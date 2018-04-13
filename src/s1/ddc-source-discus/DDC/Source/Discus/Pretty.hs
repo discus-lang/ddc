@@ -11,8 +11,6 @@ import DDC.Source.Discus.Exp
 import DDC.Source.Discus.Exp.Type.Pretty
 import DDC.Core.Codec.Text.Pretty
 import DDC.Data.Pretty
-import Prelude                                  hiding ((<$>))
-import qualified Data.Text                      as Text
 
 
 ---------------------------------------------------------------------------------------------------
@@ -22,14 +20,14 @@ type PrettyLanguage a
 
 
 instance Pretty DaConBind where
- ppr (DaConBindName tt)         = text (Text.unpack tt)
+ ppr (DaConBindName tt)   = text tt
 
 
 instance Pretty DaConBound where
  ppr uu
   = case uu of
-        DaConBoundName tt       -> text (Text.unpack tt)
-        DaConBoundLit  pl       -> ppr  pl
+        DaConBoundName tt -> text tt
+        DaConBoundLit  pl -> ppr  pl
 
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -49,19 +47,19 @@ instance PrettyLanguage l => Pretty (GType l) where
         TVar bv         -> ppr bv
 
         TAbs bv k t
-         -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
+         -> text "λ" <> ppr bv <> text ":" %% ppr k <> text "." %% ppr t
 
         TApp (TApp (TCon TyConFunExplicit) t1) t2
          -> pprParen' (d > 5)
-         $  pprPrec 6  t1 <+> text "->" <+> pprPrec 5 t2
+         $  pprPrec 6  t1 %% text "->" %% pprPrec 5 t2
 
         TApp (TApp (TCon TyConFunImplicit) t1) t2
          -> pprParen' (d > 5)
-         $  pprPrec 6  t1 <+> text "~>" <+> pprPrec 5 t2
+         $  pprPrec 6  t1 %% text "~>" %% pprPrec 5 t2
 
         TApp t1 t2
          -> pprParen' (d > 10)
-         $  pprPrec 10 t1 <+> pprPrec 11 t2
+         $  pprPrec 10 t1 %% pprPrec 11 t2
 
 
 
@@ -80,24 +78,25 @@ instance PrettyLanguage l => Pretty (Module l) where
         , moduleImportTypes     = importedTypes
         , moduleImportValues    = importedValues
         , moduleTops            = tops }
-  =  text "module"
-        <+> ppr name
+  = vcat
+  [ text "module"
+        %% ppr name
         <>  sImportedTypes
         <>  sImportedValues
         <>   (if null importedTypes && null importedValues
                 then space <> text "where"
                 else text "where")
-        <$$> (vcat $ map ppr tops)
+  , vcat $ map ppr tops]
 
   where sImportedTypes
-         | null importedTypes   = empty
+         | null importedTypes   = mempty
          | otherwise
          = line
          <> (vcat $ map pprImportType importedTypes)
          <> line
 
         sImportedValues
-         | null importedValues  = empty
+         | null importedValues  = mempty
          | otherwise
          = (vcat $ map (pprImportValue . snd) importedValues)
          <> line
@@ -110,29 +109,31 @@ instance PrettyLanguage l => Pretty (Top l) where
   <> semi <> line
 
  ppr (TopData _ (DataDef name params ctors))
-  = (text "data"
-        <+> hsep ( ppr name
+  = vcat
+  [ text "data"
+        %% hsep ( ppr name
                  : map pprParam params)
-        <+> text "where"
-        <+> lbrace)
-  <$> indent 8
-        (vcat [ ppr (dataCtorName ctor)
-                <+> text ":"
-                <+> (hsep   $ punctuate (text " ->")
+        %% text "where"
+        %% lbrace
+
+  , indent 8
+        $ vcat [ ppr (dataCtorName ctor)
+                %% text ":"
+                %% (hsep   $ punctuate (text " ->")
                                 $ (  map (pprPrec 6) (dataCtorFieldTypes ctor)
                                   ++ [ ppr           (dataCtorResultType ctor)]))
                 <> semi
-                        | ctor       <- ctors ])
-  <> line <> rbrace <> semi
-  <> line
+                        | ctor       <- ctors ]
+  , rbrace <> semi
+  , mempty ]
 
  ppr (TopType _ b t)
-  =  text "type" <+> ppr b <+> text "=" <+> ppr t
+  =  text "type" %% ppr b %% text "=" %% ppr t
   <> semi
   <> line
 
 pprParam (b, t)
- = parens $ ppr b <> text ":" <+> ppr t
+ = parens $ ppr b <> text ":" %% ppr t
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -167,56 +168,54 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XApp x1 r2
          -> pprParen' (d > 10)
-         $  pprPrec 10 x1 <+> nest 4 (pprPrec 11 r2)
+         $  pprPrec 10 x1 %% nest 4 (pprPrec 11 r2)
 
         XLet lts x
          ->  pprParen' (d > 2)
-         $   ppr lts <+> text "in"
-         <$> ppr x
+         $   vcat [ ppr lts %% text "in", ppr x]
 
         XCase x alts
          -> pprParen' (d > 2)
-         $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
+         $  (nest 2 $ text "case" %% ppr x %% text "of" %% lbrace <> line
                 <> (vcat $ punctuate semi $ map ppr alts))
          <> line
          <> rbrace
 
         XCast CastBox x
          -> pprParen' (d > 2)
-         $  text "box"  <$> ppr x
+         $  vcat [ text "box", ppr x]
 
         XCast CastRun x
          -> pprParen' (d > 2)
-         $  text "run"  <+> ppr x
+         $  text "run"  %% ppr x
 
         XCast cc x
          ->  pprParen' (d > 2)
-         $   ppr cc <+> text "in"
-         <$> ppr x
+         $   vcat [ ppr cc %% text "in", ppr x]
 
         XDefix    _ xs
-         -> text "[" <> text "DEFIX|" <+> hsep (map (pprPrec 11) xs) <+> text "]"
+         -> text "[" <> text "DEFIX|" %% hsep (map (pprPrec 11) xs) %% text "]"
 
         XInfixOp  _ str
-         -> parens $ text "INFIXOP"  <+> text "\"" <> text str <> text "\""
+         -> parens $ text "INFIXOP"  %% text "\"" % string str % text "\""
 
         XInfixVar _ str
-         -> parens $ text "INFIXVAR" <+> text "\"" <> text str <> text "\""
+         -> parens $ text "INFIXVAR" %% text "\"" % string str % text "\""
 
         XMatch _ alts xDefault
          -> pprParen' (d > 2)
-         $  (nest 2 $ text "match" <+> lbrace <> line
+         $  (nest 2 $ text "match" %% lbrace <> line
                 <> (vcat $ punctuate (semi <> line) $ map ppr alts))
          <> line
          <> rbrace
-         <+> text "else" <+> pprPrec 10 xDefault
+         %% text "else" %% pprPrec 10 xDefault
 
         XWhere _ x cls
          ->  pprParen' (d > 2)
          $   ppr x
-         <+> line
+         %% line
          <>  (text "where"
-                <+> text "{" <> line
+                %% text "{" <> line
                 <>  (nest 4 $ vcat $ map ppr cls)
                 <>  line
                 <>  text "}")
@@ -231,7 +230,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
                 <> pprPrec 2 p
                 <> (case mt of
                         Just t  -> text ": " <> ppr t
-                        Nothing -> empty)
+                        Nothing -> mempty)
                 <> (case ps of
                         MSType          -> text "]"
                         MSTerm          -> text ")"
@@ -270,69 +269,70 @@ instance PrettyLanguage l => Pretty (GLets l) where
   = case lts of
         LLet b x
          -> text "let"
-                 <+> align (  ppr b
+                 %% align (  ppr b
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
-                                     <> text "=" <+> align (ppr x)))
+                                     <> text "=" %% align (ppr x)))
         LRec bxs
          -> let pprLetRecBind (b, x)
                  =   ppr b
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
-                            <> text "=" <+> align (ppr x))
+                            <> text "=" %% align (ppr x))
 
-           in   (nest 2 $ text "rec"
-                  <+> lbrace
+           in vcat
+                [ nest 2 $ text "rec"
+                  %% lbrace
                   <>  (  line
                       <> (vcat $ punctuate (semi <> line)
-                               $ map pprLetRecBind bxs)))
-                <$> rbrace
+                               $ map pprLetRecBind bxs))
+                , rbrace]
 
         LPrivate bs (CapsList [])
          -> text "private"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% (hcat $ punctuate space (map ppr bs))
 
         LPrivate bs (CapsList bsWit)
          -> text "private"
-                <+> (hcat $ punctuate space (map ppr bs))
-                <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
+                %% (hcat $ punctuate space (map ppr bs))
+                %% text "with"
+                %% braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
         LPrivate bs CapsMutable
          -> text "mutable"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% (hcat $ punctuate space (map ppr bs))
 
         LPrivate bs CapsConstant
          -> text "constant"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% (hcat $ punctuate space (map ppr bs))
 
         LExtend bs parent (CapsList [])
          -> text "extend"
-                <+> ppr parent
-                <+> text "using"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% ppr parent
+                %% text "using"
+                %% (hcat $ punctuate space (map ppr bs))
 
         LExtend bs parent (CapsList bsWit)
          -> text "extend"
-                <+> ppr parent
-                <+> text "using"
-                <+> (hcat $ punctuate space (map ppr bs))
-                <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
+                %% ppr parent
+                %% text "using"
+                %% (hcat $ punctuate space (map ppr bs))
+                %% text "with"
+                %% braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
         LExtend bs parent CapsMutable
          -> text "extend"
-                <+> ppr parent
-                <+> text "with mutable"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% ppr parent
+                %% text "with mutable"
+                %% (hcat $ punctuate space (map ppr bs))
 
         LExtend bs parent CapsConstant
          -> text "extend"
-                <+> ppr parent
-                <+> text "with constant"
-                <+> (hcat $ punctuate space (map ppr bs))
+                %% ppr parent
+                %% text "with constant"
+                %% (hcat $ punctuate space (map ppr bs))
 
         LGroup bRec cs
          ->   (if bRec then text "recs" else text "lets")
-                <+> nest 2 (lbrace
+                %% nest 2 (lbrace
                                 <> line
                                 <> (vcat $ map ppr cs)
                                 <> line <> rbrace)
@@ -341,15 +341,15 @@ instance PrettyLanguage l => Pretty (GLets l) where
 -- Clause -----------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GClause l) where
  ppr (SSig _ b t)
-  = ppr b <+> text ":" <+> ppr t
+  = ppr b %% text ":" %% ppr t
 
  ppr (SLet _ b ps [GExp x])
-  = ppr b       <+> hsep (map (pprPrec 10) ps)
+  = ppr b       %% hsep (map (pprPrec 10) ps)
                 <>  nest 2 ( breakWhen (not $ isSimpleX x)
-                           <> text "=" <+> align (ppr x))
+                           <> text "=" %% align (ppr x))
 
  ppr (SLet _ b ps gxs)
-  = ppr b       <+> hsep (map (pprPrec 10) ps)
+  = ppr b       %% hsep (map (pprPrec 10) ps)
                 <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
@@ -359,19 +359,19 @@ instance PrettyLanguage l => Pretty (GParam l) where
   = text "[" <> ppr b <> text "]"
 
  pprPrec _d (MType    b (Just t))
-  = text "[" <> ppr b <> text ":" <+> ppr t <> text "]"
+  = text "[" <> ppr b <> text ":" %% ppr t <> text "]"
 
  pprPrec d  (MTerm    p Nothing)
   = pprPrec d p
 
  pprPrec _  (MTerm    p (Just t))
-  = parens $ pprPrec 0 p <> text ":" <+> ppr t
+  = parens $ pprPrec 0 p <> text ":" %% ppr t
 
  pprPrec _d (MImplicit b Nothing)
   = text "{" <> ppr b <> text "}"
 
  pprPrec _d (MImplicit b (Just t))
-  = text "{" <> ppr b <> text ":" <+> ppr t <> text "}"
+  = text "{" <> ppr b <> text ":" %% ppr t <> text "}"
 
 
 -- Pat --------------------------------------------------------------------------------------------
@@ -386,7 +386,7 @@ instance PrettyLanguage l => Pretty (GPat l) where
 
         PData u ps
          -> pprParen' (d > 1)
-         $  ppr u <+> sep (map (pprPrec 2) ps)
+         $  ppr u %% sep (map (pprPrec 2) ps)
 
 
 -- GuardedExp -------------------------------------------------------------------------------------
@@ -395,19 +395,19 @@ pprGuardedExp sTerm gx
   = pprGs "|" gx
   where
         pprGs _c (GExp x)
-         = text sTerm <+> ppr x
+         = string sTerm %% ppr x
 
         pprGs c (GGuard g gs)
          = pprG c g <> line <> pprGs "," gs
 
         pprG  c (GPat p x)
-         = text c <+> ppr p  <+> text "<-" <+> ppr x
+         = text c %% ppr p  %% text "<-" %% ppr x
 
         pprG  c (GPred x)
-         = text c <+> ppr x
+         = text c %% ppr x
 
         pprG  c GDefault
-         = text c <+> text "otherwise"
+         = text c %% text "otherwise"
 
 
 -- Guard ------------------------------------------------------------------------------------------
@@ -415,7 +415,7 @@ instance PrettyLanguage l => Pretty (GGuard l) where
  ppr gg
   = case gg of
         GPat p w
-         -> ppr p <+> text "<-" <+> ppr w
+         -> ppr p %% text "<-" %% ppr w
 
         GPred p
          -> ppr p
@@ -440,7 +440,7 @@ instance PrettyLanguage l => Pretty (GAltMatch l) where
 instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
-        CastWeakenEffect  eff -> text "weakeff" <+> brackets (ppr eff)
+        CastWeakenEffect  eff -> text "weakeff" %% brackets (ppr eff)
         CastBox         -> text "box"
         CastRun         -> text "run"
 
@@ -452,7 +452,7 @@ instance PrettyLanguage l => Pretty (GWitness l) where
         WAnnot _ w      -> ppr w
         WVar   n        -> ppr n
         WCon   wc       -> ppr wc
-        WApp   w1 w2    -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
+        WApp   w1 w2    -> pprParen (d > 10) (ppr w1 %% pprPrec 11 w2)
         WType  t        -> text "[" <> ppr t <> text "]"
 
 
@@ -469,7 +469,7 @@ instance Pretty n => Pretty (DaCon n t) where
 
         DaConRecord ns
          -> text "("
-         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns)
+         <> (hcat $ punctuate (text ",") $ map text ns)
          <> text ")#"
 
         DaConPrim n _   -> ppr n

@@ -1,3 +1,4 @@
+
 -- | Type checker for the Disciple Core language.
 --
 --   The functions in this module do not check for language fragment compliance.

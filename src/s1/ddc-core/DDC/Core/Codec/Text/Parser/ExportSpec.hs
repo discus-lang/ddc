@@ -11,7 +11,6 @@ import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Core.Module
 import DDC.Type.Exp.Simple
 import DDC.Data.Pretty
-import Control.Monad
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as T
 
@@ -43,7 +42,7 @@ pExportSpecs c
 
                 -- export foreign X value { (NAME :: TYPE)+ }
          , do   pKey    EForeign
-                dst     <- liftM (renderIndent . ppr) pName
+                dst     <- fmap (renderIndent . ppr) pName
                 pKey    EValue
                 pSym    SBraceBra
                 specs   <- P.sepEndBy1 (pExportForeignValue c dst)

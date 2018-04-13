@@ -26,7 +26,6 @@ module DDC.Core.Check.Base
         , module DDC.Type.DataDef
         , module DDC.Type.Universe
         , module DDC.Type.Exp.Simple
-        , module DDC.Data.Pretty
         , module DDC.Data.ListUtils
         , module Control.Monad
         , module Data.Maybe)
@@ -45,15 +44,15 @@ import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
 import DDC.Control.Check                (throw, runCheck, evalCheck)
-import DDC.Data.Pretty
 import DDC.Data.ListUtils
 
 import Control.Monad
-import Data.Monoid                      hiding ((<>))
 import Data.Maybe
 import Data.Set                         (Set)
+import DDC.Data.Pretty                  as P
 import qualified Data.Set               as Set
 import qualified DDC.Control.Check      as G
+import qualified Data.Semigroup         as SG
 import Prelude                          hiding ((<$>))
 
 
@@ -96,7 +95,6 @@ applySolved ctx tt
         Right t -> return t
 
 
-
 -- CheckTrace -----------------------------------------------------------------
 -- | Human readable trace of the type checker.
 data CheckTrace
@@ -104,12 +102,24 @@ data CheckTrace
         { checkTraceDoc :: Doc }
 
 instance Pretty CheckTrace where
- ppr ct = checkTraceDoc ct
+ ppr ct         = checkTraceDoc ct
+
+instance SG.Semigroup CheckTrace where
+ (<>)           = unionCheckTrace
 
 instance Monoid CheckTrace where
- mempty = CheckTrace empty
+ mempty         = emptyCheckTrace
+ mappend        = unionCheckTrace
 
- mappend ct1 ct2
+
+-- | Construct an empty `CheckTrace`.
+emptyCheckTrace :: CheckTrace
+emptyCheckTrace = CheckTrace mempty
+
+
+-- | Union two `ChecTrace`s.
+unionCheckTrace :: CheckTrace -> CheckTrace -> CheckTrace
+unionCheckTrace ct1 ct2
         = CheckTrace
         { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
 
@@ -118,7 +128,7 @@ instance Monoid CheckTrace where
 ctrace :: Doc -> CheckM a n ()
 ctrace doc'
  = do   (tr, ix, pos)       <- G.get
-        let tr' = tr { checkTraceDoc = checkTraceDoc tr <$> doc' }
+        let tr' = tr { checkTraceDoc = checkTraceDoc tr `P.pline` doc' }
         G.put (tr', ix, pos)
         return  ()
 

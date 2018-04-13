@@ -131,9 +131,9 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar         s       -> text s
-        NameVarMod      n s     -> ppr n <> text "$" <> text s
-        NameCon         c       -> text c
+        NameVar         s       -> string s
+        NameVarMod      n s     -> ppr n <> text "$" <> string s
+        NameCon         c       -> string c
 
         NameKiConFlow   con     -> ppr con
         NameTyConFlow   con     -> ppr con

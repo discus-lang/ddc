@@ -14,31 +14,31 @@ instance Pretty Param where
 instance Pretty FunctionDecl where
  ppr (FunctionDecl n l c r varg params a strategy)
   = let varg'   = case varg of
-                   VarArgs | null params        -> text "..."
-                           | otherwise          -> text ", ..."
-                   _otherwise                   -> empty
+                   VarArgs | null params -> text "..."
+                           | otherwise   -> text ", ..."
+                   _otherwise            -> mempty
 
         align'  = case a of
-                   AlignNone            -> empty
-                   AlignBytes a'        -> text " align" <+> ppr a'
+                   AlignNone       -> mempty
+                   AlignBytes a'   -> text " align" %% ppr a'
 
         gc'     = case strategy of
-                   Nothing              -> empty
-                   Just strategy'       -> text " gc" <+> dquotes (text strategy')
+                   Nothing         -> mempty
+                   Just strategy'  -> text " gc" %% dquotes (string strategy')
 
         args'   = hcat $ punctuate comma $ map ppr params
 
-    in  ppr l   <+> ppr c 
-                <+> ppr r 
-                <+> text " @" 
-                <>  ppr n <> brackets (args' <> varg') 
-                <>  align'
-                <>  gc'
+    in  ppr l   %% ppr c
+                %% ppr r
+                %% text " @"
+                %  ppr n % brackets (args' %% varg')
+                %  align'
+                %  gc'
 
 
 instance Pretty TypeAlias where
  ppr (TypeAlias name ty)
-        = text "%" <> text name <+> equals <+> text "type" <+> ppr ty
+        = text "%" <> string name %% equals %% text "type" %% ppr ty
 
 
 instance Pretty Type where
@@ -59,14 +59,14 @@ instance Pretty Type where
         TArray nr tp
          -> brackets  $ integer nr <> text " x " <> ppr tp
 
-        TAlias (TypeAlias s _)  
-         -> text "%"  <> text s
+        TAlias (TypeAlias s _)
+         -> text "%"  <> string s
 
         TFunction (FunctionDecl _ _ _ r varg params _ _)
          -> let varg' = case varg of
                         VarArgs | null params -> text "..."
                                 | otherwise   -> text ", ..."
-                        _otherwise            -> empty
+                        _otherwise            -> mempty
 
                 -- by default we don't print param attributes
                 args    = hcat $ punctuate comma $ map ppr params

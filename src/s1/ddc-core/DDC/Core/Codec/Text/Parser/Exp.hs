@@ -21,7 +21,6 @@ import DDC.Core.Exp.Annot
 import DDC.Control.Parser               ((<?>), SourcePos)
 import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Exp.Simple    as T
-import Control.Monad.Except
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -33,7 +32,7 @@ pExp c
         -- Level-0 lambda abstractions
         -- (λBIND.. . EXP) or (\BIND.. . EXP)
  [ do   sp      <- P.choice [ pSym SLambda,    pSym SBackSlash]
-        params  <- liftM concat $ P.many1 (pParams c)
+        params  <- fmap concat $ P.many1 (pParams c)
         pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XAbs sp) xBody params
@@ -41,7 +40,7 @@ pExp c
         -- Level-1 lambda abstractions.
         -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
  , do   sp      <- P.choice [ pSym SBigLambda, pSym SBigLambdaSlash]
-        bs      <- liftM concat $ P.many1 (pTypeBinds c)
+        bs      <- fmap concat $ P.many1 (pTypeBinds c)
         pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
@@ -120,10 +119,10 @@ pExp c
 pExpApp :: (Ord n, Pretty n)
         => Context n -> Parser n (Exp SourcePos n)
 pExpApp c
-  = do  (x1, _)        <- pExpAtomSP c
+  = do  (x1, _) <- pExpAtomSP c
 
         P.choice
-         [ do   xs  <- liftM concat $ P.many1 (pArgSPs c)
+         [ do   xs  <- fmap concat $ P.many1 (pArgSPs c)
                 return  $ foldl (\x (x', sp) -> XApp sp x x') x1 xs
 
          ,      return x1]
@@ -271,7 +270,7 @@ pPat c
 
         -- CON BIND BIND ...
  , do   nCon    <- pCon
-        bs      <- liftM concat $ P.many (pTermBinds c)
+        bs      <- fmap concat $ P.many (pTermBinds c)
         return  $ PData (DaConBound nCon) bs]
 
 
@@ -477,7 +476,7 @@ pLetBinding c
 
 
          , do   -- Binding using function syntax.
-                ps      <- liftM concat
+                ps      <- fmap concat
                         $  P.many (pBindParamSpec c)
 
                 P.choice

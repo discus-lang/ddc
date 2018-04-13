@@ -5,11 +5,10 @@ module DDC.Build.Spec.Parser
         , Error(..) )
 where
 import DDC.Build.Spec.Base
-import DDC.Data.Pretty
-import Control.Monad
 import Data.List
 import Data.Char
 import Data.Maybe
+import DDC.Data.Pretty                  as P
 import qualified DDC.Core.Module        as C
 
 
@@ -36,16 +35,16 @@ instance Pretty Error where
  ppr err
   = case err of
         ErrorEmpty filePath
-         -> vcat [ text filePath
+         -> vcat [ string filePath
                  , text "Empty file" ]
 
         ErrorParse filePath n
-         -> vcat [ text filePath <> text ":" <> int n
+         -> vcat [ string filePath <> text ":" <> int n
                  , text "Parse error" ]
 
         ErrorMissingField filePath field
-         -> vcat [ text filePath
-                 , text "Missing field '" <> text field <> text "'" ]
+         -> vcat [ string filePath
+                 , text "Missing field '" <> string field <> text "'" ]
 
 
 ---------------------------------------------------------------------------------------------------
@@ -152,7 +151,7 @@ pExecutableFields path str
 
         let Just msTetra
                 = sequence $ map C.readModuleName
-                $ concat   $ maybeToList $ liftM words sTetraOther
+                $ concat   $ maybeToList $ fmap words sTetraOther
 
         return  $ SpecExecutable
                 { specExecutableName       = sName

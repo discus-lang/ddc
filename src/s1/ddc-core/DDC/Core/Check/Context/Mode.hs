@@ -25,6 +25,7 @@ data Mode n
         | Synth [Exists n]
 
         -- | The descending tongue of flame.
+        --
         --   Check the type of an expression against this expected type, and
         --   unify expected types into unification variables for bidirecional
         --   type inference.
@@ -36,7 +37,7 @@ instance (Eq n, Pretty n) => Pretty (Mode n) where
  ppr mode
   = case mode of
         Recon    -> text "RECON"
-        Synth is -> text "SYNTH" <+> ppr is
-        Check t  -> text "CHECK" <+> parens (ppr t)
+        Synth is -> text "SYNTH" %% ppr is
+        Check t  -> text "CHECK" %% parens (ppr t)
 
 

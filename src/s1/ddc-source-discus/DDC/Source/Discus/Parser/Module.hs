@@ -101,7 +101,7 @@ pExportValue src
                 return  (ExportValue b (ExportValueSea b txSymbol k))
 
 
-         , do   let txSymbol = Text.pack $ renderIndent (text $ Text.unpack n)
+         , do   let txSymbol = Text.pack $ renderIndent (text n)
                 pTokSP (KOp ":")
                 k       <- pType
                 return  (ExportValue b (ExportValueSea b txSymbol k)) ]
@@ -205,7 +205,7 @@ pImportValue src
                 k       <- pType
                 return  (ImportValue b (ImportValueSea b txSymbol k))
 
-         , do   let txSymbol = Text.pack $ renderIndent (text $ Text.unpack n)
+         , do   let txSymbol = Text.pack $ renderIndent (text n)
                 pTokSP (KOp ":")
                 k       <- pType
                 return  (ImportValue b (ImportValueSea b txSymbol k))

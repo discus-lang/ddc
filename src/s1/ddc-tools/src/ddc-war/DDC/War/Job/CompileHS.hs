@@ -16,7 +16,6 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
 
 
 -- | Use GHC to compile/make file.
@@ -46,7 +45,7 @@ data Spec
 data Result
         = ResultSuccess Seconds
         | ResultFailure
-        deriving Show
+
 
 resultSuccess :: Result -> Bool
 resultSuccess result
@@ -56,10 +55,13 @@ resultSuccess result
 
 
 instance Pretty Result where
- pretty result
+ ppr result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultFailure           -> text "failed"
+        ResultSuccess seconds
+         -> string "success" %% parens (ppr seconds)
+
+        ResultFailure
+         -> string "failed"
 
 
 -- | Compile a Haskell Source File

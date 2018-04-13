@@ -7,7 +7,6 @@ module DDC.Core.Transform.Forward
         , forwardModule
         , forwardX)
 where
-import DDC.Data.Pretty
 import DDC.Core.Analysis.Usage
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
@@ -18,8 +17,11 @@ import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer     (Writer, runWriter, tell)
 import Data.Typeable
+import Data.Semigroup           (Semigroup(..))
+import Data.Monoid              (Monoid(..))
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
+import qualified DDC.Data.Pretty                        as P
 import Prelude                                          hiding ((<$>))
 
 
@@ -38,18 +40,33 @@ data ForwardInfo
         deriving Typeable
 
 
-instance Pretty ForwardInfo where
+instance P.Pretty ForwardInfo where
  ppr (ForwardInfo inspected substs bindings)
-  =  text "Forward:"
-  <$> indent 4 (vcat
-      [ text "Total bindings inspected:      " <> int inspected
-      , text "  Trivial substitutions made:  " <> int substs
-      , text "  Bindings moved forward:      " <> int bindings ])
+  = P.vcat
+  [ P.text "Forward:"
+  , P.indent 4 $ P.vcat
+        [ P.text "Total bindings inspected:      " <> P.int inspected
+        , P.text "  Trivial substitutions made:  " <> P.int substs
+        , P.text "  Bindings moved forward:      " <> P.int bindings ]]
+
+
+instance Semigroup ForwardInfo where
+ (<>)           = unionForwardInfo
 
 
 instance Monoid ForwardInfo where
- mempty = ForwardInfo 0 0 0
- mappend (ForwardInfo i1 s1 b1)(ForwardInfo i2 s2 b2)
+ mempty         = emptyForwardInfo
+ mappend        = unionForwardInfo
+
+
+-- | Construct an empty ForwardInfo
+emptyForwardInfo :: ForwardInfo
+emptyForwardInfo = ForwardInfo 0 0 0
+
+
+-- | Union two ForwardInfo
+unionForwardInfo :: ForwardInfo -> ForwardInfo -> ForwardInfo
+unionForwardInfo (ForwardInfo i1 s1 b1) (ForwardInfo i2 s2 b2)
         = ForwardInfo (i1 + i2) (s1 + s2) (b1 + b2)
 
 

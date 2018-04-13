@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Desugar match expressions to case expressions.
 --
@@ -16,8 +15,8 @@ module DDC.Source.Discus.Transform.Matches
 where
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp
-import Data.Monoid
 import Data.Text                        (Text)
+import Data.Semigroup                   (Semigroup(..))
 import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text

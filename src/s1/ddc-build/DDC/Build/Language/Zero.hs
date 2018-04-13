@@ -59,7 +59,7 @@ data Error a
         deriving Show
 
 instance Pretty (Error a) where
- ppr Error  = text (show Error)
+ ppr Error  = string (show Error)
 
 
 -- Wrap the names we use for the zero fragment,
@@ -76,8 +76,8 @@ instance NFData Name where
 
 
 instance Pretty Name where
- ppr (Name str)         = text str
- ppr (NameExt n str)    = ppr n <> text "$" <> text str
+ ppr (Name str)         = string str
+ ppr (NameExt n str)    = ppr n <> text "$" <> string str
 
 
 instance CompoundName Name where

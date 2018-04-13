@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Names used in the Disciple Core Salt language profile.
 module DDC.Core.Salt.Name
@@ -142,9 +140,9 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  n              -> text $ T.unpack n
-        NameCon  n              -> text $ T.unpack n
-        NameExt  n ext          -> ppr n <> text "$" <> text (T.unpack ext)
+        NameVar  n              -> text n
+        NameCon  n              -> text n
+        NameExt  n ext          -> ppr n % text "$" % text ext
         NameObjTyCon            -> text "Obj"
         NamePrimTyCon tc        -> ppr tc
         NamePrimVal   val       -> ppr val
@@ -376,8 +374,8 @@ instance Pretty PrimLit where
         PrimLitSize    i        -> integer i <> text "s#"
         PrimLitWord    i bits   -> integer i <> text "w" <> int bits    <> text "#"
         PrimLitFloat   f bits   -> double  f <> text "f" <> int bits    <> text "#"
-        PrimLitChar    c        -> text (show c)                        <> text "#"
-        PrimLitTextLit tx       -> (text $ show $ T.unpack tx)          <> text "#"
+        PrimLitChar    c        -> string (show c)                      <> text "#"
+        PrimLitTextLit tx       -> (string $ show $ T.unpack tx)        <> text "#"
         PrimLitTag     i        -> text "TAG" <> integer i              <> text "#"
 
 
@@ -445,7 +443,7 @@ seaNameOfSuper mImport mExport nm
         | Nothing               <- mImport
         , Nothing               <- mExport
         , Just str              <- takeNameVar nm
-        = Just $ text $ sanitizeName $ T.unpack str
+        = Just $ string $ sanitizeName $ T.unpack str
 
         -- Special case for the main function.
         -- This comes with a export definition but we don't want
@@ -456,31 +454,31 @@ seaNameOfSuper mImport mExport nm
         , Just str              <- takeNameVar nm
         , ps  == ["Main"]
         , str == "main"
-        = Just $ text $ T.unpack str
+        = Just $ text str
 
         -- Super is exported to other modules.
         | Just ev@ExportValueLocal{} <- mExport
         , ModuleName ps         <- C.exportValueLocalModuleName ev
         , Just str              <- takeNameVar nm
-        = Just $ text $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
+        = Just $ string $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
 
         -- Super is imported from another module.
         | Just iv@ImportValueModule{} <- mImport
         , ModuleName ps         <- C.importValueModuleName iv
         , Just str              <- takeNameVar nm
-        = Just $ text $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
+        = Just $ string $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
 
         -- Super is imported from C-land and not exported.
         | Just (ImportValueSea _ strSea _) <- mImport
         , Nothing               <- mExport
-        = Just $ text $ T.unpack strSea
+        = Just $ text strSea
 
         -- ISSUE #320: Handle all the import/export combinations.
         --
         -- We don't handle the other cases because we would need to
         -- produce a wrapper to convert the names.
         | Just str                      <- takeNameVar nm
-        = Just $ text $ T.unpack str
+        = Just $ text str
 
         | otherwise
         = Nothing
@@ -491,7 +489,7 @@ seaNameOfSuper mImport mExport nm
 seaNameOfLocal :: Name -> Maybe Doc
 seaNameOfLocal nn
  = case takeNameVar nn of
-        Just str -> Just $ text $ "_" ++ sanitizeName (T.unpack str)
+        Just str -> Just $ string $ "_" ++ sanitizeName (T.unpack str)
         _        -> Nothing
 
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module DDC.Core.Discus.Convert.Type.DaCon
         (convertDaCon)
 where

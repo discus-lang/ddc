@@ -22,7 +22,7 @@ checkCase !table !ctx0 mode demand
                 , text "    xDiscrim: " <> ppr xDiscrim
                 , text "    mode:     " <> ppr mode
                 , indent 2 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
@@ -127,13 +127,13 @@ checkCase !table !ctx0 mode demand
 
         ctrace  $ vcat
                 [ text "*<  Case"
-                , text "    modeDiscrim"  <+> ppr modeDiscrim
-                , text "    tAlt = "      <+> ppr tAlt
+                , text "    modeDiscrim" %% ppr modeDiscrim
+                , text "    tAlt = "     %% ppr tAlt
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
                 , indent 2 $ ppr ctx4
-                , empty ]
+                , mempty ]
 
         returnX a
                 (\z -> XCase z xDiscrim' alts')
@@ -274,9 +274,9 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
    = do
         ctrace  $ vcat
                 [ text "*>  Alt"
-                , text "    mode:   " <+> ppr mode
+                , text "    mode:   " %% ppr mode
                 , indent 4 $ ppr ctx
-                , empty ]
+                , mempty ]
 
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
@@ -333,8 +333,8 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         ctrace  $ vcat
                 [ text "*<  Alt"
                 , ppr alt
-                , text "  MODE:   " <+> ppr mode
-                , text "  tBody': " <+> ppr tBody'
+                , text "  MODE:   " %% ppr mode
+                , text "  tBody': " %% ppr tBody'
                 , ppr ctx0
                 , ppr ctxBody
                 , ppr ctx_cut

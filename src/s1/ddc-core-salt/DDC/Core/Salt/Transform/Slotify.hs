@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module DDC.Core.Salt.Transform.Slotify
         (slotifyModule)
 where

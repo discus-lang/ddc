@@ -17,47 +17,47 @@ import Data.Char
 data PrimVec
         -- Arithmetic ---------------------------
         -- | Negate elements of a vector.
-        = PrimVecNeg    
+        = PrimVecNeg
         { primVecMulti          :: Int }
 
         -- | Add elements of a vector.
-        | PrimVecAdd         
+        | PrimVecAdd
         { primVecMulti          :: Int }
 
         -- | Subtract elements of a vector.
-        | PrimVecSub         
+        | PrimVecSub
         { primVecMulti          :: Int }
 
         -- | Multiply elements of a vector.
-        | PrimVecMul         
+        | PrimVecMul
         { primVecMulti          :: Int }
 
         -- | Divide elements of a vector.
-        | PrimVecDiv         
+        | PrimVecDiv
         { primVecMulti          :: Int }
 
         -- Constructors -------------------------
         -- | Replicate a scalar into a vector.
-        | PrimVecRep         
+        | PrimVecRep
         { primVecMulti          :: Int }
 
         -- | Pack multiple scalars into a vector
-        | PrimVecPack        
+        | PrimVecPack
         { primVecMulti          :: Int }
 
         -- Projections --------------------------
         -- | Extract a single element from a vector.
         | PrimVecProj
-        { primVecMulti          :: Int 
+        { primVecMulti          :: Int
         , primVecIndex          :: Int }
 
         -- Memory Access ------------------------
         -- | Read multiple elements  from memory.
-        | PrimVecGather      
+        | PrimVecGather
         { primVecMulti          :: Int }
 
         -- | Write multiple elements to   memory.
-        | PrimVecScatter     
+        | PrimVecScatter
         { primVecMulti          :: Int }
         deriving (Eq, Ord, Show)
 

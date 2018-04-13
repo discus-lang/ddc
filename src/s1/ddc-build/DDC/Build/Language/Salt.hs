@@ -51,5 +51,7 @@ data Error a
         = Error
         deriving Show
 
+
 instance Pretty (Error a) where
- ppr Error  = text (show Error)
+ ppr Error  = string (show Error)
+

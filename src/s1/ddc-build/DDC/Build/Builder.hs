@@ -12,10 +12,10 @@ where
 import DDC.Build.Platform
 import DDC.Data.Pretty                          hiding ((</>))
 import Data.List
-import Control.Monad
 import System.FilePath
 import System.Exit                              hiding (die)
 import System.Process
+import Control.Monad
 import qualified DDC.Core.Salt.Platform         as Llvm
 
 
@@ -122,14 +122,14 @@ instance Show Builder where
 instance Pretty Builder where
  ppr builder
         = vcat
-        [ text "Builder Name : " <> text (builderName builder)
-        , empty
+        [ text "Builder Name : " <> string (builderName builder)
+        , mempty
         , text "Host Platform"
         , indent 1 $ ppr $ buildHost builder
-        , empty
+        , mempty
         , text "Target Platform"
         , indent 1 $ ppr $ buildTarget builder
-        , empty
+        , mempty
         , text "LLVM Target Spec"
         , indent 1 $ ppr $ buildSpec builder ]
 

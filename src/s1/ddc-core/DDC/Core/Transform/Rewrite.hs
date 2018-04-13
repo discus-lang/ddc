@@ -5,11 +5,11 @@ module DDC.Core.Transform.Rewrite
         , rewriteModule
         , rewriteX)
 where
-import DDC.Data.Pretty
 import DDC.Core.Exp.Annot                               as X
 import DDC.Core.Module
 import Data.Map                                         (Map)
 import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
+import DDC.Data.Pretty                                  as P
 import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint    as RD
 import qualified DDC.Core.Transform.Rewrite.Env         as RE
@@ -22,8 +22,8 @@ import qualified DDC.Type.Exp.Simple                    as T
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import Data.Maybe
-import Control.Monad
 import Control.Monad.Writer (tell, runWriter, Writer)
+import Control.Monad
 import Data.List
 import Data.Typeable
 import Prelude                                          hiding ((<$>))
@@ -43,13 +43,14 @@ data RewriteLog
 
 instance Pretty RewriteInfo where
  ppr (RewriteInfo rules)
-        =   text "Rules fired:"
-        <$> indent 4 (vcat $ map ppr rules)
+  = P.vcat
+        [ text "Rules fired:"
+        , indent 4 (vcat $ map ppr rules) ]
 
 
 instance Pretty RewriteLog where
- ppr (LogRewrite name) = text "Rewrite: " <> text name
- ppr (LogUnfold  name) = text "Unfold:  " <> text name
+ ppr (LogRewrite name) = text "Rewrite: " <> string name
+ ppr (LogUnfold  name) = text "Unfold:  " <> string name
 
 isProgress = not . null
 
@@ -479,7 +480,7 @@ matchWithRule
         --  This should always match because checked rules are guaranteed not to
         --  have `BAnon` or `BNone` binders.
         let Just vs
-                = liftM Set.fromList
+                = fmap Set.fromList
                 $ sequence
                 $ map T.takeNameOfBind
                 $ map snd binds

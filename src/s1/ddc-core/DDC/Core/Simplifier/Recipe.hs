@@ -22,10 +22,10 @@ module DDC.Core.Simplifier.Recipe
 where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
+import Data.Semigroup                   (Semigroup(..))
 import qualified DDC.Core.Transform.Snip  as Snip
 import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
-import Data.Monoid
 
 
 -- Atomic ---------------------------------------------------------------------
@@ -99,16 +99,16 @@ snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
 
 -- Compound -------------------------------------------------------------------
 -- | Conversion to administrative normal-form.
-anormalize 
-        :: (KindEnv n -> Namifier s n) 
+anormalize
+        :: (KindEnv n -> Namifier s n)
                 -- ^ Make a namifier to create fresh level-1 names.
-        -> (TypeEnv n -> Namifier s n) 
+        -> (TypeEnv n -> Namifier s n)
                 -- ^ Make a namifier to create fresh level-0 names.
         -> Simplifier s a n
 
 anormalize namK namT
         =  snip
-        <> Trans Flatten 
+        <> Trans Flatten
         <> Trans (Namify namK namT)
 
 

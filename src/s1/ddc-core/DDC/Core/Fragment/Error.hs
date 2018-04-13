@@ -42,25 +42,25 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
  ppr err
   = case err of
         ErrorUnsupported feature
-         -> vcat [ text "Unsupported feature: " <> text (show feature) ]
+         -> vcat [ text "Unsupported feature: " % string (show feature) ]
 
         ErrorUndefinedPrim n
-         -> vcat [ text "Undefined primitive: " <> ppr n ]
+         -> vcat [ text "Undefined primitive: " % ppr n ]
 
         ErrorUndefinedVar n
-         -> vcat [ text "Undefined variable: " <> ppr n ]
+         -> vcat [ text "Undefined variable: " % ppr n ]
 
         ErrorShadowedBind n
-         -> vcat [ text "Binding shadows existing name: " <> ppr n ]
+         -> vcat [ text "Binding shadows existing name: " % ppr n ]
 
         ErrorUnusedBind n
-         -> vcat [ text "Bound name is not used: " <> ppr n ]
+         -> vcat [ text "Bound name is not used: " % ppr n ]
 
         ErrorNakedType t
-         -> vcat [ text "Naked type is not a function argument: " <> ppr t]
+         -> vcat [ text "Naked type is not a function argument: " % ppr t]
 
         ErrorNakedWitness w
-         -> vcat [ text "Naked witness is not a function argument: " <> ppr w ]
+         -> vcat [ text "Naked witness is not a function argument: " % ppr w ]
 
         ErrorUnsupportedArg a
-         -> vcat [ text "Unsupported argument mode: " <> ppr a ]
+         -> vcat [ text "Unsupported argument mode: " % ppr a ]

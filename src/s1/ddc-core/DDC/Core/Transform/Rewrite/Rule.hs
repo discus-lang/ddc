@@ -1,3 +1,4 @@
+
 -- | Constructing and checking whether rewrite rules are valid
 module DDC.Core.Transform.Rewrite.Rule
         ( -- * Binding modes

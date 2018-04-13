@@ -9,7 +9,6 @@ import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Pretty
 import BuildBox
-import Text.PrettyPrint.Leijen
 
 
 -- | Diff two files.
@@ -45,11 +44,10 @@ resultSuccess result
 
 
 instance Pretty Result where
- pretty result
+ ppr result
   = case result of
-        ResultSame      -> text "ok"
-        ResultDiff{}    -> text "diff"
-
+        ResultSame      -> string "ok"
+        ResultDiff{}    -> string "diff"
 
 
 -- | Compare two files for differences.

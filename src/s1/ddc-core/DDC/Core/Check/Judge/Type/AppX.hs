@@ -56,8 +56,8 @@ checkAppX !table !ctx0
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth"
-                , text "    mode    = " <> ppr mode
-                , text "    xx      = " <> ppr xx
+                , text "    mode    = " % ppr mode
+                , text "    xx      = " % ppr xx
                 , empty ]
 
         -- Synth a type for the functional expression.
@@ -75,13 +75,13 @@ checkAppX !table !ctx0
 
         ctrace  $ vcat
                 [ text "*<  App Synth"
-                , text "    mode    = " <> ppr mode
-                , text "    demand  = " <> (text $ show demand)
+                , text "    mode    = " % ppr mode
+                , text "    demand  = " % (string $ show demand)
                 , indent 4 $ ppr xx
-                , text "    tFn     = " <> ppr tFn'
-                , text "    arg     = " <> ppr arg
-                , text "    xResult = " <> ppr xResult
-                , text "    tResult = " <> ppr tResult
+                , text "    tFn     = " % ppr tFn'
+                , text "    arg     = " % ppr arg
+                , text "    xResult = " % ppr xResult
+                , text "    tResult = " % ppr tResult
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
                 , empty ]
@@ -95,14 +95,14 @@ checkAppX !table !ctx
  = do
         ctrace  $ vcat
                 [ text "*>  App Check"
-                , text "    tExpected = " <> ppr tExpected
+                , text "    tExpected = " % ppr tExpected
                 , empty ]
 
         result  <- checkSub table a ctx demand xx tExpected
 
         ctrace  $ vcat
                 [ text "*<  App Check"
-                , empty ]
+                , mempty ]
 
         return  result
 
@@ -164,7 +164,7 @@ synthAppArg table
                 [ text "*>  App Synth Exists"
                 , text "    demand = " <> ppr demand
                 , text "    scope  = " <> ppr isScope
-                , empty ]
+                , mempty ]
 
         -- New existential for the type of the function parameter.
         iA1      <- newExists kData
@@ -197,7 +197,7 @@ synthAppArg table
                 , text "    xResult ="  <> ppr xResult
                 , indent 4 $ ppr xx
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return  (xResult, tA2, esResult, ctx2)
 
@@ -213,14 +213,14 @@ synthAppArg table
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth Match"
-                , text "    demand    = " <> ppr demand
-                , text "    scope     = " <> ppr isScope
-                , text "    tFn       = " <> ppr tFn
-                , text "    arg       = " <> ppr arg
-                , text "    paramSort = " <> text (show paramSort)
-                , text "    paramMode = " <> text (show paramMode)
-                , text "    bParam    = " <> ppr bParam
-                , text "    tResult   = " <> ppr tResult
+                , text "    demand    = " % ppr demand
+                , text "    scope     = " % ppr isScope
+                , text "    tFn       = " % ppr tFn
+                , text "    arg       = " % ppr arg
+                , text "    paramSort = " % string (show paramSort)
+                , text "    paramMode = " % string (show paramMode)
+                , text "    bParam    = " % ppr bParam
+                , text "    tResult   = " % ppr tResult
                 , empty ]
 
         -- Check the argument.
@@ -284,7 +284,7 @@ synthAppArg table
                 , text "    xExpRun = " <> ppr xExpRun
                 , text "    tExpRun = " <> ppr tExpRun
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return  (xExpRun, tExpRun, esExpRun, ctx1)
 
@@ -306,7 +306,7 @@ synthAppArg table
                 , text "    scope   = " <> ppr isScope
                 , text "    xFn     = " <> ppr xFn
                 , text "    arg     = " <> ppr arg
-                , empty ]
+                , mempty ]
 
         -- Build an argument (elaborate# [t]) where t is the desired argument type.
         --  This argument will then be replaced by a real term after type checking,
@@ -338,7 +338,7 @@ synthAppArg table
                 , text "    xResult = " <> ppr xResult
                 , text "    tResult = " <> ppr tResult
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return  (xResult, tResult, esResult, ctx1)
 
@@ -381,7 +381,7 @@ synthAppArg table
                 , text "    iA      = " <> ppr iA
                 , text "    tBody'  = " <> ppr tBody'
                 , text "    xResult = " <> ppr xFnTy
-                , empty ]
+                , mempty ]
 
         -- Synthesise the result type of a function being applied to its
         -- argument. We know the type of the function up-front, but we pass
@@ -392,15 +392,15 @@ synthAppArg table
         -- Result expression.
         ctrace  $ vcat
                 [ text "*<  App Synth Elaborate Type"
-                , text "    demand  = " <> ppr demand
-                , text "    scope   = " <> ppr isScope
-                , text "    xFn     = " <> ppr xFn
-                , text "    tFn     = " <> ppr tFn
-                , text "    arg     = " <> ppr arg
-                , text "    xResult = " <> ppr xResult
-                , text "    tResult = " <> ppr tResult
+                , text "    demand  = " % ppr demand
+                , text "    scope   = " % ppr isScope
+                , text "    xFn     = " % ppr xFn
+                , text "    tFn     = " % ppr tFn
+                , text "    arg     = " % ppr arg
+                , text "    xResult = " % ppr xResult
+                , text "    tResult = " % ppr tResult
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return  (xResult, tResult, esResult, ctx2)
 

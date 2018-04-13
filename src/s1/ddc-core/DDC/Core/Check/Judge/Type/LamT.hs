@@ -80,7 +80,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         returnX a
                 (\z -> XLAM z b1' x2')
@@ -151,7 +151,7 @@ checkLAM !table !ctx0 a b1 x2 (Synth {})
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         returnX a
                 (\z -> XLAM z b1' x2')
@@ -245,7 +245,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         returnX a
                 (\z -> XLAM z b1' x2')

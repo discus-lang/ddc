@@ -27,11 +27,11 @@ checkLetPrivate !table !ctx mode demand
 
         ctrace  $ vcat
                 [ text "*>  Let Private"
-                , text "    mode             =" <+> ppr mode
-                , text "    demand           =" <+> text (show demand)
-                , text "    in region binds  =" <+> ppr bsRgn
-                , text "    in parent bind   =" <+> text (show mtParent)
-                , text "    in witness binds =" <+> ppr bsWit
+                , text "    mode             =" %% ppr mode
+                , text "    demand           =" %% string (show demand)
+                , text "    in region binds  =" %% ppr bsRgn
+                , text "    in parent bind   =" %% string (show mtParent)
+                , text "    in witness binds =" %% ppr bsWit
                 , empty ]
 
         -- Check the kinds of the region binders.

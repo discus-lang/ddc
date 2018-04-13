@@ -49,11 +49,11 @@ checkAppT !table !ctx0 Recon demand
 
         ctrace  $ vcat
                 [ text "* APP Recon"
-                , text "      xx : " <+> ppr xx
-                , text "      xx': " <+> ppr xx'
-                , text "      tFn: " <+> ppr tFn
-                , text "     tArg: " <+> ppr tArg
-                , text "  tResult: " <+> ppr tResult
+                , text "      xx :" %% ppr xx
+                , text "      xx':" %% ppr xx'
+                , text "      tFn:" %% ppr tFn
+                , text "     tArg:" %% ppr tArg
+                , text "  tResult:" %% ppr tResult
                 , indent 2 $ ppr ctx2
                 , empty ]
 
@@ -79,11 +79,11 @@ checkAppT !table !ctx0 (Synth {}) demand
 
         ctrace  $ vcat
                 [ text "* APP Synth"
-                , text "      xx : " <+> ppr xx
-                , text "      xx': " <+> ppr xx'
-                , text "      tFn: " <+> ppr tFn
-                , text "     tArg: " <+> ppr tArg
-                , text "  tResult: " <+> ppr tResult
+                , text "      xx :" %% ppr xx
+                , text "      xx':" %% ppr xx'
+                , text "      tFn:" %% ppr tFn
+                , text "     tArg:" %% ppr tArg
+                , text "  tResult:" %% ppr tResult
                 , indent 2 $ ppr ctx2
                 , empty ]
 

@@ -1,6 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Conversion of Flow to Tetra
---
 module DDC.Core.Flow.Convert
         ( tetraOfFlowModule )
 where

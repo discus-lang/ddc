@@ -6,8 +6,6 @@ where
 import DDC.Llvm.Syntax.Exp
 import DDC.Llvm.Pretty.Type             ()
 import DDC.Data.Pretty
-import Data.Text                        (Text)
-import qualified Data.Text              as T
 
 
 instance Pretty Exp where
@@ -19,8 +17,8 @@ instance Pretty Exp where
         XConv _ c x     -> parens $ ppr c <> ppr x
 
         XGet  _ x is
-         ->  parens $ text "getelementptr"
-         <+> hcat (punctuate (text ", ") (ppr x : map (text . show) is))
+         -> parens $ text "getelementptr"
+         %% hcat (punctuate (text ", ") (ppr x : map (string . show) is))
 
 
 -- | Pretty print an expression without its type.
@@ -33,30 +31,29 @@ pprPlainX xx
         XConv _ c x     -> parens $ ppr c <> ppr x
 
         XGet  _ x is
-         ->  parens $ text "getelementptr"
-         <+> hcat (punctuate (text ", ") (ppr x : map (text . show) is))
+         -> parens $ text "getelementptr"
+         %% hcat (punctuate (text ", ") (ppr x : map (string . show) is))
 
 
 instance Pretty Var where
- ppr (Var n t)  = ppr t <+> ppr n
+ ppr (Var n t)          = ppr t %% ppr n
 
 
 instance Pretty Name where
- ppr (NameGlobal str)   = text "@" <> text str
- ppr (NameLocal  str)   = text "%" <> text str
+ ppr (NameGlobal str)   = text "@" % string str
+ ppr (NameLocal  str)   = text "%" % string str
 
 
 instance Pretty Lit where
  ppr ll
   = case ll of
-        LitInt   t i    -> ppr t <+> integer i
-        LitFloat t f    -> ppr t <+> double  f
-        LitNull  t      -> ppr t <+> text "null"
+        LitInt   t i    -> ppr t %% integer i
+        LitFloat t f    -> ppr t %% double  f
+        LitNull  t      -> ppr t %% text "null"
         LitUndef _      -> text "undef"
 
         LitString _ txEnc _
-         ->  ppr (typeOfLit ll)
-         <+> text "c" <> pprString txEnc
+         -> ppr (typeOfLit ll) %% text "c" % pprString txEnc
 
 
 
@@ -76,5 +73,5 @@ pprPlainL ll
 -- | Pretty print an LLVM string.
 pprString :: Text -> Doc
 pprString tx
- = text "\"" <> text (T.unpack tx) <> text "\""
+ = text "\"" <> text tx <> text "\""
 

@@ -95,13 +95,14 @@ data Context n
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
  ppr (Context _ genPos genExists ls _solved)
-  =   text "Context "
-  <$> text "  genPos    = " <> int genPos
-  <$> text "  genExists = " <> int genExists
-  <$> indent 2
-        (vcat $ [padL 4 (int i)  <+> ppr l
-                        | l <- reverse ls
-                        | i <- [0..]])
+  = vcat
+  [ text "Context "
+  , text "  genPos    = " % int genPos
+  , text "  genExists = " % int genExists
+  , indent 2 $ vcat
+        [padL 4 (int i) %% ppr l
+                | l <- reverse ls
+                | i <- [0..]]]
 
 
 

@@ -23,7 +23,7 @@ create  :: Way           -- Compilation way.
 
 create way allFiles filePath
 
- -- Check if the file looks like a core file that we can compile into 
+ -- Check if the file looks like a core file that we can compile into
  -- an executable. If so, then determine the language fragment based
  -- on the file name extension.
  | Just fragment
@@ -32,7 +32,7 @@ create way allFiles filePath
         "Main.dct"      -> Just $ CompileDC.FragmentTetra
         "Main.ds"       -> Just $ CompileDC.FragmentTetra
         _               -> Nothing
-  = let  
+  = let
         -- Use the whole filepath as the name of the test.
         testName         = filePath
 
@@ -42,7 +42,7 @@ create way allFiles filePath
         -- Directory where build products should go.
         buildDir         = sourceDir </> "war-" ++ wayName way
 
-        -- Determine names of the possible control files associated 
+        -- Determine names of the possible control files associated
         -- with this test.
         mainSH            = sourceDir </> "Main.sh"
         mainBin           = buildDir  </> "Main.bin"
@@ -72,19 +72,18 @@ create way allFiles filePath
         -- If we have an expected stderr file then diff the run stderr output.
         shouldDiffStderr  = Set.member mainStderrCheck allFiles
 
-
         -- Define the jobs to run.
         -- compile the .ds into a .bin
         compile         = jobOfSpec (JobId testName (wayName way))
                         $ CompileDC.Spec
-                                filePath (wayOptsComp way) fragment 
+                                filePath (wayOptsComp way) fragment
                                 buildDir mainCompStdout mainCompStderr
                                 (Just mainBin) compShouldSucceed
 
         -- run the binary.
         run             = jobOfSpec (JobId testName (wayName way))
                         $ RunExe.Spec
-                                filePath 
+                                filePath
                                 mainBin []
                                 mainRunStdout mainRunStderr
                                 runShouldSucceed
@@ -111,7 +110,7 @@ create way allFiles filePath
         -- DDC to compile the executable directly.
    in   if Set.member mainSH allFiles
          then Nothing
-         else Just $ Chain 
+         else Just $ Chain
                 $  [compile]
                 ++ (if compShouldSucceed  then [run]        else [diffError])
                 ++ (if shouldDiffStdout   then [diffStdout] else [])
@@ -119,6 +118,6 @@ create way allFiles filePath
 
  -- We don't recognize the file as something that we can compile
  -- into an executable, so just ignore it.
- | otherwise    
+ | otherwise
  = Nothing
 

@@ -1,3 +1,4 @@
+
 module DDC.Core.Flow.Transform.Rates.CnfFromExp
         (cnfOfExp, takeXLamFlags_safe) where
 import DDC.Core.Collect
@@ -7,12 +8,11 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Combinators        as CNF
+import Control.Monad
 import qualified DDC.Type.Env           as Env
 
-import           Control.Monad
 import           Data.List              (intersect, nub)
 import           Data.Maybe             (catMaybes)
-import           Data.Monoid
 import qualified Data.Set               as Set
 
 
@@ -43,6 +43,7 @@ cnfOfExp fun
 
         let lam_names = catMaybes $ map (takeNameOfBind . snd) lams
         let names     = lam_names ++ map fst binds
+
         -- Make sure names are unique
         when (length names /= length (nub names)) $
           Left FailNamesNotUnique
@@ -79,16 +80,23 @@ isTypeArray :: TypeF -> Bool
 isTypeArray = isVectorType
 
 
-getBinds :: [(Name,(TypeF,ExpF))] -> ([Name],[Name]) -> ([CNF.Bind Name Name], ([Name],[Name]))
+getBinds
+        :: [(Name,(TypeF,ExpF))]
+        -> ([Name],[Name])
+        -> ([CNF.Bind Name Name], ([Name],[Name]))
+
 getBinds bs env
  = go bs env
  where
   go [] e = ([], e)
   go (b:rest) e
    = let b'          = getBind b e
-         e'          = envOfBind b' <> e
+         e'          = envOfBind b' `joinEnvs` e
          (rest',e'') = go rest e'
      in  (b' : rest', e'')
+
+joinEnvs (a1, a2) (b1, b2)
+ = (a1 ++ b1, a2 ++ b2)
 
 
 -- | Convert an epression to a CNF binding.

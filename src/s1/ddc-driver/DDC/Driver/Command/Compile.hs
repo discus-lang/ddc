@@ -384,7 +384,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 $ CReannotate.reannotate (const ()) modTetra
 
                 | otherwise
-                = throwE [ErrorLoad $ "no tetra file"]
+                = throwE [ErrorLoad ("no tetra file" :: String)]
 
         modSalt <- makeSalt
 

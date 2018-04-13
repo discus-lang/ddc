@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 
 module DDC.Core.Flow.Transform.Melt
         ( Info (..)
@@ -9,27 +10,46 @@ import DDC.Core.Flow.Compounds
 import DDC.Core.Module
 import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Flow.Transform.Deannotate
-import Control.Monad.Writer.Strict      hiding (Alt(..))
-import qualified Data.Set               as Set
-import Data.Set                         (Set)
+import Control.Monad.Writer.Strict              hiding (Alt(..))
+import Data.Set                                 (Set)
+import Data.Semigroup                           (Semigroup(..))
+import Data.Monoid                              (Monoid(..))
+import qualified Data.Set                       as Set
+
+
 
 -------------------------------------------------------------------------------
+
 -- | Contains binders of variables that have been melted.
 data Info
         = Info (Set Name)
 
+instance Semigroup Info where
+ (<>)           = unionInfo
+
 instance Monoid Info where
- mempty                         = Info (Set.empty)
- mappend (Info s1) (Info s2)    = Info (Set.union s1 s2)
+ mempty         = emptyInfo
+ mappend        = unionInfo
+
+
+-- | Construct an empty Info.
+emptyInfo :: Info
+emptyInfo = Info Set.empty
+
+
+-- | Union two Infos.
+unionInfo :: Info -> Info -> Info
+unionInfo (Info s1) (Info s2)
+ = Info (Set.union s1 s2)
 
 
 -------------------------------------------------------------------------------
 -- | Melt compound data structures in a module.
 meltModule :: Module () Name -> (Module () Name, Info)
 meltModule mm
- = let  (xBody', info)  
-                = runWriter 
-                $ melt 
+ = let  (xBody', info)
+                = runWriter
+                $ melt
                 $ deannotate (const Nothing) $ moduleBody mm
 
    in   (mm { moduleBody = annotate () xBody' }, info)
@@ -57,15 +77,15 @@ instance Melt (Exp () Name) where
   , Just ( NameTyConFlow (TyConFlowTuple n)
          , tAs)                                <- takePrimTyConApps tElem
   , length tAs == n
-  = do  
-        let ltsNew 
+  = do
+        let ltsNew
                 = [ LLet (BName (NameVarMod nBind (show i)) (tRef tA))
                     $ xNew  tA (xProj tAs i xInit)
                         | i     <- [1..n]
                         | tA    <- tAs ]
 
         x2'      <- melt x2
-        return  $ xLets ltsNew x2' 
+        return  $ xLets ltsNew x2'
 
 
  -- Melt reads from tuple references.
@@ -83,9 +103,9 @@ instance Melt (Exp () Name) where
   , Just ( NameTyConFlow (TyConFlowTuple n)
          , tsA)                                 <- takePrimTyConApps tElem
   , length tsA == n
-  = do  
+  = do
         -- read all the components
-        let ltsRead 
+        let ltsRead
                 = [LLet (BName (NameVarMod nBind (show i)) tA)
                     $ xRead tA
                         (XVar (UName (NameVarMod nRef (show i))))
@@ -93,10 +113,10 @@ instance Melt (Exp () Name) where
                         | tA    <- tsA ]
 
         -- build the result tuple
-        let ltOrig      
-                = LLet b 
+        let ltOrig
+                = LLet b
                 $ xApps (XCon (dcTupleN n))
-                        (   [XType t    | t <- tsA] 
+                        (   [XType t    | t <- tsA]
                          ++ [XVar (UName (NameVarMod nBind (show i)))
                                         | i <- [1..n]])
 
@@ -110,17 +130,17 @@ instance Melt (Exp () Name) where
  --
  --    let _ = write# [TupleN# tA1 tA2] xR xV in ...
  --
- -- => let _ = write# [tA1] xR$1 (projN_1 xV) 
+ -- => let _ = write# [tA1] xR$1 (projN_1 xV)
  --    let _ = write# [tA2] xR$2 (projN_2 xV) in ...
  --
  melt (XLet (LLet b x1) x2)
   | BNone tB                                     <- b
-  , Just ( NameOpStore OpStoreWrite 
+  , Just ( NameOpStore OpStoreWrite
          , [XType tElem, XVar (UName nRef), xV]) <- takeXPrimApps x1
   , Just ( NameTyConFlow (TyConFlowTuple n)
          , tsA)                                  <- takePrimTyConApps tElem
   , length tsA == n
-  = do  
+  = do
         let ltsWrite
                 = [ LLet (BNone tB)
                     $ xWrite tA
@@ -157,7 +177,7 @@ instance Melt (Lets () Name) where
         LLet b x
          -> liftM (LLet b) (melt x)
 
-        LRec bxs        
+        LRec bxs
          -> do  let (bs, xs) = unzip bxs
                 xs'      <- mapM melt xs
                 return   $  LRec $ zip bs xs'

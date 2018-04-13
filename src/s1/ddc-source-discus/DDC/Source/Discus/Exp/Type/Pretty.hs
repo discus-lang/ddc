@@ -7,15 +7,14 @@ module DDC.Source.Discus.Exp.Type.Pretty
 where
 import DDC.Source.Discus.Exp.Type.Base
 import DDC.Data.Pretty
-import qualified Data.Text              as Text
 
 
 instance Pretty TyConBind where
- ppr (TyConBindName tx)  = text (Text.unpack tx)
+ ppr (TyConBindName tx)  = text tx
 
 
 instance Pretty TyConBound where
- ppr (TyConBoundName tx) = text (Text.unpack tx)
+ ppr (TyConBoundName tx) = text tx
 
 
 instance Pretty Bind where
@@ -23,14 +22,14 @@ instance Pretty Bind where
   = case bb of
         BNone   -> text "_"
         BAnon   -> text "^"
-        BName t -> text (Text.unpack t)
+        BName t -> text t
 
 
 instance Pretty Bound where
  ppr uu
   = case uu of
-        UIx i   -> int i
-        UName t -> text (Text.unpack t)
+        UIx i   -> int  i
+        UName t -> text t
         UHole   -> text "?"
 
 
@@ -64,19 +63,18 @@ pprRawPrecT :: Pretty a => Int -> GType a -> Doc
 pprRawPrecT d tt
  = case tt of
         TAnnot a t
-         ->  braces (ppr a)
-         <+> pprRawT t
+         -> braces (ppr a) %% pprRawT t
 
         TCon c   -> pprRawC c
         TVar u   -> ppr u
 
         TAbs b k t
          -> pprParen (d > 1)
-         $  text "λ" <> ppr b <> text ":" <+> pprRawT k <> text "." <+> pprRawT t
+         $  text "λ" % ppr b % text ":" %% pprRawT k % text "." %% pprRawT t
 
         TApp t1 t2
          -> pprParen (d > 10)
-         $  pprRawT t1 <+> pprRawPrecT 11 t2
+         $  pprRawT t1 %% pprRawPrecT 11 t2
 
 
 -- | Pretty print a type constructor using the generic, raw syntax.

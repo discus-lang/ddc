@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- | Conversion of Disciple Core Discus to Disciple Core Salt.
 module DDC.Core.Discus.Convert
         ( saltOfDiscusModule

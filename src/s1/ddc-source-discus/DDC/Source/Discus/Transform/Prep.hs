@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 
 -- | A light simplification pass before conversion of desugared code to Core.
 module DDC.Source.Discus.Transform.Prep
@@ -7,8 +7,8 @@ module DDC.Source.Discus.Transform.Prep
 where
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp
-import Data.Monoid
 import Data.Text                                (Text)
+import Data.Semigroup                           (Semigroup(..))
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Text                      as Text
 

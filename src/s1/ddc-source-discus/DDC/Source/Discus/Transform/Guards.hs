@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
 
 -- | Desugar guards and nested patterns to match expressions.
 module DDC.Source.Discus.Transform.Guards
@@ -13,6 +15,9 @@ import Control.Monad
 import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
 
 
 -------------------------------------------------------------------------------

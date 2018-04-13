@@ -1,3 +1,4 @@
+
 -- | General purpose tree walking boilerplate.
 module DDC.Core.Transform.TransformUpX
         ( TransformUpMX(..)
@@ -16,14 +17,14 @@ import qualified DDC.Core.Env.EnvX              as EnvX
 transformUpX
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformUpMX Identity c)
-        => (EnvX n -> Exp a n -> Exp a n)       
+        => (EnvX n -> Exp a n -> Exp a n)
                         -- ^ The worker function is given the current kind and type environments.
         -> EnvX n       -- ^ Initial environment.
         -> c a n        -- ^ Transform this thing.
         -> c a n
 
 transformUpX f env xx
-        = runIdentity 
+        = runIdentity
         $ transformUpMX (\env' x -> return (f env' x)) env xx
 
 
@@ -31,7 +32,7 @@ transformUpX f env xx
 transformUpX'
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformUpMX Identity c)
-        => (Exp a n -> Exp a n)       
+        => (Exp a n -> Exp a n)
                         -- ^ The worker function is given the current
                         --      kind and type environments.
         -> c a n        -- ^ Transform this thing.
@@ -72,35 +73,35 @@ instance Monad m => TransformUpMX m Exp where
          -> liftM3 XAbs (return a) (return (MType b))
                         (transformUpMX f (EnvX.extendT b env) x1)
 
-        XAbs a (MTerm b)  x1    
+        XAbs a (MTerm b)  x1
          -> liftM3 XAbs (return a) (return (MTerm b))
                         (transformUpMX f (EnvX.extendX b env) x1)
 
-        XAbs a (MImplicit b)  x1    
+        XAbs a (MImplicit b)  x1
          -> liftM3 XAbs (return a) (return (MImplicit b))
                         (transformUpMX f (EnvX.extendX b env) x1)
 
-        XApp a x1 x2    
-         -> liftM3 XApp (return a) 
-                        (transformUpMX f env x1) 
+        XApp a x1 x2
+         -> liftM3 XApp (return a)
+                        (transformUpMX f env x1)
                         (transformUpMX f env x2)
 
         XLet a lts x
          -> do  lts'      <- transformUpMX f env lts
 
                 let env'  = EnvX.extendsX (valwitBindsOfLets lts')
-                          $ EnvX.extendsT (specBindsOfLets lts')   
+                          $ EnvX.extendsT (specBindsOfLets lts')
                           $ env
 
                 x'        <- transformUpMX f env' x
                 return  $ XLet a lts' x'
-                
+
         XCase a x alts
          -> liftM3 XCase (return a)
                          (transformUpMX f env x)
                          (mapM (transformUpMX f env) alts)
 
-        XCast a c x       
+        XCast a c x
          -> liftM3 XCast
                         (return a) (return c)
                         (transformUpMX f env x)
@@ -121,7 +122,7 @@ instance Monad m => TransformUpMX m Lets where
         LLet b x
          -> liftM2 LLet (return b)
                         (transformUpMX f env x)
-        
+
         LRec bxs
          -> do  let (bs, xs) = unzip bxs
                 let env'     = EnvX.extendsX bs env
@@ -136,9 +137,9 @@ instance Monad m => TransformUpMX m Alt where
   = case alt of
         AAlt p@(PData _ bsArg) x
          -> let env'    = EnvX.extendsX bsArg env
-            in  liftM2  AAlt (return p) 
+            in  liftM2  AAlt (return p)
                         (transformUpMX f env' x)
 
         AAlt PDefault x
          ->     liftM2  AAlt (return PDefault)
-                        (transformUpMX f env x) 
+                        (transformUpMX f env x)

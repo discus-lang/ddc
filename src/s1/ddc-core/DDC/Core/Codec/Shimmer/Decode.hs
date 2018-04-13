@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms   #-}
+
 module DDC.Core.Codec.Shimmer.Decode
         ( Config (..)
         , takeModuleDecls

@@ -1,3 +1,4 @@
+
 module DDC.Core.Codec.Text.Pretty.Type
         (module DDC.Data.Pretty)
 where
@@ -6,7 +7,6 @@ import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Data.Pretty
 import qualified DDC.Type.Sum           as Sum
-import qualified Data.Text              as Text
 
 
 -- Bind -----------------------------------------------------------------------
@@ -18,7 +18,7 @@ instance (Pretty n, Eq n) => Pretty (Bind n) where
         BNone   t       -> text "_"  <> pprT t
 
   where pprT t
-         | isBot t      = empty
+         | isBot t      = mempty
          | otherwise    = text ": " <> ppr t
 
 -- Binder ---------------------------------------------------------------------
@@ -43,7 +43,7 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  (brackets $ (sep $ map pprBinderSep rs) <> text ":" <+> ppr t)
+        =  (brackets $ (sep $ map pprBinderSep rs) % text ":" %% ppr t)
         <> dot
 
 
@@ -68,31 +68,31 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         -- Generic abstraction.
         TAbs b t
          -> pprParen (d > 5)
-         $  text "λ" <> ppr b <> dot <+> ppr t
+         $  text "λ" % ppr b % dot %% ppr t
 
         -- Full application of function constructors are printed infix.
         TApp (TApp (TCon (TyConKind    KiConFun)) k1) k2
          -> pprParen (d > 5)
-         $  pprPrec 6 k1 <+> text "->" <+> ppr k2
+         $  pprPrec 6 k1 %% text "->" `psoftline` ppr k2
 
         -- Witness abstraction.
         TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
          -> pprParen (d > 5)
-         $  pprPrec 6 t1 <+> text "=>" </> pprPrec 5 t2
+         $  pprPrec 6 t1 %% text "=>" `psoftline` pprPrec 5 t2
 
         -- Explicit term abstraction.
         TApp (TApp (TCon (TyConSpec    TcConFunExplicit)) t1) t2
          -> pprParen (d > 5)
-         $  pprPrec 6 t1 <+> text "->" </> pprPrec 5 t2
+         $  pprPrec 6 t1 %% text "->" `psoftline` pprPrec 5 t2
 
         -- Implicit term abstraction.
         TApp (TApp (TCon (TyConSpec    TcConFunImplicit)) t1) t2
          -> pprParen (d > 5)
-         $  pprPrec 6 t1 <+> text "~>" </> pprPrec 5 t2
+         $  pprPrec 6 t1 %% text "~>" `psoftline` pprPrec 5 t2
 
         TApp t1 t2
          -> pprParen (d > 10)
-         $  ppr t1 <+> pprPrec 11 t2
+         $  ppr t1 %% pprPrec 11 t2
 
         TForall b t
          | Just (bsMore, tBody) <- takeTForalls t
@@ -193,7 +193,7 @@ instance Pretty TcCon where
 
         TcConRecord nn
          -> text "("
-         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) nn)
+         <> (hcat $ punctuate (text ",") $ map text nn)
          <> text ")#"
 
         TcConRead        -> text "Read"
@@ -203,3 +203,4 @@ instance Pretty TcCon where
         TcConDeepWrite   -> text "DeepWrite"
         TcConAlloc       -> text "Alloc"
         TcConDeepAlloc   -> text "DeepAlloc"
+

@@ -26,7 +26,7 @@ import qualified DDC.Core.Salt          as A
 --   primitives should be implemented in a Salt-level or Source-level library,
 --   and not here in the code generator.
 --
-data Error 
+data Error
         -- Generic errors that should only be possible by compiling a
         -- hand-crafted Salt program.
 
@@ -47,7 +47,7 @@ data Error
 
         -- | Invalid Salt type constructor.
         | ErrorInvalidTyCon
-        { errorTyCon    :: TyCon A.Name 
+        { errorTyCon    :: TyCon A.Name
         , errorDetails  :: Maybe String }
 
         -- | Invalid Salt expression.
@@ -70,7 +70,7 @@ data Error
         { errorModule   :: Module () A.Name }
 
         -- Platform specific errors that might arise in otherwise well-typed
-        -- source programs. 
+        -- source programs.
 
         -- | The size# primitive was applied to an invalid type.
         | ErrorInvalidSizeType
@@ -105,34 +105,34 @@ data Error
 instance Pretty Error where
 
  ppr (ErrorInvalidBound u md)
-  = vcat [ text "Invalid bound: "       <> ppr u 
-         , text $ fromMaybe "" md ]
+  = vcat [ text "Invalid bound: "       <> ppr u
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidBind b md)
   = vcat [ text "Invalid bind: "        <> ppr b
-         , text $ fromMaybe "" md ]
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidType t md)
   = vcat [ text "Invalid type: "        <> ppr t
-         , text $ fromMaybe "" md ]
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidTyCon tc md)
   = vcat [ text "Invalid type constructor: " <> ppr tc
-         , text $ fromMaybe "" md ]
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidExp x md)
   = vcat [ text "Invalid exp: "         <> ppr x
-         , text $ fromMaybe "" md ]
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidAlt alts md)
   = vcat [ text "Invalid alts: "        <> ppr alts
-         , text $ fromMaybe "" md ]
+         , string $ fromMaybe "" md ]
 
  ppr (ErrorInvalidSuper _n _x)
   = vcat [ text "Invalid super." ]
 
  ppr (ErrorInvalidModule _m)
-  = vcat [ text "Invalid module." ] 
+  = vcat [ text "Invalid module." ]
 
  ppr (ErrorInvalidSizeType t)
   = vcat [ text "Cannot apply size# to type '"          <> ppr t <> text "'" ]
@@ -141,15 +141,15 @@ instance Pretty Error where
   = vcat [ text "Cannot apply size2# to type '"         <> ppr t <> text "'" ]
 
  ppr (ErrorInvalidConversion tSrc tDst)
-  = vcat [ text "Cannot convert# value of type '"       <> ppr tSrc 
+  = vcat [ text "Cannot convert# value of type '"       <> ppr tSrc
                 <> text "' to '"                        <> ppr tDst <> text "'" ]
 
  ppr (ErrorInvalidPromotion tSrc tDst)
-  = vcat [ text "Cannot promote# value of type '"       <> ppr tSrc 
+  = vcat [ text "Cannot promote# value of type '"       <> ppr tSrc
                 <> text "' to '"                        <> ppr tDst <> text "'" ]
 
  ppr (ErrorInvalidTruncation tSrc tDst)
-  = vcat [ text "Cannot truncate# value of type '"      <> ppr tSrc 
+  = vcat [ text "Cannot truncate# value of type '"      <> ppr tSrc
                 <> text "' to '"                        <> ppr tDst <> text "'" ]
 
  ppr (ErrorInvalidArith n t)

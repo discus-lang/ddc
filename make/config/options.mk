@@ -15,6 +15,7 @@ GHC_LANGUAGE	:= \
         -XConstraintKinds \
 	-XFlexibleContexts \
         -XParallelListComp \
+	-XOverloadedStrings \
         -XFlexibleInstances \
 	-XStandaloneDeriving \
         -XExplicitNamespaces \
@@ -75,23 +76,20 @@ DDC_PACKAGES	:= \
 	-hide-all-packages \
         -package base \
         -package array \
+        -package time \
+        -package text \
+        -package mtl \
+        -package stm \
         -package bytestring \
         -package containers \
-        -package deepseq \
         -package directory \
+        -package transformers \
+        -package haskeline \
+        -package deepseq \
         -package filepath \
         -package process \
-        -package time \
-        -package transformers \
-        -package mtl \
         -package parsec \
-        -package compact \
-        -package random \
-        -package stm \
-        -package text \
-        -package wl-pprint \
         -package buildbox \
-        -package haskeline \
         -package inchworm \
         -package shimmer
 

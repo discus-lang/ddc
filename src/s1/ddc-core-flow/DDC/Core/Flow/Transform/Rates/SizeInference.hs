@@ -5,7 +5,7 @@ module DDC.Core.Flow.Transform.Rates.SizeInference
     , lookupV
     , iter
     , parents
-    , trans ) 
+    , trans )
 where
 import DDC.Core.Flow.Transform.Rates.Combinators
 import DDC.Data.Pretty
@@ -264,7 +264,7 @@ generateBind env b
 
 
 
-        
+
 -- | Solving constraints.
 -- If we take the environment and constraints from @normalize2@,
 -- >    xs : kxs, gts : kgts, ys1 : kys1, ys2 : kys2, ∃k1, k2, k3
@@ -372,7 +372,7 @@ iter program e nm
  | NameScalar  nm' <- nm
  = do   b <- lookupS program nm'
         case b of
-         Fold _ _ n -> get n 
+         Fold _ _ n -> get n
  | NameArray   nm' <- nm
  = do   b <- lookupA program nm'
         case b of
@@ -446,7 +446,7 @@ parents bs e a b
 
  where
   itsz = iter bs e
- 
+
 -----------------------------------
 -- == Pretty printing
 
@@ -454,32 +454,30 @@ instance (Pretty v) => Pretty (K v) where
  ppr (KV v) = ppr v
  ppr (K' v) = ppr v <> squote
 
+
 instance (Pretty v) => Pretty (Type v) where
  ppr (TVar   v)   = ppr v
- ppr (TCross a b) = ppr a <+> text "*" <+> ppr b
+ ppr (TCross a b) = ppr a %% text "*" %% ppr b
 
 
 instance (Pretty v) => Pretty (Maybe (Type v)) where
  ppr (Just t)     = ppr t
  ppr Nothing      = text "(no type)"
 
-instance (Pretty v) => Pretty (Scope v) where
- ppr (EVar v t)   = ppr v <+> text ":" <+> ppr t
- ppr (EUnify v)   = text "∀" <> ppr v
- ppr (ERigid v)   = text "∃" <> ppr v
 
-{-
-instance (Pretty v) => Pretty (Env v) where
- ppr = hcat . map ppr
--}
+instance (Pretty v) => Pretty (Scope v) where
+ ppr (EVar v t)   = ppr v %% text ":" %% ppr t
+ ppr (EUnify v)   = text "∀" % ppr v
+ ppr (ERigid v)   = text "∃" % ppr v
+
 
 instance (Pretty v) => Pretty (Scheme v) where
  ppr (Scheme foralls exists from to)
-  =   text "∀" <> hcat (map ppr foralls) <> text ". "
-  <+> text "∃" <> hcat (map ppr exists)  <> text ". "
-  <+> tupled (map tppr from) <+> text "→"
-  <+> tupled (map tppr to)
+  =  text "∀" % hcat (map ppr foralls) % text ". "
+  %% text "∃" % hcat (map ppr exists)  % text ". "
+  %% tupled (map tppr from) %% text "→"
+  %% tupled (map tppr to)
   where
-   tppr (v,t) = ppr v <+> text ":" <+> ppr t
+   tppr (v,t) = ppr v %% text ":" %% ppr t
 
 

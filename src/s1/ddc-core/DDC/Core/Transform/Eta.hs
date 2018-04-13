@@ -19,13 +19,15 @@ import DDC.Core.Fragment
 import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
 import DDC.Core.Simplifier.Result
-import DDC.Core.Codec.Text.Pretty
 import DDC.Type.Transform.AnonymizeT
-import Control.Monad.Writer     (Writer, tell, runWriter)
+import Control.Monad.Writer                     (Writer, tell, runWriter)
 import Data.Typeable
-import DDC.Core.Env.EnvX                (EnvX)
-import qualified DDC.Core.Env.EnvX      as EnvX
-import Prelude                          hiding ((<$>))
+import DDC.Core.Env.EnvX                        (EnvX)
+import Data.Semigroup                           (Semigroup(..))
+import Data.Monoid                              (Monoid(..))
+import qualified DDC.Core.Env.EnvX              as EnvX
+import qualified DDC.Core.Codec.Text.Pretty     as P
+import Prelude                                  hiding ((<$>))
 
 
 -------------------------------------------------------------------------------
@@ -53,25 +55,39 @@ data Info
         deriving Typeable
 
 
-instance Pretty Info where
+instance P.Pretty Info where
  ppr (Info ex1 ex0)
-  = text "Eta Transform"
-  <$> indent 4 (vcat
-      [ text "level-1 lambdas added:     " <> int ex1
-      , text "level-0 lambdas added:     " <> int ex0 ])
+  = P.vcat
+  [ P.text "Eta Transform"
+  , P.indent 4 $ P.vcat
+      [ P.text "level-1 lambdas added:     " <> P.int ex1
+      , P.text "level-0 lambdas added:     " <> P.int ex0 ]]
+
+
+instance Semigroup Info where
+ (<>)           = unionInfo
 
 
 instance Monoid Info where
- mempty  = Info 0 0
- mappend (Info ex1  ex0)
-         (Info ex1' ex0')
+ mempty         = emptyInfo
+ mappend        = unionInfo
+
+
+-- | Construct an empty Info record.
+emptyInfo :: Info
+emptyInfo       = Info 0 0
+
+
+-- | Union two info records.
+unionInfo :: Info -> Info -> Info
+unionInfo (Info ex1 ex0) (Info ex1' ex0')
   = Info (ex1 + ex1') (ex0 + ex0')
 
 
 -- Module ---------------------------------------------------------------------
 -- | Eta-transform expressions in a module.
 etaModule
-        :: (Ord n, Show n, Pretty n, Show a)
+        :: (Ord n, Show n, P.Pretty n, Show a)
         => Profile n
         -> Config
         -> Module a n
@@ -106,7 +122,7 @@ etaModule profile config  mm
 
 
 -- | Eta-transform an expression.
-etaX    :: (Ord n, Show n, Show a, Pretty n)
+etaX    :: (Ord n, Show n, Show a, P.Pretty n)
         => Profile n            -- ^ Language profile.
         -> Config               -- ^ Eta-transform config.
         -> EnvX    n            -- ^ Type checker environment.
@@ -136,7 +152,7 @@ etaX profile config env xx
 
 -------------------------------------------------------------------------------
 class Eta (c :: * -> * -> *) where
- etaM   :: (Show a, Ord n, Pretty n, Show n)
+ etaM   :: (Show a, Ord n, P.Pretty n, Show n)
         => Config               -- ^ Eta-transform config.
         -> Check.Config n       -- ^ Type checker config.
         -> EnvX n               -- ^ Type checker environment.

@@ -44,8 +44,8 @@ instance Pretty Error where
 
         ErrorLint stage pipe err'
          -> vcat [ text "Error in transformed module."
-                 , text "  in stage " <> text stage
-                 , text "  in pipe  " <> text pipe
+                 , text "  in stage " <> string stage
+                 , text "  in pipe  " <> string pipe
                  , indent 2 (ppr err') ]
 
         ErrorSaltLoad err'

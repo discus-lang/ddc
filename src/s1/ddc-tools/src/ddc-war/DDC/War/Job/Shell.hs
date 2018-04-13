@@ -11,7 +11,6 @@ import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
-import Text.PrettyPrint.Leijen
 
 
 -- | Run a shell script.
@@ -41,7 +40,6 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedSuccess
         | ResultUnexpectedFailure
-        deriving Show
 
 
 resultSuccess :: Result -> Bool
@@ -52,11 +50,16 @@ resultSuccess result
 
 
 instance Pretty Result where
- pretty result
+ ppr result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure -> text "failed"
-        ResultUnexpectedSuccess -> text "unexpected"
+        ResultSuccess seconds
+         -> string "success" %% parens (ppr seconds)
+
+        ResultUnexpectedFailure
+         -> string "failed"
+
+        ResultUnexpectedSuccess
+         -> string "unexpected"
 
 
 -- | Run a binary

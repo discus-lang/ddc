@@ -11,13 +11,13 @@ import qualified Data.Text      as T
 encodeInterface :: Interface ta sa -> T.Text
 encodeInterface i
   = T.pack $ renderIndent
-  $ (text "ddc interface" <+> text (interfaceVersion i))
+  $ (text "ddc interface" %% string (interfaceVersion i))
          <> line <> line
-         <> vcat [ text $ makeInterfaceTearLine "Meta"
-                 , text "module-meta"   <+> lbrace <> line
-                        <> indent 8 (vcat
+         <> vcat [ string $ makeInterfaceTearLine "Meta"
+                 , text "module-meta" %% lbrace % line
+                        % indent 8 (vcat
                                 [ hsep [text "name:", ppr $ interfaceModuleName i ] ])
-                        <> line <> rbrace]
+                        % line % rbrace]
 
         -- Include the full unoptimised core code in interface files.
         --   We include the unoptimised code so that the modules that inline
@@ -26,14 +26,14 @@ encodeInterface i
         --   to reason about the overall compilation process.
         <> (case interfaceDiscusModule i of
                 Just m  -> vcat [ line
-                                , text $ makeInterfaceTearLine "Tetra"
+                                , string $ makeInterfaceTearLine "Tetra"
                                 , ppr m ]
-                Nothing -> empty)
+                Nothing -> mempty)
 
 
 -- | Tear line to separate sections of the interface file.
 --   We use '~' because it's not used in the core language syntax.
 makeInterfaceTearLine :: String -> String
 makeInterfaceTearLine name
-        = "~~ " ++ name ++ " " ++ replicate (80 - 4 - length name) '~'
+ = "~~ " ++ name ++ " " ++ replicate (80 - 4 - length name) '~'
 

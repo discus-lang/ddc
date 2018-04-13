@@ -23,13 +23,12 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Exception
 import Data.List
-import Text.PrettyPrint.Leijen
 
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
 import qualified Data.Set               as Set
 import qualified Data.Traversable       as Seq
-
+import qualified Data.Text              as T
 
 -- | Run regression tests.
 data Spec
@@ -59,13 +58,12 @@ data Spec
 
 data Result
         = ResultSuccess
-        deriving Show
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess   -> text "success"
+        ResultSuccess   -> "success"
 
 
 build :: Spec -> Build Result
@@ -117,11 +115,12 @@ build spec
         -- Write all results to file if we were asked for it
         let chainsTotal = length chains
         let pathWidth   = specFormatPathWidth spec
-        let pprResult   = renderIndent . Driver.prettyResult chainsTotal prefix pathWidth
+        let pprResult   = Driver.prettyResult chainsTotal prefix pathWidth
         (case specResultsFileAll spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file
-                                $ unlines
+                                $ T.unpack
+                                $ vcat
                                 $ map pprResult
                                 $ results)
 
@@ -133,7 +132,8 @@ build spec
         (case specResultsFileFailed spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file
-                                $ unlines
+                                $ T.unpack
+                                $ vcat
                                 $ map pprResult
                                 $ filter (not . wasSuccess . Driver.resultProduct)
                                 $ results)

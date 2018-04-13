@@ -10,20 +10,19 @@ import qualified DDC.War.Job.RunDCX     as RunDCX
 import qualified DDC.War.Job.RunDSX     as RunDSX
 import qualified DDC.War.Job.RunExe     as RunExe
 import qualified DDC.War.Job.Shell      as Shell
-import BuildBox.Pretty
 
 
 instance Spec CompileDC.Spec CompileDC.Result where
  specActionName _               = "compile"
  buildFromSpec                  = CompileDC.build
- productOfResult _ result       
+ productOfResult _ result
         = ProductStatus (ppr result) (CompileDC.resultSuccess result)
 
 
 instance Spec CompileDS.Spec  CompileDS.Result where
  specActionName _               = "compile"
  buildFromSpec                  = CompileDS.build
- productOfResult _ result       
+ productOfResult _ result
         = ProductStatus (ppr result) (CompileDS.resultSuccess result)
 
 
@@ -39,11 +38,11 @@ instance Spec Diff.Spec       Diff.Result where
  buildFromSpec                  = Diff.build
  productOfResult _ result
   = case result of
-        Diff.ResultSame                 
+        Diff.ResultSame
          -> ProductStatus (ppr result) True
 
-        Diff.ResultDiff ref out diff    
-         -> ProductDiff ref out diff
+        Diff.ResultDiff ref out' diff
+         -> ProductDiff ref out' diff
 
 
 instance Spec RunDCX.Spec     RunDCX.Result where
@@ -72,7 +71,4 @@ instance Spec Shell.Spec      Shell.Result where
  buildFromSpec                  = Shell.build
  productOfResult _ result
         = ProductStatus (ppr result) (Shell.resultSuccess result)
-
-
-
 

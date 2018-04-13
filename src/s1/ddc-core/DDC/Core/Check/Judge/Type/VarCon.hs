@@ -29,7 +29,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         , indent 4 $ ppr xx
                         , text "    tVar: " <> ppr t
                         , indent 4 $ ppr ctx
-                        , empty ]
+                        , mempty ]
 
                 returnX a
                         (\z -> XVar z u)
@@ -50,7 +50,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         , indent 4 $ ppr xx
                         , text "    tVar: " <> ppr t
                         , indent 4 $ ppr ctx
-                        , empty ]
+                        , mempty ]
 
                 returnX a
                         (\z -> XVar z u)
@@ -77,7 +77,7 @@ checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc)
                 , indent 4 $ ppr xx
                 , text "    tCon: " <> ppr tCtor
                 , indent 4 $ ppr ctx
-                , empty ]
+                , mempty ]
 
         -- Type of the data constructor.
         returnX a
@@ -106,7 +106,7 @@ checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
                 , indent 4 $ ppr xx
                 , text "    tCon: " <> ppr tCtor
                 , indent 4 $ ppr ctx
-                , empty ]
+                , mempty ]
 
         -- Type of the data constructor.
         returnX a

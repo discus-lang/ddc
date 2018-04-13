@@ -1,3 +1,4 @@
+
 module DDC.Core.Module
         ( -- * Modules
           Module        (..)

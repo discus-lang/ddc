@@ -26,9 +26,9 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  EqT_SynL"
-                , text "    tL : " <> ppr tL
-                , text "    tL': " <> ppr tL'
-                , text "    tR : " <> ppr tR
+                , text "    tL : " % ppr tL
+                , text "    tL': " % ppr tL'
+                , text "    tR : " % ppr tR
                 , empty ]
 
         makeEqT config ctx0 tL' tR err
@@ -41,9 +41,9 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  EqT_SynR"
-                , text "    tL : " <> ppr tL
-                , text "    tR : " <> ppr tR
-                , text "    tR': " <> ppr tR'
+                , text "    tL : " % ppr tL
+                , text "    tR : " % ppr tR
+                , text "    tR': " % ppr tR'
                 , empty ]
 
         makeEqT config ctx0 tL tR' err
@@ -54,8 +54,8 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  EqT_SolveL"
-                , text "    tL:  " <> ppr tL
-                , text "    tR:  " <> ppr tR
+                , text "    tL:  " % ppr tL
+                , text "    tR:  " % ppr tR
                 , empty ]
 
         let Just ctx1   = updateExists [] iL tR ctx0
@@ -69,8 +69,8 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  EqT_SolveR"
-                , text "    tL:  " <> ppr tL
-                , text "    tR:  " <> ppr tR
+                , text "    tL:  " % ppr tL
+                , text "    tR:  " % ppr tR
                 , empty ]
 
         let Just ctx1   = updateExists [] iR tL ctx0
@@ -89,8 +89,8 @@ makeEqT config ctx0 tL tR err
 
         ctrace  $ vcat
                 [ text "**  EqT_EachL"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , empty ]
@@ -109,8 +109,8 @@ makeEqT config ctx0 tL tR err
 
         ctrace  $ vcat
                 [ text "**  EqT_EachR"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , empty ]
@@ -143,8 +143,8 @@ makeEqT config ctx0 tL tR err
         when (not $ tc1 == tc2)
          $ ctrace  $ vcat
                 [ text "**  EqT_Con"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , empty ]
 
         return ctx0
@@ -156,8 +156,8 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "*>  EqT_App"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , empty ]
 
         ctx1    <- makeEqT config ctx0 tL1  tR1  err
@@ -167,8 +167,8 @@ makeEqT config ctx0 tL tR err
 
         ctrace  $ vcat
                 [ text "*<  EqT_App"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
                 , empty ]
@@ -180,8 +180,8 @@ makeEqT config ctx0 tL tR err
  | equivT (contextEnvT ctx0) tL tR
  = do   ctrace  $ vcat
                 [ text "**  EqT_Equiv"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
                 , empty ]
 
         return ctx0
@@ -192,8 +192,8 @@ makeEqT config ctx0 tL tR err
  = do
         ctrace  $ vcat
                 [ text "EqT_Fail"
-                , text "  tL: " <> ppr tL
-                , text "  tR: " <> ppr tR
+                , text "  tL: " % ppr tL
+                , text "  tR: " % ppr tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 

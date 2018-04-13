@@ -55,12 +55,12 @@ instance Pretty Error where
 
         ErrorCannotLiftExp x
          -> vcat [ text "Cannot lift expression in series process."
-                 , empty
+                 , mempty
                  , indent 4 $ ppr (annotate () x) ]
 
         ErrorCannotLiftType t
          -> vcat [ text "Cannot lift type in series process."
-                 , empty
+                 , mempty
                  , indent 4 $ ppr t ]
 
         ErrorUnsupported _

@@ -18,10 +18,12 @@ import DDC.Core.Fragment
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Data.Pretty
 import Data.Typeable
+import DDC.Data.Pretty
 import Control.Monad.Writer                             (Writer, runWriter, tell)
 import DDC.Core.Env.EnvX                                (EnvX)
+import Data.Semigroup                                   (Semigroup(..))
+import Data.Monoid                                      (Monoid(..))
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Exp.Simple                    as T
@@ -41,15 +43,29 @@ data PruneInfo
 
 instance Pretty PruneInfo where
  ppr (PruneInfo remo)
-  =  text "Prune:"
-  <$> indent 4 (vcat
-      [ text "Removed:        " <> int remo])
+  = vcat
+  [ text "Prune:"
+  , indent 4 $ vcat
+      [ text "Removed:        " % int remo ]]
+
+
+instance Semigroup PruneInfo where
+ (<>)           = unionPruneInfo
 
 
 instance Monoid PruneInfo where
- mempty = PruneInfo 0
+ mempty         = emptyPruneInfo
+ mappend        = unionPruneInfo
 
- mappend (PruneInfo r1) (PruneInfo r2)
+
+-- | Construct an empty Info record.
+emptyPruneInfo :: PruneInfo
+emptyPruneInfo  = PruneInfo 0
+
+
+-- | Union two info records.
+unionPruneInfo :: PruneInfo -> PruneInfo -> PruneInfo
+unionPruneInfo (PruneInfo r1) (PruneInfo r2)
         = PruneInfo (r1 + r2)
 
 
@@ -70,19 +86,18 @@ pruneModule profile mm
          = mm
 
          | otherwise
-         = let  env     = moduleEnvX 
+         = let  env     = moduleEnvX
                                 (profilePrimKinds    profile)
                                 (profilePrimTypes    profile)
                                 (profilePrimDataDefs profile)
                                 mm
-           in   mm { moduleBody      
+           in   mm { moduleBody
                         = result $ pruneX profile env
                                  $ moduleBody mm }
 
 
 -- | Erase pure let-bindings in an expression that have no uses.
-pruneX
-        :: (Show a, Show n, Ord n, Pretty n)
+pruneX  :: (Show a, Show n, Ord n, Pretty n)
         => Profile n            -- ^ Profile of the language we're in
         -> EnvX n               -- ^ Type checker environment.
         -> Exp a n
@@ -90,13 +105,13 @@ pruneX
 
 pruneX profile env xx
  = {-# SCC pruneX #-}
-   let  
+   let
         (xx', info)
                 = transformTypeUsage profile env
                        (transformUpMX pruneTrans env)
                        xx
 
-        progress (PruneInfo r) 
+        progress (PruneInfo r)
                 = r > 0
 
    in TransformResult
@@ -116,20 +131,19 @@ transformTypeUsage profile env trans xx
  = let  config  = configOfProfile profile
         rr      = checkExp config env Recon DemandNone xx
    in case fst rr of
-        Right (xx1, _, _) 
+        Right (xx1, _, _)
          -> let xx2        = usageX xx1
                 (x', info) = runWriter (trans xx2)
                 x''        = reannotate (\(_, AnTEC { annotTail = a }) -> a) x'
             in  (x'', info)
 
         Left _
-         -> error $  renderIndent
-         $  vcat [ text "ddc-core-simpl.Prune: core type error" ]
+         -> error "ddc-core-simpl.Prune: core type error"
 
 
 -------------------------------------------------------------------------------
 -- | Annotations used by the dead-code trasnform.
-type Annot a n 
+type Annot a n
         = (UsedMap n, AnTEC a n)
 
 
@@ -138,7 +152,7 @@ pruneTrans
         :: Ord n
         => EnvX n               -- ^ Type checker environment.
         -> Exp (Annot a n) n    -- ^ Expression to transform.
-        -> Writer PruneInfo 
+        -> Writer PruneInfo
                  (Exp (Annot a n) n)
 
 pruneTrans _ xx
@@ -146,14 +160,14 @@ pruneTrans _ xx
         XLet a@(usedMap, antec) (LLet b x1) x2
          | isUnusedBind b usedMap
          , isContainedEffect $ annotEffect antec
-         -> do      
+         -> do
                 -- We still need to substitute value into casts
                 let x2' = S.substituteXX b x1 x2
 
                 -- Record that we've erased a binding.
                 tell mempty {infoBindingsErased = 1}
 
-                -- 
+                --
                 return $ XCast a (weakEff antec)
                        $ x2'
 
@@ -166,7 +180,7 @@ pruneTrans _ xx
          $ annotEffect antec
 
 
--- | Check whether this binder has no uses, 
+-- | Check whether this binder has no uses,
 --   not including weakclo casts, beause we'll substitute the bound
 --   expression directly into those.
 isUnusedBind :: Ord n => Bind n -> UsedMap n -> Bool
@@ -189,12 +203,12 @@ filterUsedInCasts = filter notCast
 
 -- | A contained effect is one that is not visible to anything else
 --   in the context. This is allocation and read effects, which are
---   not visible from outside the computation performing the effect. 
+--   not visible from outside the computation performing the effect.
 isContainedEffect :: Ord n => Effect n -> Bool
-isContainedEffect eff 
+isContainedEffect eff
  = all contained
-        $ map T.takeTApps 
-        $ sumList 
+        $ map T.takeTApps
+        $ sumList
         $ T.crushEffect EnvT.empty eff
  where
         contained (c : _args)

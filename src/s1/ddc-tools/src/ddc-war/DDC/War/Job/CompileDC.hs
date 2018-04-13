@@ -17,7 +17,6 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
 import qualified System.FilePath.Posix as P
 
 
@@ -63,7 +62,6 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedFailure
         | ResultUnexpectedSuccess
-        deriving Show
 
 
 resultSuccess :: Result -> Bool
@@ -74,11 +72,16 @@ resultSuccess result
 
 
 instance Pretty Result where
- pretty result
+ ppr result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure -> text "failed"
-        ResultUnexpectedSuccess -> text "unexpected"
+        ResultSuccess seconds
+         -> string "success" %% parens (ppr seconds)
+
+        ResultUnexpectedFailure
+         -> string "failed"
+
+        ResultUnexpectedSuccess
+         -> string "unexpected"
 
 
 -- Build ----------------------------------------------------------------------

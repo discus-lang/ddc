@@ -76,22 +76,22 @@ instance Show a => Pretty (Error a) where
 
         ErrorMalformed str
          -> vcat [ text "Module is malformed."
-                 , text str ]
+                 , string str ]
 
         ErrorMistyped xx
-         -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
+         -> vcat [ text "Module is mistyped." <> (string $ show xx) ]
 
         ErrorUnsupported xx doc
          -> vcat [ text "Cannot convert expression."
                  , indent 2 $ doc
-                 , empty
-                 , indent 2 $ text "with:" <+> ppr xx ]
+                 , mempty
+                 , indent 2 $ text "with:" %% ppr xx ]
 
         ErrorUnsupportedArg aa doc
          -> vcat [ text "Cannot convert argument."
                  , indent 2 $ doc
-                 , empty
-                 , indent 2 $ text "with:" <+> ppr aa ]
+                 , mempty
+                 , indent 2 $ text "with:" %% ppr aa ]
 
         ErrorBotAnnot
          -> vcat [ text "Found bottom type annotation."
@@ -114,11 +114,11 @@ instance Show a => Pretty (Error a) where
 
         ErrorInvalidAlt alt
          -> vcat [ text "Invalid alternative."
-                 , indent 2 $ text "with:" <+> ppr alt ]
+                 , indent 2 $ text "with:" %% ppr alt ]
 
         ErrorInvalidScrut xx
          -> vcat [ text "Invalid scrutinee."
-                 , indent 2 $ text "with:" <+> ppr xx ]
+                 , indent 2 $ text "with:" %% ppr xx ]
 
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function." ]

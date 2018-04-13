@@ -31,5 +31,5 @@ instance (Eq n, Pretty n) => Pretty (Error a n) where
  ppr (ErrorCannotResolve tWanted)
   = vcat
   [ text "Cannot resolve elaboration"
-  , text " of type: " <> ppr tWanted ]
+  , text " of type: " % ppr tWanted ]
 

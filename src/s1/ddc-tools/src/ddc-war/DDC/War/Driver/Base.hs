@@ -1,6 +1,8 @@
 
 module DDC.War.Driver.Base
-        ( Job           (..)
+        ( module BuildBox
+        , module BuildBox.Pretty
+        , Job           (..)
         , JobId         (..)
         , Chain         (..)
         , Product       (..)
@@ -8,12 +10,18 @@ module DDC.War.Driver.Base
         , prettyResult
         , Spec          (..))
 where
-import BuildBox.Pretty
 import BuildBox
+import BuildBox.Pretty
 import Data.Maybe
 import Data.List
-import Text.PrettyPrint.Leijen
 
+
+-------------------------------------------------------------------------------
+-- | A single job to run.
+--   The exact specification is defined by the client.
+data Job
+        =  forall spec result. Spec spec result
+        => Job JobId String spec (Build result)
 
 -- | A printable job identifier.
 data JobId
@@ -23,18 +31,15 @@ data JobId
         deriving Show
 
 
-
--- | A single job to run.
---   The exact specification is defined by the client.
-data Job
-        =  forall spec result. Spec spec result
-        => Job JobId String spec (Build result)
-
 instance Pretty Job where
- pretty (Job jobId actionName spec _)
-  = text "Job" <+> text (show jobId) <+> text actionName <+> text (show spec)
+ ppr (Job jobId actionName spec _)
+         = string "Job"
+         % (string $ show jobId)
+         % string actionName
+         % string (show spec)
 
 
+-------------------------------------------------------------------------------
 -- | A chain of jobs to run one after another.
 --   Jobs later in the list are dependent on earlier ones, so if a job fails
 --   then we skip the rest.
@@ -42,17 +47,17 @@ data Chain
         = Chain [Job]
 
 instance Pretty Chain where
- pretty (Chain jobs)
-  =   text "Chain"
-  <+> ppr jobs
+ ppr (Chain jobs)
+  =   string "Chain" %% (hsep $ map ppr jobs)
 
 
+-------------------------------------------------------------------------------
 -- | The product that we got when running a job.
 --   This is the information that the interactive interface needs to decide
 --   how to proceed.
 data Product
         = ProductStatus
-        { productStatusMsg      :: Doc
+        { productStatusMsg      :: Text
         , productStatusSuccess  :: Bool }
 
         | ProductDiff
@@ -61,6 +66,7 @@ data Product
         , productDiffDiff       :: FilePath }
 
 
+-------------------------------------------------------------------------------
 -- | Description of a job and the product we got from running it.
 data Result
         = Result
@@ -71,28 +77,30 @@ data Result
         , resultProduct         :: Product }
 
 
-prettyResult :: Int -> String -> Int -> Result -> Doc
+-- | Pretty print a job result.
+prettyResult :: Int -> String -> Int -> Result -> Text
 prettyResult chainsTotal prefix padWidth result
-        | Result chainIx jobIx jobId actionName product' <- result
-        , JobId  testName wayName                       <- jobId
-        = let   status
-                 = case product' of
-                        ProductStatus s _ -> s
-                        ProductDiff{}     -> text "diff"
+ | Result chainIx jobIx jobId actionName product' <- result
+ , JobId  testName wayName                       <- jobId
+ = let
+        status
+         = case product' of
+                 ProductStatus s _ -> s
+                 ProductDiff{}     -> "diff"
 
-                testName'
-                 = fromMaybe testName (stripPrefix prefix testName)
+        testName'
+         = fromMaybe testName (stripPrefix prefix testName)
 
-          in   parens (padR  (length $ show chainsTotal)
-                             (ppr chainIx)
-                   <>  text "."
-                   <>        (ppr jobIx))
-           <+> padL padWidth (text testName')
-           <+> padL 5        (text wayName)
-           <+> padL 8        (text actionName)
-           <+> status
+   in  hsep
+        [  parens
+            $ padR (length $ show chainsTotal) (string $ show chainIx)
+                % string "."
+                % string (show jobIx)
+        , padL padWidth (string testName')
+        , padL 5        (string wayName)
+        , padL 8        (string actionName)
+        , status ]
 
-        where
 
 -- Spec -----------------------------------------------------------------------
 -- | Class of Job specifications.
@@ -113,4 +121,5 @@ class (Show spec, Pretty result)
  -- | Make the job product from its result.
  --   This cuts away information that the controller doesn't care about.
  productOfResult  :: spec -> result -> Product
+
 

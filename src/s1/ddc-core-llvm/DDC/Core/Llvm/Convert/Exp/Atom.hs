@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module DDC.Core.Llvm.Convert.Exp.Atom
         ( mconvArg
         , mconvAtom

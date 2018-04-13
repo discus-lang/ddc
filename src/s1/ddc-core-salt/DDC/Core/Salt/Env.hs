@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Types of Disciple Core Salt primops.
 module DDC.Core.Salt.Env

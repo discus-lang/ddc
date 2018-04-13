@@ -32,19 +32,19 @@ instance Pretty Platform where
  ppr pp
   = vcat
         [ text "Address Width       (bytes) : "
-                <> text (show $ platformAddrBytes  pp)
+                <> string (show $ platformAddrBytes  pp)
 
         , text "Tag Word Width      (bytes) : "
-                <> text (show $ platformTagBytes   pp)
+                <> string (show $ platformTagBytes   pp)
 
         , text "Nat Word Width      (bytes) : "
-                <> text (show $ platformNatBytes   pp)
+                <> string (show $ platformNatBytes   pp)
 
         , text "Function Alignment  (bytes) : "
-                <> text (show $ platformAlignBytes pp)
+                <> string (show $ platformAlignBytes pp)
 
         , text "Minimum Object Size (bytes) : "
-                <> text (show $ platformObjBytes   pp) ]
+                <> string (show $ platformObjBytes   pp) ]
 
 
 -- | 32-bit platform specification.

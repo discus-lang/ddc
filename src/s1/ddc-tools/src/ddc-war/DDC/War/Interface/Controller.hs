@@ -5,19 +5,17 @@ module DDC.War.Interface.Controller
         , controller)
 where
 import DDC.War.Driver
-import BuildBox.Pretty
 import BuildBox.Control.Gang
 import System.IO
 import Control.Concurrent
 import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 import Control.Monad
-import Data.Maybe
 import Data.List
-import DDC.War.Interface.VT100      as VT100
+import Data.Maybe
 import qualified System.Process
-import Text.PrettyPrint.Leijen
-
+import qualified Data.Text      as T
+import DDC.War.Interface.VT100  as VT100
 
 data Config
         = Config
@@ -127,41 +125,51 @@ controller config gang chainsTotal chanResult
 --   Returns True if the controller should continue,
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> Result -> IO Bool
-handleResult config gang chainsTotal
-        (Result chainIx jobIx jobId actionName product')
- | JobId testName wayName       <- jobId
- , ProductStatus status _       <- product'
- = do   let testName2    = fromMaybe testName
-                                (stripPrefix (configSuppressPrefix config) testName)
+handleResult config gang chainsTotal result
+ | Result chainIx jobIx jobId actionName product' <- result
+ , ProductStatus{}  <- product'
+ , JobId  testName wayName                       <- jobId
+ = do
+        let status
+             = case product' of
+                 ProductStatus s _ -> s
+                 ProductDiff{}     -> "diff"
 
-        let width'       = configFormatPathWidth config
+        let prefix'     = configSuppressPrefix config
+        let width'      = configFormatPathWidth config
+        let testName'   = fromMaybe testName
+                        $ stripPrefix prefix' testName
 
         putStrLn
-         $ renderIndent
-         $ parens (padR (length $ show chainsTotal)
-                        (ppr $ chainIx)
-                        <> text "."
-                        <> ppr jobIx
-                        <> text "/"
-                        <> ppr chainsTotal)
-           <+> padL width' (text testName2)
-           <+> padL 5      (text wayName)
-           <+> padL 8      (text actionName)
-           <+> colorizeStatus config actionName (renderIndent status)
+         $ T.unpack
+         $ hsep
+                [ parens
+                    $ padR (length $ show chainsTotal) (string $ show chainIx)
+                        % string "."
+                        % string (show jobIx)
+                        % string "/"
+                        % string (show chainsTotal)
+
+                , padL width' (string testName')
+                , padL 5      (string wayName)
+                , padL 8      (string actionName)
+                , string $ colorizeStatus config actionName (T.unpack status) ]
 
         hFlush stdout
         return True
 
  -- If a file is different than expected in interactive mode,
  --   then ask the user what to do about it.
- | ProductDiff fileRef fileOut fileDiff <- product'
+ | Result _ _ _ _ product' <- result
+ , ProductDiff fileRef fileOut fileDiff <- product'
  , configInteractive config
  = do
-        putStr  $  "\n"
-                ++ "-- Output Differs  -------------------------------------------------------------\n"
-                ++ "   expected file: " ++ fileRef      ++      "\n"
-                ++ "     actual file: " ++ fileOut      ++      "\n"
-                ++ replicate 80 '-' ++ "\n"
+        putStr
+         $  "\n"
+         ++ "-- Output Differs  -------------------------------------------------------------\n"
+         ++ "   expected file: " ++ fileRef ++ "\n"
+         ++ "     actual file: " ++ fileOut ++ "\n"
+         ++ replicate 80 '-' ++ "\n"
 
         -- Show the difference
         str     <- readFile fileDiff
@@ -179,10 +187,11 @@ handleResult config gang chainsTotal
 
  -- If a file is different than expected in batch mode,
  --   then just print the status.
- | ProductDiff{}        <- product'
+  | Result chainIx jobIx jobId actionName product' <- result
+  , ProductDiff{}        <- product'
  = handleResult config gang chainsTotal
         $ Result chainIx jobIx jobId actionName
-        $ ProductStatus (text "failed") False
+        $ ProductStatus "failed" False
 
  -- Bogus pattern match to avoid warning.
  | otherwise
@@ -234,32 +243,32 @@ handleResult_askDiff fileRef fileOut fileDiff
         result
 
 
-colorizeStatus :: Config -> String -> String -> Doc
+colorizeStatus :: Config -> String -> String -> String
 colorizeStatus config jobName status
         | not $ configColoredOutput config
-        = text status
+        = status
 
         | isPrefixOf "ok" status
-        = colorDoc [Foreground Green] (text status)
+        = colorDoc [Foreground Green] status
 
         | isPrefixOf "success" status
         , jobName == "run"
-        = colorDoc [Foreground Green] (text status)
+        = colorDoc [Foreground Green] status
 
         | isPrefixOf "success" status
         , jobName == "compile"
-        = colorDoc [Foreground Blue]  (text status)
+        = colorDoc [Foreground Blue]  status
 
         | isPrefixOf "failed"  status
-        = colorDoc [Foreground Red]   (text status)
+        = colorDoc [Foreground Red]   status
 
         | otherwise
-        = text status
+        = status
 
 
-colorDoc :: [VT100.Mode] -> Doc -> Doc
+colorDoc :: [VT100.Mode] -> String -> String
 colorDoc vmode doc
-        = text
-        $ concat [ setMode vmode
-                 , renderPlain doc
-                 , setMode [Reset] ]
+ = concat [ setMode vmode
+          , doc
+          , setMode [Reset] ]
+

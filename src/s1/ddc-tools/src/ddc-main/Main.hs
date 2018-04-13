@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Unix-style command line interface to DDC.
 --    This interface exports commands that work on whole modules at a time,

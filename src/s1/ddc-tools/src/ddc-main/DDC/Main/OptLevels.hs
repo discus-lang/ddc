@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Define the default optimisation levels.
 module DDC.Main.OptLevels
         ( getSimplSaltOfConfig)
@@ -14,10 +14,9 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier                      (Simplifier)
 import System.FilePath
-import Control.Monad
 import Data.List
-import Data.Monoid
 import Data.Maybe
+import Data.Semigroup                           (Semigroup(..))
 import qualified DDC.Driver.Config              as D
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
@@ -26,6 +25,7 @@ import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
+
 
 -- | Get the simplifier for Salt code from the config.
 --
@@ -80,7 +80,7 @@ opt1_salt config dconfig builder runtimeConfig filePath
         --  If any of these don't load then the 'cmdReadModule' function
         --  will display the errors.
         minlineModules
-                <- liftM sequence
+                <- fmap sequence
                 $  mapM (cmdReadModule dconfig Salt.fragment)
                         inlineModulePaths
 

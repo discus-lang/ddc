@@ -42,7 +42,5 @@ instance (NFData a, NFData n) => NFData (AnTEC a n) where
 
 
 instance Pretty (AnTEC a n) where
- ppr _ = text "AnTEC"
-
-
+ ppr _ = string "AnTEC"
 

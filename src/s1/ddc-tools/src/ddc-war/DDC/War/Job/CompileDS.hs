@@ -15,7 +15,7 @@ import BuildBox
 import System.FilePath
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
+import DDC.War.Driver   (parens)
 
 
 -- | Use DDC to compile a source file.
@@ -52,7 +52,7 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedSuccess
         | ResultUnexpectedFailure
-        deriving Show
+
 
 resultSuccess :: Result -> Bool
 resultSuccess result
@@ -62,11 +62,16 @@ resultSuccess result
 
 
 instance Pretty Result where
- pretty result
+ ppr result
   = case result of
-        ResultSuccess seconds    -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure  -> text "failed"
-        ResultUnexpectedSuccess  -> text "unexpected"
+        ResultSuccess seconds
+         -> string "success" %% (parens $ ppr seconds)
+
+        ResultUnexpectedFailure
+         -> string "failed"
+
+        ResultUnexpectedSuccess
+         -> string "unexpected"
 
 
 -- | Compile a Disciple source file.

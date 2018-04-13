@@ -40,7 +40,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Transform.BoundT
 import Data.Maybe
-import DDC.Type.DataDef                 (DataDefs)
+import DDC.Type.DataDef                 (DataDefs, unionDataDefs)
 import Data.Map                         (Map)
 import Prelude                          hiding (lookup)
 import DDC.Core.Env.EnvT                (EnvT)
@@ -198,12 +198,12 @@ typeEnvOfEnvX env
 union :: Ord n => EnvX n -> EnvX n -> EnvX n
 union env1 env2
         = EnvX
-        { envxEnvT         = envxEnvT          env1 `EnvT.union` envxEnvT        env2
-        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`    envxPrimFun     env1 n
-        , envxDataDefs     = envxDataDefs      env1 `mappend`    envxDataDefs    env2
-        , envxLocalMap     = envxLocalMap      env1 `Map.union`  envxLocalMap    env2
-        , envxLocalStack   = envxLocalStack    env2  ++          envxLocalStack  env1
-        , envxStackLength  = envxStackLength   env2  +           envxStackLength env1 }
+        { envxEnvT         = envxEnvT          env1 `EnvT.union`    envxEnvT        env2
+        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`       envxPrimFun     env1 n
+        , envxDataDefs     = envxDataDefs      env1 `unionDataDefs` envxDataDefs    env2
+        , envxLocalMap     = envxLocalMap      env1 `Map.union`     envxLocalMap    env2
+        , envxLocalStack   = envxLocalStack    env2  ++             envxLocalStack  env1
+        , envxStackLength  = envxStackLength   env2  +              envxStackLength env1 }
 
 
 -- | Combine multiple environments,

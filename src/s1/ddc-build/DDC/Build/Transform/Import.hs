@@ -11,7 +11,6 @@ import DDC.Core.Collect.Support
 import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Data.Pretty
-import DDC.Control.Panic
 import Data.Map                                 (Map)
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Interface.Base                 (Interface (..))
@@ -50,9 +49,8 @@ importNamesForModule kenv tenv store mm
                  Left err       -> return $ Left err
                  Right isrc     -> return $ Right (n, isrc)
 
-            getDaVarImport u    =   panic "ddc-build" "resolveNamesInModule"
-                                $   text  "Cannot resolve anonymous binder:"
-                                <+> ppr u
+            getDaVarImport u    =   error "ddc-build.resolveNamesInModule:"
+                                $   "Cannot resolve anonymous binder: " ++ show u
 
         (errsDaVar, importsDaVar)
                 <- fmap Either.partitionEithers
@@ -200,6 +198,6 @@ instance Pretty Error where
          -> vcat [ text "Not in scope: " <> squotes (ppr n) ]
 
         ErrorMultiple n ms
-         -> vcat $  [ text "Variable" <+> squotes (ppr n) <+> text "defined in multiple modules:" ]
+         -> vcat $  [ text "Variable" %% squotes (ppr n) %% text "defined in multiple modules:" ]
                  ++ (map ppr ms)
 
