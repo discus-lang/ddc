@@ -80,16 +80,23 @@ isTypeArray :: TypeF -> Bool
 isTypeArray = isVectorType
 
 
-getBinds :: [(Name,(TypeF,ExpF))] -> ([Name],[Name]) -> ([CNF.Bind Name Name], ([Name],[Name]))
+getBinds
+        :: [(Name,(TypeF,ExpF))]
+        -> ([Name],[Name])
+        -> ([CNF.Bind Name Name], ([Name],[Name]))
+
 getBinds bs env
  = go bs env
  where
   go [] e = ([], e)
   go (b:rest) e
    = let b'          = getBind b e
-         e'          = envOfBind b' <> e
+         e'          = envOfBind b' `joinEnvs` e
          (rest',e'') = go rest e'
      in  (b' : rest', e'')
+
+joinEnvs (a1, a2) (b1, b2)
+ = (a1 ++ b1, a2 ++ b2)
 
 
 -- | Convert an epression to a CNF binding.

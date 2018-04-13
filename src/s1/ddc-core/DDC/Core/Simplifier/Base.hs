@@ -20,6 +20,7 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Exp
 import DDC.Type.Env
 import DDC.Data.Pretty
+import qualified Data.Semigroup         as SG
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta
@@ -41,7 +42,7 @@ data Simplifier s a n
         | Fix   Int                (Simplifier s a n)
 
 
-instance Semigroup (Simplifier s a n) where
+instance SG.Semigroup (Simplifier s a n) where
  (<>)           = unionSimplifier
 
 

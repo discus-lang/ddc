@@ -9,6 +9,7 @@ import DDC.Core.Discus.Convert.Type.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Call
 import DDC.Core.Exp.Annot
+import DDC.Data.Textual
 import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
 
@@ -55,7 +56,7 @@ convertSuperT ctx0 tt0
          -- Convert data type abstractions to region abstractions.
          | isDataKind   $ typeOfBind bParam
          , BName (E.NameVar str) _   <- bParam
-         , str'         <- str <> "$r"
+         , str'         <- str % "$r"
          , bParam'      <- BName (A.NameVar str') kRegion
          = do   let ctx' = extendKindEnv bParam ctx
                 tBody'  <- convertAbsType ctx' tBody
@@ -135,7 +136,7 @@ convertSuperConsT ctx0 cs0 tt0
          -- Convert data type abstractions to region abstractions.
          | isDataKind $ typeOfBind bParam
          , BName (E.NameVar str) _ <- bParam
-         , str'          <- str <> "$r"
+         , str'          <- str % "$r"
          , bParam'       <- BName (A.NameVar str') kRegion
          = do   let ctx' =  extendKindEnv bParam ctx
                 tBody'   <- convertAbsType ctx' cs tBody

@@ -116,14 +116,11 @@ module DDC.Data.PrettyPrint (
    SimpleDoc(..), renderPretty, renderCompact, displayS, displayIO
 
    -- * Undocumented
-        , bool
-
-        , column, nesting, width
-
-        ) where
-
+   , bool
+   , column, nesting, width)
+where
 import System.IO (Handle,hPutStr,hPutChar,stdout)
-
+import Data.Semigroup
 
 -----------------------------------------------------------
 -- list, tupled and semiBraces pretty print a list of

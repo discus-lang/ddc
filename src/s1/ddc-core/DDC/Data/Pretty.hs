@@ -1,5 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
+-- Suppress warnings about Data.Monoid in GHC 8.2 -> 8.4 transition.
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 -- | Pretty printer utilities.
 --
 --   This is a re-export of Daan Leijen's pretty printer package (@wl-pprint@),
@@ -8,8 +11,10 @@ module DDC.Data.Pretty
         ( T.Textual(..)
         , T.Text
         , (T.%), (T.%%)
+        , (<>)
 
-        , Pretty(..)
+        , Pretty        (..)
+        , Monoid        (..)
         , P.Doc
 
         -- * Character documents
@@ -18,7 +23,7 @@ module DDC.Data.Pretty
         , P.lbrace,   P.rbrace
         , P.lbracket, P.rbracket
         , P.squote,   P.dquote
-        , P.semi, P.colon, P.comma, P.space, P.dot, P.backslash, P.equals
+        , P.semi,     P.colon, P.comma, P.space, P.dot, P.backslash, P.equals
 
         -- * Bracketing combinators
         , P.enclose, P.parens, P.squotes, P.dquotes, P.angles, P.braces, P.brackets
@@ -42,13 +47,17 @@ module DDC.Data.Pretty
         -- * Utils
         , padL
         , pprParen)
-
 where
 import Data.Set                         (Set)
+import DDC.Data.Textual                 ((%))
 import qualified Data.Set               as Set
 import qualified Data.Text              as Text
 import qualified DDC.Data.Textual       as T
 import qualified DDC.Data.PrettyPrint   as P
+
+-- With GHC <  8.4.1 we need Data.Monoid to get (<>)
+-- With GHC >= 8.4.1 it comes in the prelude.
+import Data.Monoid
 
 
 -- Textual -------------------------------------------------------------------
@@ -109,7 +118,7 @@ instance Pretty a => Pretty (Set a) where
          $ map ppr $ Set.toList xs
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
- ppr (a, b) = P.parens $ ppr a <> P.comma <> ppr b
+ ppr (a, b) = P.parens $ ppr a % P.comma % ppr b
 
 
 padL :: Int -> P.Doc -> P.Doc
@@ -117,7 +126,7 @@ padL n d
  = let  len     = length $ renderPlain d
         pad     = n - len
    in   if pad > 0
-         then  d <> P.text (replicate pad ' ')
+         then  d % P.text (replicate pad ' ')
          else  d
 
 

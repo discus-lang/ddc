@@ -143,10 +143,13 @@ handleResult config gang chainsTotal result
         putStrLn
          $ T.unpack
          $ hsep
-                [  parens
+                [ parens
                     $ padR (length $ show chainsTotal) (string $ show chainIx)
                         % string "."
                         % string (show jobIx)
+                        % string "/"
+                        % string (show chainsTotal)
+
                 , padL width' (string testName')
                 , padL 5      (string wayName)
                 , padL 8      (string actionName)

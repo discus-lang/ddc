@@ -8,6 +8,7 @@ import qualified SMR.Core.Exp           as S
 import qualified SMR.Prim.Name          as S
 import qualified Data.Text              as T
 import Data.Text                        (Text)
+import DDC.Data.Textual
 
 
 ---------------------------------------------------------------------------------------------------
@@ -121,7 +122,7 @@ takeOpFun op
 -- | Take the Shimmer encoding of a vector operator.
 takeOpVector :: D.OpVector -> Bool -> SExp
 takeOpVector op b
- = xSym (nop <> nbx)
+ = xSym (nop % nbx)
  where
   nop
    = case op of
@@ -158,7 +159,7 @@ takePrimTyCon tc
 -- | Take the Shimmer encoding of a primitive arithmetic operator.
 takePrimArith :: D.PrimArith -> Bool -> SExp
 takePrimArith pm bx
- = xSym (npm <> nbx)
+ = xSym (npm % nbx)
  where
    npm
     = case pm of
@@ -192,7 +193,7 @@ takePrimArith pm bx
 -- | Take the Shimmer encoding of a primitive cast operator.
 takePrimCast :: D.PrimCast -> Bool -> SExp
 takePrimCast pc bx
- = xSym (npm <> nbx)
+ = xSym (npm % nbx)
  where
   npm
    = case pc of

@@ -17,9 +17,9 @@ import DDC.Core.Simplifier.Result
 import DDC.Core.Env.EnvX                (EnvX)
 import Control.Monad.Writer             (Writer, runWriter, tell)
 import Data.Typeable                    (Typeable)
-import Prelude                          hiding ((<$>))
 import DDC.Data.Pretty                  as P
 import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified Data.Semigroup         as SG
 
 
 -------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ instance Pretty Info where
       , text "Values skipped: " % int skip ] ]
 
 
-instance Semigroup Info where
+instance SG.Semigroup Info where
  (<>)           = unionInfo
 
 

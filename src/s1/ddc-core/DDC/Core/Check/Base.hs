@@ -52,6 +52,7 @@ import Data.Set                         (Set)
 import DDC.Data.Pretty                  as P
 import qualified Data.Set               as Set
 import qualified DDC.Control.Check      as G
+import qualified Data.Semigroup         as SG
 import Prelude                          hiding ((<$>))
 
 
@@ -103,7 +104,7 @@ data CheckTrace
 instance Pretty CheckTrace where
  ppr ct         = checkTraceDoc ct
 
-instance Semigroup CheckTrace where
+instance SG.Semigroup CheckTrace where
  (<>)           = unionCheckTrace
 
 instance Monoid CheckTrace where
