@@ -2,7 +2,7 @@
 Discus
 ======
 
-The Discus language is an experimental dialect of Haskell which investigates static typing and program transformation in the presence of computational effects. :ref:`Version 0.5.1 <release-notes-0.5.1>` is "working alpha" quality, meaning there is a complete system that can be hacked around with, but it's not yet industrial strength.
+The Discus language is an experimental dialect of Haskell which investigates static typing and program transformation in the presence of computational effects.
 
 .. figure::  logo/discus-512x512.jpg
    :width:   512
@@ -19,6 +19,8 @@ The main language features are:
 * Simple two space copying garbage collection.
 * Default call-by-value evaluation.
 * Typed external core language.
+
+:ref:`Version 0.5.1 <release-notes-0.5.1>` (2017/10/23) includes new support for copying garbage collection and implicit function parameters.
 
 Examples
 ========
