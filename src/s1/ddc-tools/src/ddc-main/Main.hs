@@ -228,8 +228,9 @@ getDriverConfig :: Config -> Maybe FilePath -> IO Driver.Config
 getDriverConfig config mFilePath
  = do
         -- Determine the default builder config.
-        Just builder
-                <- determineDefaultBuilder
+        -- This should recognize standard OSX and Linux distributions.
+        builder <- fmap (fromMaybe $ error "ddc-main: unrecognized build environment.")
+                $  determineDefaultBuilder
                 $  defaultBuilderConfig config
 
         -- Treat the directory holding a module to compile as a base

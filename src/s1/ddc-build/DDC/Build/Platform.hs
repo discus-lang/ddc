@@ -251,7 +251,6 @@ determineHostLlvmBinPath mpath
               ]
 
             -- Test each candidate and return the result of "llvm-config --bindir"
-            --
             search []          = return Nothing
             search (path:rest) = do
               (exitCode, stdout, _)
@@ -271,5 +270,5 @@ determineHostLlvmBinPath mpath
                       _         -> search rest
 
         -- return the first successful candidate
-        search ( maybe candidates (:candidates) mpath )
+        search (maybe candidates (: candidates) mpath)
 

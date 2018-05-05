@@ -159,6 +159,7 @@ builders config host
 --
 --   If we don't recognise the result of 'arch' or 'uname', or don't have
 --   a default builder config for this platform then `Nothing`.
+--
 determineDefaultBuilder :: BuilderConfig -> IO (Maybe Builder)
 determineDefaultBuilder config
  = do   mPlatform       <- determineHostPlatform
