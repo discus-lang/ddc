@@ -25,22 +25,30 @@ import foreign c value
 with letrec
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Initialize the DDC runtime system.
 ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         (argc: Nat#)            -- Number of command line arguments.
         (argv: Addr#)           -- Pointer to array of command line arguments.
         : Unit
  = do
+        -- Initialize the heap.
         ddcAllocInit   defaultHeapSize
-        write# [Nat#]   (global# [Nat#]  "ddcGlobalEnvArgCount"#) 0# argc
-        write# [Addr#]  (global# [Addr#] "ddcGlobalEnvArgVal"#)   0# argv
 
-        write# [Addr#]  (global# [Addr#] "ddcRuntimeHookExceptionFile"#)    0#
-                        (promote# 0#)
+        -- Create refs for the object info table.
+        -- TODO: The 'ddcInfoIdentNext' is supposed to be a Word32,
+        --       but the Salt -> LLVM code generator doesn't want to make one.
+        write# [Word64#] (global# [Word64#] "ddcInfoIdentNext"#)     0# 0w64#
+        write# [Addr#]   (global# [Addr#]   "ddcInfoFrameRoot"#)     0# (promote# 0#)
 
-        write# [Addr#]  (global# [Addr#] "ddcRuntimeHookExceptionNetwork"#) 0#
-                        (promote# 0#)
+        -- Create refs to command line arguments.
+        write# [Nat#]    (global# [Nat#]    "ddcGlobalEnvArgCount"#) 0# argc
+        write# [Addr#]   (global# [Addr#]   "ddcGlobalEnvArgVal"#)   0# argv
+
+        -- Create refs for exception hooks.
+        write# [Addr#]   (global# [Addr#]   "ddcRuntimeHookExceptionFile"#)    0# (promote# 0#)
+        write# [Addr#]   (global# [Addr#]   "ddcRuntimeHookExceptionNetwork"#) 0# (promote# 0#)
+
         ()
 
 
@@ -64,7 +72,7 @@ ddcAllocInit (heapSize : Nat#) : Unit
         ()
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Shutdown the runtime system and exit cleanly.
 ddcExit (code: Nat#): Void#
  = do

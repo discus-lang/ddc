@@ -1,0 +1,62 @@
+
+-- | Binding onto the runtime infotable system.
+module System.Runtime.Info
+
+export  info_lookup
+        info_getIdent; info_getType; info_getArity
+        info_getModuleName; info_getCtorName
+
+export foreign c value
+ ddcInfoFrameNew                : Nat# -> Addr#
+ ddcInfoFramePush               : Addr# -> Unit
+ ddcInfoFrameAddData            : Addr# -> Word16# -> TextLit# -> TextLit# -> Word32#
+
+import Control.Exception
+import Data.Text
+
+import foreign c value
+ ddcInfoFrameNew                : Nat# -> Addr#
+ ddcInfoFramePush               : Addr# -> Unit
+ ddcInfoFrameAddData            : Addr# -> Word16# -> TextLit# -> TextLit# -> Word32#
+
+ ddcInfoEntryLookup             : Word32# -> Addr#
+ ddcInfoEntryGetIdent           : Addr# -> Word32#
+ ddcInfoEntryGetType            : Addr# -> Word16#
+ ddcInfoEntryGetArity           : Addr# -> Word16#
+ ddcInfoEntryGetModuleName      : Addr# -> TextLit#
+ ddcInfoEntryGetCtorName        : Addr# -> TextLit#
+
+ ddcPrimTakeTextLit             : TextLit -> TextLit#
+
+where
+
+-- | Lookup the info table entry with the given identifier,
+--   failing if it cannot be found.
+info_lookup (ident: Word32#): Addr#
+ = ddcInfoEntryLookup ident
+
+
+-- | Get the identifier from an info table entry.
+info_getIdent      (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetIdent aEntry)
+
+
+-- | Get the type of an info table entry.
+info_getType       (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetType aEntry)
+
+
+-- | Get the arity of an info table entry.
+info_getArity      (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetArity aEntry)
+
+
+-- | Get the module name of an info table entry.
+info_getModuleName (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetModuleName aEntry))
+
+
+-- | Get the ctor name of an info table entry.
+info_getCtorName   (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetCtorName aEntry))
+

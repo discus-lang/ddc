@@ -32,7 +32,8 @@ baseSaltFiles builder
         , runtime ++ bits </> "primitive" </> "Text.dcs"
         , runtime ++ bits </> "primitive" </> "Vector.dcs"
         , runtime ++ bits </> "Apply.dcs"
-        , runtime ++ bits </> "Object.dcs" ]
+        , runtime ++ bits </> "Object.dcs"
+        , runtime ++ bits </> "Info.dcs" ]
 
 
 baseSeaFiles  :: Builder -> [FilePath]
