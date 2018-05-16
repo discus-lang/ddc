@@ -98,7 +98,7 @@ data Error
         -- | Arithmetic or logic primop cannot be used at this type.
         | ErrorInvalidArith
         { errorPrimArith :: A.PrimArith
-        , errorType      :: Type A.Name }
+        , errorTypes     :: [Type A.Name] }
         deriving Show
 
 
@@ -152,7 +152,10 @@ instance Pretty Error where
   = vcat [ text "Cannot truncate# value of type '"      <> ppr tSrc
                 <> text "' to '"                        <> ppr tDst <> text "'" ]
 
- ppr (ErrorInvalidArith n t)
+ ppr (ErrorInvalidArith n [])
+  = vcat [ text "Invalid use of arithmetic operator " <> ppr n ]
+
+ ppr (ErrorInvalidArith n ts)
   = vcat [ text "Cannot use " <> ppr n
-                <> text " at type '" <> ppr t <> text "'" ]
+                <> text " at types '" <> hsep (map ppr ts) <> text "'" ]
 
