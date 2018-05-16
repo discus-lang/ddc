@@ -1,0 +1,191 @@
+
+module Runtime.Info
+
+export foreign c value
+ ddcInfoFrameNew                : Word32# -> Addr#
+ ddcInfoFramePush               : Addr#   -> Unit
+ ddcInfoFrameAddData            : Addr# -> Word16# -> Addr# -> Addr# -> Word32#
+
+ ddcInfoEntryLookup             : Word32# -> Addr#
+ ddcInfoEntryGetIdent           : Addr# -> Word32#
+ ddcInfoEntryGetType            : Addr# -> Word16#
+ ddcInfoEntryGetArity           : Addr# -> Word16#
+ ddcInfoEntryGetModuleName      : Addr# -> Addr#
+ ddcInfoEntryGetCtorName        : Addr# -> Addr#
+
+
+import foreign c value
+ malloc                         : Nat# -> Addr#
+
+
+with letrec
+
+
+---------------------------------------------------------------------------------------------------
+-- While the runtime system is being initialized the infotable consists
+-- of a number of frames joined by a linked list. Each frame contains
+-- entries that describe the data objects that can be created by the
+-- running user program.
+--
+-- TODO:
+-- During runtime initialization we call separate initialization code for
+-- each module, which adds its information to the list of frames. As a
+-- final step we then pack down all the frame into a single one, so that
+-- entries can be retrieved in constant time, rather than by walking through
+-- the linked list of frames.
+--
+-- struct InfoFrame
+-- { 0  uint32       sizeUsed     -- Total number of used entries in the frame.
+--   4  uint32       sizeMax      -- Maximum number of entries in the frame.
+--   8  addr64       next         -- Address of next frame, or 0 if no more frames.
+--   16 InfoEntry[]  entries      -- Entries
+-- }
+--
+-- struct InfoEntry
+-- {  uint32 index
+--    uint16 type
+-- }
+--
+-- struct InfoEntryData <: InfoEntry
+-- {                            -- Total size = 32 bytes.
+--    0  uint32 ident           -- Identifier of entry in infotable.
+--    4  uint16 type   = 0      -- Type of entry in infotable (0 = Data)
+--    6  uint16 arity           -- Arity of data constructor.
+--    8  addr64 moduleName      -- Address of null-terminated string of module name.
+--    16 addr64 ctorName        -- Address of null-terminated string of constructor name.
+--    24 addr64 padding         -- Empty padding.
+-- }
+--
+
+-- | Allocate a new info table frame with enough space for the
+--   given number of entries.
+ddcInfoFrameNew (nEntries: Word32#): Addr#
+ = do
+        nSizeOfEntry    = 32#
+
+        nSizeOfFrame
+         =      add# (size# [Word32#])                  -- Total number of entries.
+               (add# (size# [Word32#])                  -- Max number of entries.
+               (add# (size# [Addr#])                    -- Address of next frame.
+                     (mul#  (promote# nEntries) nSizeOfEntry)))
+
+        aFrame          = malloc nSizeOfFrame
+        set# aFrame 0w8# nSizeOfFrame
+
+        write# [Word32#] aFrame 0# 0w32#                -- Used entries in frame.
+        write# [Word32#] aFrame 4# nEntries             -- Total entries in frame.
+        write# [Addr#]   aFrame 8# (promote# 0w64#)     -- Address of next frame.
+
+        aFrame
+
+
+-- | Push an info table frame onto the global frame stack.
+ddcInfoFramePush (aFrame: Addr#): Unit
+ = do
+        aRoot   = read# (global# [Addr#] "ddcInfoFrameRoot"#) 0#
+        write# [Addr#] aFrame 8# aRoot
+        write# [Addr#]  (global# [Addr#] "ddcInfoFrameRoot"#) 0# aFrame
+        ()
+
+
+-- | Add an entry for a data constructor to the given info frame,
+--   using the next available table index from the global index counter.
+ddcInfoFrameAddData
+        (aFrame:        Addr#)          -- Address of frame to add info entry to.
+        (nArity:        Word16#)        -- Arity of data constructor.
+        (aNameModule:   Addr#)          -- Address of null-terminated string of module name.
+        (aNameCtor:     Addr#)          -- Address of null-terminated string of constructor name.
+        : Word32#                       -- Index of new entry.
+ = do
+        nSizeOfEntry    = 32#
+
+        -- Check that we're not about to overflowing the frame.
+        nFrameUsed      = read# [Word32#] aFrame 0#
+        nFrameMax       = read# [Word32#] aFrame 4#
+        (case ge# nFrameUsed nFrameMax of
+          True#  -> fail#
+          False# -> ())
+
+        -- Allocate a global identifier for the new entry.
+        nIdent  = read# (global# [Word32#] "ddcInfoIdentNext"#) 0#
+        write# (global# [Word32#] "ddcInfoIdentNext"#) 0# (add# nIdent 1w32#)
+
+        -- Initialize the entry in the frame.
+        aEntry  = plusAddr# aFrame
+                 (add#  16#
+                        (mul# (promote# nFrameUsed) 32#))
+
+        write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
+        write# [Word16#] aEntry 4#  0w16#       -- Entry type (0 = Data)
+        write# [Word16#] aEntry 6#  nArity      -- Arity of data constructor.
+        write# [Addr#]   aEntry 8#  aNameModule -- Module name.
+        write# [Addr#]   aEntry 16# aNameCtor   -- Constructor name.
+
+        -- Bump the count of entries in the frame.
+        write# [Word32#] aFrame 0#  (add# nFrameUsed 1w32#)
+
+        nIdent
+
+
+-- Entry ------------------------------------------------------------------------------------------
+ddcInfoEntryGetIdent      (aEntry: Addr#): Word32#
+ = do   read# [Word32#] aEntry 0#
+
+ddcInfoEntryGetType       (aEntry: Addr#): Word16#
+ = do   read# [Word16#] aEntry 4#
+
+ddcInfoEntryGetArity      (aEntry: Addr#): Word16#
+ = do   read# [Word16#] aEntry 6#
+
+ddcInfoEntryGetModuleName (aEntry: Addr#): Addr#
+ = do   read# [Addr#]   aEntry 8#
+
+ddcInfoEntryGetCtorName   (aEntry: Addr#): Addr#
+ = do   read# [Addr#]   aEntry 16#
+
+
+---------------------------------------------------------------------------------------------------
+-- | Lookup the info table entry with the given identifier,
+--   failing if it cannot be found.
+ddcInfoEntryLookup
+        (nIdent:        Word32#)        -- Identifier of entry to lookup.
+        : Addr#                         -- Address of info table entry.
+ = do
+        -- Get the addres of the first frame from the global root pointer.
+        aFrame  = read# (global# [Addr#] "ddcInfoFrameRoot"#) 0#
+
+        -- Try to find the entry in the list of frames.
+        ddcInfoEntryLookup_loop nIdent aFrame 0w32#
+
+ddcInfoEntryLookup_loop
+        (nIdent:        Word32#)
+        (aFrame:        Addr#)
+        (nEntry:        Word32#)
+        : Addr#
+ = do
+        -- Check the frame pointer is not null.
+        (case eq# aFrame (promote# 0#) of
+          True#  -> fail#
+          False# -> ())
+
+        -- If we're off the end of the current frame then go to the next one.
+        nFrameUsed      = read# [Word32#] aFrame 0#
+        nFrameMax       = read# [Word32#] aFrame 4#
+        case or# (ge# nEntry nFrameUsed) (ge# nEntry nFrameMax) of
+         True#  -> do
+          aFrameNext   = read# [Addr#] aFrame 8#
+          ddcInfoEntryLookup_loop nIdent aFrameNext 0w32#
+
+         False# -> do
+                -- Get the address of the current entry in the frame.
+                aEntry  = plusAddr# aFrame
+                         (add#  16#
+                               (mul# (promote# nEntry) 32#))
+
+                -- See if this is the entry we were looking for.
+                nIdentx = read# [Word32#] aEntry 0#
+                case eq# nIdent nIdentx of
+                 True#  -> aEntry
+                 False# -> ddcInfoEntryLookup_loop nIdent aFrame (add# nEntry 1w32#)
+
+

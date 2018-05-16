@@ -15,6 +15,7 @@ module DDC.Core.Llvm.Convert.Type
 
           -- * Predicates
         , isVoidT
+        , isBoolT
         , isSignedT
         , isUnsignedT
         , isIntegralT
@@ -246,8 +247,15 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 -- | Check whether this is the Void# type.
 isVoidT :: C.Type A.Name -> Bool
 isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid)) _))
-         = True
+          = True
 isVoidT _ = False
+
+
+-- | Check whether this is the Bool# type.
+isBoolT :: C.Type A.Name -> Bool
+isBoolT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConBool)) _))
+          = True
+isBoolT _ = False
 
 
 -- | Check whether some type is signed: IntN or FloatN.
