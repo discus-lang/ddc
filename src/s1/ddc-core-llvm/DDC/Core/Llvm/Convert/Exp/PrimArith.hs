@@ -15,6 +15,8 @@ import qualified Data.Sequence          as Seq
 
 -- | Convert a primitive call to LLVM,
 --   or Nothing if this doesn't look like such an operation.
+
+-- TODO: refactor this mess, and eliminate the hard call to error.
 convPrimArith
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
@@ -23,8 +25,8 @@ convPrimArith
         -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimArith ctx mdst p xs
- = let  pp              = contextPlatform ctx
-        kenv            = contextKindEnv  ctx
+ = let  pp      = contextPlatform ctx
+        kenv    = contextKindEnv  ctx
    in case p of
         -- Unary operators ------------
         A.PrimArith op
@@ -75,6 +77,23 @@ convPrimArith ctx mdst p xs
                 instr  <- result
                 return $ Seq.singleton (annotNil instr)
 
+        A.PrimArith op
+         | Just dst             <- mdst
+         , Just [mx1, mx2]      <- sequence $ map (mconvArg ctx) xs
+         -> Just $ do
+                x1'     <- mx1
+                x2'     <- mx2
+                let result
+                     | A.PrimArithOr    <- op
+                     = return $ IOp dst OpOr x1' x2'
+
+                     | otherwise
+                     = error "convPrimArith: failed"
+
+                instr <- result
+                return $ Seq.singleton (annotNil instr)
+
+
         -- This doesn't look like an arithmetic primop.
         _ -> Nothing
 
@@ -83,45 +102,79 @@ convPrimArith ctx mdst p xs
 convPrimArith2 :: A.PrimArith -> C.Type A.Name -> Maybe Op
 convPrimArith2 op t
  = case op of
+        A.PrimArithNeg                  -> Nothing
+
         A.PrimArithAdd
          | isIntegralT t                -> Just OpAdd
          | isFloatingT t                -> Just OpFAdd
+         | otherwise                    -> Nothing
 
         A.PrimArithSub
          | isIntegralT t                -> Just OpSub
          | isFloatingT t                -> Just OpFSub
+         | otherwise                    -> Nothing
 
         A.PrimArithMul
          | isIntegralT t                -> Just OpMul
          | isFloatingT t                -> Just OpFMul
+         | otherwise                    -> Nothing
 
+        -- ISSUE #450 Division by Zero in LLVM generated code has undefined behaviour.
         A.PrimArithDiv
          | isIntegralT t, isUnsignedT t -> Just OpUDiv
          | isIntegralT t, isSignedT t   -> Just OpSDiv
          | isFloatingT t                -> Just OpFDiv
+         | otherwise                    -> Nothing
 
+        -- ISSUE #450 Division by Zero in LLVM generated code has undefined behaviour.
         A.PrimArithRem
          | isIntegralT t, isUnsignedT t -> Just OpURem
          | isIntegralT t, isSignedT t   -> Just OpSRem
          | isFloatingT t                -> Just OpFRem
+         | otherwise                    -> Nothing
 
+        -- ISSUE #451 The 'mod' function in LLVM generated code is not implemented.
+        A.PrimArithMod                  -> Nothing
+
+        -- comparison -------------------------------------
+        -- These are handled via the ICmp instruction rather that IOp.
+        A.PrimArithEq                   -> Nothing
+        A.PrimArithNeq                  -> Nothing
+        A.PrimArithGt                   -> Nothing
+        A.PrimArithGe                   -> Nothing
+        A.PrimArithLt                   -> Nothing
+        A.PrimArithLe                   -> Nothing
+
+        -- boolean ----------------------------------------
+        A.PrimArithAnd
+         | isBoolT t                    -> Just OpAnd
+         | otherwise                    -> Nothing
+
+        A.PrimArithOr
+         | isBoolT t                    -> Just OpOr
+         | otherwise                    -> Nothing
+
+        -- bitwise ----------------------------------------
         A.PrimArithShl
          | isIntegralT t                -> Just OpShl
+         | otherwise                    -> Nothing
 
         A.PrimArithShr
          | isIntegralT t, isUnsignedT t -> Just OpLShr
          | isIntegralT t, isSignedT t   -> Just OpAShr
+         | otherwise                    -> Nothing
 
         A.PrimArithBAnd
          | isIntegralT t                -> Just OpAnd
+         | otherwise                    -> Nothing
 
         A.PrimArithBOr
          | isIntegralT t                -> Just OpOr
+         | otherwise                    -> Nothing
 
         A.PrimArithBXOr
          | isIntegralT t                -> Just OpXor
-
-        _                               -> Nothing
+         | otherwise                    -> Nothing
 
 
 -- | Convert an integer comparison from Core Sea to LLVM form.

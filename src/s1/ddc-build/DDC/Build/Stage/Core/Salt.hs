@@ -144,8 +144,8 @@ saltToLlvm
         mm_slotify
          <- if bAddSlots
              then do mm' <- case ASlotify.slotifyModule () mm_checked of
-                                Left err        -> throwE [B.ErrorSaltConvert err]
-                                Right mm''       -> return mm''
+                                Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
+                                Right mm'' -> return mm''
 
                      liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkSlots
                      return mm'
@@ -156,8 +156,8 @@ saltToLlvm
         -- Insert control transfer primops.
         mm_transfer
          <- case ATransfer.transferModule mm_slotify of
-                Left err        -> throwE [B.ErrorSaltConvert err]
-                Right mm'       -> return mm'
+                Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/transfer" err]
+                Right mm'  -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_transfer) sinkTransfer
 
@@ -166,8 +166,8 @@ saltToLlvm
         srcLlvm
          <- case ALlvm.convertModule platform
                   (CReannotate.reannotate (const ()) mm_transfer) of
-                Left  err       -> throwE [B.ErrorSaltConvert err]
-                Right mm'       -> return mm'
+                Left  err -> throwE [B.ErrorSaltConvert "saltToLlvm/convert" err]
+                Right mm' -> return mm'
 
         return srcLlvm
 
