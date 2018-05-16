@@ -166,25 +166,25 @@ determineDefaultBuilder config
         mHost           <- determineDefaultBuilderHost
 
         case (mPlatform, mHost) of
-         (Just (Platform ArchX86_32 (OsDarwin mVersion)), Just host)
+         (Right (Platform ArchX86_32 (OsDarwin mVersion)), Just host)
                 -> return $ Just (builder_X8632_Darwin config host mVersion)
 
-         (Just (Platform ArchX86_64 (OsDarwin mVersion)), Just host)
+         (Right (Platform ArchX86_64 (OsDarwin mVersion)), Just host)
                 -> return $ Just (builder_X8664_Darwin config host mVersion)
 
-         (Just (Platform ArchX86_32 OsLinux),  Just host)
+         (Right (Platform ArchX86_32 OsLinux),  Just host)
                 -> return $ Just (builder_X8632_Linux  config host)
 
-         (Just (Platform ArchX86_64 OsLinux),  Just host)
+         (Right (Platform ArchX86_64 OsLinux),  Just host)
                 -> return $ Just (builder_X8664_Linux  config host)
 
-         (Just (Platform ArchPPC_32 OsLinux),  Just host)
+         (Right (Platform ArchPPC_32 OsLinux),  Just host)
                 -> return $ Just (builder_PPC32_Linux  config host)
 
-         (Just (Platform ArchX86_32 OsCygwin), Just host)
+         (Right (Platform ArchX86_32 OsCygwin), Just host)
                 -> return $ Just (builder_X8632_Cygwin config host)
 
-         (Just (Platform ArchX86_32 OsMingw),  Just host)
+         (Right (Platform ArchX86_32 OsMingw),  Just host)
                 -> return $ Just (builder_X8632_Mingw  config host)
 
          _      -> return Nothing
@@ -200,10 +200,10 @@ determineDefaultBuilderHost
         mLlvmBinPath  <- determineHostLlvmBinPath Nothing
 
         case liftM2 (,) mLlvmVersion mLlvmBinPath of
-         Nothing
-          -> return Nothing
+         Left err
+          -> error $ renderIndent $ ppr err   -- ******** TODO: propagate
 
-         Just (llvmVersion, llvmBinPath)
+         Right (llvmVersion, llvmBinPath)
           -> return  $ Just $ BuilderHost
                      { builderHostLlvmVersion = llvmVersion
                      , builderHostLlvmBinPath = llvmBinPath
