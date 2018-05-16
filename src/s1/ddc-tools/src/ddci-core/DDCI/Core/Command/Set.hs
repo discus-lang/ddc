@@ -115,11 +115,13 @@ cmdSet state cmd
         mHost   <- Build.determineDefaultBuilderHost
 
         case mHost of
-         Nothing
-          -> do  putStrLn "cannot determine build environment"
+         Left err
+          -> do  putStrLn $ renderIndent $ vcat
+                        [ string "Cannot determine build environment."
+                        , ppr err ]
                  return state
 
-         Just host
+         Right host
           -> case find (\b -> Build.builderName b == name)
                        (Build.builders config host) of
 

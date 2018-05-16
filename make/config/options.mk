@@ -4,6 +4,7 @@
 
 # -- Language features --------------------------------------------------------
 GHC_LANGUAGE	:= \
+        -XLambdaCase \
         -XRankNTypes \
         -XViewPatterns \
         -XInstanceSigs \
