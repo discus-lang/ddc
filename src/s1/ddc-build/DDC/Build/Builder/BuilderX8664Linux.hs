@@ -2,6 +2,7 @@ module DDC.Build.Builder.BuilderX8664Linux where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
 
+
 builder_X8664_Linux config host
  =      Builder
         { builderName           = "x86_64-linux"

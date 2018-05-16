@@ -10,8 +10,8 @@ module DDC.Build.Builder
         , determineDefaultBuilderHost)
 where
 import DDC.Build.Builder.Base
-import DDC.Data.Pretty
-import Control.Monad
+import DDC.Build.Builder.Error
+import qualified DDC.Build.Platform     as Platform
 
 import DDC.Build.Builder.BuilderX8632Darwin
 import DDC.Build.Builder.BuilderX8632Linux
@@ -45,46 +45,60 @@ builders config host
 --   If we don't recognise the result of 'arch' or 'uname', or don't have
 --   a default builder config for this platform then `Nothing`.
 --
-determineDefaultBuilder :: BuilderConfig -> IO (Maybe Builder)
+determineDefaultBuilder :: BuilderConfig -> IO (Either Error Builder)
 determineDefaultBuilder config
- = do   mPlatform       <- determineHostPlatform
-        mHost           <- determineDefaultBuilderHost
+ = goDeterminePlatform
+ where
+        goDeterminePlatform
+         = Platform.determineHostPlatform
+         >>= \case
+                Left err   -> return $ Left $ ErrorPlatformDetermination err
+                Right platform -> goDetermineHost platform
 
-        case (mPlatform, mHost) of
-         (Right (Platform ArchX86_32 (OsDarwin mVersion)), Just host)
-                -> return $ Just (builder_X8632_Darwin config host mVersion)
+        goDetermineHost platform
+         = determineDefaultBuilderHost
+         >>= \case
+                Left err   -> return $ Left err
+                Right host -> goChooseBuilder platform host
 
-         (Right (Platform ArchX86_64 (OsDarwin mVersion)), Just host)
-                -> return $ Just (builder_X8664_Darwin config host mVersion)
+        goChooseBuilder platform host
+         = case platform of
+                Platform ArchX86_32 (OsDarwin mVersion)
+                  -> return $ Right $ builder_X8632_Darwin config host mVersion
 
-         (Right (Platform ArchX86_32 OsLinux),  Just host)
-                -> return $ Just (builder_X8632_Linux  config host)
+                Platform ArchX86_64 (OsDarwin mVersion)
+                  -> return $ Right $ builder_X8664_Darwin config host mVersion
 
-         (Right (Platform ArchX86_64 OsLinux),  Just host)
-                -> return $ Just (builder_X8664_Linux  config host)
+                Platform ArchX86_32 OsLinux
+                  -> return $ Right $ builder_X8632_Linux  config host
 
-         (Right (Platform ArchPPC_32 OsLinux),  Just host)
-                -> return $ Just (builder_PPC32_Linux  config host)
+                Platform ArchX86_64 OsLinux
+                  -> return $ Right $ builder_X8664_Linux  config host
 
-         _      -> return Nothing
+                Platform ArchPPC_32 OsLinux
+                  -> return $ Right $ builder_PPC32_Linux  config host
+
+                _ -> return $ Left  $ ErrorBuilderUnsupported platform host
 
 
 -- | Determine the default builder host configuration,
 --   this the default set of build tools that we can see in the current path.
-determineDefaultBuilderHost :: IO (Maybe BuilderHost)
+determineDefaultBuilderHost :: IO (Either Error BuilderHost)
 determineDefaultBuilderHost
- = do
-        -- Get the version of the LLVM suite in the current path.
-        mLlvmVersion  <- determineHostLlvmVersion Nothing
-        mLlvmBinPath  <- determineHostLlvmBinPath Nothing
+ = goGetLlvmVersion
+ where
+        goGetLlvmVersion
+         = Platform.determineHostLlvmVersion Nothing
+         >>= \case
+                Left err        -> return $ Left $ ErrorPlatformDetermination err
+                Right version   -> goGetLlvmPath version
 
-        case liftM2 (,) mLlvmVersion mLlvmBinPath of
-         Left err
-          -> error $ renderIndent $ ppr err   -- ******** TODO: propagate
-
-         Right (llvmVersion, llvmBinPath)
-          -> return  $ Just $ BuilderHost
-                     { builderHostLlvmVersion = llvmVersion
-                     , builderHostLlvmBinPath = llvmBinPath
-                     }
+        goGetLlvmPath version
+         = Platform.determineHostLlvmBinPath Nothing
+         >>= \case
+                Left err        -> return $ Left $ ErrorPlatformDetermination err
+                Right path
+                 -> return $ Right $ BuilderHost
+                        { builderHostLlvmVersion = version
+                        , builderHostLlvmBinPath = path }
 

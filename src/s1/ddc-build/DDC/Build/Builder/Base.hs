@@ -12,6 +12,8 @@ module DDC.Build.Builder.Base
         , module Data.List)
 where
 import DDC.Build.Platform
+        (Platform(..), Arch(..), Os(..))
+
 import DDC.Data.Pretty
 import System.Exit                              hiding (die)
 import System.Process
@@ -20,7 +22,7 @@ import Data.List
 import qualified DDC.Core.Salt.Platform         as Llvm
 
 
-
+-------------------------------------------------------------------------------
 -- | Configuration information for a builder that is not platform specific.
 data BuilderConfig
         = BuilderConfig
@@ -46,6 +48,7 @@ data BuilderHost
 
           -- | Path to the LLVM executables
         , builderHostLlvmBinPath        :: FilePath }
+        deriving Show
 
 
 -- | Actions to use to invoke external compilation tools.
@@ -116,6 +119,7 @@ data BuilderResult
         deriving (Show, Eq)
 
 
+-------------------------------------------------------------------------------
 instance Show Builder where
  show builder
         = "Builder " ++ show (builderName builder)

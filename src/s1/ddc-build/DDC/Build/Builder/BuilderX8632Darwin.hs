@@ -2,6 +2,7 @@ module DDC.Build.Builder.BuilderX8632Darwin where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
 
+
 builder_X8632_Darwin config host mVersion
  =      Builder
         { builderName           = "x86_32-darwin"

@@ -2,6 +2,7 @@ module DDC.Build.Builder.BuilderPPC32Linux where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
 
+
 builder_PPC32_Linux config host
  =      Builder
         { builderName           = "ppc32-linux"

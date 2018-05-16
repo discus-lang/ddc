@@ -13,6 +13,7 @@ import DDC.Driver.Interface.Input
 import DDC.Build.Builder
 import System.FilePath
 import Data.Set                         (Set)
+import DDC.Data.Pretty
 import qualified DDC.Core.Simplifier    as S
 import qualified DDC.Driver.Stage       as D
 import qualified DDC.Driver.Config      as D
@@ -123,6 +124,8 @@ getActiveBuilder state
          -> do  config   <- getDefaultBuilderConfig
                 mBuilder <- determineDefaultBuilder config
                 case mBuilder of
-                 Nothing      -> error "ddci-tetra.getActiveBuilder: unrecognised host platform"
-                 Just builder -> return builder
+                 Left err -> error $ renderIndent $ vcat
+                        [ string "ddci-tetra.getActiveBuilder: unrecognised host platform"
+                        , ppr err ]
+                 Right builder -> return builder
 

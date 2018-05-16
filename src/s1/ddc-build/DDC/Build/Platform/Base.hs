@@ -23,8 +23,8 @@ data Platform
 instance Pretty Platform where
  ppr platform
   = vcat
-  [ text "Processor Architecture : " <> ppr (platformArch platform)
-  , text "Operating System       : " <> ppr (platformOs   platform) ]
+  [ text "Processor Architecture: " <> ppr (platformArch platform)
+  , text "Operating System:       " <> ppr (platformOs   platform) ]
 
 
 -- | Get the file extension to use for a static library on this platform.
@@ -99,5 +99,4 @@ instance Pretty Os where
         OsLinux         -> text "Linux"
         OsCygwin        -> text "Cygwin"
         OsMingw         -> text "Mingw"
-
 

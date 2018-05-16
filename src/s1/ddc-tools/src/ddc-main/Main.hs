@@ -45,6 +45,7 @@ import qualified DDC.Version                    as Version
 import qualified DDC.Build.Interface.Store      as Store
 
 
+---------------------------------------------------------------------------------------------------
 main :: IO ()
 main
  = do   args    <- getArgs
@@ -58,11 +59,11 @@ main
         --   the command-line arguments.
         config  <- parseArgs args config0
 
-
         -- Run the main compiler.
         run config
 
 
+---------------------------------------------------------------------------------------------------
 run :: Config -> IO ()
 run config
  = case configMode config of
@@ -161,25 +162,22 @@ run config
         ModeFlowLower filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError
-                 $ cmdFlowLower dconfig Flow.defaultConfigScalar
-                        (SourceFile filePath) str
+                runError $ cmdFlowLower dconfig Flow.defaultConfigScalar
+                                (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerKernel filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError
-                 $ cmdFlowLower dconfig Flow.defaultConfigKernel
-                        (SourceFile filePath) str
+                runError $ cmdFlowLower dconfig Flow.defaultConfigKernel
+                                (SourceFile filePath) str
 
         -- Lower a Disciple Core Flow program to loops.
         ModeFlowLowerVector filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError
-                 $ cmdFlowLower dconfig Flow.defaultConfigVector
-                        (SourceFile filePath) str
+                runError $ cmdFlowLower dconfig Flow.defaultConfigVector
+                                (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
         ModeFlowConcretize filePath
@@ -223,15 +221,25 @@ run config
          ->     putStrLn $ configBaseDir config
 
 
+---------------------------------------------------------------------------------------------------
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> Maybe FilePath -> IO Driver.Config
 getDriverConfig config mFilePath
  = do
         -- Determine the default builder config.
         -- This should recognize standard OSX and Linux distributions.
-        builder <- fmap (fromMaybe $ error "ddc-main: unrecognized build environment.")
-                $  determineDefaultBuilder
-                $  defaultBuilderConfig config
+        eBuilder <- determineDefaultBuilder
+                 $  defaultBuilderConfig config
+
+        builder
+         <- case eBuilder of
+                Right bb  -> return bb
+                Left err
+                 -> do  hPutStrLn stderr
+                         $ renderIndent
+                         $ vcat [ string "Cannot determine build environment."
+                                , indent 1 $ ppr err ]
+                        exitWith $ ExitFailure 1
 
         -- Treat the directory holding a module to compile as a base
         -- directory where we look for other modules.
@@ -284,19 +292,7 @@ getDriverConfig config mFilePath
                 { Driver.configSimplSalt        = simplSalt }
 
 
--- | Print errors to stderr and set the exit code.
-runError :: ExceptT String IO a -> IO ()
-runError m
- = do   result  <- runExceptT m
-        case result of
-         Left err
-          -> do hPutStrLn stderr err
-                exitWith $ ExitFailure 1
-
-         Right _
-          -> return ()
-
-
+---------------------------------------------------------------------------------------------------
 -- | Force build of base library if it doesn't already exist.
 --
 --   Due to bugs in cabal-install 1.22 it can't be trusted to run the
@@ -319,4 +315,18 @@ forceBaseBuild config
                 dconfig <- getDriverConfig config Nothing
                 store   <- Store.new
                 runError $ cmdBaseBuild dconfig store
+
+
+---------------------------------------------------------------------------------------------------
+-- | Print errors to stderr and set the exit code.
+runError :: ExceptT String IO a -> IO ()
+runError m
+ = do   result  <- runExceptT m
+        case result of
+         Left err
+          -> do hPutStrLn stderr err
+                exitWith $ ExitFailure 1
+
+         Right _
+          -> return ()
 

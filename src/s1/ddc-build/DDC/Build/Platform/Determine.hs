@@ -180,7 +180,8 @@ determineHostLlvmBinPath mpath
                 , "llvm-config"
                 ]
 
-        -- Test each candidate and return the result of "llvm-config --bindir"
+        -- Test each candidate and return
+        -- the result of "llvm-config --bindir"
         search []
          = return $ Left
          $ ErrorLlvmConfigMissing mpath candidates

@@ -11,6 +11,7 @@ module DDC.Build.Platform
         , Os            (..)
 
           -- * Host platform determination
+        , Error (..)
         , determineHostPlatform
         , determineHostArch
         , determineHostOs
@@ -19,3 +20,4 @@ module DDC.Build.Platform
 where
 import DDC.Build.Platform.Base
 import DDC.Build.Platform.Determine
+import DDC.Build.Platform.Error

@@ -2,6 +2,7 @@ module DDC.Build.Builder.BuilderX8664Darwin where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
 
+
 builder_X8664_Darwin config host mVersion
  =      Builder
         { builderName           = "x86_64-darwin"

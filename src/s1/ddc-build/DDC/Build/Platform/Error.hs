@@ -3,6 +3,7 @@ module DDC.Build.Platform.Error where
 import DDC.Data.Pretty
 
 
+-------------------------------------------------------------------------------
 -- | Things that can go wrong when determining the build platform.
 --
 --   We want to be very specific why we can't determine the build platform
@@ -39,6 +40,7 @@ data Error
         deriving (Eq, Show)
 
 
+-------------------------------------------------------------------------------
 instance Pretty Error where
  ppr (ErrorToolMissing tool)
   = text "Cannot find command line tool" %% dquotes (string tool) %% text "."
@@ -52,33 +54,33 @@ instance Pretty Error where
 
  ppr (ErrorUnameUnknownArch cmd out)
   = vcat
-  [ text "Unrecognized processor architecture reported by 'uname' command line tool."
+  [ text "Unrecognized processor architecture reported by 'uname'."
   , text " Command was:    " %% squotes (string $ show cmd)
   , text " stdout response:" %% pprDump out ]
 
  ppr (ErrorUnameUnknownOs cmd out)
   = vcat
-  [ text "Unrecognized operating system reported by 'uname' command line tool."
+  [ text "Unrecognized operating system reported by 'uname'."
   , text " Command was:    " %% squotes (string $ show cmd)
   , text " stdout response:" %% pprDump out ]
 
  ppr (ErrorUnameUnknownDarwinVersion cmd out)
   = vcat
-  [ text "Unrecognized OSX/Darwin version reported by 'uname' command line tool."
+  [ text "Unrecognized OSX/Darwin version reported by 'uname'."
   , text " Command was:    " %% squotes (string $ show cmd)
   , text " stdout response:" %% pprDump out ]
 
  ppr (ErrorLlvmConfigMissing mFilePath names)
   = vcat
-  $  [ text "Cannot find a known version of the 'llvm-config' command line tool."
-     , text " Looked for: " %% (string $ hsep $ map (string . show) names) ]
+  $  [ text "Cannot find a known version of 'llvm-config'."
+     , text " Looked for:" %% (string $ hsep $ map (string . show) names) ]
   ++ case mFilePath of
         Nothing   -> []
         Just path -> [text " Even at supplied path " % string path]
 
  ppr (ErrorLlvmConfigUnexpectedOutput cmd out)
   = vcat
-  [ text "Unrecognized output from 'llvm-config' command line tool."
+  [ text "Unrecognized output from 'llvm-config'."
   , text " Command was:    " %% dquotes (string $ show cmd)
   , text " stdout response:" %% pprDump out ]
 
