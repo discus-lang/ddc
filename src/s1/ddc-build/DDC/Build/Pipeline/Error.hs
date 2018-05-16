@@ -22,7 +22,9 @@ data Error
         => ErrorSaltLoad  (CL.Error Salt.Name err)
 
         -- | Error converting the module to Salt to Sea.
-        | forall err. Pretty err => ErrorSaltConvert !err
+        | forall err
+           .  Pretty err
+           => ErrorSaltConvert String !err
 
         -- | Error converting the module from Discus to Salt.
         | forall err. Pretty err => ErrorDiscusConvert !err
@@ -52,8 +54,9 @@ instance Pretty Error where
          -> vcat [ text "Type error when loading Salt module."
                  , indent 2 (ppr err') ]
 
-        ErrorSaltConvert err'
+        ErrorSaltConvert sStage err'
          -> vcat [ text "Fragment violation when converting Salt module to target code."
+                 , indent 2 (string ("stage: " ++ sStage))
                  , indent 2 (ppr err') ]
 
         ErrorDiscusConvert err'

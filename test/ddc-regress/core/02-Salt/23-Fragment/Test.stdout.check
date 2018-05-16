@@ -12,6 +12,7 @@ When checking expression.
 
 -- Error: Module does not have a top-level letrec.
 Fragment violation when converting Salt module to target code.
+  stage: saltToLlvm/transfer
   ['n','o',' ','t','o','p',' ','l','e','v','e','l',' ','l','e','t','r','e','c']
 
 
@@ -69,8 +70,8 @@ letrec {
 
 -- Error: assignment from primop.
 Fragment violation when converting Salt module to target code.
-  Invalid exp: add#
-  Was expecting a variable, primitive, or super application.
+  stage: saltToLlvm/convert
+  Invalid use of arithmetic operator add#
 
 
 -- Error: name shadowing in function definition
@@ -96,11 +97,13 @@ Error in transformed module.
 
 -- Error: partially applied primop
 Fragment violation when converting Salt module to target code.
-  Cannot use add# at type 'Int#'
+  stage: saltToLlvm/convert
+  Cannot use add# at types 'Int#'
 
 
 -- Error: partial application not supported in Salt.
 Fragment violation when converting Salt module to target code.
+  stage: saltToLlvm/convert
   Invalid exp: foo1 3#
   Was expecting a variable, primitive, or super application.
 
