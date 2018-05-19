@@ -43,10 +43,10 @@ data BuilderConfig
 --   building in, versions of software tools etc. This is separate
 data BuilderHost
         = BuilderHost
-        { -- | Version of the LLVM compiler suite we are using
+        { -- | Version of the LLVM compiler suite we are using.
           builderHostLlvmVersion        :: String
 
-          -- | Path to the LLVM executables
+          -- | Path to the LLVM executables.
         , builderHostLlvmBinPath        :: FilePath }
         deriving Show
 
@@ -140,7 +140,6 @@ instance Pretty Builder where
         , indent 1 $ ppr $ buildSpec builder ]
 
 
-
 -- Utils ----------------------------------------------------------------------
 -- | Run a system command, and if it fails quit the program.
 doCmd   :: String                       -- ^ Description of tool being invoked.
@@ -160,13 +159,11 @@ doCmd thing exitCodeMeanings cmdParts
                 BuilderSuccess  -> return ()
                 BuilderCanceled -> exitWith $ ExitFailure 2
                 BuilderFailed   -> die c
-
           | otherwise           -> die c
 
- where  cmd     = unwords cmdParts
-        die c   = error
-                $ unlines
-                [ "System command failed when invoking external " ++ thing ++ "."
-                , " Command was: " ++ cmd
-                , " Exit code:   " ++ show c ]
+ where  cmd   = unwords cmdParts
+        die c = error $ unlines
+              [ "System command failed when invoking external " ++ thing ++ "."
+              , " Command was: " ++ cmd
+              , " Exit code:   " ++ show c ]
 

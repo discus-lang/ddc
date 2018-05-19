@@ -1,6 +1,7 @@
 module DDC.Build.Builder.BuilderX8664Darwin where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
+import qualified System.Directory       as System
 
 
 builder_X8664_Darwin config host mVersion
@@ -13,9 +14,10 @@ builder_X8664_Darwin config host mVersion
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
+
         , buildLlc
-                = \llFile sFile
-                -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
+           = \llFile sFile
+           -> doCmd "LLVM compiler"     [(2, BuilderCanceled)]
                 [ builderHostLlvmBinPath host </> "opt"
                 , "-O3"
                 , llFile
@@ -25,24 +27,24 @@ builder_X8664_Darwin config host mVersion
                 , "-o", sFile ]
 
         , buildCC
-                = \cFile oFile
-                -> doCmd "C compiler"           [(2, BuilderCanceled)]
+           = \cFile oFile
+           -> doCmd "C compiler"        [(2, BuilderCanceled)]
                 [ "cc -Werror -std=c99 -O3 -m64"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
-                = \sFile oFile
-                -> doCmd "assembler"            [(2, BuilderCanceled)]
+           = \sFile oFile
+           -> doCmd "assembler"         [(2, BuilderCanceled)]
                 [ builderHostLlvmBinPath host </> "llvm-mc"
                 , "-filetype=obj"
 
                   -- From LLVM 3.8 we need to set the -triple explicitly which includes
-                  -- the macosx OS specifier. llc inserts a pragma into the output
-                  -- .s files saying they're for a specific version of macosx. If we
-                  -- don't set the same version in the triple passed to llvm-mc then
-                  -- it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
+                  --   the macosx OS specifier. llc inserts a pragma into the output
+                  --   .s files saying they're for a specific version of macosx. If we
+                  --   don't set the same version in the triple passed to llvm-mc then
+                  --   it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
                 , case mVersion of
                         Nothing -> ""
                         Just (major, _minor, _patch)
@@ -52,26 +54,40 @@ builder_X8664_Darwin config host mVersion
                 ,       sFile ]
 
         , buildLdExe
-                = \oFiles binFile
-                -> doCmd "linker"               [(2, BuilderCanceled)]
-                        [ "cc -m64"
-                        , "-Wl,-dead_strip"
-                        , "-o", binFile
-                        , intercalate " " oFiles
-                        , builderConfigBaseLibDir config
-                              </> "ddc-runtime" </> "build"
-                              </> builderConfigLibFile config
-                                      "libddc-runtime.a"
-                                      "libddc-runtime.dylib" ]
+           = \oFiles binFile
+           -> doCmd "linker"            [(2, BuilderCanceled)]
+                 $ [ "cc -m64"
+                   , "-Wl,-dead_strip"
+                   , "-o", binFile
+                   , intercalate " " oFiles
+                   , builderConfigBaseLibDir config
+                         </> "ddc-runtime" </> "build"
+                         </> builderConfigLibFile config
+                                 "libddc-runtime.a"
+                                 "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
-                = \oFiles libFile
-                -> doCmd "linker"               [(2, BuilderCanceled)]
+           = \oFiles libFile
+           ->  doCmd "linker"           [(2, BuilderCanceled)]
                 $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
-                = \oFiles libFile
-                -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ [ "cc -m64 -dynamiclib -undefined dynamic_lookup"
-                  , "-o", libFile ] ++ oFiles
+           = \oFiles libFile -> do
+                -- The install_name is the intended install path of the dylib.
+                --  When executables are linked against a library with an install_name
+                --  set that path is added to the linker meta-data of the executable.
+                --  When the system then loads the executable it tries to find the dylib
+                --  at that previously set path.
+                --
+                -- Setting headerpad_max_install_names adds space to the header so
+                --   that the install_name can be rewritten to a longer one using
+                --   the command line install_name_tool.
+                --
+                libFile'  <- System.makeAbsolute libFile
+                doCmd "linker"          [(2, BuilderCanceled)]
+                 $ [ "cc -m64 -dynamiclib -undefined dynamic_lookup"
+                   , "-install_name " ++ libFile'
+                   , "-headerpad_max_install_names"
+                   , "-o", libFile ] ++ oFiles
         }
+
