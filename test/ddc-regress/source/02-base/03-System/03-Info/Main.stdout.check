@@ -1,0 +1,3 @@
+ident      = 1
+moduleName = Some.Module1
+ctorName   = CtorNameBaz
