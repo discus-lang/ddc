@@ -37,16 +37,17 @@ builder_PPC32_Linux config host
                 , sFile ]
 
         , buildLdExe
-                = \oFiles binFile
-                -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32"
-                , "-o", binFile
-                , intercalate " " $ map normalise oFiles
-                , builderConfigBaseLibDir config
-                        </> "ddc-runtime" </> "build"
-                        </> builderConfigLibFile config
-                                "libddc-runtime.a"
-                                "libddc-runtime.so" ]
+           = \oFiles binFile
+           -> do let pathRuntime
+                        = builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build" </> "libddc-runtime"
+                        <.> (if builderConfigLinkStatic config then ".a" else ".so")
+
+                 doCmd "linker"                 [(2, BuilderCanceled)]
+                       [ "gcc -m32"
+                       , "-o", binFile
+                       , intercalate " " $ map normalise oFiles
+                       , pathRuntime ]
 
         , buildLdLibStatic
                 = \oFiles libFile

@@ -212,10 +212,6 @@ defaultBuilderConfig config
         = BuilderConfig
         { builderConfigBaseSrcDir = configBaseDir config
         , builderConfigBaseLibDir = configBaseDir config
-        , builderConfigLibFile
-           =  \static dynamic
-           -> if configRuntimeLinkStrategy config == D.LinkStatic
-                        then static
-                        else dynamic }
+        , builderConfigLinkStatic = configRuntimeLinkStrategy config == D.LinkStatic }
 
 

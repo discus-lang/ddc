@@ -39,15 +39,16 @@ builder_X8664_Linux config host
 
         , buildLdExe
            = \oFiles binFile -> do
-                libPath <- System.makeAbsolute
-                         $ builderConfigBaseLibDir config 
-                             </> "ddc-runtime" </> "build"
+                pathLib <- System.makeAbsolute
+                        $  builderConfigBaseLibDir config
+                                </> "ddc-runtime" </> "build"
+
                 doCmd "linker"            [(2, BuilderCanceled)]
                  [ "gcc -m64"
                  , "-o", binFile
                  , intercalate " " oFiles
-                 , "-Wl,-rpath," ++ libPath
-                 , "-L " ++ libPath
+                 , "-Wl,-rpath," ++ pathLib
+                 , "-L " ++ pathLib
                  , "-lm -lddc-runtime" ]
 
         , buildLdLibStatic

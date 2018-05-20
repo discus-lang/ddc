@@ -1,6 +1,7 @@
 module DDC.Build.Builder.BuilderX8632Linux where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
+import qualified System.Directory       as System
 
 
 builder_X8632_Linux config host
@@ -13,8 +14,9 @@ builder_X8632_Linux config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
+
         , buildLlc
-                = \llFile sFile
+           = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
                 [ builderHostLlvmBinPath host </> "llc"
                 , "-O3 -march=x86 -relocation-model=pic"
@@ -22,7 +24,7 @@ builder_X8632_Linux config host
                 , "-o", sFile ]
 
         , buildCC
-                = \cFile oFile
+           = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
                 [ "gcc -Werror -Wextra -pedantic -std=c99 -O3 -m32 -fPIC"
                 , "-c", cFile
@@ -31,32 +33,33 @@ builder_X8632_Linux config host
 
 
         , buildAs
-                = \sFile oFile
+           = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
                 [ "as --32"
                 , "-o", oFile
                 ,       sFile ]
 
         , buildLdExe
-                = \oFiles binFile
-                -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32"
-                , "-o", binFile
-                , intercalate " " oFiles
-                , builderConfigBaseLibDir config
-                        </> "ddc-runtime" </> "build"
-                        </> builderConfigLibFile config
-                                "libddc-runtime.a"
-                                "libddc-runtime.so"
-                , "-lm" ]
+           = \oFiles binFile -> do
+                pathLib <- System.makeAbsolute
+                        $  builderConfigBaseLibDir config
+                                </> "ddc-runtime" </> "build"
+
+                doCmd "linker"               [(2, BuilderCanceled)]
+                 [ "gcc -m32"
+                 , "-o", binFile
+                 , intercalate " " oFiles
+                 , "-Wl,-rpath," ++ pathLib
+                 , "-L " ++ pathLib
+                 , "-lm -lddc-runtime" ]
 
         , buildLdLibStatic
-                = \oFiles libFile
+           = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
-                = \oFiles libFile
+           = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 $ [ "gcc -shared", "-o", libFile ] ++ oFiles
         }

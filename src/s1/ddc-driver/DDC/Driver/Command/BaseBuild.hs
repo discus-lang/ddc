@@ -14,6 +14,7 @@ import Control.Monad
 import DDC.Build.Interface.Store        (Store)
 
 
+-- | Salt source files that form the runtime system and are build with -basebuild.
 baseSaltFiles :: Builder -> [FilePath]
 baseSaltFiles builder
  = let  bits    = show $ archPointerWidth $ platformArch $ buildTarget builder
@@ -36,6 +37,7 @@ baseSaltFiles builder
         , runtime ++ bits </> "Info.dcs" ]
 
 
+-- | Sea source files that form the runtime system and are built with -basebuild.
 baseSeaFiles  :: Builder -> [FilePath]
 baseSeaFiles _builder
  =      [ "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Console.c"
@@ -76,19 +78,18 @@ cmdBaseBuild config store
         let objFiles     = objSaltFiles ++ objSeaFiles
 
         -- Link the .o files into a static library.
-        let staticRuntime
+        let pathStaticRuntime
                 =    dirBuild
                 </> "libddc-runtime." ++ staticFileExtensionOfPlatform target
 
-        liftIO $ buildLdLibStatic builder objFiles staticRuntime
-
+        liftIO $ buildLdLibStatic builder objFiles pathStaticRuntime
 
         -- Link the .o files into a shared library.
-        let sharedRuntime
+        let pathSharedRuntime
                 =    dirBuild
                 </> "libddc-runtime." ++ sharedFileExtensionOfPlatform target
 
-        liftIO $ buildLdLibShared builder objFiles sharedRuntime
+        liftIO $ buildLdLibShared builder objFiles pathSharedRuntime
 
         return ()
 
