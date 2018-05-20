@@ -34,8 +34,9 @@ data BuilderConfig
           --   system and base library.
         , builderConfigBaseLibDir       :: FilePath
 
-          -- | Runtime library to link with.
-        , builderConfigLibFile          :: FilePath -> FilePath -> FilePath }
+          -- | Link the runtime library statically,
+          --   otherwise link dynamically.
+        , builderConfigLinkStatic       :: Bool }
 
 
 -- | Builder information that we determine by interrogating the host platform.

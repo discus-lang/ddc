@@ -109,7 +109,7 @@ getDefaultBuilderConfig
         return $ BuilderConfig
           { builderConfigBaseSrcDir             = baseLibraryPath
           , builderConfigBaseLibDir             = baseLibraryPath </> "build"
-          , builderConfigLibFile                = \_static dynamic -> dynamic }
+          , builderConfigLinkStatic             = False }
 
 
 -- | Get the active builder.

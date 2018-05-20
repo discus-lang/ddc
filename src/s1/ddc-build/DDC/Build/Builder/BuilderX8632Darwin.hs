@@ -3,6 +3,7 @@ import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
 import qualified System.Directory       as System
 
+
 builder_X8632_Darwin config host mVersion
  =      Builder
         { builderName           = "x86_32-darwin"
@@ -40,10 +41,10 @@ builder_X8632_Darwin config host mVersion
                 , "-arch x86 -filetype=obj"
 
                   -- From LLVM 3.8 we need to set the -triple explicitly which includes
-                  -- the macosx OS specifier. llc inserts a pragma into the output
-                  -- .s files saying they're for a specific version of macosx. If we
-                  -- don't set the same version in the triple passed to llvm-mc then
-                  -- it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
+                  --   the macosx OS specifier. llc inserts a pragma into the output
+                  --   .s files saying they're for a specific version of macosx. If we
+                  --   don't set the same version in the triple passed to llvm-mc then
+                  --   it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
                 , case mVersion of
                         Nothing -> ""
                         Just (major, _minor, _patch)
@@ -53,16 +54,20 @@ builder_X8632_Darwin config host mVersion
                 ,       sFile ]
 
         , buildLdExe
-           = \oFiles binFile
-           -> doCmd "linker"            [(2, BuilderCanceled)]
-                [ "cc -m32 -Wl,-dead_strip"
-                , "-o", binFile
-                , intercalate " " oFiles
-                , builderConfigBaseLibDir config
-                        </> "ddc-runtime" </> "build"
-                        </> builderConfigLibFile config
-                                "libddc-runtime.a"
-                                "libddc-runtime.dylib" ]
+           = \oFiles binFile -> do
+                let pathBuild   =   builderConfigBaseLibDir config
+                                </> "ddc-runtime" </> "build"
+
+                let pathRuntime =   pathBuild </> "libddc-runtime"
+                                <.> (if builderConfigLinkStatic config
+                                        then "a" else "dylib")
+
+                doCmd "linker"            [(2, BuilderCanceled)]
+                 [ "cc -m32"
+                 , "-Wl,-dead_strip"
+                 , "-o", binFile
+                 , intercalate " " oFiles
+                 , pathRuntime ]
 
         , buildLdLibStatic
            = \oFiles libFile
@@ -84,7 +89,8 @@ builder_X8632_Darwin config host mVersion
                 libFile'  <- System.makeAbsolute libFile
 
                 doCmd "linker"            [(2, BuilderCanceled)]
-                 $ [ "cc -m32 -dynamiclib -undefined dynamic_lookup"
+                 $ [ "cc -m32"
+                   , "-dynamiclib -undefined dynamic_lookup"
                    , "-install_name " ++ libFile'
                    , "headerpad_max_install_names"
                    , "-o", libFile ] ++ oFiles

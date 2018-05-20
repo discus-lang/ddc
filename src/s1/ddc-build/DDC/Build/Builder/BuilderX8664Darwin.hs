@@ -54,21 +54,24 @@ builder_X8664_Darwin config host mVersion
                 ,       sFile ]
 
         , buildLdExe
-           = \oFiles binFile
-           -> doCmd "linker"            [(2, BuilderCanceled)]
-                 $ [ "cc -m64"
-                   , "-Wl,-dead_strip"
-                   , "-o", binFile
-                   , intercalate " " oFiles
-                   , builderConfigBaseLibDir config
-                         </> "ddc-runtime" </> "build"
-                         </> builderConfigLibFile config
-                                 "libddc-runtime.a"
-                                 "libddc-runtime.dylib" ]
+           = \oFiles binFile -> do
+                let pathBuild   =   builderConfigBaseLibDir config
+                                </> "ddc-runtime" </> "build"
+
+                let pathRuntime =   pathBuild </> "libddc-runtime"
+                                <.> (if builderConfigLinkStatic config
+                                        then "a" else "dylib")
+
+                doCmd "linker"          [(2, BuilderCanceled)]
+                 [ "cc -m64"
+                 , "-Wl,-dead_strip"
+                 , "-o", binFile
+                 , intercalate " " oFiles
+                 , pathRuntime ]
 
         , buildLdLibStatic
            = \oFiles libFile
-           ->  doCmd "linker"           [(2, BuilderCanceled)]
+           -> doCmd "linker"            [(2, BuilderCanceled)]
                 $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
@@ -84,8 +87,10 @@ builder_X8664_Darwin config host mVersion
                 --   the command line install_name_tool.
                 --
                 libFile'  <- System.makeAbsolute libFile
+
                 doCmd "linker"          [(2, BuilderCanceled)]
-                 $ [ "cc -m64 -dynamiclib -undefined dynamic_lookup"
+                 $ [ "cc -m64"
+                   , "-dynamiclib -undefined dynamic_lookup"
                    , "-install_name " ++ libFile'
                    , "-headerpad_max_install_names"
                    , "-o", libFile ] ++ oFiles
