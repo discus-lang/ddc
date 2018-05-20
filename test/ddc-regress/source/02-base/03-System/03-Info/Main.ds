@@ -1,0 +1,45 @@
+
+module Main
+import System.IO.Console
+import System.Runtime.Info
+import Data.Text
+
+import foreign c value
+ ddcPrimTakeTextLit     : TextLit -> TextLit#
+
+where
+
+main ()
+ = do
+        -- Create two info table frames and push them on the stack.
+        aFrame1 = ddcInfoFrameNew 2
+        wIdent1 = ddcInfoFrameAddData aFrame1 0w16
+                        (unpackTextLit "Some.Module1")
+                        (unpackTextLit "CtorNameBar")
+
+        wIdent3 = ddcInfoFrameAddData aFrame1 0w16
+                        (unpackTextLit "Some.Module1")
+                        (unpackTextLit "CtorNameBaz")
+
+        ddcInfoFramePush aFrame1
+
+
+        aFrame2 = ddcInfoFrameNew 1
+        wIdent2 = ddcInfoFrameAddData aFrame2 0w16
+                        (unpackTextLit "Some.Module2")
+                        (unpackTextLit "CtorNameFoo")
+        ddcInfoFramePush aFrame2
+
+
+        -- Lookup an entry from the bottom frame.
+        aEntry  = info_lookup wIdent3
+
+        writel $ "ident      = " % show (info_getIdent aEntry)
+        writel $ "moduleName = " % info_getModuleName aEntry
+        writel $ "ctorName   = " % info_getCtorName   aEntry
+
+
+unpackTextLit (tx: Text): TextLit#
+ = case tx of
+        TextLit lit     -> ddcPrimTakeTextLit lit
+        _               -> fail "unpackTextLit: not a text literal"
