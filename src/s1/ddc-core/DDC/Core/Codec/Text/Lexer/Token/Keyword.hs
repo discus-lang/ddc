@@ -38,6 +38,7 @@ data Keyword
         | EForget
         | EBox
         | ERun
+        | EAsync
 
         -- sugar keywords.
         | EDo
@@ -83,6 +84,7 @@ sayKeyword kw
         EWeakEff        -> "weakeff"
         EWith           -> "with"
         EUsing          -> "using"
+        EAsync          -> "async"
 
         -- sugar keywords
         EDo             -> "do"
@@ -132,6 +134,7 @@ acceptKeyword str
         "weakeff"       -> Just EWeakEff
         "with"          -> Just EWith
         "using"         -> Just EUsing
+        "async"         -> Just EAsync
 
         -- sugar keywords
         "do"            -> Just EDo
