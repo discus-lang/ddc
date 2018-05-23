@@ -74,6 +74,10 @@ data Exp a n
         -- | Case branching.
         | XCase    !a !(Exp a n)  ![Alt a n]
 
+        -- | Async binding
+        -- | async      x     <-  e1   in    e2
+        | XAsync   !a !(Bind n) !(Exp a n) !(Exp a n)
+
         -- | Type cast.
         | XCast    !a !(Cast a n) !(Exp a n)
         deriving (Show, Eq)
