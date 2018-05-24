@@ -98,19 +98,20 @@ annotOfExp xx
         XAtom   a _     -> a
         XCase   a _ _   -> a
         XCast   a _ _   -> a
-
+        XAsync  a _ _ _ -> a
 
 -- | Apply a function to the annotation of an expression.
 mapAnnotOfExp :: (a -> a) -> Exp a n -> Exp a n
 mapAnnotOfExp f xx
  = case xx of
-        XVar    a u     -> XVar  (f a) u
-        XAbs    a b  x  -> XAbs  (f a) b  x
-        XApp    a x1 x2 -> XApp  (f a) x1 x2
-        XLet    a lt x  -> XLet  (f a) lt x
-        XAtom   a t     -> XAtom (f a) t
-        XCase   a x  as -> XCase (f a) x  as
-        XCast   a c  x  -> XCast (f a) c  x
+        XVar    a u         -> XVar   (f a) u
+        XAbs    a b  x      -> XAbs   (f a) b  x
+        XApp    a x1 x2     -> XApp   (f a) x1 x2
+        XLet    a lt x      -> XLet   (f a) lt x
+        XAtom   a t         -> XAtom  (f a) t
+        XCase   a x  as     -> XCase  (f a) x  as
+        XCast   a c  x      -> XCast  (f a) c  x
+        XAsync  a v  e1 e2  -> XAsync (f a) v  e1 e2
 
 
 -- Lambdas ---------------------------------------------------------------------
