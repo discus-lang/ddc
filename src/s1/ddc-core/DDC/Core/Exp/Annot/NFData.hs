@@ -8,14 +8,14 @@ import Control.DeepSeq
 instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
-        XVar  a u               -> rnf a `seq` rnf u
-        XAbs  a b x             -> rnf a `seq` rnf b   `seq` rnf x
-        XApp  a x1 x2           -> rnf a `seq` rnf x1  `seq` rnf x2
-        XLet  a lts x           -> rnf a `seq` rnf lts `seq` rnf x
-        XAtom a t               -> rnf a `seq` rnf t
-        XCase a x alts          -> rnf a `seq` rnf x   `seq` rnf alts
-        XCast a c x             -> rnf a `seq` rnf c   `seq` rnf x
-
+        XVar   a u           -> rnf a `seq` rnf u
+        XAbs   a b x         -> rnf a `seq` rnf b   `seq` rnf x
+        XApp   a x1 x2       -> rnf a `seq` rnf x1  `seq` rnf x2
+        XLet   a lts x       -> rnf a `seq` rnf lts `seq` rnf x
+        XAtom  a t           -> rnf a `seq` rnf t
+        XCase  a x alts      -> rnf a `seq` rnf x   `seq` rnf alts
+        XCast  a c x         -> rnf a `seq` rnf c   `seq` rnf x
+        XAsync a v e1 e2     -> rnf a `seq` rnf v   `seq` rnf e1   `seq` rnf e2
 
 instance (NFData a, NFData n) => NFData (Arg a n) where
  rnf rr
