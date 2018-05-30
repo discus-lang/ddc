@@ -87,3 +87,4 @@ data PrimLit
         -- | Text literals (UTF-8 encoded)
         | PrimLitTextLit        !Text
         deriving (Eq, Ord, Show)
+

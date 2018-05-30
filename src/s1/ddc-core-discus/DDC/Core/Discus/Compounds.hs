@@ -14,6 +14,7 @@ module DDC.Core.Discus.Compounds
 
           -- * Info table primitive
         , xInfoFrameNew,        tInfoFrameNew
+        , xInfoFramePush,       tInfoFramePush
         , xInfoFrameAddData,    tInfoFrameAddData)
 where
 import DDC.Core.Discus.Prim.TyConDiscus
@@ -80,11 +81,7 @@ xCastConvert a tTo tFrom x
 -- Info -------------------------------------------------------------------------------------------
 -- | Allocate a new info table frame with the given number of entries.
 --   This function is defined in the runtime system.
-xInfoFrameNew
-        :: a
-        -> Int          -- ^ Number of data constructor entries in the frame.
-        -> Exp a Name
-
+xInfoFrameNew :: a -> Int -> Exp a Name
 xInfoFrameNew a iCount
  = xApps a
         (XVar a (UName (NameVar "ddcInfoFrameNew")))
@@ -93,7 +90,22 @@ xInfoFrameNew a iCount
 
 -- | Type of the ddcInfoFrameNew runtime primitive.
 tInfoFrameNew :: Type Name
+tInfoFrameNew
         = tNat `tFun` tAddr
+
+
+-- | Push an info table frame onto the stack.
+xInfoFramePush :: a -> Exp a Name -> Exp a Name
+xInfoFramePush a xFrame
+ = xApps a
+        (XVar a (UName (NameVar "ddcInfoFramePush")))
+        [ RTerm xFrame ]
+
+
+-- | Type of the ddcInfoFramePush runtime primitive.
+tInfoFramePush :: Type Name
+tInfoFramePush
+        = tAddr `tFun` tUnit
 
 
 -- | Add the name of a data constructor to an info-table frame.
@@ -110,7 +122,7 @@ xInfoFrameAddData a xPtr iTag xNameModule xNameData
  = xApps a
         (XVar a (UName (NameVar "ddcInfoFrameAddData")))
         [ RTerm xPtr
-        , RTerm $ XCon a (DaConPrim (NameLitWord 16 iTag) (tWord 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag) 16) (tWord 16))
         , RTerm xNameModule
         , RTerm xNameData]
 
@@ -119,6 +131,4 @@ xInfoFrameAddData a xPtr iTag xNameModule xNameData
 tInfoFrameAddData :: Type Name
 tInfoFrameAddData
         = tAddr `tFun` tWord 16 `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
-
-
 
