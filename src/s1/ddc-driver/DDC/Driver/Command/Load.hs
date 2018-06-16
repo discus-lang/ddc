@@ -23,7 +23,6 @@ import qualified DDC.Build.Spec.Parser                          as Spec
 import qualified DDC.Build.Language.Discus                      as Tetra
 import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
 
-
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC

@@ -48,6 +48,9 @@ data Mode
         -- | Build libraries or executables following a build .spec file.
         | ModeBuild     FilePath
 
+        -- | Become a language server, using the LSP protocol.
+        | ModeLSP
+
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
 
@@ -155,6 +158,10 @@ data Config
           -- | Other modules to use for inliner templates.
         , configWith            :: [FilePath]
 
+          -- Language Server -----------
+          -- | Write debugging information for the language server to the given file.
+        , configLspLogDebug     :: Maybe FilePath
+
           -- Debugging -----------------
           -- | Dump intermediate representations.
         , configDump            :: Bool
@@ -199,6 +206,9 @@ getDefaultConfig
           , configTrans                 = Nothing
           , configWith                  = []
 
+            -- Language Server ----------
+          , configLspLogDebug           = Nothing
+
             -- Debugging ----------------
           , configDump                  = False
 
@@ -213,5 +223,4 @@ defaultBuilderConfig config
         { builderConfigBaseSrcDir = configBaseDir config
         , builderConfigBaseLibDir = configBaseDir config
         , builderConfigLinkStatic = configRuntimeLinkStrategy config == D.LinkStatic }
-
 

@@ -21,6 +21,7 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Thread
+import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
@@ -132,6 +133,9 @@ run config
                 dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdBuild dconfig store filePath
+
+        ModeLSP
+         -> do  runError $ cmdLSP (configLspLogDebug config)
 
         -- Convert a module to Salt.
         ModeToSalt filePath

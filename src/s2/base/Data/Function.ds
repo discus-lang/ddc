@@ -14,3 +14,4 @@ apply   {@a b: Data} (f: a -> b) (x: a): b
 -- | Category dictionary for functions.
 function_Category: Category (->)
  = Category (\x -> x) (\f g x -> f (g x))
+
