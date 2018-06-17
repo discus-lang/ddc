@@ -75,12 +75,12 @@ data TextDocumentClientCapability
         | TcSynchronizationWillSaveUntil
         | TcSynchronizationDidSave
         | TcCompletionDR
-        | TcCompletionItemSnippet
-        | TcCompletionItemCommitCharacters
-        | TcCompletionItemDocumentationFormat [MarkupKind]
-        | TcCompletionItemDeprecated
-        | TcCompletionItemKindValueSet [CompletionItemKind]
-        | TcCompletionItemContextSupport
+        | TcCompletionSnippet
+        | TcCompletionCommitCharacters
+        | TcCompletionDocumentationFormat [MarkupKind]
+        | TcCompletionDeprecated
+        | TcCompletionKindValueSet [CompletionItemKind]
+        | TcCompletionContextSupport
         | TcHoverDR
         | TcHoverContentFormat [MarkupKind]
         | TcSignatureHelpDR

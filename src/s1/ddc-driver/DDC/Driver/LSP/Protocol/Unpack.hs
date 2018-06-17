@@ -81,15 +81,15 @@ unpackClientCapabilities jv
                         Nothing -> Just []
                         Just js -> unpackWorkspaceClientCapabilities js
 
-        _mTx    <- case lookup "textDocument" fs of
-                        Nothing -> Just Nothing
-                        Just js -> Just (Just js)
+        mTx     <- case lookup "textDocument" fs of
+                        Nothing -> Just []
+                        Just js -> unpackTextDocumentClientCapabilities js
 
         jsAny   <- pure $ lookup "experimental" fs
 
         return  $ ClientCapabilities
                 { ccWorkspace           = mWs
-                , ccTextDocument        = [] -- mTx
+                , ccTextDocument        = mTx
                 , ccExperimental        = jsAny }
 
 
@@ -107,14 +107,120 @@ unpackWorkspaceClientCapabilities jv
                 Just Nothing            -> Just Nothing
 
    in fmap catMaybes $ sequence
-        [ testCap WcApplyEdit                   ["applyEdit"]
-        , testCap WcEditDocumentChanges         ["workspaceEdit", "documentChanges"]
-        , testCap WcDidChangeConfigurationDR    ["didChangeConfiguration", "dynamicRegistration"]
-        , testCap WcDidChangeWatchedFilesDR     ["didChangeWatchedFiles",  "dynamicRegistration"]
-        , testCap WcSymbolDR                    ["symbol", "dynamicRegistration"]
-        , testCap WcExecuteCommandDR            ["executeCommand", "dynamicRegistration"]
-        , testCap WcWorkspaceFolders            ["workspaceFolders"]
-        , testCap WcConfiguration               ["configuration"]
+        [ testCap WcApplyEdit
+                ["applyEdit"]
+
+        , testCap WcEditDocumentChanges
+                ["workspaceEdit", "documentChanges"]
+
+        , testCap WcDidChangeConfigurationDR
+                ["didChangeConfiguration", "dynamicRegistration"]
+
+        , testCap WcDidChangeWatchedFilesDR
+                ["didChangeWatchedFiles",  "dynamicRegistration"]
+
+        , testCap WcSymbolDR
+                ["symbol", "dynamicRegistration"]
+
+        , testCap WcExecuteCommandDR
+                ["executeCommand", "dynamicRegistration"]
+
+        , testCap WcWorkspaceFolders
+                ["workspaceFolders"]
+
+        , testCap WcConfiguration
+                ["configuration"]
         ]
 
--- unpackTextDocumentClientCapabilities :: J.JSValue -> Maybe [TextDocumentClientCapability]
+
+---------------------------------------------------------------------------------------------------
+-- | Unpack `WorkspaceClientCapabilities` from JSON.
+unpackTextDocumentClientCapabilities :: J.JSValue -> Maybe [TextDocumentClientCapability]
+unpackTextDocumentClientCapabilities jv
+ = let  -- Test for a capability flag in the JSON message goop.
+        -- The message format is wierdly redundant in its optionality.
+        testCap c ps
+         = case takeObjPathBool jv ps of
+                Nothing                 -> Nothing
+                Just (Just True)        -> Just (Just c)
+                Just (Just False)       -> Just Nothing
+                Just Nothing            -> Just Nothing
+   in fmap catMaybes $ sequence
+        [ testCap TcSynchronizationDR
+                ["synchronization", "dynamicRegistration"]
+
+        , testCap TcSynchronizationWillSave
+                ["synchronization", "willSave"]
+
+        , testCap TcSynchronizationWillSaveUntil
+                ["synchronization", "willSaveUntil"]
+
+        , testCap TcSynchronizationDidSave
+                ["synchronization", "didSave"]
+
+        , testCap TcCompletionDR
+                ["completion", "dynamicRegistration"]
+
+        , testCap TcCompletionSnippet
+                ["completion", "completionItem", "snippetSupport"]
+
+        , testCap TcCompletionCommitCharacters
+                ["completion", "completionItem", "commitCharactersSupport"]
+
+        , testCap TcCompletionDeprecated
+                ["completion", "completionItem", "deprecatedSupport"]
+
+        , testCap TcHoverDR
+                ["hover",              "dynamicRegistration"]
+
+        , testCap TcSignatureHelpDR
+                ["signatureHelp",      "dynamicRegistration"]
+
+        , testCap TcReferencesDR
+                ["references",         "dynamicRegistration"]
+
+        , testCap TcDocumentHighlightDR
+                ["documentHighlight",  "dynamicRegistration"]
+
+        , testCap TcDocumentSymbolDR
+                ["documentSymbol",     "dynamicRegistration"]
+
+        , testCap TcFormattingDR
+                ["formatting",         "dynamicRegistration"]
+
+        , testCap TcRangeFormattingDR
+                ["rangeFormatting",    "dynamicRegistration"]
+
+        , testCap TcOnTypeFormattingDR
+                ["onTypeFormatting",   "dynamicRegistration"]
+
+        , testCap TcDefinitionDR
+                ["definition",         "dynamicRegistration"]
+
+        , testCap TcTypeDefinitionDR
+                ["typeDefinition",     "dynamicRegistration"]
+
+        , testCap TcImplementationDR
+                ["implementation",     "dynamicRegistration"]
+
+        , testCap TcCodeActionDR
+                ["codeAction",         "dynamicRegistration"]
+
+        , testCap TcCodeLensDR
+                ["codeLens",           "dynamicRegistration"]
+
+        , testCap TcDocumentLinkDR
+                ["documentLink",       "dynamicRegistration"]
+
+        , testCap TcColorProviderDR
+                ["colorProvider",      "dynamicRegistration"]
+
+        , testCap TcRenameDR
+                ["rename",             "dynamicRegistration"]
+
+        , testCap TcPublishDiagnosticsRelated
+                ["publishDiagnostics", "relatedInformation"]
+        ]
+
+
+

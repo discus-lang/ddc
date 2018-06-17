@@ -40,13 +40,13 @@ cmdLSP mFileLog
 
 loopRPC state
  = do   txContentLength <- liftIO $ T.hGetLine S.stdin
-        lspLog state $ "line length: " ++ show txContentLength
+        lspLog state $ "  line length: " ++ show txContentLength
 
         txEmpty         <- liftIO $ T.hGetLine S.stdin
-        lspLog state $ "line empty: " ++ show txEmpty
+        lspLog state $ "  line empty: " ++ show txEmpty
 
         txChunk         <- liftIO $ T.hGetChunk S.stdin
-        lspLog state $ "chunk: " ++ show txChunk
+        lspLog state $ "  chunk: " ++ T.unpack txChunk ++ "\n"
 
         case statePhase state of
          PhaseStartup
@@ -65,7 +65,7 @@ handleStartup state txChunk
  , Just req     <- unpackRequestMessage jValue
  , Just inits   <- unpackInitializeParams req
  = do
-        lspLog state $ "* Initialized " ++ show inits
+        lspLog state $ "* Received Initialization Request " ++ show inits ++ "\n"
         return state
 
  | otherwise
