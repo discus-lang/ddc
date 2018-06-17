@@ -24,4 +24,3 @@ show_map {Show key} {Show elem}: Show (Map rep key elem)
          $ reverse
          $ map_foldKeys mp (\k e x -> Cons (show k %% ":=" %% show e) x) Nil
 
-
