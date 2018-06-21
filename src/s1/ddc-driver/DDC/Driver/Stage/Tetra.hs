@@ -95,13 +95,15 @@ discusLoadText config _store source str
 discusToSalt
         :: D.Config
         -> D.Source
+        -> [C.ModuleName]
         -> C.Module a CE.Name
         -> ExceptT [B.Error] IO (C.Module () CA.Name)
 
-discusToSalt config source mm
+discusToSalt config source mnsInit mm
  = BCD.discusToSalt
         (B.buildSpec $ D.configBuilder config)
         (D.configRuntime config)
+        mnsInit
         (CReannotate.reannotate (const ()) mm)
  $ BCD.ConfigDiscusToSalt
         { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"

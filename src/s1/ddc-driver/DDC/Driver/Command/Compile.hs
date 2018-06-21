@@ -373,6 +373,10 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 = config
 
         -- Convert Core Tetra to Core Salt.
+        --   For Discus source files we pass in the names of modules reachable
+        --   from the current one. This is done so we can call the initialization
+        --   function for each module from the Main module.
+        mnsTrans <- liftIO $ Store.getModuleNames store
         let makeSalt
                 | ext == ".dcs"
                 =   fmap (CReannotate.reannotate (const ()))
@@ -380,7 +384,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 =<< DA.saltLoadText config store source src
 
                 | Just modTetra <- mModTetra
-                = DE.discusToSalt  config_handler source
+                = DE.discusToSalt  config_handler source mnsTrans
                 $ CReannotate.reannotate (const ()) modTetra
 
                 | otherwise

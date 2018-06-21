@@ -94,7 +94,7 @@ cmdToLlvmSourceTetraFromString config store source str
         modLlvm'
          <-  DA.saltToLlvm     config source True
          =<< DA.saltSimplify   config source
-         =<< DE.discusToSalt   config source
+         =<< DE.discusToSalt   config source []
          =<< DE.sourceLoadText config store  source str
 
         liftIO $ putStrLn (renderIndent $ ppr modLlvm')
@@ -150,8 +150,8 @@ cmdToLlvmCoreFromString config language source str
         -- Decide what to do based on file extension and current fragment.
         let makeSalt
                 |   fragName == "Tetra"
-                =   DA.saltSimplify  config source
-                =<< DE.discusToSalt   config source
+                =   DA.saltSimplify   config source
+                =<< DE.discusToSalt   config source []
                 =<< DE.discusLoadText config store source str
 
                 |   fragName == "Salt"

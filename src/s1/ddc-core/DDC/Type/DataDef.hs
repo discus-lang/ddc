@@ -46,7 +46,7 @@ data DataDef n
         , dataDefParams         :: ![Bind n]
 
           -- | Constructors of the data type,
-          --   or Nothing if the data type is algbraic but there are too many
+          --   or Nothing if the data type is algebraic but there are too many
           --      constructors to list (like with `Int`).
         , dataDefCtors          :: !(Maybe [DataCtor n])
 
