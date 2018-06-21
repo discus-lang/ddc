@@ -49,11 +49,12 @@ data ConfigDiscusToSalt
 discusToSalt
         :: A.Platform           -- ^ Platform configuation.
         -> A.Config             -- ^ Runtime config.
+        -> [C.ModuleName]       -- ^ Names of modules transitively imported by the current one.
         -> C.Module () D.Name   -- ^ Core tetra module.
         -> ConfigDiscusToSalt   -- ^ Sinker config.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-discusToSalt platform runtimeConfig mm config
+discusToSalt platform runtimeConfig mnsInit mm config
  = do
         -- Expliciate the core module.
         --   This converts implicit function parameters and arguments to explicit ones
@@ -69,7 +70,9 @@ discusToSalt platform runtimeConfig mm config
         -- Perform the initialize transform.
         --   This wraps the main function with the default exception handler.
         let mm_initialize
-                = DInitialize.initializeModule runtimeConfig mm_explicit
+                = DInitialize.initializeModule
+                        runtimeConfig
+                        mnsInit mm_explicit
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_initialize)
                             (configSinkInitialize config)

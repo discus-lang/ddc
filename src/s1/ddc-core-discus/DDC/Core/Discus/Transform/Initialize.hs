@@ -12,52 +12,98 @@ import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Discus.Compounds      as D
 import qualified Data.Text                      as T
 import Data.List
--- import Data.Maybe
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert inititialization code into the module.
-initializeModule :: A.Config -> C.Module a D.Name -> C.Module a D.Name
-initializeModule config mm
+initializeModule
+        :: A.Config             -- ^ Runtime system configuration.
+        -> [C.ModuleName]       -- ^ Names of modules transitively imported by this one.
+        -> C.Module a D.Name
+        -> C.Module a D.Name
+
+initializeModule config mnsImport mm
  | C.isMainModuleName $ C.moduleName mm
  = initializeMain config
- $ initializeInfo config mm
+ $ initializeInfo mnsImport mm
 
  | otherwise
- = initializeInfo config mm
+ = initializeInfo [] mm
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert initialization code into a module.
-initializeInfo :: A.Config -> C.Module a D.Name -> C.Module a D.Name
-initializeInfo _config mm
+initializeInfo
+        :: [C.ModuleName]       -- ^ Also call infotable init functions for these modules.
+        -> C.Module a D.Name    -- ^ Module to add initialization code to.
+        -> C.Module a D.Name
+
+initializeInfo mnsImport mm
  = let  modName  = C.moduleName mm
         dataDefs = map snd $ C.moduleLocalDataDefs mm
 
         importValueSea n t
          = (D.NameVar n, C.ImportValueSea (D.NameVar n) n t)
 
-   in   mm { C.moduleBody
-                = injectInfoInit modName dataDefs
-                $ C.moduleBody mm
+   in mm
+        { C.moduleBody
+            = injectInfoInit modName mnsImport dataDefs
+            $ C.moduleBody   mm
+
+        , C.moduleExportValues
+            =  C.moduleExportValues mm
+            ++ [ ( initNameOfModule modName
+                 , C.ExportValueLocal
+                        { exportValueLocalModuleName    = modName
+                        , exportValueLocalName          = initNameOfModule modName
+                        , exportValueLocalType          = D.tUnit `D.tFun` D.tUnit
+                        , exportValueLocalArity         = Just (0, 1, 0) }) ]
 
              -- TODO: these will need to be converted into primops so that the discus -> salt
              -- code generator can remember the info table index of each data constructor.
-           , C.moduleImportValues
-                =  C.moduleImportValues mm
-                ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
-                   , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
-                   , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]}
+        , C.moduleImportValues
+            =  C.moduleImportValues mm
+            ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
+               , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
+               , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]
+
+               -- Import the initialization functions for transitively imported modules.
+            ++ [ ( initNameOfModule mn
+                 , C.ImportValueModule
+                        { importValueModuleName  = mn
+                        , importValueModuleVar   = initNameOfModule mn
+                        , importValueModuleType  = D.tUnit `D.tFun` D.tUnit
+                        , importValueModuleArity = Just (0, 1, 0) })
+               | mn <- mnsImport ]
+        }
+
+
+-- | Get the name of the initialization function for the given module name.
+initNameOfModule :: C.ModuleName -> D.Name
+initNameOfModule (C.ModuleName parts)
+ = let  flatName = intercalate "$" parts
+   in   D.NameVar $ T.pack $ "_init$" ++ flatName
+
+
+-- | Get the binding ccc of the initialization function for the given module name.
+initBindOfModule :: C.ModuleName -> C.Bind D.Name
+initBindOfModule mn  = C.BName (initNameOfModule mn) $ D.tUnit `D.tFun` D.tUnit
+
+
+-- | Get the bound occ of the initialization function for the given module name.
+initBoundOfModule :: C.ModuleName -> C.Bound D.Name
+initBoundOfModule mn = C.UName $ initNameOfModule mn
 
 
 -- | Inject the info table initialization function into the end of the module.
 injectInfoInit
         :: C.ModuleName         -- ^ Name of the module we're making the table for.
+        -> [C.ModuleName]       -- ^ Also call the init function for these other modules.
         -> [C.DataDef D.Name]   -- ^ Data type declarations defined locally in the module.
         -> C.Exp a D.Name       -- ^ Body expression of the module to inject into.
         -> C.Exp a D.Name
 
-injectInfoInit modName dataDefs xx
+injectInfoInit modName mnsImport dataDefs xx
  = downTop xx
  where
         downTop x
@@ -66,15 +112,26 @@ injectInfoInit modName dataDefs xx
                 C.XLRec a bxs x2  -> C.XLRec a (bxs ++ [(b', xInit')]) x2
                 _                 -> x
 
-        C.ModuleName parts = modName
-        flatName = intercalate "$" parts
-
         a'      = D.annotOfExp xx
-        b'      = C.BName (D.NameVar $ T.pack $ "_init$" ++ flatName) tInit'
-        tInit'  = D.tUnit `D.tFun` D.tUnit
+        b'      = initBindOfModule modName
 
         xInit'  = C.XAbs a' (C.MTerm (C.BNone D.tUnit))
+                $ makeInfoInitImport      a' mnsImport
                 $ makeInfoInitForDataDefs a' modName dataDefs
+
+
+-- | Call the info table initialization functions for transitively imported modules.
+makeInfoInitImport
+        :: a -> [C.ModuleName]
+        -> C.Exp a D.Name -> C.Exp a D.Name
+
+makeInfoInitImport a mnsImport xx
+ = foldr (C.XLet a) xx
+ $ map makeForModuleName mnsImport
+
+ where  makeForModuleName mn
+         = let  u'       = initBoundOfModule mn
+           in   C.LLet (C.BNone D.tUnit) (C.XApp a (C.XVar a u') (C.RTerm (C.xUnit a)))
 
 
 -- | Create a new frame to hold info about the given data type definitions,
