@@ -172,7 +172,9 @@ makeInfoInitForDataDef a modName dataDef
                 $ D.xInfoFrameNew a (length ctors) ]
 
          ++ [ C.LLet (C.BNone (D.tWord 32))
-                $  D.xInfoFrameAddData a (C.XVar a (C.UIx 0)) iTag
+                $  D.xInfoFrameAddData a
+                        (C.XVar a (C.UIx 0))
+                        iTag (length $ C.dataCtorFieldTypes ctor)
                         (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))
                                                (D.tTextLit)))
                         (C.XCon a (C.DaConPrim (textLitOfConName $ C.dataCtorName ctor)

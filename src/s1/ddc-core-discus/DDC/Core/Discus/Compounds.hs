@@ -114,15 +114,17 @@ xInfoFrameAddData
         :: a
         -> Exp a Name   -- ^ Frame pointer.
         -> Int          -- ^ Tag of data constructor.
+        -> Int          -- ^ Arity of data constructor.
         -> Exp a Name   -- ^ Name of defining module.
         -> Exp a Name   -- ^ Name of data constructor.
         -> Exp a Name
 
-xInfoFrameAddData a xPtr iTag xNameModule xNameData
+xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
  = xApps a
         (XVar a (UName (NameVar "ddcInfoFrameAddData")))
         [ RTerm xPtr
-        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag) 16) (tWord 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16) (tWord 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16) (tWord 16))
         , RTerm xNameModule
         , RTerm xNameData]
 
@@ -130,5 +132,6 @@ xInfoFrameAddData a xPtr iTag xNameModule xNameData
 -- | Type of the ddcInfoFrameAddData runtime primitive.
 tInfoFrameAddData :: Type Name
 tInfoFrameAddData
-        = tAddr `tFun` tWord 16 `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
+        = tAddr `tFun` tWord 16 `tFun` tWord 16
+        `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
 

@@ -13,11 +13,11 @@ main ()
  = do
         -- Create two info table frames and push them on the stack.
         aFrame1 = ddcInfoFrameNew 2
-        wIdent1 = ddcInfoFrameAddData aFrame1 0w16
+        wIdent1 = ddcInfoFrameAddData aFrame1 0w16 1w16
                         (unpackTextLit "Some.Module1")
                         (unpackTextLit "CtorNameBar")
 
-        wIdent3 = ddcInfoFrameAddData aFrame1 0w16
+        wIdent3 = ddcInfoFrameAddData aFrame1 0w16 1w16
                         (unpackTextLit "Some.Module1")
                         (unpackTextLit "CtorNameBaz")
 
@@ -25,7 +25,7 @@ main ()
 
 
         aFrame2 = ddcInfoFrameNew 1
-        wIdent2 = ddcInfoFrameAddData aFrame2 0w16
+        wIdent2 = ddcInfoFrameAddData aFrame2 0w16 1w16
                         (unpackTextLit "Some.Module2")
                         (unpackTextLit "CtorNameFoo")
         ddcInfoFramePush aFrame2
