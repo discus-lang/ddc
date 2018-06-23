@@ -9,6 +9,7 @@ module DDC.Core.Discus.Env
 where
 import DDC.Core.Discus.Prim
 import DDC.Core.Discus.Compounds
+import DDC.Core.Module.Name
 import DDC.Type.DataDef
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
@@ -31,30 +32,30 @@ primDataDefs
   $     [ dataDefBool
 
         -- Nat#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- WordN#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
         -- FloatN#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
 
         -- TextLit#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)    [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConTextLit)    [] Nothing
 
         -- Vector#
-        , makeDataDefAlg (NameTyConDiscus TyConDiscusVector)   [] Nothing
+        , makeDataDefAlg mn (NameTyConDiscus TyConDiscusVector) [] Nothing
 
         -- U#
         -- We need this data def when matching against literals with case expressions.
-        , makeDataDefAlg (NameTyConDiscus TyConDiscusU)        [] Nothing
+        , makeDataDefAlg mn (NameTyConDiscus TyConDiscusU)      [] Nothing
         ]
 
         -- Tuple
@@ -63,11 +64,15 @@ primDataDefs
  ++     [ makeTupleDataDef arity
                 | arity <- [2..32] ]
 
+ where  mn = ModuleName ["DDC", "Types", "Discus"]
+
 
 -- | Data type definition for `Bool`.
 dataDefBool :: DataDef Name
 dataDefBool
- = makeDataDefAlg (NamePrimTyCon PrimTyConBool)
+ = makeDataDefAlg
+        (ModuleName ["DDC", "Types", "Discus"])
+        (NamePrimTyCon PrimTyConBool)
         []
         (Just   [ (NameLitBool True,  [])
                 , (NameLitBool False, []) ])
@@ -76,11 +81,12 @@ dataDefBool
 -- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
-        = makeDataDefAlg
-                (NameTyConDiscus (TyConDiscusTuple n))
-                (replicate n (BAnon kData))
-                (Just   [ ( NameDaConDiscus (DaConDiscusTuple n)
-                          , (reverse [tIx kData i | i <- [0..n - 1]]))])
+ = makeDataDefAlg
+        (ModuleName ["DDC", "Types", "Discus"])
+        (NameTyConDiscus (TyConDiscusTuple n))
+        (replicate n (BAnon kData))
+        (Just   [ ( NameDaConDiscus (DaConDiscusTuple n)
+                  , (reverse [tIx kData i | i <- [0..n - 1]]))])
 
 
 -- Sorts ---------------------------------------------------------------------

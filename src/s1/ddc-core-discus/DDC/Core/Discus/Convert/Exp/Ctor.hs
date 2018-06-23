@@ -9,6 +9,7 @@ import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Exp.Lit
 import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
+import DDC.Core.Module.Name
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Discus.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
@@ -71,13 +72,15 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
         -- We can't make a real CtorDef for records because they don't have real
         -- fragment specific names. However, the constructData fn is not using
         -- the name field, so we shouldn't have to supply this bogus info.
-        let ctorDef     = DataCtor
-                        { dataCtorName          = E.NameCon $ T.pack "Record"    -- bogus name.
-                        , dataCtorTag           = 0
-                        , dataCtorFieldTypes    = tsArgsValues
-                        , dataCtorResultType    = tResult
-                        , dataCtorTypeName      = E.NameCon $ T.pack "Record"    -- bogus name.
-                        , dataCtorTypeParams    = [BAnon t | t <- tsArgsValues] }
+        let ctorDef
+                = DataCtor
+                { dataCtorModuleName    = ModuleName ["DDC", "Types", "Discus"]
+                , dataCtorName          = E.NameCon $ T.pack "Record"    -- bogus name.
+                , dataCtorTag           = 0
+                , dataCtorFieldTypes    = tsArgsValues
+                , dataCtorResultType    = tResult
+                , dataCtorTypeName      = E.NameCon $ T.pack "Record"    -- bogus name.
+                , dataCtorTypeParams    = [BAnon t | t <- tsArgsValues] }
 
         constructData pp a
                 ctorDef A.rTop

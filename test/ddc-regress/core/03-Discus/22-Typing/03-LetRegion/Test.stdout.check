@@ -24,7 +24,7 @@ private r1 with {w1: Const r1; w2: Read r1} in
 
 -- Use the bound region in the body of the expression.
 module Test 
-import data Ref (r: Region) (a: Data) where {
+data Ref (r: Region) (a: Data) where {
         MkRef : a -> Ref r a;
 }
 with
@@ -51,7 +51,7 @@ Error in transformed module.
        are already in environment
 
 
--- Error: private region variable cannot shadow variable that is already 
+-- Error: private region variable cannot shadow variable that is already
 -- in the environment.
 Error in transformed module.
   in stage CoreLoad

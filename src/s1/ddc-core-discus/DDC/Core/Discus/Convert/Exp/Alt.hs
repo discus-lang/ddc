@@ -7,6 +7,7 @@ import DDC.Core.Discus.Convert.Data
 import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
+import DDC.Core.Module.Name
 import DDC.Type.DataDef
 import DDC.Core.Check                    (AnTEC(..))
 import DDC.Control.Check                (throw)
@@ -73,13 +74,15 @@ convertAlt a uScrut tScrut ectx ctx alt
 
                 -- ISSUE #433: Refactor constructData to take only the fields it uses.
                 -- We can't make a real CtorDef for records.
-                let ctorDef     = DataCtor
-                                { dataCtorName          = E.NameCon "Record"    -- bogus name.
-                                , dataCtorTag           = 0
-                                , dataCtorFieldTypes    = tsArgs
-                                , dataCtorResultType    = tScrut
-                                , dataCtorTypeName      = E.NameCon "Record"    -- bogus name.
-                                , dataCtorTypeParams    = [BAnon t | t <- tsArgs] }
+                let ctorDef
+                        = DataCtor
+                        { dataCtorModuleName    = ModuleName ["DDC", "Types", "Discus"]
+                        , dataCtorName          = E.NameCon "Record"    -- bogus name.
+                        , dataCtorTag           = 0
+                        , dataCtorFieldTypes    = tsArgs
+                        , dataCtorResultType    = tScrut
+                        , dataCtorTypeName      = E.NameCon "Record"    -- bogus name.
+                        , dataCtorTypeParams    = [BAnon t | t <- tsArgs] }
 
                 -- Wrap the body expression with let-bindings that bind
                 -- each of the fields of the data constructor.

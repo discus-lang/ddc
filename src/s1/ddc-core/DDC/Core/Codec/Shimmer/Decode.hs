@@ -288,35 +288,38 @@ takeDeclDat c mpD dd
 
         _ -> failDecode "takeDeclDat failed"
 
- where  takeTypDat  (XAps "typ-dat" [XTxt _nCon, XMac txMacDat])
+ where  takeTypDat  (XAps "typ-dat" [_modName, XTxt _nCon, XMac txMacDat])
          | Just ssDataDef <- Map.lookup txMacDat mpD
          = takeDataDef ssDataDef
 
         takeTypDat _ = failDecode "takeTypDat failed"
 
-        takeDataDef (XAps "d-alg"   [ssCon, ssListParam, XNone])
+        takeDataDef (XAps "d-alg"   [ssModuleName, ssCon, ssListParam, XNone])
          | nType <- fromRef c ssCon
          = (nType, C.DataDef
-                { C.dataDefTypeName     = nType
+                { C.dataDefModuleName   = fromModuleName ssModuleName
+                , C.dataDefTypeName     = nType
                 , C.dataDefParams       = map (fromBind c)  $ fromList ssListParam
                 , C.dataDefCtors        = Nothing
                 , C.dataDefIsAlgebraic  = True })
 
-        takeDataDef (XAps "d-alg"   [ssType, ssListParam, XSome ssCtors])
+        takeDataDef (XAps "d-alg"   [ssModuleName, ssType, ssListParam, XSome ssCtors])
          | nType    <- fromRef c ssType
          , bsParam  <- map (fromBind c)  $ fromList ssListParam
          = (nType, C.DataDef
-                { C.dataDefTypeName     = nType
+                { C.dataDefModuleName   = fromModuleName ssModuleName
+                , C.dataDefTypeName     = nType
                 , C.dataDefParams       = bsParam
                 , C.dataDefCtors        = Just $ map (takeDataCtor nType bsParam) $ fromList ssCtors
                 , C.dataDefIsAlgebraic  = True })
 
         takeDataDef _ = failDecode $ "takeDataDef failed"
 
-        takeDataCtor nType bsParam (XAps "ctor"  (XNat nTag : ssCtorName : ssRest))
+        takeDataCtor nType bsParam (XAps "ctor"  (XNat nTag : ssModuleName : ssCtorName : ssRest))
          | (ssField, ssResult)  <- splitLast ssRest
          = C.DataCtor
-            { C.dataCtorName        = fromRef c ssCtorName
+            { C.dataCtorModuleName  = fromModuleName ssModuleName
+            , C.dataCtorName        = fromRef c ssCtorName
             , C.dataCtorTag         = nTag
             , C.dataCtorFieldTypes  = map (fromType c) ssField
             , C.dataCtorResultType  = fromType c ssResult

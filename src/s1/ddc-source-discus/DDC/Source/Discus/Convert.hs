@@ -108,7 +108,7 @@ coreOfSourceModuleM a mm
 
         -- Data type definitions.
         dataDefsLocal
-         <- sequence $ fmap toCoreDataDef
+         <- sequence $ fmap (toCoreDataDef (S.moduleName mm))
          $  [ def    | S.TopData _ def <- S.moduleTops mm ]
 
         -- Type equations.
@@ -221,21 +221,27 @@ toCoreImportValue src
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef SP -> ConvertM a (C.Name, C.DataDef C.Name)
-toCoreDataDef def
+toCoreDataDef :: S.ModuleName -> S.DataDef SP -> ConvertM a (C.Name, C.DataDef C.Name)
+toCoreDataDef modName def
  = do
-        defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
+        defParams
+         <- sequence
+                $ fmap toCoreTBK
+                $ S.dataDefParams def
 
-        defCtors        <- sequence $ fmap (\(ctor, tag) -> toCoreDataCtor def tag ctor)
-                                    $ [(ctor, tag) | ctor <- S.dataDefCtors def
-                                                   | tag  <- [0..]]
+        defCtors
+         <- sequence
+                $ fmap (\(ctor, tag) -> toCoreDataCtor modName def tag ctor)
+                $ [(ctor, tag) | ctor <- S.dataDefCtors def
+                               | tag  <- [0..]]
 
         let (S.TyConBindName txTyConName) = S.dataDefTypeName def
         let nType       = C.NameCon txTyConName
 
         return  ( nType
                 , C.DataDef
-                  { C.dataDefTypeName    = C.NameCon txTyConName
+                  { C.dataDefModuleName  = modName
+                  , C.dataDefTypeName    = C.NameCon txTyConName
                   , C.dataDefParams      = defParams
                   , C.dataDefCtors       = Just $ defCtors
                   , C.dataDefIsAlgebraic = True })
@@ -243,19 +249,21 @@ toCoreDataDef def
 
 -- DataCtor ---------------------------------------------------------------------------------------
 toCoreDataCtor
-        :: S.DataDef  SP
+        :: S.ModuleName
+        -> S.DataDef  SP
         -> Integer
         -> S.DataCtor SP
         -> ConvertM a (C.DataCtor C.Name)
 
-toCoreDataCtor dataDef tag ctor
+toCoreDataCtor modName dataDef tag ctor
  = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
         fieldTypes      <- sequence $ fmap (toCoreT UniverseSpec)   $ S.dataCtorFieldTypes ctor
         resultType      <- toCoreT UniverseSpec (S.dataCtorResultType ctor)
         let (S.TyConBindName txTyConName) = S.dataDefTypeName dataDef
 
         return $ C.DataCtor
-         { C.dataCtorName        = toCoreDaConBind (S.dataCtorName ctor)
+         { C.dataCtorModuleName  = modName
+         , C.dataCtorName        = toCoreDaConBind (S.dataCtorName ctor)
          , C.dataCtorTag         = tag
          , C.dataCtorFieldTypes  = fieldTypes
          , C.dataCtorResultType  = resultType
