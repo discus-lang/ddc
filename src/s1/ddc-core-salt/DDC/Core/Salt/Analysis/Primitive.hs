@@ -24,8 +24,9 @@ import Data.Monoid                      (Monoid(..))
 --- | Support of some term.
 data Support
         = Support
-        { -- | Names of static globals mentioned using the global# primitive.
-          supportGlobal :: Map Text [Type A.Name]
+        { -- | Names of static globals mentioned using the global# primitive,
+          --   and whether we should define the symbol in the current module.
+          supportGlobal :: Map Text [(Type A.Name, Bool)]
         }
         deriving Show
 
@@ -63,12 +64,12 @@ collectModule mm
 -- | Collect support of an expression.
 collectExp :: Exp a A.Name -> Support
 collectExp xx
- -- Collect names of global variables defined with the static# primitive.
- | Just ( A.NamePrimOp (A.PrimStore A.PrimStoreGlobal)
+ -- Collect names of global variables defined with the globali# primitive.
+ | Just ( A.NamePrimOp (A.PrimStore (A.PrimStoreGlobal bDefineHere))
         , [RType t, RTerm x])              <- takeXFragApps xx
  , XCon _ (C.DaConPrim name _)             <- x
  , A.NamePrimLit (A.PrimLitTextLit txName) <- name
- = mempty { supportGlobal = Map.singleton txName [t] }
+ = mempty { supportGlobal = Map.singleton txName [(t, bDefineHere)] }
 
  -- boilerplate.
  | otherwise

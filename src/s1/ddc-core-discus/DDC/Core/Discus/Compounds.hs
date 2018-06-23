@@ -71,11 +71,18 @@ xFunApply a tsArg tResult xF xsArg
 
 -- Convert ----------------------------------------------------------------------------------------
 xCastConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
-xCastConvert a tTo tFrom x
+xCastConvert a tTo tFrom xx
+ | Just ( NamePrimCast PrimCastConvert _
+        , [ RType tTo', RType tFrom', RTerm xxOrig ])
+        <- takeXFragApps xx
+ , tTo == tFrom', tFrom == tTo'
+ = xxOrig
+
+ | otherwise
  = xApps a
         (XVar a (UPrim (NamePrimCast PrimCastConvert False)))
         [ RType tTo, RType tFrom
-        , RTerm x ]
+        , RTerm xx ]
 
 
 -- Info -------------------------------------------------------------------------------------------

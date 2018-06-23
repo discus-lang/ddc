@@ -345,7 +345,7 @@ convPrimStore ctx mdst p as
 
 
         -- Refer to a global variable.
-        A.PrimStore A.PrimStoreGlobal
+        A.PrimStore (A.PrimStoreGlobal _)
          | [A.RType t, A.RExp x]        <- as
          ,  A.XCon (C.DaConPrim n _)    <- x
          ,  A.NamePrimLit (A.PrimLitTextLit txName) <- n

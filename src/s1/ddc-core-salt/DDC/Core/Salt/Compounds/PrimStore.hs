@@ -192,7 +192,7 @@ typeOfPrimStore jj
          -> tForalls [kRegion, kData, kData]
          $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
-        PrimStoreGlobal
+        PrimStoreGlobal _
          -> tForall kData
          $ \_t -> tTextLit `tFun` tAddr
 

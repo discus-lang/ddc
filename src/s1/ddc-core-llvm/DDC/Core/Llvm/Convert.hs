@@ -195,17 +195,31 @@ collectGlobalsOfModule pp mm
                         ( APrimitive.supportGlobal
                         $ APrimitive.collectModule mm)
                 $ Map.fromList
-                        [ (Text.pack "ddcHeapMax",  [A.tAddr])
-                        , (Text.pack "ddcHeapTop",  [A.tAddr]) ]
+                        [ (Text.pack "ddcHeapMax",  [(A.tAddr, False)])
+                        , (Text.pack "ddcHeapTop",  [(A.tAddr, False)])]
 
         -- Convert the Salt types of each global to their equivalent
         -- LLVM types.
         globals_llvm
          <- forM (Map.toList globals_salt)
-         $  \(name, ts)
-         -> do  _ts'@(t' : _)  <- mapM (convertType pp Env.empty) ts
-                return  (name, t')
+         $  \(name, tbs)
+         -> do  _ts'@(t' : _)  <- mapM (convertType pp Env.empty) $ map fst tbs
+                let bInitHere   = or $ map snd tbs
+                return  (name, (t', bInitHere))
 
+        let takeDecl (name, (tGlobal, bDefineHere))
+                | bDefineHere
+                = GlobalStatic   (Var (NameGlobal (Text.unpack name))
+                                      (TPointer tGlobal))
+                                 (StaticLit (LitInt (tAddr pp) 0))
+
+                | otherwise
+                = GlobalExternal (Var (NameGlobal (Text.unpack name))
+                                      tGlobal)
+
+        return $ map takeDecl globals_llvm
+
+{-
         if C.moduleName mm == C.ModuleName ["Init"]
          -- When compiling the Init module, allocate space for each global.
          then return
@@ -219,7 +233,7 @@ collectGlobalsOfModule pp mm
                 [ GlobalExternal (Var (NameGlobal (Text.unpack name))
                                  tGlobal)
                 | (name, tGlobal) <- globals_llvm ]
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | C library functions that are used directly by the generated code without

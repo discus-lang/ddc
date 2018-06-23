@@ -43,14 +43,21 @@ convertPrimInfo _ectx ctx xxExp
 
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFrameAddData True
-                , [ RTerm xAddr,      RTerm xTag, RTerm xArith
-                  , RTerm xTxtModule, RTerm xTxtCon])
+                , [ RTerm xAddr
+                  , RTerm xTag
+                  , RTerm xArity
+                  , RTerm xTxtModule@(XCon _ dcTxtModuleName)
+                  , RTerm xTxtCon   @(XCon _ dcTxtCtorName) ])
                 <- takeXFragApps xxExp
+         , D.NameLitUnboxed (D.NameLitTextLit _txCtorName)
+                <- daConName dcTxtCtorName
+         , D.NameLitUnboxed (D.NameLitTextLit _txModuleName)
+                <- daConName dcTxtModuleName
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'      <- convertX ExpArg ctx xAddr
                 xTag'       <- convertX ExpArg ctx xTag
-                xArith'     <- convertX ExpArg ctx xArith
+                xArith'     <- convertX ExpArg ctx xArity
                 xTxtModule' <- convertX ExpArg ctx xTxtModule
                 xTxtCon'    <- convertX ExpArg ctx xTxtCon
                 return   $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddData")))
