@@ -187,7 +187,7 @@ data DataType n
 -- | Describes a data constructor, used in the `DataDefs` table.
 data DataCtor n
         = DataCtor
-        { -- | Name of data constructor.
+        { -- | Constructor name.
           dataCtorName        :: !n
 
           -- | Tag of constructor (order in data type declaration)

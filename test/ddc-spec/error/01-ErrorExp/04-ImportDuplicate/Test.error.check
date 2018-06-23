@@ -1,4 +1,0 @@
-Error in transformed module.
-  in stage SourceLoadText
-  in pipe  PipeCoreCheck/Check
-  Duplicate imported name 'foo'.
