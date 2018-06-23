@@ -22,6 +22,8 @@ war.failed
 war-std
 war-opt
 Main.dump*
+doc
+log
 tmp
 bin
 dist

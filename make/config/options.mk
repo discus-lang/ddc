@@ -81,6 +81,7 @@ DDC_PACKAGES	:= \
         -package text \
         -package mtl \
         -package stm \
+        -package json \
         -package bytestring \
         -package containers \
         -package directory \
