@@ -10,6 +10,7 @@ import DDC.Core.Discus.Convert.Exp.PrimArith
 import DDC.Core.Discus.Convert.Exp.PrimVector
 import DDC.Core.Discus.Convert.Exp.PrimBoxing
 import DDC.Core.Discus.Convert.Exp.PrimRecord
+import DDC.Core.Discus.Convert.Exp.PrimInfo
 import DDC.Core.Discus.Convert.Exp.PrimError
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Boxing
@@ -18,7 +19,7 @@ import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                           (AnTEC(..))
 import qualified DDC.Core.Call                  as Call
-import qualified DDC.Core.Discus.Prim            as E
+import qualified DDC.Core.Discus.Prim           as D
 import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
@@ -37,7 +38,7 @@ convertExp
         :: Show a
         => ExpContext                   -- ^ The surrounding expression context.
         -> Context a                    -- ^ Types and values in the environment.
-        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> Exp (AnTEC a D.Name) D.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a A.Name)
 
 convertExp ectx ctx xx
@@ -62,20 +63,17 @@ convertExp ectx ctx xx
 
                 return  $  XVar a' u'
 
-
         ---------------------------------------------------
         -- Ambient primitives.
         XPrim a p
          -> do  let a'  = annotTail a
                 return  $ XPrim a' p
 
-
         ---------------------------------------------------
         -- Unapplied data constructor.
         XCon a dc
          -> do  xx'     <- downCtorApp a dc []
                 return  xx'
-
 
         ---------------------------------------------------
         -- Type abstractions can appear in the body of expressions when
@@ -84,14 +82,12 @@ convertExp ectx ctx xx
          -> let ctx'    = extendsKindEnv [b] ctx
             in  convertExp ectx ctx' x
 
-
         ---------------------------------------------------
         -- Function abstractions can only appear at the top-level of a fucntion.
         XAbs{}
          -> throw $ ErrorUnsupported xx
           $ vcat [ text "Cannot convert function abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
-
 
         ---------------------------------------------------
         _
@@ -109,12 +105,13 @@ convertExp ectx ctx xx
          |  Just n      <- takeNameFragAppX xx
          ,  Just r
              <- case n of
-                  E.NamePrimArith{}       -> convertPrimArith  ectx ctx xx
-                  E.NamePrimCast _ True   -> convertPrimArith  ectx ctx xx
-                  E.NamePrimCast _ False  -> convertPrimBoxing ectx ctx xx
-                  E.NameOpError{}         -> convertPrimError  ectx ctx xx
-                  E.NameOpVector{}        -> convertPrimVector ectx ctx xx
-                  E.NameOpFun{}           -> convertPrimCall   ectx ctx xx
+                  D.NamePrimArith{}       -> convertPrimArith  ectx ctx xx
+                  D.NamePrimCast _ True   -> convertPrimArith  ectx ctx xx
+                  D.NamePrimCast _ False  -> convertPrimBoxing ectx ctx xx
+                  D.NameOpError{}         -> convertPrimError  ectx ctx xx
+                  D.NameOpVector{}        -> convertPrimVector ectx ctx xx
+                  D.NameOpFun{}           -> convertPrimCall   ectx ctx xx
+                  D.NameOpInfo{}          -> convertPrimInfo   ectx ctx xx
                   _                       -> Nothing
          -> r
 
@@ -133,7 +130,6 @@ convertExp ectx ctx xx
          , not $ Map.member n (contextCallable ctx)
          -> convertX ExpBody ctx xF
 
-
         ---------------------------------------------------
         -- Fully applied primitive data constructor.
         --  The type of the constructor is attached directly to this node of the AST.
@@ -148,7 +144,6 @@ convertExp ectx ctx xx
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
                      $ text "Cannot convert partially applied data constructor."
-
 
         ---------------------------------------------------
         -- Fully applied user-defined data constructor application.
@@ -166,7 +161,6 @@ convertExp ectx ctx xx
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
                      $ text "Cannot convert partially applied data constructor."
-
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
@@ -187,9 +181,8 @@ convertExp ectx ctx xx
          | otherwise
          -> throw $ ErrorUnsupported xx
          $  vcat [ text "Cannot convert application."
-                 , text "fun:       " <> ppr xa
+                 , text "fun:       " <> string (show xa)
                  , text "args:      " <> ppr xb ]
-
 
         ---------------------------------------------------
         -- let-expressions.
@@ -210,7 +203,6 @@ convertExp ectx ctx xx
          $  vcat [ text "Cannot convert a let-expression in this context."
                  , text "The program must be a-normalized before conversion." ]
 
-
         ---------------------------------------------------
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
@@ -226,7 +218,6 @@ convertExp ectx ctx xx
                                 alts
 
                 return  $  XCase a' xScrut' alts'
-
 
         ---------------------------------------------------
         -- Match against finite algebraic data.
@@ -262,7 +253,6 @@ convertExp ectx ctx xx
                 return  $ XCase a' (A.xBoxedTag a' tPrime x')
                         $ alts' ++ newDefaultAlt
 
-
         ---------------------------------------------------
         -- Trying to matching against something that isn't a primitive numeric
         -- type or alebraic data.
@@ -274,7 +264,6 @@ convertExp ectx ctx xx
         XCase{}
          -> throw $ ErrorUnsupported xx
          $  text "Unsupported case expression form."
-
 
         ---------------------------------------------------
         -- Type casts
@@ -307,14 +296,14 @@ convertExp ectx ctx xx
 
 ---------------------------------------------------------------------------------------------------
 convertExpSuperCall
-        :: Exp (AnTEC a E.Name) E.Name
+        :: Exp (AnTEC a D.Name) D.Name
         -> ExpContext                     -- ^ The surrounding expression context.
         -> Context a                      -- ^ Types and values in the environment.
         -> Bool                           -- ^ Whether this is call is directly inside a 'run'
         ->  a                             -- ^ Annotation from application node.
-        ->  E.Name                        -- ^ Name of super.
-        -> [ ( Arg (AnTEC a E.Name) E.Name
-             , Type E.Name) ]             -- ^ Arguments to super, along with their types.
+        ->  D.Name                        -- ^ Name of super.
+        -> [ ( Arg (AnTEC a D.Name) D.Name
+             , Type D.Name) ]             -- ^ Arguments to super, along with their types.
         -> ConvertM a (Exp a A.Name)
 
 convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
@@ -372,7 +361,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
 ---------------------------------------------------------------------------------------------------
 -- | If this is an application of a fragment specific primitive or
 --   the result of running one then take its name.
-takeNameFragAppX :: Exp a E.Name -> Maybe E.Name
+takeNameFragAppX :: Exp a D.Name -> Maybe D.Name
 takeNameFragAppX xx
  = case xx of
         XApp{}
@@ -388,7 +377,7 @@ takeNameFragAppX xx
 
 -- | If this is an application of an ambient primitive,
 --   then return its name.
-takeNamePrimAppX :: Exp a E.Name -> Maybe Prim
+takeNamePrimAppX :: Exp a D.Name -> Maybe Prim
 takeNamePrimAppX xx
  = case xx of
         XApp{}

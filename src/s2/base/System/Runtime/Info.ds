@@ -9,7 +9,7 @@ export  info_lookup
 export foreign c value
  ddcInfoFrameNew                : Nat# -> Addr#
  ddcInfoFramePush               : Addr# -> Unit
- ddcInfoFrameAddData            : Addr# -> Word16# -> TextLit# -> TextLit# -> Word32#
+ ddcInfoFrameAddData            : Addr# -> Word16# -> Word16# -> TextLit# -> TextLit# -> Word32#
 
 import Control.Exception
 import Data.Text
@@ -17,7 +17,7 @@ import Data.Text
 import foreign c value
  ddcInfoFrameNew                : Nat# -> Addr#
  ddcInfoFramePush               : Addr# -> Unit
- ddcInfoFrameAddData            : Addr# -> Word16# -> TextLit# -> TextLit# -> Word32#
+ ddcInfoFrameAddData            : Addr# -> Word16# -> Word16# -> TextLit# -> TextLit# -> Word32#
 
  ddcInfoEntryLookup             : Word32# -> Addr#
  ddcInfoEntryGetIdent           : Addr# -> Word32#

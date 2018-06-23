@@ -20,6 +20,9 @@ instance Pretty Exp where
          -> parens $ text "getelementptr"
          %% hcat (punctuate (text ", ") (ppr x : map (string . show) is))
 
+        XAdd  t x1 x2
+         -> parens $ hsep [ text "#ADD", ppr t, ppr x1, ppr x2 ]
+
 
 -- | Pretty print an expression without its type.
 pprPlainX :: Exp -> Doc
@@ -34,6 +37,9 @@ pprPlainX xx
          -> parens $ text "getelementptr"
          %% hcat (punctuate (text ", ") (ppr x : map (string . show) is))
 
+
+        XAdd t x1 x2
+         -> parens $ hsep [ text "#ADD", ppr t, ppr x1, ppr x2]
 
 instance Pretty Var where
  ppr (Var n t)          = ppr t %% ppr n

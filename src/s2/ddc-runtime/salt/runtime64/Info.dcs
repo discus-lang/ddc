@@ -4,22 +4,20 @@ module Runtime.Info
 export foreign c value
  ddcInfoFrameNew                : Word32# -> Addr#
  ddcInfoFramePush               : Addr#   -> Unit
- ddcInfoFrameAddData            : Addr# -> Word16# -> Addr# -> Addr# -> Word32#
+ ddcInfoFrameAddData            : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
 
  ddcInfoEntryLookup             : Word32# -> Addr#
  ddcInfoEntryGetIdent           : Addr# -> Word32#
  ddcInfoEntryGetType            : Addr# -> Word16#
+ ddcInfoEntryGetTag             : Addr# -> Word16#
  ddcInfoEntryGetArity           : Addr# -> Word16#
  ddcInfoEntryGetModuleName      : Addr# -> Addr#
  ddcInfoEntryGetCtorName        : Addr# -> Addr#
 
-
 import foreign c value
  malloc                         : Nat# -> Addr#
 
-
 with letrec
-
 
 ---------------------------------------------------------------------------------------------------
 -- While the runtime system is being initialized the infotable consists
@@ -48,12 +46,13 @@ with letrec
 --
 -- struct InfoEntryData <: InfoEntry
 -- {                            -- Total size = 32 bytes.
---    0  uint32 ident           -- Identifier of entry in infotable.
---    4  uint16 type   = 0      -- Type of entry in infotable (0 = Data)
---    6  uint16 arity           -- Arity of data constructor.
---    8  addr64 moduleName      -- Address of null-terminated string of module name.
---    16 addr64 ctorName        -- Address of null-terminated string of constructor name.
---    24 addr64 padding         -- Empty padding.
+--    0  uint32  ident          -- Identifier of entry in infotable.
+--    4  uint16  type   = 0     -- Type of entry in infotable (0 = Data)
+--    6  uint16  tag            -- Tag of data constructor in its data type.
+--    8  uint16  arity          -- Arity of data constructor.
+--    10 uint8[] .. padding ..
+--    16 addr64  moduleName     -- Address of null-terminated string of module name.
+--    24 addr64  ctorName       -- Address of null-terminated string of constructor name.
 -- }
 --
 
@@ -92,6 +91,7 @@ ddcInfoFramePush (aFrame: Addr#): Unit
 --   using the next available table index from the global index counter.
 ddcInfoFrameAddData
         (aFrame:        Addr#)          -- Address of frame to add info entry to.
+        (nTag:          Word16#)        -- Tag of data constructor in its data type.
         (nArity:        Word16#)        -- Arity of data constructor.
         (aNameModule:   Addr#)          -- Address of null-terminated string of module name.
         (aNameCtor:     Addr#)          -- Address of null-terminated string of constructor name.
@@ -117,9 +117,10 @@ ddcInfoFrameAddData
 
         write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
         write# [Word16#] aEntry 4#  0w16#       -- Entry type (0 = Data)
-        write# [Word16#] aEntry 6#  nArity      -- Arity of data constructor.
-        write# [Addr#]   aEntry 8#  aNameModule -- Module name.
-        write# [Addr#]   aEntry 16# aNameCtor   -- Constructor name.
+        write# [Word16#] aEntry 6#  nTag        -- Tag of data constructor.
+        write# [Word16#] aEntry 8#  nArity      -- Arity of data constructor.
+        write# [Addr#]   aEntry 16# aNameModule -- Module name.
+        write# [Addr#]   aEntry 24# aNameCtor   -- Constructor name.
 
         -- Bump the count of entries in the frame.
         write# [Word32#] aFrame 0#  (add# nFrameUsed 1w32#)
@@ -129,19 +130,22 @@ ddcInfoFrameAddData
 
 -- Entry ------------------------------------------------------------------------------------------
 ddcInfoEntryGetIdent      (aEntry: Addr#): Word32#
- = do   read# [Word32#] aEntry 0#
+ =      read# [Word32#] aEntry 0#
 
 ddcInfoEntryGetType       (aEntry: Addr#): Word16#
- = do   read# [Word16#] aEntry 4#
+ =      read# [Word16#] aEntry 4#
+
+ddcInfoEntryGetTag        (aEntry: Addr#): Word16#
+ =      read# [Word16#] aEntry 6#
 
 ddcInfoEntryGetArity      (aEntry: Addr#): Word16#
- = do   read# [Word16#] aEntry 6#
+ =      read# [Word16#] aEntry 8#
 
 ddcInfoEntryGetModuleName (aEntry: Addr#): Addr#
- = do   read# [Addr#]   aEntry 8#
+ =      read# [Addr#]   aEntry 16#
 
 ddcInfoEntryGetCtorName   (aEntry: Addr#): Addr#
- = do   read# [Addr#]   aEntry 16#
+ =      read# [Addr#]   aEntry 24#
 
 
 ---------------------------------------------------------------------------------------------------

@@ -154,17 +154,14 @@ convPrimStore ctx mdst p as
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
          | A.RType{} : args             <- as
-         , Just vDst@(Var nDst tDst)    <- mdst
+         , Just vDst@(Var _nDst tDst)   <- mdst
          , Just [mAddr, mOffset]        <- atomsR args
          -> Just $ do
                 xAddr'      <- mAddr
                 xOffset'    <- mOffset
-                let vOff    = Var (bumpName nDst "off") (tAddr pp)
-                let vPtr    = Var (bumpName nDst "ptr") (tPtr tDst)
-                return  $ Seq.fromList $ map annotNil
-                        [ IOp   vOff OpAdd xAddr' xOffset'
-                        , IConv vPtr ConvInttoptr (XVar vOff)
-                        , ILoad vDst (XVar vPtr) ]
+                return  $ Seq.singleton $ annotNil
+                        $ ILoad vDst
+                                (XConv (tPtr tDst) ConvInttoptr (XAdd (tAddr pp) xAddr' xOffset'))
 
 
         -- Write a value via a pointer.
@@ -175,13 +172,10 @@ convPrimStore ctx mdst p as
                 xAddr'   <- mAddr
                 xOffset' <- mOffset
                 xVal'    <- mVal
-                vOff     <- newUniqueNamedVar "off" (tAddr pp)
-                vPtr     <- newUniqueNamedVar "ptr" (tPtr $ typeOfExp xVal')
-                return  $ Seq.fromList $ map annotNil
-                        [ IOp    vOff OpAdd xAddr' xOffset'
-                        , IConv  vPtr ConvInttoptr (XVar vOff)
-                        , IStore (XVar vPtr) xVal' ]
-
+                let tPtrVal = tPtr $ typeOfExp xVal'
+                return  $ Seq.singleton $ annotNil
+                        $ IStore (XConv tPtrVal ConvInttoptr (XAdd (tAddr pp) xAddr' xOffset'))
+                                 xVal'
 
         -- Copy a block of memory.
         A.PrimStore A.PrimStoreCopy
@@ -345,7 +339,7 @@ convPrimStore ctx mdst p as
 
 
         -- Refer to a global variable.
-        A.PrimStore A.PrimStoreGlobal
+        A.PrimStore (A.PrimStoreGlobal _)
          | [A.RType t, A.RExp x]        <- as
          ,  A.XCon (C.DaConPrim n _)    <- x
          ,  A.NamePrimLit (A.PrimLitTextLit txName) <- n

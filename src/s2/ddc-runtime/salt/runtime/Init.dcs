@@ -36,18 +36,16 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         ddcAllocInit   defaultHeapSize
 
         -- Create refs for the object info table.
-        -- TODO: The 'ddcInfoIdentNext' is supposed to be a Word32,
-        --       but the Salt -> LLVM code generator doesn't want to make one.
-        write# [Word64#] (global# [Word64#] "ddcInfoIdentNext"#)     0# 0w64#
-        write# [Addr#]   (global# [Addr#]   "ddcInfoFrameRoot"#)     0# (promote# 0#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIdentNext"#)     0# 0w32#
+        write# [Addr#]   (globali# [Addr#]   "ddcInfoFrameRoot"#)     0# (promote# 0#)
 
         -- Create refs to command line arguments.
-        write# [Nat#]    (global# [Nat#]    "ddcGlobalEnvArgCount"#) 0# argc
-        write# [Addr#]   (global# [Addr#]   "ddcGlobalEnvArgVal"#)   0# argv
+        write# [Nat#]    (globali# [Nat#]    "ddcGlobalEnvArgCount"#) 0# argc
+        write# [Addr#]   (globali# [Addr#]   "ddcGlobalEnvArgVal"#)   0# argv
 
         -- Create refs for exception hooks.
-        write# [Addr#]   (global# [Addr#]   "ddcRuntimeHookExceptionFile"#)    0# (promote# 0#)
-        write# [Addr#]   (global# [Addr#]   "ddcRuntimeHookExceptionNetwork"#) 0# (promote# 0#)
+        write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionFile"#)    0# (promote# 0#)
+        write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionNetwork"#) 0# (promote# 0#)
 
         ()
 
@@ -57,16 +55,16 @@ ddcAllocInit (heapSize : Nat#) : Unit
  = do
         -- Create the front heap.
         pHeapBaseA      = malloc heapSize
-        write# (global# [Addr#] "ddcHeapBase"#)     0# pHeapBaseA
-        write# (global# [Addr#] "ddcHeapTop"#)      0# pHeapBaseA
-        write# (global# [Addr#] "ddcHeapMax"#)      0#
+        write# (globali# [Addr#] "ddcHeapBase"#)     0# pHeapBaseA
+        write# (globali# [Addr#] "ddcHeapTop"#)      0# pHeapBaseA
+        write# (globali# [Addr#] "ddcHeapMax"#)      0#
                (plusAddr# pHeapBaseA    (sub# heapSize 1#))
 
         -- Create the back heap.
         pHeapBackBaseA  = malloc heapSize
-        write# (global# [Addr#] "ddcHeapBackBase"#) 0# pHeapBackBaseA
-        write# (global# [Addr#] "ddcHeapBackTop"#)  0# pHeapBackBaseA
-        write# (global# [Addr#] "ddcHeapBackMax"#)  0#
+        write# (globali# [Addr#] "ddcHeapBackBase"#) 0# pHeapBackBaseA
+        write# (globali# [Addr#] "ddcHeapBackTop"#)  0# pHeapBackBaseA
+        write# (globali# [Addr#] "ddcHeapBackMax"#)  0#
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         ()
@@ -77,8 +75,8 @@ ddcAllocInit (heapSize : Nat#) : Unit
 ddcExit (code: Nat#): Void#
  = do
         -- Free the space for the heaps.
-        pHeapBaseA      = read# (global# [Addr#] "ddcHeapBase"#)     0#
-        pHeapBackBaseA  = read# (global# [Addr#] "ddcHeapBackBase"#) 0#
+        pHeapBaseA      = read# (globali# [Addr#] "ddcHeapBase"#)     0#
+        pHeapBackBaseA  = read# (globali# [Addr#] "ddcHeapBackBase"#) 0#
 
         free pHeapBaseA
         free pHeapBackBaseA

@@ -30,6 +30,11 @@ module DDC.Core.Discus.Prim
         , readOpVectorFlag
         , typeOpVectorFlag
 
+          -- * Baked-in info table operators.
+        , OpInfo        (..)
+        , readOpInfoFlag
+        , typeOpInfoFlag
+
           --- * Baked-in error handling.
         , OpError       (..)
         , readOpErrorFlag
@@ -60,6 +65,7 @@ import DDC.Core.Discus.Prim.OpArith
 import DDC.Core.Discus.Prim.OpCast
 import DDC.Core.Discus.Prim.OpFun
 import DDC.Core.Discus.Prim.OpVector
+import DDC.Core.Discus.Prim.OpInfo
 import DDC.Type.Exp
 import DDC.Data.Pretty
 import DDC.Data.Name
@@ -82,12 +88,13 @@ instance NFData Name where
         NameCon s               -> rnf s
         NameExt n s             -> rnf n `seq` rnf s
 
-        NameTyConDiscus con      -> rnf con
-        NameDaConDiscus con      -> rnf con
+        NameTyConDiscus con     -> rnf con
+        NameDaConDiscus con     -> rnf con
 
         NameOpError    op !_    -> rnf op
         NameOpFun      op       -> rnf op
         NameOpVector   op !_    -> rnf op
+        NameOpInfo     op !_    -> rnf op
 
         NamePrimTyCon  op       -> rnf op
         NamePrimArith  op !_    -> rnf op
@@ -124,6 +131,9 @@ instance Pretty Name where
 
         NameOpVector   op False -> ppr op
         NameOpVector   op True  -> ppr op <> text "#"
+
+        NameOpInfo     op False -> ppr op
+        NameOpInfo     op True  -> ppr op <> text "#"
 
         NamePrimTyCon  op       -> ppr op
 
@@ -179,6 +189,9 @@ readName str
 
         | Just (p, f)   <- readOpVectorFlag  $ T.unpack str
         = Just $ NameOpVector p f
+
+        | Just (p, f)   <- readOpInfoFlag    $ T.unpack str
+        = Just $ NameOpInfo p f
 
         -- Primitive names.
         | Just p        <- readPrimTyCon     $ T.unpack str
@@ -255,6 +268,7 @@ takeTypeOfPrimOpName nn
         NameOpError     op f    -> Just (typeOpErrorFlag   op f)
         NameOpFun       op      -> Just (typeOpFun         op)
         NameOpVector    op f    -> Just (typeOpVectorFlag  op f)
+        NameOpInfo      op f    -> Just (typeOpInfoFlag    op f)
         NamePrimArith   op f    -> Just (typePrimArithFlag op f)
         NamePrimCast    op f    -> Just (typePrimCastFlag  op f)
         _                       -> Nothing

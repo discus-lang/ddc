@@ -121,6 +121,7 @@ unboxPrimOpName n
         NamePrimCast  op False  -> Just $ NamePrimCast  op True
         NameOpVector  op False  -> Just $ NameOpVector  op True
         NameOpError   op False  -> Just $ NameOpError   op True
+        NameOpInfo    op False  -> Just $ NameOpInfo    op True
         _                       -> Nothing
 
 
