@@ -192,8 +192,18 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToPHP file
 
+
+        -- Language Server ----------------------
+        | "-lsp" : rest <- args
+        = parseArgs rest
+        $ setMode config $ ModeLSP
+
+        | "-lsp-log-debug" : file : rest <- args
+        = parseArgs rest
+        $ config { configLspLogDebug = Just file }
+
         -- Debugging ----------------------------
-        | "-dump"   : rest        <- args
+        | "-dump"   : rest <- args
         = parseArgs rest
         $ config { configDump   = True }
 
@@ -255,29 +265,30 @@ setMode config newMode
 flagOfMode :: Mode -> Maybe String
 flagOfMode mode
  = case mode of
-        ModeNone{}                      -> Nothing
-        ModeVersion{}                   -> Just "-version"
-        ModeHelp{}                      -> Just "-help"
-        ModeParse{}                     -> Just "-parse"
-        ModeScan _ True                 -> Just "-scan"
-        ModeScan _ False                -> Just "-scan-no-locations"
-        ModeCheck{}                     -> Just "-check"
-        ModeLoad{}                      -> Just "-load"
-        ModeCompile{}                   -> Just "-compile"
-        ModeMake{}                      -> Just "-make"
-        ModeBuild{}                     -> Just "-build"
-        ModeToSalt{}                    -> Just "-to-salt"
-        ModeToLLVM{}                    -> Just "-to-llvm"
-        ModeToPHP{}                     -> Just "-to-php"
-        ModeFlowPrep{}                  -> Just "-flow-prep"
-        ModeFlowLower{}                 -> Just "-flow-lower"
-        ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"
-        ModeFlowLowerVector{}           -> Just "-flow-lower-vector"
-        ModeFlowConcretize{}            -> Just "-flow-concretize"
-        ModeFlowMelt{}                  -> Just "-flow-melt"
-        ModeFlowThread{}                -> Just "-flow-thread"
-        ModeFlowWind{}                  -> Just "-flow-wind"
-        ModeBaseBuild{}                 -> Just "-basebuild"
-        ModePrintBuilder{}              -> Just "-print-builder"
-        ModePrintBaseDir{}              -> Just "-print-basedir"
+        ModeNone{}              -> Nothing
+        ModeVersion{}           -> Just "-version"
+        ModeHelp{}              -> Just "-help"
+        ModeParse{}             -> Just "-parse"
+        ModeScan _ True         -> Just "-scan"
+        ModeScan _ False        -> Just "-scan-no-locations"
+        ModeCheck{}             -> Just "-check"
+        ModeLoad{}              -> Just "-load"
+        ModeCompile{}           -> Just "-compile"
+        ModeMake{}              -> Just "-make"
+        ModeBuild{}             -> Just "-build"
+        ModeLSP{}               -> Just "-lsp"
+        ModeToSalt{}            -> Just "-to-salt"
+        ModeToLLVM{}            -> Just "-to-llvm"
+        ModeToPHP{}             -> Just "-to-php"
+        ModeFlowPrep{}          -> Just "-flow-prep"
+        ModeFlowLower{}         -> Just "-flow-lower"
+        ModeFlowLowerKernel{}   -> Just "-flow-lower-kernel"
+        ModeFlowLowerVector{}   -> Just "-flow-lower-vector"
+        ModeFlowConcretize{}    -> Just "-flow-concretize"
+        ModeFlowMelt{}          -> Just "-flow-melt"
+        ModeFlowThread{}        -> Just "-flow-thread"
+        ModeFlowWind{}          -> Just "-flow-wind"
+        ModeBaseBuild{}         -> Just "-basebuild"
+        ModePrintBuilder{}      -> Just "-print-builder"
+        ModePrintBaseDir{}      -> Just "-print-basedir"
 
