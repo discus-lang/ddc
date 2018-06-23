@@ -198,8 +198,7 @@ collectGlobalsOfModule pp mm
                         [ (Text.pack "ddcHeapMax",  [(A.tAddr, False)])
                         , (Text.pack "ddcHeapTop",  [(A.tAddr, False)])]
 
-        -- Convert the Salt types of each global to their equivalent
-        -- LLVM types.
+        -- Convert the Salt types of each global to their equivalent LLVM types.
         globals_llvm
          <- forM (Map.toList globals_salt)
          $  \(name, tbs)
@@ -208,32 +207,25 @@ collectGlobalsOfModule pp mm
                 return  (name, (t', bInitHere))
 
         let takeDecl (name, (tGlobal, bDefineHere))
+                -- Uses of the "globali#" primitive indicate that the symbol
+                -- should be define in this module, which gets set to 0.
                 | bDefineHere
                 = GlobalStatic   (Var (NameGlobal (Text.unpack name))
                                       (TPointer tGlobal))
-                                 (StaticLit (LitInt (tAddr pp) 0))
+                $ case tGlobal of
+                        TPointer _ -> StaticLit (LitInt (tAddr pp) 0)
+                        TInt bits  -> StaticLit (LitInt (TInt bits) 0)
+                        _ -> error $  "ddc-core-llvm.collectGlobalsOfModule: cannot define global"
+                                   ++ "of type " ++ show tGlobal
 
+                -- Uses of the "global#" primtive refer to symbol defined
+                -- in some other module, so we import them externally.
                 | otherwise
                 = GlobalExternal (Var (NameGlobal (Text.unpack name))
                                       tGlobal)
 
         return $ map takeDecl globals_llvm
 
-{-
-        if C.moduleName mm == C.ModuleName ["Init"]
-         -- When compiling the Init module, allocate space for each global.
-         then return
-                [ GlobalStatic   (Var (NameGlobal (Text.unpack name))
-                                      (TPointer tGlobal))
-                                 (StaticLit (LitInt (tAddr pp) 0))
-                | (name, tGlobal) <- globals_llvm ]
-
-         -- Otherwise refer to the global as an external symbol.
-         else return
-                [ GlobalExternal (Var (NameGlobal (Text.unpack name))
-                                 tGlobal)
-                | (name, tGlobal) <- globals_llvm ]
--}
 
 ---------------------------------------------------------------------------------------------------
 -- | C library functions that are used directly by the generated code without

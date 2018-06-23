@@ -36,9 +36,7 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         ddcAllocInit   defaultHeapSize
 
         -- Create refs for the object info table.
-        -- TODO: The 'ddcInfoIdentNext' is supposed to be a Word32,
-        --       but the Salt -> LLVM code generator doesn't want to make one.
-        write# [Word64#] (globali# [Word64#] "ddcInfoIdentNext"#)     0# 0w64#
+        write# [Word32#] (globali# [Word32#] "ddcInfoIdentNext"#)     0# 0w32#
         write# [Addr#]   (globali# [Addr#]   "ddcInfoFrameRoot"#)     0# (promote# 0#)
 
         -- Create refs to command line arguments.
