@@ -8,7 +8,7 @@ export foreign c value
  ddcPrimRefWrite  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
 import foreign c value
- ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcBoxedGetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
  ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
@@ -20,7 +20,7 @@ ddcPrimRefAlloc [r1 r2: Region] (pVal: Ptr# r1 Obj): Ptr# r2 Obj
  = do   sVal    = allocSlot# [r1]
 
         poke# sVal pVal
-        ref     = ddcBoxedAlloc [r2] (truncate# 0#) 1#
+        ref     = ddcBoxedAlloc [r2] (truncate# 0#) (truncate# 1#) 1#
         pVal'   = peek# sVal
 
         ddcBoxedSetField ref 0# pVal'

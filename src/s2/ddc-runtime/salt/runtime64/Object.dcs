@@ -93,7 +93,7 @@ export foreign c value
  ddcThunkGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Objects with just pointers to boxed things.
- ddcBoxedAlloc          : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedAlloc          : [r1:    Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcBoxedSize           : [r1:    Region]. Ptr# r1 Obj -> Nat#
  ddcBoxedFields         : [r1:    Region]. Ptr# r1 Obj -> Nat#
  ddcBoxedTag            : [r1:    Region]. Ptr# r1 Obj -> Tag#
@@ -470,7 +470,7 @@ ddcThunkGetField
 --
 ddcBoxedAlloc
         [r: Region]
-        (tag: Tag#) (arity: Nat#): Ptr# r Obj
+        (tag: Tag#) (info: Nat#) (arity: Nat#) : Ptr# r Obj
  = do
         -- Size of the object we need to allocate.
         bytesObj
@@ -494,7 +494,8 @@ ddcBoxedAlloc
         write# addr 0#
             (bor# (shl# (promote# [Word64#] arity) 40w64#)
             (bor# (shl# (promote# [Word64#] tag)   32w64#)
-                  0b00100001w64#))
+            (bor# (shl# (promote# [Word64#] info)   8w64#)
+                  0b00100001w64#)))
 
         -- Return pointer to the new object.
         makePtr# addr

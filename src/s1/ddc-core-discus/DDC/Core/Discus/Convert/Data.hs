@@ -35,7 +35,9 @@ constructData pp a ctorDef rPrime xsFields tsFields
         -- Allocate the object.
         let arity       = length tsFields
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
-        let xAlloc      = A.xAllocBoxed a rPrime (dataCtorTag ctorDef)
+        let xAlloc      = A.xAllocBoxed a rPrime
+                                (dataCtorTag ctorDef)
+                                (A.xNat a 0) -- TODO: add info table index.
                         $ A.xNat a (fromIntegral arity)
 
         -- Statements to write each of the fields.

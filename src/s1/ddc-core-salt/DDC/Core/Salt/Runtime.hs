@@ -300,18 +300,19 @@ utRunThunk
 
 -- Boxed ------------------------------------------------------------------------------------------
 -- | Allocate a Boxed object.
-xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
-xAllocBoxed a tR tag x2
+xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name -> Exp a Name
+xAllocBoxed a tR tag xInfo x2
  = xApps a (XVar a $ fst utAllocBoxed)
         [ RType tR
-        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)) tTag)
+        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag))  tTag)
+        , RTerm xInfo
         , RTerm x2]
 
 
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
  =      ( UName (NameVar "ddcBoxedAlloc")
-        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
+        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the constructor tag of an object.

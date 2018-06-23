@@ -36,7 +36,15 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         ddcAllocInit   defaultHeapSize
 
         -- Create refs for the object info table.
-        write# [Word32#] (globali# [Word32#] "ddcInfoIdentNext"#)     0# 0w32#
+        --   The runtime system reserves info table entries for the following:
+        --   0 - sentinal unallocated value, if any object has this then there's a bug.
+        --   1 - for the Ref# data constructor.
+        --   2 - for the TextLit# data constructor.
+        --   3 - for the Vector# data constructor.
+        --   4 - for the Array#  data constructor.
+        --   TODO: need indices for boxed prims as well, Nat# Word8# etc,
+        --   as we produce these via convert#.
+        write# [Word32#] (globali# [Word32#] "ddcInfoIdentNext"#)     0# 32w32#
         write# [Addr#]   (globali# [Addr#]   "ddcInfoFrameRoot"#)     0# (promote# 0#)
 
         -- Create refs to command line arguments.

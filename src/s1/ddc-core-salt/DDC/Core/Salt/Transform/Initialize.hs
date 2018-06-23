@@ -104,7 +104,9 @@ isMainBind bb
 --   which is the entry point to the executable.
 makeMainEntryX :: Config -> a -> Exp a Name
 makeMainEntryX config a
- = let xU       = xAllocBoxed a rTop 0 (xNat a 0)
+ = let xU = xAllocBoxed a rTop 0 (xNat a 0) (xNat a 0)
+                -- TODO: info table index.
+
    in  XLam    a  (BName (NameVar "argc") tNat)
         $ XLam a  (BName (NameVar "argv") tAddr)
 

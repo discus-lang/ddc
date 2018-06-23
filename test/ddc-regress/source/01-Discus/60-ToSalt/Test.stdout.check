@@ -48,7 +48,7 @@ letrec {
       ^1;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx1: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx1: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -88,7 +88,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -137,7 +137,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -198,7 +198,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -250,7 +250,7 @@ letrec {
       add x xx4;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -262,11 +262,11 @@ letrec {
       case ddcBoxedTag [rT] x of {
         TAG0#  
          -> let ^      
-                  = ddcBoxedAlloc [rT] TAG1# 0# in
+                  = ddcBoxedAlloc [rT] TAG1# 0# 0# in
             ^0;
         TAG1#  
          -> let ^      
-                  = ddcBoxedAlloc [rT] TAG0# 0# in
+                  = ddcBoxedAlloc [rT] TAG0# 0# 0# in
             ^0;
         _ 
          -> fail# [Ptr# rT Obj]
@@ -344,7 +344,7 @@ letrec {
               ^0 in
       let xx4    
             = ddcInfoFramePush xx10 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -443,7 +443,7 @@ letrec {
               ^0 in
       let xx4    
             = ddcInfoFramePush xx10 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -536,7 +536,7 @@ letrec {
               ^0 in
       let xx4    
             = ddcInfoFramePush xx10 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -577,7 +577,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -604,7 +604,7 @@ letrec {
     = λ(x$Sx101: Ptr# rT Obj).
       let xx0    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG1# 0# in
+                    = ddcBoxedAlloc [rT] TAG1# 0# 0# in
               ^0 in
       let xx7    
             = let ^      
@@ -617,7 +617,7 @@ letrec {
               ^1 in
       let xx1    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG0# 2# in
+                    = ddcBoxedAlloc [rT] TAG0# 0# 2# in
               let _      
                     = ddcBoxedSetField [rT] [rT] ^0 0# xx7 in
               let _      
@@ -706,7 +706,7 @@ letrec {
               ^0 in
       let xx6    
             = ddcInfoFramePush xx14 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
 
@@ -734,19 +734,19 @@ letrec {
       λ(x$Sx101: Ptr# rT Obj).
       let xx0    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG0# 0# in
+                    = ddcBoxedAlloc [rT] TAG0# 0# 0# in
               ^0 in
       let xx1    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG1# 0# in
+                    = ddcBoxedAlloc [rT] TAG1# 0# 0# in
               ^0 in
       let xx2    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG1# 0# in
+                    = ddcBoxedAlloc [rT] TAG1# 0# 0# in
               ^0 in
       let xx3    
             = let ^      
-                    = ddcBoxedAlloc [rT] TAG0# 2# in
+                    = ddcBoxedAlloc [rT] TAG0# 0# 2# in
               let _      
                     = ddcBoxedSetField [rT] [rT] ^0 0# xx1 in
               let _      
@@ -896,6 +896,6 @@ letrec {
               ^0 in
       let xx12   
             = ddcInfoFramePush xx24 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0# 0#
 }
 
