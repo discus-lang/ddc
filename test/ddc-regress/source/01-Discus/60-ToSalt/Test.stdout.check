@@ -7,25 +7,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let xx1    
-            = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 1# in
-              let ^      
-                    = ddcSmallPayload [rT] ^0 in
-              let _      
-                    = poke# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 3# in
-              ^1 in
       let xx2    
-            = let ^      
-                    = xx1 in
-              let ^      
-                    = ddcSmallPayload [rT] ^0 in
-              let ^      
-                    = peek# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
-              ^0 in
-      let xx3    
             = let ^      
                     = x in
               let ^      
@@ -34,8 +16,8 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      let xx4    
-            = add# [Nat#] xx2 xx3 in
+      let xx3    
+            = add# [Nat#] 3# xx2 in
       let xx0    
             = let ^      
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -43,27 +25,9 @@ letrec {
                     = ddcSmallPayload [rT] ^0 in
               let _      
                     = poke# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx4 in
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx3 in
               ^1 in
-      let xx5    
-            = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 1# in
-              let ^      
-                    = ddcSmallPayload [rT] ^0 in
-              let _      
-                    = poke# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 2# in
-              ^1 in
-      let xx6    
-            = let ^      
-                    = xx5 in
-              let ^      
-                    = ddcSmallPayload [rT] ^0 in
-              let ^      
-                    = peek# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
-              ^0 in
-      let xx7    
+      let xx4    
             = let ^      
                     = xx0 in
               let ^      
@@ -72,16 +36,19 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      let xx8    
-            = add# [Nat#] xx6 xx7 in
+      let xx5    
+            = add# [Nat#] 2# xx4 in
       let ^      
             = ddcSmallAlloc [rT] TAG0# 1# in
       let ^      
             = ddcSmallPayload [rT] ^0 in
       let _      
             = poke# [rT] [Nat#]
-                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx8 in
-      ^1
+                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx5 in
+      ^1;
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx1: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -90,7 +57,7 @@ module Test with
 letrec {
   neg: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let xx0    
+      let xx1    
             = let ^      
                     = x in
               let ^      
@@ -99,7 +66,7 @@ letrec {
                     = peek# [rT] [Bool#]
                           (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) in
               ^0 in
-      case xx0 of {
+      case xx1 of {
         True#  
          -> let ^      
                   = ddcSmallAlloc [rT] TAG0# 1# in
@@ -118,7 +85,10 @@ letrec {
                   = poke# [rT] [Bool#]
                         (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) True# in
             ^1
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -127,7 +97,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let xx0    
+      let xx1    
             = let ^      
                     = x in
               let ^      
@@ -136,7 +106,7 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      case xx0 of {
+      case xx1 of {
         5#  
          -> let ^      
                   = ddcSmallAlloc [rT] TAG0# 1# in
@@ -164,7 +134,10 @@ letrec {
                   = poke# [rT] [Nat#]
                         (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -173,7 +146,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(x y: Ptr# rT Obj).
-      let xx0    
+      let xx1    
             = let ^      
                     = x in
               let ^      
@@ -182,9 +155,9 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      case xx0 of {
+      case xx1 of {
         0#  
-         -> let xx1    
+         -> let xx2    
                   = let ^      
                           = y in
                     let ^      
@@ -193,7 +166,7 @@ letrec {
                           = peek# [rT] [Nat#]
                                 (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
                     ^0 in
-            case xx1 of {
+            case xx2 of {
               0#  
                -> let ^      
                         = ddcSmallAlloc [rT] TAG0# 1# in
@@ -222,7 +195,10 @@ letrec {
                   = poke# [rT] [Nat#]
                         (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -231,7 +207,7 @@ module Test with
 letrec {
   add: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(x y: Ptr# rT Obj).
-      let xx0    
+      let xx1    
             = let ^      
                     = x in
               let ^      
@@ -240,7 +216,7 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      let xx1    
+      let xx2    
             = let ^      
                     = y in
               let ^      
@@ -249,20 +225,20 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      let xx2    
-            = add# [Nat#] xx0 xx1 in
+      let xx3    
+            = add# [Nat#] xx1 xx2 in
       let ^      
             = ddcSmallAlloc [rT] TAG0# 1# in
       let ^      
             = ddcSmallPayload [rT] ^0 in
       let _      
             = poke# [rT] [Nat#]
-                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx2 in
+                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) xx3 in
       ^1;
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let xx3    
+      let xx4    
             = let ^      
                     = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
@@ -271,7 +247,10 @@ letrec {
                     = poke# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 5# in
               ^1 in
-      add x xx3
+      add x xx4;
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -291,7 +270,81 @@ letrec {
             ^0;
         _ 
          -> fail# [Ptr# rT Obj]
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx5    
+            = ddcInfoFrameNew 2# in
+      let xx1    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx5 in
+              ^1 in
+      let xx6    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx7    
+            = let ^      
+                    = ddcInfoFrameAddData xx6 0w16# 0w16# "Test"# "Hot"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Hot"#) 0# ^0 in
+              ^0 in
+      let xx2    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx7 in
+              ^1 in
+      let xx8    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx9    
+            = let ^      
+                    = ddcInfoFrameAddData xx8 1w16# 0w16# "Test"# "Cold"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cold"#) 0# ^0 in
+              ^0 in
+      let xx3    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx9 in
+              ^1 in
+      let xx10   
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx4    
+            = ddcInfoFramePush xx10 in
+      ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -316,7 +369,81 @@ letrec {
                   = poke# [rT] [Nat#]
                         (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx5    
+            = ddcInfoFrameNew 2# in
+      let xx1    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx5 in
+              ^1 in
+      let xx6    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx7    
+            = let ^      
+                    = ddcInfoFrameAddData xx6 0w16# 2w16# "Test"# "Cons"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
+      let xx2    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx7 in
+              ^1 in
+      let xx8    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx9    
+            = let ^      
+                    = ddcInfoFrameAddData xx8 1w16# 0w16# "Test"# "Nil"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
+      let xx3    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx9 in
+              ^1 in
+      let xx10   
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx4    
+            = ddcInfoFramePush xx10 in
+      ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -335,7 +462,81 @@ letrec {
             x;
         _ 
          -> def
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx5    
+            = ddcInfoFrameNew 2# in
+      let xx1    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx5 in
+              ^1 in
+      let xx6    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx7    
+            = let ^      
+                    = ddcInfoFrameAddData xx6 0w16# 2w16# "Test"# "Cons"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
+      let xx2    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx7 in
+              ^1 in
+      let xx8    
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx9    
+            = let ^      
+                    = ddcInfoFrameAddData xx8 1w16# 0w16# "Test"# "Nil"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
+      let xx3    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx9 in
+              ^1 in
+      let xx10   
+            = let ^      
+                    = xx1 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx4    
+            = ddcInfoFramePush xx10 in
+      ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -345,7 +546,7 @@ module Test with
 letrec {
   swap: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let xx0    
+      let xx1    
             = let ^      
                     = x in
               let ^      
@@ -354,7 +555,7 @@ letrec {
                     = peek# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
-      case xx0 of {
+      case xx1 of {
         0#  
          -> let ^      
                   = ddcSmallAlloc [rT] TAG0# 1# in
@@ -373,7 +574,10 @@ letrec {
                   = poke# [rT] [Nat#]
                         (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
-      }
+      };
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -402,7 +606,7 @@ letrec {
             = let ^      
                     = ddcBoxedAlloc [rT] TAG1# 0# in
               ^0 in
-      let xx2    
+      let xx7    
             = let ^      
                     = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
@@ -415,11 +619,11 @@ letrec {
             = let ^      
                     = ddcBoxedAlloc [rT] TAG0# 2# in
               let _      
-                    = ddcBoxedSetField [rT] [rT] ^0 0# xx2 in
+                    = ddcBoxedSetField [rT] [rT] ^0 0# xx7 in
               let _      
                     = ddcBoxedSetField [rT] [rT] ^0 1# xx0 in
               ^0 in
-      let xx3    
+      let xx8    
             = let ^      
                     = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
@@ -428,7 +632,81 @@ letrec {
                     = poke# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
               ^1 in
-      head [rT] xx3 xx1
+      head [rT] xx8 xx1;
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx2: Ptr# rT Obj).
+      let xx9    
+            = ddcInfoFrameNew 2# in
+      let xx3    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx9 in
+              ^1 in
+      let xx10   
+            = let ^      
+                    = xx3 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx11   
+            = let ^      
+                    = ddcInfoFrameAddData xx10 0w16# 2w16# "Test"# "Cons"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
+      let xx4    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx11 in
+              ^1 in
+      let xx12   
+            = let ^      
+                    = xx3 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx13   
+            = let ^      
+                    = ddcInfoFrameAddData xx12 1w16# 0w16# "Test"# "Nil"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
+      let xx5    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx13 in
+              ^1 in
+      let xx14   
+            = let ^      
+                    = xx3 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx6    
+            = ddcInfoFramePush xx14 in
+      ddcBoxedAlloc [rT] TAG0# 0#
 }
 
 
@@ -474,6 +752,150 @@ letrec {
               let _      
                     = ddcBoxedSetField [rT] [rT] ^0 1# xx2 in
               ^0 in
-      head [rT] xx0 xx3
+      head [rT] xx0 xx3;
+  
+  _init$Test: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx4: Ptr# rT Obj).
+      let xx13   
+            = ddcInfoFrameNew 2# in
+      let xx5    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx13 in
+              ^1 in
+      let xx14   
+            = let ^      
+                    = xx5 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx15   
+            = let ^      
+                    = ddcInfoFrameAddData xx14 0w16# 2w16# "Test"# "Cons"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
+      let xx6    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx15 in
+              ^1 in
+      let xx16   
+            = let ^      
+                    = xx5 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx17   
+            = let ^      
+                    = ddcInfoFrameAddData xx16 1w16# 0w16# "Test"# "Nil"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
+      let xx7    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx17 in
+              ^1 in
+      let xx18   
+            = let ^      
+                    = xx5 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx8    
+            = ddcInfoFramePush xx18 in
+      let xx19   
+            = ddcInfoFrameNew 2# in
+      let xx9    
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx19 in
+              ^1 in
+      let xx20   
+            = let ^      
+                    = xx9 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx21   
+            = let ^      
+                    = ddcInfoFrameAddData xx20 0w16# 0w16# "Test"# "Hot"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Hot"#) 0# ^0 in
+              ^0 in
+      let xx10   
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx21 in
+              ^1 in
+      let xx22   
+            = let ^      
+                    = xx9 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx23   
+            = let ^      
+                    = ddcInfoFrameAddData xx22 1w16# 0w16# "Test"# "Cold"# in
+              let _      
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cold"#) 0# ^0 in
+              ^0 in
+      let xx11   
+            = let ^      
+                    = ddcSmallAlloc [rT] TAG0# 1# in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let _      
+                    = poke# [rT] [Word32#]
+                          (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx23 in
+              ^1 in
+      let xx24   
+            = let ^      
+                    = xx9 in
+              let ^      
+                    = ddcSmallPayload [rT] ^0 in
+              let ^      
+                    = peek# [rT] [Addr#]
+                          (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+              ^0 in
+      let xx12   
+            = ddcInfoFramePush xx24 in
+      ddcBoxedAlloc [rT] TAG0# 0#
 }
 

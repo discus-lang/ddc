@@ -23,8 +23,8 @@ import qualified Data.Foldable  as Seq
 -- | Flatten expressions in a module.
 flatten :: Module -> Module
 flatten mm
- = let  Right funcs'    
-                = evalCheck 0 
+ = let  Right funcs'
+                = evalCheck 0
                 $ mapM flattenFunction $ modFuncs mm
    in   mm { modFuncs = funcs' }
 
@@ -39,22 +39,22 @@ flattenFunction fun
 -- | Flatten expressions in a single block.
 flattenBlock    :: Block   -> FlattenM Block
 flattenBlock block
- = do   instrs' <- flattenInstrs Seq.empty 
+ = do   instrs' <- flattenInstrs Seq.empty
                 $  Seq.toList $ blockInstrs block
         return  $ block { blockInstrs = Seq.fromList instrs' }
 
 
 -- | Flatten a list of instructions.
-flattenInstrs   
+flattenInstrs
         :: Seq AnnotInstr       -- ^ Accumulated instructions of result.
         -> [AnnotInstr]         -- ^ Instructions still to flatten.
         -> FlattenM [AnnotInstr]
 
-flattenInstrs acc [] 
+flattenInstrs acc []
  = return $ Seq.toList acc
 
 flattenInstrs acc (AnnotInstr i annots : is)
- = let  
+ = let
         next acc'
          = flattenInstrs acc' is
 
@@ -74,7 +74,7 @@ flattenInstrs acc (AnnotInstr i annots : is)
 
          -- Preserve nops, for the sake of just doing one thing at a time.
          -- These can be eliminated with the LLVM simplifier.
-         INop 
+         INop
           ->    next $ acc |> reannot i
 
          -- Phi nodes
@@ -135,10 +135,10 @@ flattenInstrs acc (AnnotInstr i annots : is)
                 next $ (acc >< is1 >< is2) |> (reannot $ ICmp v c x1' x2')
 
          -- Function calls
-         ICall mv ct mcc t n xs ats        
+         ICall mv ct mcc t n xs ats
           -> do (iss, xs')      <- fmap unzip $ mapM flattenX xs
                 let is'         =  join $ Seq.fromList iss
-                next $  (acc >< is') 
+                next $  (acc >< is')
                      |> (reannot $ ICall mv ct mcc t n xs' ats)
 
 
@@ -149,6 +149,12 @@ flattenInstrs acc (AnnotInstr i annots : is)
 flattenX :: Exp -> FlattenM (Seq AnnotInstr, Exp)
 flattenX xx
  = case xx of
+        -- TODO: we need to refactor the LLVM gen to return more exps
+        -- directly for this to work.
+--        XConv (TPointer t1) ConvInttoptr (XConv t2 ConvPtrtoint x)
+--         | t1 == t2 -> return (Seq.empty, x)
+--         | otherwise -> error $ show (t1, t2)
+
         XConv t c x
          -> do  (is', x') <- flattenX x
                 v         <- newUniqueVar t
@@ -158,6 +164,23 @@ flattenX xx
          -> do  (is', x') <- flattenX x
                 v         <- newUniqueVar t
                 return    (is' |> (annotNil $ IGet v x' os), XVar v)
+
+        -- Flatten add expressions into instructions,
+        --   Suppressing (0 + x) and (x + 0) as we go.
+        XAdd  t x1 x2
+         -> do  (is1', x1') <- flattenX x1
+                (is2', x2') <- flattenX x2
+                v       <- newUniqueVar t
+                case (x1', x2') of
+                 (XLit (LitInt _ 0), _)
+                   -> return (is1' >< is2', x2')
+
+                 (_, XLit (LitInt _ 0))
+                   -> return (is1' >< is2', x1')
+
+                 _ -> return ( is1' >< (is2' |> (annotNil $ IOp v OpAdd x1' x2'))
+                             , XVar v)
+
 
         _ ->    return (Seq.empty, xx)
 
@@ -169,7 +192,7 @@ type FlattenM a = CheckM Int String a
 
 -- | Unique name generation.
 newUnique :: FlattenM Int
-newUnique 
+newUnique
  = do   s       <- get
         put     $ s + 1
         return  $ s

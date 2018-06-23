@@ -13,11 +13,11 @@ main ()
  = do
         -- Create two info table frames and push them on the stack.
         aFrame1 = ddcInfoFrameNew 2
-        wIdent1 = ddcInfoFrameAddData aFrame1 0w16
+        wIdent1 = ddcInfoFrameAddData aFrame1 0w16 1w16
                         (unpackTextLit "Some.Module1")
                         (unpackTextLit "CtorNameBar")
 
-        wIdent3 = ddcInfoFrameAddData aFrame1 0w16
+        wIdent3 = ddcInfoFrameAddData aFrame1 0w16 1w16
                         (unpackTextLit "Some.Module1")
                         (unpackTextLit "CtorNameBaz")
 
@@ -25,7 +25,7 @@ main ()
 
 
         aFrame2 = ddcInfoFrameNew 1
-        wIdent2 = ddcInfoFrameAddData aFrame2 0w16
+        wIdent2 = ddcInfoFrameAddData aFrame2 0w16 1w16
                         (unpackTextLit "Some.Module2")
                         (unpackTextLit "CtorNameFoo")
         ddcInfoFramePush aFrame2
@@ -34,7 +34,11 @@ main ()
         -- Lookup an entry from the bottom frame.
         aEntry  = info_lookup wIdent3
 
-        writel $ "ident      = " % show (info_getIdent aEntry)
+        -- The identifier this ends up being assigned to will depend
+        -- on what other infotable entries have been added for imported
+        -- modules, eg System.IO.Console, so the test output isn't stable.
+--      writel $ "ident      = " % show (info_getIdent aEntry)
+
         writel $ "moduleName = " % info_getModuleName aEntry
         writel $ "ctorName   = " % info_getCtorName   aEntry
 

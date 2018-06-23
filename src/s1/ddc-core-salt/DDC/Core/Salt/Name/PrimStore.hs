@@ -84,7 +84,9 @@ data PrimStore
 
         -- Global Variables -----------
         -- | Reference to a global
-        | PrimStoreGlobal
+        --   The flag says whether the object level symbol should be initialized in the
+        --   code for the enclosing module.
+        | PrimStoreGlobal Bool
         deriving (Eq, Ord, Show)
 
 
@@ -119,7 +121,8 @@ instance Pretty PrimStore where
         PrimStoreTakePtr        -> text "takePtr#"
         PrimStoreCastPtr        -> text "castPtr#"
 
-        PrimStoreGlobal         -> text "global#"
+        PrimStoreGlobal False   -> text "global#"
+        PrimStoreGlobal True    -> text "globali#"
 
 
 
@@ -146,7 +149,8 @@ readPrimStore str
         "peekBounded#"          -> Just PrimStorePeekBounded
         "pokeBounded#"          -> Just PrimStorePokeBounded
 
-        "global#"               -> Just PrimStoreGlobal
+        "global#"               -> Just (PrimStoreGlobal False)
+        "globali#"              -> Just (PrimStoreGlobal True)
 
         "check#"                -> Just PrimStoreCheck
         "alloc#"                -> Just PrimStoreAlloc

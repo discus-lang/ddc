@@ -124,10 +124,11 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameDaConDiscus  p                    -> Just $ typeDaConDiscus    p
+        NameDaConDiscus p                    -> Just $ typeDaConDiscus   p
         NameOpFun       p                    -> Just $ typeOpFun         p
         NameOpVector    p f                  -> Just $ typeOpVectorFlag  p f
         NameOpError     p f                  -> Just $ typeOpErrorFlag   p f
+        NameOpInfo      p f                  -> Just $ typeOpInfoFlag    p f
         NamePrimArith   p f                  -> Just $ typePrimArithFlag p f
         NamePrimCast    p f                  -> Just $ typePrimCastFlag  p f
 

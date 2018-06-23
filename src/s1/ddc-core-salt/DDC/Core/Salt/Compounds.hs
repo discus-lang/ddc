@@ -36,7 +36,8 @@ module DDC.Core.Salt.Compounds
         , xRead, xWrite
         , xPeek, xPeekBounded, xPoke, xPokeBounded
         , xPlusPtr
-        , xCastPtr)
+        , xCastPtr
+        , xGlobal, xGlobali)
 where
 import DDC.Core.Salt.Compounds.Lit
 import DDC.Core.Salt.Compounds.PrimArith

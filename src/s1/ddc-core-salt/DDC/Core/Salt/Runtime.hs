@@ -123,6 +123,10 @@ runtimeImportTypes
     , rn utddcInit
     , rn utddcExit
 
+    , rn utInfoFrameNew
+    , rn utInfoFramePush
+    , rn utInfoFrameAddData
+
     , rn utErrorDefault]
 
  where   rn (UName n, t)  = (n, ImportValueSea n (T.pack $ renderPlain $ ppr n) t)
@@ -494,6 +498,25 @@ utErrorDefault :: (Bound Name, Type Name)
 utErrorDefault
  =      ( UName (NameVar "ddcPrimErrorDefault")
         , tTextLit `tFun` tNat `tFun` tPtr rTop tObj)
+
+
+-- Info -------------------------------------------------------------------------------------------
+utInfoFrameNew :: (Bound Name, Type Name)
+utInfoFrameNew
+ =      ( UName (NameVar "ddcInfoFrameNew")
+        , tNat `tFun` tAddr)
+
+utInfoFramePush :: (Bound Name, Type Name)
+utInfoFramePush
+ =      ( UName (NameVar "ddcInfoFramePush")
+        , tAddr `tFun` tPtr rTop tObj)
+
+utInfoFrameAddData :: (Bound Name, Type Name)
+utInfoFrameAddData
+ =      ( UName (NameVar "ddcInfoFrameAddData")
+        , tAddr `tFun` tWord 16 `tFun` tWord 16
+                `tFun` tTextLit `tFun` tTextLit
+                `tFun` tWord 32)
 
 
 -- Primops ----------------------------------------------------------------------------------------

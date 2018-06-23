@@ -5,11 +5,12 @@ module DDC.Core.Discus.Prim.Base
         , isNameLit
         , isNameLitUnboxed
 
-        , TyConDiscus    (..)
-        , DaConDiscus    (..)
+        , TyConDiscus   (..)
+        , DaConDiscus   (..)
         , OpError       (..)
         , OpFun         (..)
         , OpVector      (..)
+        , OpInfo        (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..))
@@ -39,18 +40,23 @@ data Name
         -- | Baked-in data constructors.
         | NameDaConDiscus       !DaConDiscus
 
+        -- | Baked-in function operators.
+        | NameOpFun             !OpFun
+
         -- | Baked-in runtime error reporting.
         --   The flag indicates whether this is the
         --   boxed (False) or unboxed (True) version.
         | NameOpError           !OpError        !Bool
 
-        -- | Baked-in function operators.
-        | NameOpFun             !OpFun
-
         -- | Baked-in vector operators.
         --   The flag indicates whether this is the
         --   boxed (False) or unboxed (True) version.
         | NameOpVector          !OpVector       !Bool
+
+        -- | Baked-in info table management operators.
+        --   The flag indicates whether this is the
+        --   boxed (False) or unboxed (True) version.
+        | NameOpInfo            !OpInfo         !Bool
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
@@ -208,5 +214,19 @@ data OpVector
 
         -- | Write a value to a vector.
         | OpVectorWrite
+        deriving (Eq, Ord, Show)
+
+
+-- OpInfo ---------------------------------------------------------------------
+-- | Info-table management operators.
+data OpInfo
+        -- | Create a new, empty info table frame.
+        = OpInfoFrameNew
+
+        -- | Push an info table frame on the frame stack.
+        | OpInfoFramePush
+
+        -- | Add a data constructor to an allocated info table frame.
+        | OpInfoFrameAddData
         deriving (Eq, Ord, Show)
 

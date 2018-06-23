@@ -187,6 +187,10 @@ curryX_call envt callables xx
  --  functional part and arguments, then work out how to call it.
  | (xF, esArgs)         <- Call.takeCallElim xx
  , XVar aF (UName nF)   <- xF
+ , case nF of
+        NameVar{}       -> True
+        NameExt{}       -> True
+        _               -> False
  , length esArgs  > 0
  = do   esArgs'   <- mapM downElim esArgs
         makeCall envt callables nF (annotType aF) esArgs'
