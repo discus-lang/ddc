@@ -42,8 +42,8 @@ initializeInfo mnsImport mm
  = let  modName  = C.moduleName mm
         dataDefs = map snd $ C.moduleLocalDataDefs mm
 
-        importValueSea n t
-         = (D.NameVar n, C.ImportValueSea (D.NameVar n) n t)
+--        importValueSea n t
+--         = (D.NameVar n, C.ImportValueSea (D.NameVar n) n t)
 
    in mm
         { C.moduleBody
@@ -59,14 +59,14 @@ initializeInfo mnsImport mm
                         , exportValueLocalType          = D.tUnit `D.tFun` D.tUnit
                         , exportValueLocalArity         = Just (0, 1, 0) }) ]
 
-             -- TODO: these will need to be converted into primops so that the discus -> salt
-             -- code generator can remember the info table index of each data constructor.
         , C.moduleImportValues
             =  C.moduleImportValues mm
+
+{-
             ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
                , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
                , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]
-
+-}
                -- Import the initialization functions for transitively imported modules.
             ++ [ ( initNameOfModule mn
                  , C.ImportValueModule

@@ -30,6 +30,7 @@ takeName nn
         D.NameOpError op b      -> takeOpError op b
         D.NameOpFun op          -> takeOpFun op
         D.NameOpVector op b     -> takeOpVector op b
+        D.NameOpInfo op b       -> takeOpInfo op b
 
         -- Prim
         D.NamePrimTyCon tc      -> takePrimTyCon tc
@@ -133,6 +134,23 @@ takeOpVector op b
 
   nbx
    = case b of
+        True                    -> "-u"
+        False                   -> "-b"
+
+
+-- | Take the Shimmer encoding of an info table operator.
+takeOpInfo :: D.OpInfo -> Bool -> SExp
+takeOpInfo pm bx
+ = xSym (npm % nbx)
+ where
+   npm
+    = case pm of
+        D.OpInfoFrameNew        -> "oi-frame-new"
+        D.OpInfoFramePush       -> "oi-frame-push"
+        D.OpInfoFrameAddData    -> "oi-frame-add-data"
+
+   nbx
+    = case bx of
         True                    -> "-u"
         False                   -> "-b"
 

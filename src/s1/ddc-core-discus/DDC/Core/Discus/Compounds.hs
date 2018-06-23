@@ -84,7 +84,7 @@ xCastConvert a tTo tFrom x
 xInfoFrameNew :: a -> Int -> Exp a Name
 xInfoFrameNew a iCount
  = xApps a
-        (XVar a (UName (NameVar "ddcInfoFrameNew")))
+        (XVar a (UPrim (NameOpInfo OpInfoFrameNew False)))
         [ RTerm $ XCon a (DaConPrim (NameLitNat $ fromIntegral iCount) tNat)]
 
 
@@ -98,7 +98,7 @@ tInfoFrameNew
 xInfoFramePush :: a -> Exp a Name -> Exp a Name
 xInfoFramePush a xFrame
  = xApps a
-        (XVar a (UName (NameVar "ddcInfoFramePush")))
+        (XVar a (UPrim (NameOpInfo OpInfoFramePush False)))
         [ RTerm xFrame ]
 
 
@@ -121,7 +121,7 @@ xInfoFrameAddData
 
 xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
  = xApps a
-        (XVar a (UName (NameVar "ddcInfoFrameAddData")))
+        (XVar a (UPrim (NameOpInfo OpInfoFrameAddData False)))
         [ RTerm xPtr
         , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16) (tWord 16))
         , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16) (tWord 16))

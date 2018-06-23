@@ -1,0 +1,60 @@
+
+module DDC.Core.Discus.Convert.Exp.PrimInfo
+        (convertPrimInfo)
+where
+import DDC.Core.Discus.Convert.Exp.Base
+import DDC.Core.Discus.Convert.Error
+import DDC.Core.Exp.Annot
+import DDC.Core.Check                   (AnTEC(..))
+import qualified DDC.Core.Discus.Prim   as D
+import qualified DDC.Core.Salt.Name     as A
+
+
+convertPrimInfo
+        :: Show a
+        => ExpContext                    -- ^ The surrounding expression context.
+        -> Context a                     -- ^ Types and values in the environment.
+        -> Exp (AnTEC a D.Name) (D.Name) -- ^ Expression to convert.
+        -> Maybe (ConvertM a (Exp a A.Name))
+
+convertPrimInfo _ectx ctx xxExp
+ = let  convertX = contextConvertExp ctx
+   in case xxExp of
+
+        XApp a _xa _xb
+         | Just ( D.NameOpInfo D.OpInfoFrameNew True
+                , [RTerm xLength])
+                <- takeXFragApps xxExp
+         -> Just $ do
+                let a'   =  annotTail a
+                xLength' <- convertX ExpArg ctx xLength
+                return   $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameNew")))
+                                    [RTerm xLength']
+
+        XApp a _xa _xb
+         | Just ( D.NameOpInfo D.OpInfoFramePush True
+                , [RTerm xAddr])
+                <- takeXFragApps xxExp
+         -> Just $ do
+                let a'   =  annotTail a
+                xAddr'   <- convertX ExpArg ctx xAddr
+                return   $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFramePush")))
+                                    [RTerm xAddr']
+
+        XApp a _xa _xb
+         | Just ( D.NameOpInfo D.OpInfoFrameAddData True
+                , [ RTerm xAddr,      RTerm xTag, RTerm xArith
+                  , RTerm xTxtModule, RTerm xTxtCon])
+                <- takeXFragApps xxExp
+         -> Just $ do
+                let a'   =  annotTail a
+                xAddr'      <- convertX ExpArg ctx xAddr
+                xTag'       <- convertX ExpArg ctx xTag
+                xArith'     <- convertX ExpArg ctx xArith
+                xTxtModule' <- convertX ExpArg ctx xTxtModule
+                xTxtCon'    <- convertX ExpArg ctx xTxtCon
+                return   $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddData")))
+                                    [ RTerm xAddr', RTerm xTag', RTerm xArith'
+                                    , RTerm xTxtModule', RTerm xTxtCon' ]
+
+        _ -> Nothing
