@@ -5,9 +5,10 @@ where
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
-import DDC.Core.Check                   (AnTEC(..))
-import qualified DDC.Core.Discus.Prim   as D
-import qualified DDC.Core.Salt.Name     as A
+import DDC.Core.Check                    (AnTEC(..))
+import qualified DDC.Core.Discus.Prim    as D
+import qualified DDC.Core.Salt.Name      as A
+import qualified DDC.Core.Salt.Compounds as A
 
 
 convertPrimInfo
@@ -49,10 +50,10 @@ convertPrimInfo _ectx ctx xxExp
                   , RTerm xTxtModule@(XCon _ dcTxtModuleName)
                   , RTerm xTxtCon   @(XCon _ dcTxtCtorName) ])
                 <- takeXFragApps xxExp
-         , D.NameLitUnboxed (D.NameLitTextLit _txCtorName)
-                <- daConName dcTxtCtorName
-         , D.NameLitUnboxed (D.NameLitTextLit _txModuleName)
+         , D.NameLitUnboxed (D.NameLitTextLit txModuleName)
                 <- daConName dcTxtModuleName
+         , D.NameLitUnboxed (D.NameLitTextLit txCtorName)
+                <- daConName dcTxtCtorName
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'      <- convertX ExpArg ctx xAddr
@@ -60,8 +61,25 @@ convertPrimInfo _ectx ctx xxExp
                 xArith'     <- convertX ExpArg ctx xArity
                 xTxtModule' <- convertX ExpArg ctx xTxtModule
                 xTxtCon'    <- convertX ExpArg ctx xTxtCon
-                return   $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddData")))
-                                    [ RTerm xAddr', RTerm xTag', RTerm xArith'
-                                    , RTerm xTxtModule', RTerm xTxtCon' ]
+
+                let txSymbolInfoIndex
+                        = "ddcInfoIndex." <> txModuleName
+                        <> "." <> txCtorName
+
+                return
+                 $ xLets a'
+                        [ LLet  (BAnon $ A.tWord 32)
+                          $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddData")))
+                                [ RTerm xAddr', RTerm xTag', RTerm xArith'
+                                , RTerm xTxtModule', RTerm xTxtCon' ]
+
+                        , LLet  (BNone $ A.tVoid)
+                          $ A.xWrite a'
+                                (A.tWord 32)
+                                (A.xGlobali a' (A.tWord 32) txSymbolInfoIndex)
+                                (A.xNat a' 0)
+                                (XVar a' (UIx 0)) ]
+                 $ XVar a' (UIx 0)
+
 
         _ -> Nothing

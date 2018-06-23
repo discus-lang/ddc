@@ -10,12 +10,15 @@ module DDC.Core.Salt.Compounds.PrimStore
         , xPeekBounded, xPokeBounded
         , xPlusPtr
         , xCastPtr
+        , xGlobal, xGlobali
 
         , typeOfPrimStore)
 where
+import DDC.Core.Salt.Compounds.Lit
 import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
 import DDC.Core.Exp.Annot
+import Data.Text                (Text)
 
 
 -- Regions --------------------------------------------------------------------
@@ -112,6 +115,22 @@ xCastPtr a r toType fromType xPtr
                 [ RType r, RType toType, RType fromType, RTerm xPtr ]
 
 
+-- | Reference to a global variable.
+xGlobal :: a -> Type Name -> Text -> Exp a Name
+xGlobal a t name
+ = xApps a      (xPrimStore a (PrimStoreGlobal False))
+                [ RType t, RTerm $ xTextLit a name ]
+
+
+-- | Reference to a global variable,
+--   and also define it in the current module.
+xGlobali :: a -> Type Name -> Text -> Exp a Name
+xGlobali a t name
+ = xApps a      (xPrimStore a (PrimStoreGlobal True))
+                [ RType t, RTerm $ xTextLit a name ]
+
+
+---------------------------------------------------------------------------------------------------
 -- | Take the type of a primitive projection.
 typeOfPrimStore :: PrimStore -> Type Name
 typeOfPrimStore jj
