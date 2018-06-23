@@ -5,6 +5,7 @@ where
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
+import qualified Data.Monoid             as T
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Discus.Prim    as D
 import qualified DDC.Core.Salt.Name      as A
@@ -63,8 +64,8 @@ convertPrimInfo _ectx ctx xxExp
                 xTxtCon'    <- convertX ExpArg ctx xTxtCon
 
                 let txSymbolInfoIndex
-                        = "ddcInfoIndex." <> txModuleName
-                        <> "." <> txCtorName
+                        = "ddcInfoIndex." T.<> txModuleName
+                        T.<> "." T.<> txCtorName
 
                 return
                  $ xLets a'

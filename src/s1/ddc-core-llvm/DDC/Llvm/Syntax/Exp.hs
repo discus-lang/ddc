@@ -54,6 +54,9 @@ data Exp
 
         -- | (synthetic) Get a pointer to an element of the expression.
         | XGet   Type Exp [Exp]
+
+        -- | (synthetic) Add a value to an expression.
+        | XAdd   Type Exp Exp
         deriving (Eq, Show)
 
 
@@ -67,6 +70,7 @@ typeOfExp xx
 
         XConv  t _ _    -> t
         XGet   t _ _    -> t
+        XAdd   t _ _    -> t
 
 
 -- | Check if this expression is an `XVar`.
@@ -103,6 +107,7 @@ isClosedConstantExp xx
         XUndef{}        -> True
         XConv _ _ x     -> isClosedConstantExp x
         XGet  _ x1 xs   -> isClosedConstantExp x1 && all isClosedConstantExp xs
+        XAdd  _ x1 x2   -> isClosedConstantExp x1 && isClosedConstantExp x2
 
 
 -- Var ------------------------------------------------------------------------

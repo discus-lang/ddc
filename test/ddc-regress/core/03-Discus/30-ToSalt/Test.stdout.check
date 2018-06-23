@@ -253,7 +253,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx8: Word32#
-            = ddcInfoFrameAddData xx7 0w16# 0w16# "Test"# "Nil"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx7 0w16# 0w16# "Test"# "Nil"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
       let xx3: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -273,7 +277,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx10: Word32#
-            = ddcInfoFrameAddData xx9 1w16# 2w16# "Test"# "Cons"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx9 1w16# 2w16# "Test"# "Cons"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
       let xx4: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -340,7 +348,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx8: Word32#
-            = ddcInfoFrameAddData xx7 0w16# 0w16# "Test"# "Nil"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx7 0w16# 0w16# "Test"# "Nil"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
       let xx3: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -360,7 +372,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx10: Word32#
-            = ddcInfoFrameAddData xx9 1w16# 2w16# "Test"# "Cons"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx9 1w16# 2w16# "Test"# "Cons"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Cons"#) 0# ^0 in
+              ^0 in
       let xx4: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -476,7 +492,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx9: Word32#
-            = ddcInfoFrameAddData xx8 0w16# 2w16# "Test"# "Thing"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx8 0w16# 2w16# "Test"# "Thing"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Thing"#) 0# ^0 in
+              ^0 in
       let xx4: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
@@ -580,7 +600,11 @@ letrec {
                           (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
               ^0 in
       let xx8: Word32#
-            = ddcInfoFrameAddData xx7 0w16# 1w16# "Test"# "Nil"# in
+            = let ^: Word32#
+                    = ddcInfoFrameAddData xx7 0w16# 1w16# "Test"# "Nil"# in
+              let _: Void#
+                    = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Test.Nil"#) 0# ^0 in
+              ^0 in
       let xx3: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcSmallAlloc [rT] TAG0# 1# in
