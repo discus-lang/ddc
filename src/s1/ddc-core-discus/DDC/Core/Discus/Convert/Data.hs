@@ -41,22 +41,25 @@ constructData
 
 constructData pp a ctorDef rPrime xsFields tsFields
  | Just HeapObjectBoxed <- heapObjectOfDataCtor pp ctorDef
- , D.NameCon txCtorName <- dataCtorName ctorDef
  = do
         -- Allocate the object.
         let arity       = length tsFields
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
 
-        let txInfoRef   = nameOfInfoIndexCtorRef
-                                (dataCtorModuleName ctorDef)
-                                txCtorName
+        let xInfoIndex
+             = case dataCtorName ctorDef of
+                D.NameCon txCtorName
+                 -> let txInfoRef   = nameOfInfoIndexCtorRef
+                                        (dataCtorModuleName ctorDef)
+                                        txCtorName
+                    in A.xRead a (A.tWord 32)
+                        (A.xGlobal a (A.tWord 32) txInfoRef)
+                        (A.xNat a 0)
+                _ -> A.xWord a 0 32
 
         let xAlloc      = A.xAllocBoxed a rPrime
                                 (dataCtorTag ctorDef)
-                                (A.xRead a
-                                        (A.tWord 32)
-                                        (A.xGlobal a (A.tWord 32) txInfoRef)
-                                        (A.xNat a 0))
+                                xInfoIndex
                         $ A.xNat a (fromIntegral arity)
 
         -- Statements to write each of the fields.

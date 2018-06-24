@@ -38,8 +38,8 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
  pprModePrec mode d xx
   = let pprX    = pprModePrec mode 0
-        pprLts  = pprModePrec (modeExpLets mode) 0
-        pprAlt  = pprModePrec (modeExpAlt  mode) 0
+        pprLts  = pprModePrec (modeExpLets mode) { modeLetsExp = mode } 0
+        pprAlt  = pprModePrec (modeExpAlt  mode) { modeAltExp  = mode } 0
     in case xx of
 
         XVar  _ u -> ppr u
@@ -250,43 +250,68 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
  data PrettyMode (Lets a n)
         = PrettyModeLets
         { modeLetsExp           :: PrettyMode (Exp a n)
-        , modeLetsSuppressTypes :: Bool }
+          -- | Suppress type annotations on let-bindings.
+        , modeLetsSuppressTypes :: Bool
+          -- | Try to keep types of binders in their own column.
+        , modeLetsColumnTypes   :: Bool }
 
  pprDefaultMode
         = PrettyModeLets
         { modeLetsExp           = pprDefaultMode
-        , modeLetsSuppressTypes = False }
+        , modeLetsSuppressTypes = False
+        , modeLetsColumnTypes   = False }
 
  pprModePrec mode _ lts
-  = let pprX    = pprModePrec (modeLetsExp mode) 0
+  = let pprX    = pprModePrec (modeLetsExp mode) { modeExpLets = mode } 0
     in case lts of
         LLet b x
          -> let bHasType = not $ isBot (typeOfBind b)
 
-                dBind    = if modeLetsSuppressTypes mode || (not bHasType)
-                             then ppr (binderOfBind b)
-                             else ppr b
+                dBind
+                 | not bHasType
+                 = ppr (binderOfBind b)
+
+                 | modeLetsColumnTypes mode
+                 = padL 8 (ppr (binderOfBind b)) % text ":" %% ppr (typeOfBind b)
+
+                 | modeLetsSuppressTypes mode
+                 = ppr (binderOfBind b)
+
+                 | otherwise = ppr b
+
+                nBindColumnWidth
+                 = if modeLetsColumnTypes mode
+                        then (26 :: Int)
+                        else  8
+
+                nBindWidth
+                 = length $ renderPlain dBind
+
+                bBreakForExp
+                 | modeLetsColumnTypes mode
+                 = nBindWidth >= nBindColumnWidth
+
+                 | otherwise
+                 = bHasType
 
             in  text "let"
-                 %% align ( (padL 7 dBind)
-                          % nest (if bHasType then 2 else 6 )
-                                ( breakWhen bHasType
-                                % text "=" %% align (pprX x)))
+                 %% align ( (padL nBindColumnWidth dBind)
+                          % breakWhen bBreakForExp
+                          % string "=" %% align (pprX x))
 
         LRec bxs
          -> let pprLetRecBind (b, x)
-                 =   ppr (binderOfBind b)
+                 =  ppr (binderOfBind b)
                  %  text ":" %% ppr (typeOfBind b)
-                 %  nest 2 (  breakWhen (not $ isSimpleX x)
+                 %  nest 2 ( breakWhen (not $ isSimpleX x)
                            % text "=" %% align (pprX x))
 
            in vcat
                 [ nest 2
                         $ text "letrec"
-                        %% lbrace
-                        %  line
-                        %  (vcat $ punctuate (semi <> line)
-                                 $ map pprLetRecBind bxs)
+                        %% lbrace %  line
+                        %  (vcat  $ punctuate (semi <> line)
+                                  $ map pprLetRecBind bxs)
                 , rbrace ]
 
         LPrivate bs Nothing []

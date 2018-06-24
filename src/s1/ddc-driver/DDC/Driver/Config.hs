@@ -131,7 +131,8 @@ prettyModeOfConfig config
         modeLets
          = PrettyModeLets
          { modeLetsExp                  = modeExp
-         , modeLetsSuppressTypes        = configPrettySuppressLetTypes config }
+         , modeLetsSuppressTypes        = configPrettySuppressLetTypes config
+         , modeLetsColumnTypes          = False }
 
         modeAlt
          = PrettyModeAlt

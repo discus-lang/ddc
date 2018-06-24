@@ -20,9 +20,11 @@ import qualified DDC.Build.Language.Salt                as BA
 
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Check                         as C
+import qualified DDC.Core.Codec.Text.Pretty             as C
 import qualified DDC.Core.Simplifier.Recipe             as C
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
+
 
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Platform                 as A
@@ -119,6 +121,17 @@ saltToLlvm
         sinkPrep sinkSlots sinkTransfer
         mm
  = do
+        -- Pretty print a-normalized salt modules with a separate column
+        -- for the binders, as the code is mostly a list of function calls
+        -- and primop applications.
+        let md_flat :: PrettyMode (C.Module a A.Name)
+            md_flat
+                = (pprDefaultMode :: PrettyMode (C.Module a A.Name))
+                { C.modeModuleLets = pprDefaultMode
+                                   { C.modeLetsColumnTypes  = True }}
+
+        let pprModule mm' = pprModePrec md_flat 0 mm'
+
         -- Normalize code in preparation for conversion.
         mm_simpl
          <- BC.coreSimplify
@@ -127,8 +140,8 @@ saltToLlvm
                               (CNamify.makeNamifier A.freshX))
                 mm
 
+        liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkPrep
 
         -- Check normalized code to produce type annotations on every node.
         mm_checked
@@ -136,7 +149,7 @@ saltToLlvm
                 "saltToLlvm" BA.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkPrep
+        liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep
 
 
         -- Insert shadow stack slot management instructions,
@@ -147,7 +160,7 @@ saltToLlvm
                                 Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
                                 Right mm'' -> return mm''
 
-                     liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkSlots
+                     liftIO $ B.pipeSink (renderIndent $ pprModule mm') sinkSlots
                      return mm'
 
              else return mm_checked
@@ -159,7 +172,7 @@ saltToLlvm
                 Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/transfer" err]
                 Right mm'  -> return mm'
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_transfer) sinkTransfer
+        liftIO $ B.pipeSink (renderIndent $ pprModule mm_transfer) sinkTransfer
 
 
         -- Convert to LLVM source code.
