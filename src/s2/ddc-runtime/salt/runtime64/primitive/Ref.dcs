@@ -8,7 +8,7 @@ export foreign c value
  ddcPrimRefWrite  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
 import foreign c value
- ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Word32# -> Nat# -> Ptr# r1 Obj
  ddcBoxedGetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
  ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 

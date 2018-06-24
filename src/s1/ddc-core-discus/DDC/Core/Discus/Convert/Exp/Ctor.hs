@@ -37,7 +37,8 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
  -- The unit constructor.
  | DaConUnit      <- dc
  = return $ A.xAllocBoxed a A.rTop
-                0 (A.xNat a 0) -- TODO: add info table index.
+                0                -- tag
+                (A.xWord a 0 32) -- info index
                 (A.xNat a 0)
 
 

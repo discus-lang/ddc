@@ -9,7 +9,7 @@ export foreign c value
  fillStoreArray   : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
 import foreign c value
- ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Word32# -> Nat# -> Ptr# r1 Obj
  ddcBoxedSize     : [r1    : Region]. Ptr# r1 Obj -> Nat#
  ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
 

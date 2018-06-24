@@ -312,7 +312,7 @@ xAllocBoxed a tR tag xInfo x2
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
  =      ( UName (NameVar "ddcBoxedAlloc")
-        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tNat `tFun` tPtr r tObj))
+        , tForall kRegion $ \r -> (tTag `tFun` tWord 32 `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the constructor tag of an object.
