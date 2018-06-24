@@ -74,6 +74,7 @@ export foreign c value
  ddcObjectSize          : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectSizeMinimum   : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectIsAnchored    : [r: Region].     Ptr# r Obj -> Bool#
+ ddcObjectInfoIndex     : [r: Region].     Ptr# r Obj -> Word32#
 
  ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
  ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
@@ -209,6 +210,12 @@ ddcObjectIsAnchored [r: Region] (obj: Ptr# r Obj): Bool#
         case band# fmt8 0b1000w8# of
           0b1000w8# -> True#
           _         -> False#
+
+
+-- | Get the info table index of an object.
+ddcObjectInfoIndex [r: Region] (obj: Ptr# r Obj): Word32#
+ = do   header  = peek# [r] [Word64#] (castPtr# obj)
+        band# (truncate# [Word32#] (shr# header 8w64#)) 0x0ffffffw32#
 
 
 -- Forwarding Pointers --------------------------------------------------------
