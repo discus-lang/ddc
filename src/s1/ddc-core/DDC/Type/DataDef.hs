@@ -26,6 +26,7 @@ module DDC.Type.DataDef
         , mapTypeOfDataCtor
         , typeOfDataCtor)
 where
+import DDC.Core.Module.Name
 import DDC.Type.Exp
 import DDC.Type.Exp.Simple.Compounds
 import Data.Map                         (Map)
@@ -39,8 +40,11 @@ import Control.DeepSeq
 -- | The definition of a single data type.
 data DataDef n
         = DataDef
-        { -- | Name of the data type.
-          dataDefTypeName       :: !n
+        { -- | Module the type is defined in.
+          dataDefModuleName     :: !ModuleName
+
+          -- | Name of the data type.
+        , dataDefTypeName       :: !n
 
           -- | Binders for type parameters.
         , dataDefParams         :: ![Bind n]
@@ -101,21 +105,23 @@ dataCtorNamesOfDataDef def
 --
 --   Values of algebraic type can be deconstructed with case-expressions.
 makeDataDefAlg
-        :: n            -- ^ Name of data type.
+        :: ModuleName   -- ^ Module the data type is defined in.
+        -> n            -- ^ Name of data type.
         -> [Bind n]     -- ^ Type parameters.
         -> Maybe [(n, [Type n])]
                         -- ^ Constructor names and field types,
                         --      or `Nothing` if there are too many to list.
         -> DataDef n
 
-makeDataDefAlg nData bsParam Nothing
+makeDataDefAlg modName nData bsParam Nothing
         = DataDef
-        { dataDefTypeName       = nData
+        { dataDefModuleName     = modName
+        , dataDefTypeName       = nData
         , dataDefParams         = bsParam
         , dataDefCtors          = Nothing
         , dataDefIsAlgebraic    = True }
 
-makeDataDefAlg nData bsParam (Just ntsField)
+makeDataDefAlg modName nData bsParam (Just ntsField)
  = let  usParam = takeSubstBoundsOfBinds bsParam
         ksParam = map typeOfBind bsParam
         tc      = TyConBound (UName nData)
@@ -123,11 +129,12 @@ makeDataDefAlg nData bsParam (Just ntsField)
 
         tResult = tApps (TCon tc) (map TVar usParam)
 
-        ctors   = [ DataCtor n tag tsField tResult nData bsParam
+        ctors   = [ DataCtor modName n tag tsField tResult nData bsParam
                             | tag          <- [0..]
                             | (n, tsField) <- ntsField]
    in   DataDef
-        { dataDefTypeName       = nData
+        { dataDefModuleName     = modName
+        , dataDefTypeName       = nData
         , dataDefParams         = bsParam
         , dataDefCtors          = Just ctors
         , dataDefIsAlgebraic    = True }
@@ -136,10 +143,11 @@ makeDataDefAlg nData bsParam (Just ntsField)
 -- | Shortcut for constructing a `DataDef` for an abstract type.
 --
 --   Values of abstract type cannot be deconstructed with case-expressions.
-makeDataDefAbs :: n -> [Bind n] -> DataDef n
-makeDataDefAbs nData bsParam
+makeDataDefAbs :: ModuleName -> n -> [Bind n] -> DataDef n
+makeDataDefAbs modName nData bsParam
  = DataDef
-        { dataDefTypeName       = nData
+        { dataDefModuleName     = modName
+        , dataDefTypeName       = nData
         , dataDefParams         = bsParam
         , dataDefCtors          = Just []
         , dataDefIsAlgebraic    = False }
@@ -169,41 +177,47 @@ data DataMode n
 -- | Describes a data type constructor, used in the `DataDefs` table.
 data DataType n
         = DataType
-        { -- | Name of data type constructor.
-          dataTypeName       :: !n
+        { -- | Module the data type is defined in.
+          dataTypeModuleName    :: !ModuleName
+
+          -- | Name of data type constructor.
+        , dataTypeName          :: !n
 
           -- | Kinds of type parameters to constructor.
-        , dataTypeParams     :: ![Bind n]
+        , dataTypeParams        :: ![Bind n]
 
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
-        , dataTypeMode       :: !(DataMode n)
+        , dataTypeMode          :: !(DataMode n)
 
           -- | Whether the data type is algebraic.
-        , dataTypeIsAlgebraic :: Bool }
+        , dataTypeIsAlgebraic   :: Bool }
         deriving Show
 
 
 -- | Describes a data constructor, used in the `DataDefs` table.
 data DataCtor n
         = DataCtor
-        { -- | Name of data constructor.
-          dataCtorName        :: !n
+        { -- | Module the data constructor is defined in.
+          dataCtorModuleName    :: !ModuleName
+
+          -- | Constructor name.
+        , dataCtorName          :: !n
 
           -- | Tag of constructor (order in data type declaration)
-        , dataCtorTag         :: !Integer
+        , dataCtorTag           :: !Integer
 
           -- | Field types of constructor.
-        , dataCtorFieldTypes  :: ![Type n]
+        , dataCtorFieldTypes    :: ![Type n]
 
           -- | Result type of constructor.
-        , dataCtorResultType  :: !(Type n)
+        , dataCtorResultType    :: !(Type n)
 
           -- | Name of result type of constructor.
-        , dataCtorTypeName    :: !n
+        , dataCtorTypeName      :: !n
 
           -- | Parameters of data type
-        , dataCtorTypeParams :: ![Bind n] }
+        , dataCtorTypeParams    :: ![Bind n] }
         deriving Show
 
 
@@ -223,8 +237,9 @@ typeOfDataCtor ctor
 
 
 instance NFData n => NFData (DataCtor n) where
- rnf (DataCtor n t fs tR nT bsParam)
-  = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT `seq` rnf bsParam
+ rnf (DataCtor mn n t fs tR nT bsParam)
+  =     rnf mn `seq` rnf n `seq` rnf t
+  `seq` rnf fs `seq` rnf tR `seq` rnf nT `seq` rnf bsParam
 
 
 -- | An empty table of data type definitions.
@@ -245,9 +260,10 @@ unionDataDefs defs1 defs2
 
 -- | Insert a data type definition into some DataDefs.
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
-insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
+insertDataDef (DataDef modName nType bsParam mCtors isAlg) dataDefs
  = let  defType = DataType
-                { dataTypeName        = nType
+                { dataTypeModuleName  = modName
+                , dataTypeName        = nType
                 , dataTypeParams      = bsParam
                 , dataTypeMode        = defMode
                 , dataTypeIsAlgebraic = isAlg }
@@ -260,7 +276,7 @@ insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
          { dataDefsTypes = Map.insert nType defType (dataDefsTypes dataDefs)
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
                          $ Map.fromList [(n, def)
-                                | def@(DataCtor n _ _ _ _ _) <- concat $ maybeToList mCtors ]}
+                                | def@(DataCtor _ n _ _ _ _ _) <- concat $ maybeToList mCtors ]}
 
 
 -- | Build a `DataDefs` table from a list of `DataDef`

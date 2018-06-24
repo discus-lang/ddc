@@ -178,23 +178,23 @@ takeTypeSyn c (n, (k, t))
 takeDataDef :: Config n -> C.DataDef n -> (SExp, [SDecl])
 takeDataDef c dd
  = case dd of
-        C.DataDef n ps mCtors True
+        C.DataDef modName n ps mCtors True
          -> let Just tx = configTakeConName c n
-            in  ( xAps "typ-dat" [xTxt tx, xMac ("d-" <> tx)]
+            in  ( xAps "typ-dat" [takeModuleName modName, xTxt tx, xMac ("d-" <> tx)]
                 , [ S.DeclMac ("d-" <> tx)
                      $ xAps "d-alg"
-                            [ xTxt tx
+                            [ takeModuleName modName, xTxt tx
                             , xList $ map (takeBind c) ps
                             , case mCtors of
                                 Nothing    -> xNone
                                 Just ctors -> xSome (xList $ map (takeDataCtor c) ctors) ]])
 
-        C.DataDef n ps mCtors False
+        C.DataDef modName n ps mCtors False
          -> let Just tx = configTakeConName c n
-            in  ( xAps "typ-dat" [xTxt tx, xMac ("d-" <> tx)]
+            in  ( xAps "typ-dat" [takeModuleName modName, xTxt tx, xMac ("d-" <> tx)]
                 , [ S.DeclMac ("d-" <> tx)
                      $ xAps "d-nlg"
-                            [ xTxt tx
+                            [ takeModuleName modName, xTxt tx
                             , xList $ map (takeBind c) ps
                             , case mCtors of
                                 Nothing     -> xNone
@@ -203,10 +203,10 @@ takeDataDef c dd
 takeDataCtor :: Config n -> C.DataCtor n -> SExp
 takeDataCtor c ctor
  = case ctor of
-        C.DataCtor n tag tsParam tResult _ _
+        C.DataCtor modName n tag tsParam tResult _ _
          -> let Just tx = configTakeConName c n
             in  xAps "ctor"
-                 $  [xNat (fromIntegral tag), xTxt tx]
+                 $  [xNat (fromIntegral tag), takeModuleName modName, xTxt tx]
                  ++ (map (takeType c) tsParam)
                  ++ [takeType c tResult]
 

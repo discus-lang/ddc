@@ -96,7 +96,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         docsDataImport
          | null importData = mempty
          | otherwise
-         = line % vsep  (map (\i -> text "import" %% ppr i) $ map snd importData)
+         = line % vsep  (map (\i -> text "import" %% pprDataDef True i) $ map snd importData)
 
         docsDataLocal
          | null localData = mempty
@@ -228,16 +228,21 @@ pprImportValue isrc
 
 -- DataDef ----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DataDef n) where
- pprPrec _ def = pprDataDef def
+ pprPrec _ def = pprDataDef False def
 
 
 -- | Pretty print a data type definition.
-pprDataDef :: (Pretty n, Eq n) => DataDef n -> Doc
-pprDataDef def
+pprDataDef :: (Pretty n, Eq n)
+        => Bool         -- ^ Include module qualifier on data type.
+        -> DataDef n -> Doc
+pprDataDef bWithModuleName def
   = vcat
   [ text "data"
-        %% hsep ( ppr (dataDefTypeName def)
-                 : map (parens . ppr) (dataDefParams def))
+        %% hsep ( (if bWithModuleName
+                   then ppr (dataDefModuleName def)
+                            % string "." % ppr (dataDefTypeName def)
+                   else ppr (dataDefTypeName def))
+                : map (parens . ppr) (dataDefParams def))
         %% text "where"
         %% lbrace
 

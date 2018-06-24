@@ -18,10 +18,7 @@ import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Core.Discus                as E
-import Data.List
-import Data.Function
 import qualified Data.Either                    as Either
-
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
@@ -60,25 +57,28 @@ importNamesForModule kenv tenv store mm
         let mm_resolved
                 = mm
                 { moduleImportTypes
-                        =  moduleImportTypes  mm
-                        ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
+                     =  Map.toList $ Map.fromList
+                     $  moduleImportTypes  mm
+                     ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
 
                 , moduleImportDataDefs
-                     =  nubBy ((==) `on` fst)
+                     =  Map.toList $ Map.fromList
                      $  moduleImportDataDefs mm
                      ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
 
                 , moduleImportTypeDefs
-                     =  nubBy ((==) `on` fst)
+                     =  Map.toList $ Map.fromList
                      $  moduleImportTypeDefs mm
                      ++ importsTypeDef deps
 
                 , moduleImportCaps
-                     =  moduleImportCaps mm
+                     =  Map.toList $ Map.fromList
+                     $  moduleImportCaps mm
                      ++ importsCap deps
 
                 , moduleImportValues
-                     =  moduleImportValues mm
+                     =  Map.toList $ Map.fromList
+                     $  moduleImportValues mm
                      ++ importsDaVar }
 
         return (mm_resolved, errsDaVar)

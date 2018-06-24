@@ -53,7 +53,7 @@ pImportSpecs c
 
         P.choice
          [      -- data ...
-           do   def     <- pDataDef c
+           do   def     <- pDataDef c Nothing
                 return  [ ImportData def ]
 
                 -- type { (NAME :: KIND)+ }

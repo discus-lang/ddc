@@ -26,6 +26,7 @@ module DDC.Core.Discus.Convert.Boxing
 where
 import DDC.Core.Discus.Prim
 import DDC.Core.Discus.Compounds
+import DDC.Core.Module.Name
 import DDC.Type.DataDef
 
 
@@ -155,7 +156,8 @@ makeBoxedPrimDataType :: Type Name -> Maybe (DataType Name)
 makeBoxedPrimDataType tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataType
-        { dataTypeName          = n
+        { dataTypeModuleName    = ModuleName ["DDC", "Types", "Discus"]
+        , dataTypeName          = n
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
         , dataTypeIsAlgebraic   = False }
@@ -169,7 +171,8 @@ makeBoxedPrimDataCtor :: Type Name -> Maybe (DataCtor Name)
 makeBoxedPrimDataCtor tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataCtor
-        { dataCtorName          = n
+        { dataCtorModuleName    = ModuleName ["DDC", "Types", "Discus"]
+        , dataCtorName          = n
         , dataCtorTag           = 0
         , dataCtorFieldTypes    = [tUnboxed tt]
         , dataCtorResultType    = tt

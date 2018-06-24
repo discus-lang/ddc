@@ -123,7 +123,7 @@ instance (Pretty a, Pretty b) => Pretty (a, b) where
 
 padL :: Int -> P.Doc -> P.Doc
 padL n d
- = let  len     = length $ renderPlain d
+ = let  len     = length $ renderIndent d
         pad     = n - len
    in   if pad > 0
          then  d % P.text (replicate pad ' ')

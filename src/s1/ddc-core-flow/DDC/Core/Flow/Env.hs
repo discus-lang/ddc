@@ -7,6 +7,7 @@ module DDC.Core.Flow.Env
 where
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
+import DDC.Core.Module.Name
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Env             (Env)
@@ -14,7 +15,7 @@ import qualified DDC.Type.Env   as Env
 
 
 -- DataDefs -------------------------------------------------------------------
--- | Data type definitions 
+-- | Data type definitions
 --
 -- >  Type                         Constructors
 -- >  ----                ------------------------------
@@ -28,44 +29,44 @@ import qualified DDC.Type.Env   as Env
 -- >  Tuple{2-32}         (T{2-32})
 -- >  Vector              (none, abstract)
 -- >  Series              (none, abstract)
--- 
+--
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
  $      -- Primitive -----------------------------------------------
         -- Bool#
-        [ makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
-                [] 
-                (Just   [ (NameLitBool True,  []) 
+        [ makeDataDefAlg mn (NamePrimTyCon PrimTyConBool)
+                []
+                (Just   [ (NameLitBool True,  [])
                         , (NameLitBool False, []) ])
 
         -- Nat#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- Float32#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
 
         -- Float64#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- WordN#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
 
         -- Flow -----------------------------------------------------
         -- Vector
-        , makeDataDefAbs
+        , makeDataDefAbs mn
                 (NameTyConFlow TyConFlowVector)
                 [BAnon kRate, BAnon kData]
 
         -- Series
-        , makeDataDefAbs
+        , makeDataDefAbs mn
                 (NameTyConFlow TyConFlowSeries)
                 [BAnon kRate, BAnon kData]
         ]
@@ -76,15 +77,18 @@ primDataDefs
  ++     [ makeTupleDataDef arity
                 | arity <- [2..32] ]
 
+ where  mn      = ModuleName ["DDC", "Types", "Flow"]
+
 
 -- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
-        = makeDataDefAlg
-                (NameTyConFlow (TyConFlowTuple n))
-                (replicate n (BAnon kData))
-                (Just   [ ( NameDaConFlow (DaConFlowTuple n)
-                          , (reverse [tIx kData i | i <- [0..n - 1]]))])
+ = makeDataDefAlg
+        (ModuleName ["DDC", "Types", "Flow"])
+        (NameTyConFlow (TyConFlowTuple n))
+        (replicate n (BAnon kData))
+        (Just   [ ( NameDaConFlow (DaConFlowTuple n)
+                  , (reverse [tIx kData i | i <- [0..n - 1]]))])
 
 
 -- Sorts ---------------------------------------------------------------------
@@ -106,7 +110,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 
 -- | Take the kind of a primitive name.
 --
---   Returns `Nothing` if the name isn't primitive. 
+--   Returns `Nothing` if the name isn't primitive.
 --
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
@@ -135,7 +139,7 @@ typeOfPrimName dc
         NameOpVector    p       -> Just $ typeOpVector   p
         NameDaConFlow   p       -> Just $ typeDaConFlow  p
 
-        NamePrimCast    p       -> Just $ typePrimCast   p 
+        NamePrimCast    p       -> Just $ typePrimCast   p
         NamePrimArith   p       -> Just $ typePrimArith  p
         NamePrimVec     p       -> Just $ typePrimVec    p
 

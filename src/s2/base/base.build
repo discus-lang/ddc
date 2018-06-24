@@ -50,6 +50,7 @@ library
         Class.Show
         Class.Parse
         Class.Pretty
+        Data.Numeric
         Data.Array.Base
         Data.Array.Fun
         Data.Array.Store

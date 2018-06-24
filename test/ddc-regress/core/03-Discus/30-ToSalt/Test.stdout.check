@@ -51,7 +51,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -99,7 +99,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -147,7 +147,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -187,7 +187,7 @@ letrec {
       };
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -208,7 +208,7 @@ letrec {
       λ(f x: Ptr# rT Obj). ddcApply1 [rT] [rT] [rT] f x;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx0: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -220,10 +220,12 @@ letrec {
     = λ(x: Ptr# rT Obj).
       let xx0: Ptr# rT Obj
             = let ^: Ptr# rT Obj
-                    = ddcBoxedAlloc [rT] TAG0# 0# in
+                    = ddcBoxedAlloc [rT] TAG0#
+                          (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Test.Nil"#) 0#) 0# in
               ^0 in
       let ^: Ptr# rT Obj
-            = ddcBoxedAlloc [rT] TAG1# 2# in
+            = ddcBoxedAlloc [rT] TAG1#
+                  (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Test.Cons"#) 0#) 2# in
       let _: Void#
             = ddcBoxedSetField [rT] [rT] ^0 0# x in
       let _: Void#
@@ -302,7 +304,7 @@ letrec {
               ^0 in
       let xx5: Ptr# rT Obj
             = ddcInfoFramePush xx11 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -320,7 +322,7 @@ letrec {
                   = ddcBoxedGetField [rT] [rT] xx 1# in
             x;
         TAG0#  
-         -> ddcBoxedAlloc [rT] TAG0# 0#;
+         -> ddcBoxedAlloc [rT] TAG0# 0w32# 0#;
         _ 
          -> fail# [Ptr# rT Obj]
       };
@@ -397,7 +399,7 @@ letrec {
               ^0 in
       let xx5: Ptr# rT Obj
             = ddcInfoFramePush xx11 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -421,7 +423,7 @@ letrec {
     = λ(xx0: Ptr# rT Obj). xx0;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx1: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx1: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -441,7 +443,8 @@ letrec {
   thing$l$L$2: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(l$0$0 l$1$1: Ptr# rT Obj).
       let ^: Ptr# rT Obj
-            = ddcBoxedAlloc [rT] TAG0# 2# in
+            = ddcBoxedAlloc [rT] TAG0#
+                  (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Test.Thing"#) 0#) 2# in
       let _: Void#
             = ddcBoxedSetField [rT] [rT] ^0 0# l$0$0 in
       let _: Void#
@@ -517,7 +520,7 @@ letrec {
               ^0 in
       let xx5: Ptr# rT Obj
             = ddcInfoFramePush xx10 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -553,7 +556,7 @@ letrec {
       id [rT] xx1;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx2: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx2: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -625,7 +628,7 @@ letrec {
               ^0 in
       let xx4: Ptr# rT Obj
             = ddcInfoFramePush xx9 in
-      ddcBoxedAlloc [rT] TAG0# 0#
+      ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 
@@ -646,7 +649,7 @@ letrec {
       ^1;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx4: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0#
+    = λ(xx4: Ptr# rT Obj). ddcBoxedAlloc [rT] TAG0# 0w32# 0#
 }
 
 

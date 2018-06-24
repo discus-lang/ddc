@@ -8,22 +8,32 @@ import DDC.Core.Discus.Convert.Layout
 import DDC.Core.Salt.Platform
 import DDC.Core.Transform.BoundX
 import DDC.Core.Exp
+import DDC.Core.Module.Name
+import DDC.Data.Pretty
 import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
-import qualified DDC.Core.Discus.Prim            as E
+import qualified DDC.Core.Discus.Prim           as D
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
 import qualified DDC.Core.Salt.Compounds        as A
+import qualified Data.Text                      as T
 import Data.Maybe
 
 
--- Construct ------------------------------------------------------------------
+-- Env --------------------------------------------------------------------------------------------
+nameOfInfoIndexCtorRef :: ModuleName -> Text -> Text
+nameOfInfoIndexCtorRef (ModuleName parts) txCtorName
+ = let  mn' = T.intercalate (T.pack ".") $ map T.pack parts
+   in   "ddcInfoIndex." % mn' % "." % txCtorName
+
+
+-- Construct --------------------------------------------------------------------------------------
 -- | Build an expression that allocates and initialises a data object.
 constructData
         :: Show a
         => Platform                     -- ^ Platform definition.
         -> a                            -- ^ Annotation to use on expressions.
-        -> DataCtor E.Name              -- ^ Constructor definition of object.
+        -> DataCtor D.Name              -- ^ Constructor definition of object.
         -> Type     A.Name              -- ^ Prime region variable.
         -> [Exp a   A.Name]             -- ^ Field values.
         -> [Type    A.Name]             -- ^ Field types.
@@ -35,7 +45,21 @@ constructData pp a ctorDef rPrime xsFields tsFields
         -- Allocate the object.
         let arity       = length tsFields
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
-        let xAlloc      = A.xAllocBoxed a rPrime (dataCtorTag ctorDef)
+
+        let xInfoIndex
+             = case dataCtorName ctorDef of
+                D.NameCon txCtorName
+                 -> let txInfoRef   = nameOfInfoIndexCtorRef
+                                        (dataCtorModuleName ctorDef)
+                                        txCtorName
+                    in A.xRead a (A.tWord 32)
+                        (A.xGlobal a (A.tWord 32) txInfoRef)
+                        (A.xNat a 0)
+                _ -> A.xWord a 0 32
+
+        let xAlloc      = A.xAllocBoxed a rPrime
+                                (dataCtorTag ctorDef)
+                                xInfoIndex
                         $ A.xNat a (fromIntegral arity)
 
         -- Statements to write each of the fields.
@@ -102,7 +126,7 @@ constructData pp a ctorDef rPrime xsFields tsFields
         , "  size       = " ++ (show $ payloadSizeOfDataCtor pp ctorDef) ]
 
 
--- Destruct -------------------------------------------------------------------
+-- Destruct ---------------------------------------------------------------------------------------
 -- | Wrap a expression in let-bindings that bind each of the fields of
 --   of a data object. This is used when pattern matching in a case expression.
 --
@@ -112,7 +136,7 @@ constructData pp a ctorDef rPrime xsFields tsFields
 destructData
         :: Platform
         -> a
-        -> DataCtor E.Name      -- ^ Definition of the data constructor to unpack.
+        -> DataCtor D.Name      -- ^ Definition of the data constructor to unpack.
         -> Bound A.Name         -- ^ Bound of Scruitinee.
         -> Type  A.Name         -- ^ Prime region.
         -> [Bind A.Name]        -- ^ Binders for each of the fields.

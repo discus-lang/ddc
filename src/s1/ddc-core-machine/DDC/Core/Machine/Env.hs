@@ -5,6 +5,7 @@ module DDC.Core.Machine.Env
         , primKindEnv
         , primTypeEnv)
 where
+import DDC.Core.Module.Name
 import DDC.Core.Machine.Prim
 import DDC.Type.DataDef
 import DDC.Type.Exp
@@ -23,11 +24,12 @@ primDataDefs
 -- | Make a tuple data def for the given tuple arity.
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
-        = makeDataDefAlg
-                (NameTyConMachine (TyConTuple n))
-                (replicate n (BAnon kData))
-                (Just   [ ( NameDaConMachine (DaConTuple n)
-                          , (reverse [tIx kData i | i <- [0..n - 1]]))])
+ = makeDataDefAlg
+        (ModuleName ["DDC", "Types", "Machine"])
+        (NameTyConMachine (TyConTuple n))
+        (replicate n (BAnon kData))
+        (Just   [ ( NameDaConMachine (DaConTuple n)
+                  , (reverse [tIx kData i | i <- [0..n - 1]]))])
 
 
 -- Sorts ---------------------------------------------------------------------
@@ -49,7 +51,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 
 -- | Take the kind of a primitive name.
 --
---   Returns `Nothing` if the name isn't primitive. 
+--   Returns `Nothing` if the name isn't primitive.
 --
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn

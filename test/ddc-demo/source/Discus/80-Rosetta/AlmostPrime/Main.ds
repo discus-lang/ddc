@@ -30,18 +30,18 @@ isPrime (n: Nat): Bool
  =  foldl (λacc x -> rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
- 
+
 -- | A stream of k-almost-prime numbers.
 kPrimes (k: Nat): Stream Nat Nat
- = sfilter (isKPrime k) (senumFrom 2) 
+ = sfilter (isKPrime k) (senumFrom 2)
 
 
 -- | Check if some number is k-almost-prime.
 isKPrime (k n: Nat): Bool
- | k == 1       
+ | k == 1
  = isPrime n
 
- | otherwise    
+ | otherwise
  = sany $ smap       (isKPrime (k - 1))
         $ smap       fst
         $ sfilter    (eq 0 ∘ snd)
@@ -50,9 +50,8 @@ isKPrime (k n: Nat): Bool
         $ primes 2
 
 main ()
- =  forS (enumFromTo 1 5) $ λk 
+ =  forS (enumFromTo 1 5) $ λk
  -> do  write $ "k = " % show k % ": "
         forS (listOfStream $ stake 10 $ kPrimes k) $ λx
          ->     write $ show x % " "
         write "\n"
-

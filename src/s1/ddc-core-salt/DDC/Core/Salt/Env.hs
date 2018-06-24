@@ -18,6 +18,7 @@ import DDC.Core.Salt.Compounds.PrimControl
 import DDC.Core.Salt.Compounds.PrimStore
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
+import DDC.Core.Module.Name
 import DDC.Type.DataDef
 import DDC.Type.Exp.Simple
 import DDC.Type.Env                             (Env)
@@ -41,39 +42,40 @@ primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
         -- Bool#
-        [ makeDataDefAlg
+        [ makeDataDefAlg mn
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NamePrimLit (PrimLitBool True),  [])
                         , (NamePrimLit (PrimLitBool False), []) ])
         -- Nat#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- Size#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConSize)       [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConSize)       [] Nothing
 
         -- Word# 8, 16, 32, 64
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
 
         -- Float# 32, 64
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
         -- Tag#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTag)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConTag)        [] Nothing
 
         -- TextLit#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)    [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConTextLit)    [] Nothing
 
         -- Ptr#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConPtr)        [] Nothing
+        , makeDataDefAlg mn (NamePrimTyCon PrimTyConPtr)        [] Nothing
         ]
+ where  mn = ModuleName [ "DDC", "Types" ]
 
 
 -- Kinds ----------------------------------------------------------------------

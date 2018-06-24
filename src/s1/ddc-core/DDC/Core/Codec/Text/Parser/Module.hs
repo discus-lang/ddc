@@ -26,10 +26,10 @@ pModule :: (Ord n, Pretty n)
         -> Parser n (Module P.SourcePos n)
 pModule c
  = do   sp      <- pTokSP (KKeyword EModule)
-        name    <- pModuleName
+        modName <- pModuleName
 
         -- Parse header declarations
-        heads                   <- P.many (pHeadDecl c)
+        heads                   <- P.many (pHeadDecl c modName)
         let importSpecs_noArity = concat $ [specs  | HeadImportSpecs   specs <- heads ]
         let exportSpecs         = concat $ [specs  | HeadExportSpecs   specs <- heads ]
 
@@ -72,7 +72,7 @@ pModule c
         let body = xLetsAnnot lts (xUnit sp)
 
         return  $ ModuleCore
-                { moduleName            = name
+                { moduleName            = modName
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = []
                 , moduleExportValues    = [(n, s)      | ExportValue n s        <- exportSpecs]
@@ -112,9 +112,9 @@ data HeadDecl n
 
 -- | Parse one of the declarations that can appear in a module header.
 pHeadDecl :: (Ord n, Pretty n)
-          => Context n -> Parser n (HeadDecl n)
+          => Context n -> ModuleName -> Parser n (HeadDecl n)
 
-pHeadDecl ctx
+pHeadDecl ctx modName
  = P.choice
         [ do    imports <- pImportSpecs ctx
                 return  $ HeadImportSpecs imports
@@ -122,7 +122,7 @@ pHeadDecl ctx
         , do    exports <- pExportSpecs ctx
                 return  $ HeadExportSpecs exports
 
-        , do    def     <- pDataDef ctx
+        , do    def     <- pDataDef ctx (Just modName)
                 return  $ HeadDataDef (dataDefTypeName def) def
 
         , do    (n, k, t) <- pTypeDef ctx
