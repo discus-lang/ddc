@@ -1,9 +1,25 @@
 
+-- | Test info table and reflective show.
 module Main
+import Data.List
 import System.Runtime.Reflect
 
 where
 
+data Thing where
+        ThingOne        : Thing
+        ThingWrap       : Thing -> Thing
+        ThingUnit       : Unit -> Thing
+
 main ()
- = do   printl (reflect_toValue (Cons 3 Nil))
+ = do   -- Check reflection of user defined data types,
+        --   as well as the static info table entry for unit.
+        printl (reflect_toValue ThingOne)
+        printl (reflect_toValue (ThingWrap ThingOne))
+        printl (reflect_toValue (ThingWrap (ThingUnit ())))
+
+        -- Check reflection of data type defined in another module.
+        printl (reflect_toValue (Cons 3 Nil))
+
+        -- Check reflection of functional value.
         printl (reflect_toValue ((\y z -> writel $ "derp" % z) 5))

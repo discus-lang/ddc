@@ -5,9 +5,9 @@ export  show_ValueFormat
         reflect_toValue
         reflect_formatOfValue
 
-
 import Control.Exception
 import System.IO.Console
+import System.Runtime.Info
 import Data.Numeric
 
 import foreign abstract type
@@ -125,7 +125,7 @@ reflect_showValue (v: Value): Text
  = case reflect_formatOfValue v of
         ValueFormatThunk nParams nBoxes nArgs nRuns
          -> parens
-         $ "Thunk" %% show nParams %% show nBoxes %% show nArgs %% show nRuns
+         $ "Base.THUNK" %% show nParams %% show nBoxes %% show nArgs %% show nRuns
 
         ValueFormatBoxed txModuleName txCtorName nTag nFields
          |  nFields == 0
@@ -138,13 +138,7 @@ reflect_showValue (v: Value): Text
                        (map (\n -> reflect_showValue (ddcBoxedGetField_refl v n))
                             (generate nFields id))
 
-        ValueFormatRaw
-         -> "Raw"
-
-        ValueFormatArray
-         -> "Array"
-
-        ValueFormatSmall nSize
-         -> parens
-         $ "Small" %% show nSize
+        ValueFormatRaw          -> "Base.RAW"
+        ValueFormatArray        -> "Base.ARRAY"
+        ValueFormatSmall nSize  -> parens $ "Base.SMALL" %% show nSize
 

@@ -2,6 +2,7 @@
 module Runtime.Info
 
 export foreign c value
+ ddcInfoInitStatic              : Unit    -> Unit
  ddcInfoFrameNew                : Word32# -> Addr#
  ddcInfoFramePush               : Addr#   -> Unit
  ddcInfoFrameAddData            : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
@@ -14,10 +15,37 @@ export foreign c value
  ddcInfoEntryGetModuleName      : Addr# -> Addr#
  ddcInfoEntryGetCtorName        : Addr# -> Addr#
 
+
 import foreign c value
  malloc                         : Nat# -> Addr#
+ ddcPrimStdoutPutNat            : Nat#  -> Void#
 
 with letrec
+
+
+---------------------------------------------------------------------------------------------------
+-- | Initialize the static portion of the info table.
+--     This adds info table entries for types that are defined by the runtime
+--     system. Info table entries for user defined types are added by the
+--     module initialization code of the defining module.
+ddcInfoInitStatic (_: Unit): Unit
+ = do
+        aFrame  = ddcInfoFrameNew 3w32#
+
+        -- 1 Base.Unit
+        iUnit   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "Unit"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Unit"#) 0# iUnit
+
+        -- 2 Base.True
+        iTrue   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "True"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.True"#) 0# iTrue
+
+        -- 3 Base.False
+        iFalse   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "False"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.False"#) 0# iFalse
+
+        ddcInfoFramePush aFrame
+
 
 ---------------------------------------------------------------------------------------------------
 -- While the runtime system is being initialized the infotable consists

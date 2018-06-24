@@ -156,7 +156,7 @@ makeBoxedPrimDataType :: Type Name -> Maybe (DataType Name)
 makeBoxedPrimDataType tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataType
-        { dataTypeModuleName    = ModuleName ["DDC", "Types", "Discus"]
+        { dataTypeModuleName    = ModuleName ["Base"]
         , dataTypeName          = n
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
@@ -171,7 +171,7 @@ makeBoxedPrimDataCtor :: Type Name -> Maybe (DataCtor Name)
 makeBoxedPrimDataCtor tt
         | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
         = Just $ DataCtor
-        { dataCtorModuleName    = ModuleName ["DDC", "Types", "Discus"]
+        { dataCtorModuleName    = ModuleName ["Base"]
         , dataCtorName          = n
         , dataCtorTag           = 0
         , dataCtorFieldTypes    = [tUnboxed tt]

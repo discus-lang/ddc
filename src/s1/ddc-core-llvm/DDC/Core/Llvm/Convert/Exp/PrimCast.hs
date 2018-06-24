@@ -8,11 +8,12 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Salt.Platform
-import Data.Sequence                    (Seq)
-import qualified DDC.Core.Exp           as C
-import qualified DDC.Core.Salt          as A
-import qualified Data.Sequence          as Seq
-import qualified Data.Map               as Map
+import qualified DDC.Core.Salt.Compounds as A
+import Data.Sequence                     (Seq)
+import qualified DDC.Core.Exp            as C
+import qualified DDC.Core.Salt           as A
+import qualified Data.Sequence           as Seq
+import qualified Data.Map                as Map
 
 
 -------------------------------------------------------------------------------
@@ -65,6 +66,12 @@ convPrimConvert
         -> ConvertM Instr
 
 convPrimConvert ctx tDst vDst tSrc aSrc
+ | tSrc == A.tTextLit
+ , tDst == A.tAddr
+ , Just mSrc  <- mconvArg ctx aSrc
+ = do   xSrc' <- mSrc
+        return $ IConv vDst ConvPtrtoint xSrc'
+
  | pp     <- contextPlatform ctx
  , kenv   <- contextKindEnv  ctx
  = do
