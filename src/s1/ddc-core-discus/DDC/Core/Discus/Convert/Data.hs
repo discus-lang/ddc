@@ -46,34 +46,37 @@ constructData pp a ctorDef rPrime xsFields tsFields
         let arity       = length tsFields
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
 
+        -- Expression to lookup the info table index for this data
+        --   constructor, which is stored in a global variable named
+        --   after the fully-qualified constructor name.
         let xInfoIndex
              = case dataCtorName ctorDef of
                 D.NameCon txCtorName
-                 -> let txInfoRef   = nameOfInfoIndexCtorRef
-                                        (dataCtorModuleName ctorDef)
-                                        txCtorName
-                    in A.xRead a (A.tWord 32)
-                        (A.xGlobal a (A.tWord 32) txInfoRef)
-                        (A.xNat a 0)
+                 -> let txInfoRef
+                         = nameOfInfoIndexCtorRef
+                                (dataCtorModuleName ctorDef) txCtorName
+                    in  A.xRead a (A.tWord 32)
+                                  (A.xGlobal a (A.tWord 32) txInfoRef)
+                                  (A.xNat a 0)
                 _ -> A.xWord a 0 32
 
-        let xAlloc      = A.xAllocBoxed a rPrime
-                                (dataCtorTag ctorDef)
-                                xInfoIndex
-                        $ A.xNat a (fromIntegral arity)
+        -- Allocate a boxed object to represent the data contructor.
+        let xAlloc
+             = A.xAllocBoxed a rPrime (dataCtorTag ctorDef) xInfoIndex
+             $ A.xNat a (fromIntegral arity)
 
         -- Statements to write each of the fields.
-        let xObject'    = XVar a $ UIx 0
+        let xObject' = XVar a $ UIx 0
         let lsFields
-                = [ LLet (BNone A.tVoid)
-                         (A.xSetFieldOfBoxed a
-                         rPrime trField xObject' ix (liftX 1 xField))
-                  | ix      <- [0..]
-                  | xField  <- xsFields
-                  | trField <- repeat A.rTop ]
+             = [ LLet (BNone A.tVoid)
+                        (A.xSetFieldOfBoxed a
+                        rPrime trField xObject' ix (liftX 1 xField))
+               | ix      <- [0..]
+               | xField  <- xsFields
+               | trField <- repeat A.rTop ]
 
-        return  $ XLet a (LLet bObject xAlloc)
-                $ foldr (XLet a) xObject' lsFields
+        return $ XLet a (LLet bObject xAlloc)
+               $ foldr (XLet a) xObject' lsFields
 
 
  | Just HeapObjectSmall <- heapObjectOfDataCtor  pp ctorDef
