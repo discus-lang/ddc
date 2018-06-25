@@ -1,5 +1,5 @@
 Main.ThingOne
 (Main.ThingWrap Main.ThingOne)
 (Main.ThingWrap (Main.ThingUnit Base.Unit))
-(Data.List.Cons (Base.SMALL 8) Data.List.Nil)
-(Base.THUNK 2 1 1 0)
+(Data.List.Cons (SMALL "Base" "Nat" 8) Data.List.Nil)
+(THUNK 2 1 1 0)

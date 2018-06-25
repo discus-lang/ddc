@@ -20,7 +20,8 @@ letrec {
           = add# [Nat#] 3# xx2 in
       let xx0     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -39,7 +40,8 @@ letrec {
       let xx5     
           = add# [Nat#] 2# xx4 in
       let ^       
-          = ddcSmallAlloc [rT] TAG0# 1# in
+          = ddcSmallAlloc [rT]
+                (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
       let ^       
           = ddcSmallPayload [rT] ^0 in
       let _       
@@ -69,7 +71,8 @@ letrec {
       case xx1 of {
         True#  
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Bool"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -78,7 +81,8 @@ letrec {
             ^1;
         _ 
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Bool"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -109,7 +113,8 @@ letrec {
       case xx1 of {
         5#  
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -118,7 +123,8 @@ letrec {
             ^1;
         6#  
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -127,7 +133,8 @@ letrec {
             ^1;
         _ 
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -169,7 +176,8 @@ letrec {
             case xx2 of {
               0#  
                -> let ^       
-                      = ddcSmallAlloc [rT] TAG0# 1# in
+                      = ddcSmallAlloc [rT]
+                            (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
                   let ^       
                       = ddcSmallPayload [rT] ^0 in
                   let _       
@@ -178,7 +186,8 @@ letrec {
                   ^1;
               _ 
                -> let ^       
-                      = ddcSmallAlloc [rT] TAG0# 1# in
+                      = ddcSmallAlloc [rT]
+                            (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
                   let ^       
                       = ddcSmallPayload [rT] ^0 in
                   let _       
@@ -188,7 +197,8 @@ letrec {
             };
         _ 
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -228,7 +238,8 @@ letrec {
       let xx3     
           = add# [Nat#] xx1 xx2 in
       let ^       
-          = ddcSmallAlloc [rT] TAG0# 1# in
+          = ddcSmallAlloc [rT]
+                (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
       let ^       
           = ddcSmallPayload [rT] ^0 in
       let _       
@@ -240,7 +251,8 @@ letrec {
     = λ(x: Ptr# rT Obj).
       let xx4     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -280,7 +292,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx1     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -304,7 +317,8 @@ letrec {
             ^0 in
       let xx2     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -328,7 +342,8 @@ letrec {
             ^0 in
       let xx3     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -364,7 +379,8 @@ letrec {
             x;
         _ 
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -379,7 +395,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx1     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -403,7 +420,8 @@ letrec {
             ^0 in
       let xx2     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -427,7 +445,8 @@ letrec {
             ^0 in
       let xx3     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -472,7 +491,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx1     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -496,7 +516,8 @@ letrec {
             ^0 in
       let xx2     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -520,7 +541,8 @@ letrec {
             ^0 in
       let xx3     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -560,7 +582,8 @@ letrec {
       case xx1 of {
         0#  
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -569,7 +592,8 @@ letrec {
             ^1;
         _ 
          -> let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -611,7 +635,8 @@ letrec {
             ^0 in
       let xx7     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -629,7 +654,8 @@ letrec {
             ^0 in
       let xx8     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -644,7 +670,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx3     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -668,7 +695,8 @@ letrec {
             ^0 in
       let xx4     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -692,7 +720,8 @@ letrec {
             ^0 in
       let xx5     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -768,7 +797,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx5     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -792,7 +822,8 @@ letrec {
             ^0 in
       let xx6     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -816,7 +847,8 @@ letrec {
             ^0 in
       let xx7     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -838,7 +870,8 @@ letrec {
           = ddcInfoFrameNew 2# in
       let xx9     
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Addr"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -862,7 +895,8 @@ letrec {
             ^0 in
       let xx10    
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       
@@ -886,7 +920,8 @@ letrec {
             ^0 in
       let xx11    
           = let ^       
-                = ddcSmallAlloc [rT] TAG0# 1# in
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.Base.Word32"#) 0#) 1# in
             let ^       
                 = ddcSmallPayload [rT] ^0 in
             let _       

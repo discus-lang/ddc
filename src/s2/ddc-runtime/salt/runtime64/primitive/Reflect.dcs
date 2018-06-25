@@ -2,11 +2,11 @@
 module Runtime.Prim.Reflect
 
 export foreign c value
- ddcPrimReflectValue    : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj
+ ddcPrimReifyValue    : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj
 
 with letrec
 
--- | Reflecting a value is a no-op at the runtime system level,
---   though represents a type cast to the source language.
-ddcPrimReflectValue [r1: Region] (obj: Ptr# r1 Obj): Ptr# r1 Obj
+-- | Reifying a value is a no-op operationally,
+--   but is seen as a type cast to the source language.
+ddcPrimReifyValue [r1: Region] (obj: Ptr# r1 Obj): Ptr# r1 Obj
  = obj

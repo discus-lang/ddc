@@ -89,9 +89,32 @@ constructData pp a ctorDef rPrime xsFields tsFields
                                 then  sizeBytes `div` platformAddrBytes pp
                                 else (sizeBytes `div` platformAddrBytes pp) + 1
 
-        -- Allocate the object.
+        -- Binder for the allocated object.
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
-        let xAlloc      = A.xAllocSmall a rPrime (dataCtorTag ctorDef)
+
+        -- Expression to lookup the info table index for this value
+        --   which is stored in a global variable named after the
+        --   primitive value. These names need to match the ones
+        --   in Info.dcs in the runtime system.
+        let txTypeName
+                -- For boxed primitive types we grimily reuse the data
+                -- type name as the data constructor name.
+                -- TODO: make proper data constructor names for these.
+                | D.NamePrimTyCon tc <- dataCtorName ctorDef
+                , Just tx            <- infoTableRowNameOfPrimTyCon tc
+                = tx
+
+                | otherwise
+                = error $ "ddc-core.constructData: don't know what info index "
+                        ++ "to use for " ++ show (dataCtorName ctorDef)
+
+        let txInfoRef   = nameOfInfoIndexCtorRef (ModuleName ["Base"]) txTypeName
+
+        let xInfoIndex  = A.xRead a (A.tWord 32)
+                                (A.xGlobal a (A.tWord 32) txInfoRef)
+                                (A.xNat a 0)
+
+        let xAlloc      = A.xAllocSmall a rPrime xInfoIndex
                         $ A.xNat a nWords
 
         -- Take a pointer to its payload.
@@ -127,6 +150,28 @@ constructData pp a ctorDef rPrime xsFields tsFields
         , "  heapObject = " ++ (show $ heapObjectOfDataCtor  pp ctorDef)
         , "  fields     = " ++ (show $ dataCtorFieldTypes ctorDef)
         , "  size       = " ++ (show $ payloadSizeOfDataCtor pp ctorDef) ]
+
+
+-- | Names of the info table symbol and associated row to use for
+--   small primitive object. These names need to match the ones
+--   in Info.dcs of the runtime system.
+infoTableRowNameOfPrimTyCon :: D.PrimTyCon -> Maybe Text
+infoTableRowNameOfPrimTyCon ptc
+ = case ptc of
+        D.PrimTyConTextLit      -> Just "TextLit"
+        D.PrimTyConBool         -> Just "Bool"
+        D.PrimTyConNat          -> Just "Nat"
+        D.PrimTyConInt          -> Just "Int"
+        D.PrimTyConSize         -> Just "Size"
+        D.PrimTyConWord  8      -> Just "Word8"
+        D.PrimTyConWord  16     -> Just "Word16"
+        D.PrimTyConWord  32     -> Just "Word32"
+        D.PrimTyConWord  64     -> Just "Word64"
+        D.PrimTyConFloat 32     -> Just "Float32"
+        D.PrimTyConFloat 64     -> Just "Float64"
+        D.PrimTyConAddr         -> Just "Addr"
+        D.PrimTyConPtr          -> Just "Ptr"
+        _                       -> Nothing
 
 
 -- Destruct ---------------------------------------------------------------------------------------
