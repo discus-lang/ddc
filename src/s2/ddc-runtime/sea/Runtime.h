@@ -44,7 +44,7 @@ _ddcRawPayload(Obj* obj)
 
 
 // ----------------------------------------------------------------------------
-Obj*     ddcSmallAlloc          (uint32_t tag, nat_t wordsPayload);
+Obj*     ddcSmallAlloc          (uint32_t info, nat_t wordsPayload);
 nat_t    ddcSmallSize           (Obj* obj);
 uint8_t* ddcSmallPayload        (Obj* obj);
 nat_t    ddcSmallPayloadSize    (Obj* obj);

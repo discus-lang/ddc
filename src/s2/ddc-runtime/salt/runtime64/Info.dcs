@@ -2,6 +2,7 @@
 module Runtime.Info
 
 export foreign c value
+ ddcInfoInitStatic              : Unit    -> Unit
  ddcInfoFrameNew                : Word32# -> Addr#
  ddcInfoFramePush               : Addr#   -> Unit
  ddcInfoFrameAddData            : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
@@ -14,10 +15,90 @@ export foreign c value
  ddcInfoEntryGetModuleName      : Addr# -> Addr#
  ddcInfoEntryGetCtorName        : Addr# -> Addr#
 
+
 import foreign c value
  malloc                         : Nat# -> Addr#
+ ddcPrimStdoutPutNat            : Nat#  -> Void#
 
 with letrec
+
+
+---------------------------------------------------------------------------------------------------
+-- | Initialize the static portion of the info table.
+--
+--   This adds info table entries for types that are defined by the runtime
+--   system. Info table entries for user defined types are added by the
+--   module initialization code of the defining module.
+--
+--   The names for primitive types need to match the ones in the
+--   DDC.Core.Discus.Convert.Data module of the compiler implementation.
+--
+ddcInfoInitStatic (_: Unit): Unit
+ = do
+        -- Allocate the info table frame,
+        --   which has one entry for the sential 0 index,
+        --   and one for each of the entries we add in this function.
+        aFrame  = ddcInfoFrameNew (add# 1w32# 14w32#)
+
+        -- 1 Base.Unit
+        iUnit   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "Unit"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Unit"#) 0# iUnit
+
+        -- 2 Base.TextLit
+        iTxLit  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "TextLit"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.TextLit"#) 0# iTxLit
+
+        -- 3 Base.Bool
+        iBool   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "Bool"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Bool"#) 0# iBool
+
+        -- 4 Base.Nat
+        iNat    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Nat"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Nat"#) 0# iNat
+
+        -- 5 Base.Int
+        -- CAREFUL: ddcPrimMakeInt in Numeric.dcs uses the info table index 5 as a magic number.
+        iInt    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Int"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Int"#) 0# iInt
+
+        -- 6 Base.Size
+        iSize   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Size"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Size"#) 0# iSize
+
+        -- 7 Base.Word8
+        iWord8  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word8"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word8"#) 0# iWord8
+
+        -- 8 Base.Word16
+        iWord16  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word16"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word16"#) 0# iWord16
+
+        -- 9 Base.Word32
+        iWord32 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word32"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word32"#) 0# iWord32
+
+        -- 10 Base.Word64
+        iWord64 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word64"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word64"#) 0# iWord64
+
+        -- 11 Base.Float32
+        iFloat32 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Float32"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Float32"#) 0# iFloat32
+
+        -- 12 Base.Float64
+        iFloat64 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Float64"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Float64"#) 0# iFloat64
+
+        -- 13 Base.Addr
+        iAddr   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Addr"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Addr"#) 0# iAddr
+
+        -- 14 Base.Ptr
+        iPtr    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Ptr"#)
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Ptr"#) 0# iPtr
+
+        ddcInfoFramePush aFrame
+
 
 ---------------------------------------------------------------------------------------------------
 -- While the runtime system is being initialized the infotable consists

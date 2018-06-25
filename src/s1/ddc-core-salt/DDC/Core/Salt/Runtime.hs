@@ -427,15 +427,15 @@ uAllocSlotVal
 
 -- Small ------------------------------------------------------------------------------------------
 -- | Allocate a Small object.
-xAllocSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
-xAllocSmall a tR tag x2
+xAllocSmall :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
+xAllocSmall a tR xInfoIndex xWordsPayload
  = xApps a (XVar a $ fst utAllocSmall)
-        [ RType tR, RTerm $ xTag a tag, RTerm x2]
+        [ RType tR, RTerm xInfoIndex, RTerm xWordsPayload]
 
 utAllocSmall :: (Bound Name, Type Name)
 utAllocSmall
  =      ( UName (NameVar "ddcSmallAlloc")
-        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
+        , tForall kRegion $ \r -> (tWord 32 `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the payload of a Small object.

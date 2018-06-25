@@ -74,6 +74,7 @@ export foreign c value
  ddcObjectSize          : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectSizeMinimum   : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectIsAnchored    : [r: Region].     Ptr# r Obj -> Bool#
+ ddcObjectInfoIndex     : [r: Region].     Ptr# r Obj -> Word32#
 
  ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
  ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
@@ -106,7 +107,7 @@ export foreign c value
  ddcRawPayloadSize      : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
  -- Objects with small, raw non-pointer data.
- ddcSmallAlloc          : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSmallAlloc          : [r1:    Region]. Word32# -> Nat# -> Ptr# r1 Obj
  ddcSmallPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
  ddcSmallPayloadSize    : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
@@ -170,13 +171,12 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
 --| Get the size of an object.
 ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcObjectFormat obj of
-        2# -> ddcThunkSize  obj
-        3# -> ddcBoxedSize  obj
-        4# -> ddcRawSize    obj
-        6# -> ddcSmallSize  obj
-
-        _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
-                 0#
+    2# -> ddcThunkSize  obj
+    3# -> ddcBoxedSize  obj
+    4# -> ddcRawSize    obj
+    6# -> ddcSmallSize  obj
+    _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
+             0#
 
 
 -- | Get the header size of an object, in bytes.
@@ -190,13 +190,12 @@ ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
 --
 ddcObjectSizeMinimum [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcObjectFormat obj of
-        2# -> 16#   -- Thunk  (64-bit header + 64-bit function pointer)
-        3# -> 8#    -- Boxed  (64-bit header)
-        4# -> 8#    -- Raw    (64-bit header)
-        6# -> 8#    -- Small  (64-bit header with embedded data)
-
-        _  -> do ddcFailObject obj "ddcHeaderSizeOfObject"# "unrecognized object"#
-                 0#
+    2# -> 16#   -- Thunk  (64-bit header + 64-bit function pointer)
+    3# -> 8#    -- Boxed  (64-bit header)
+    4# -> 8#    -- Raw    (64-bit header)
+    6# -> 8#    -- Small  (64-bit header with embedded data)
+    _  -> do ddcFailObject obj "ddcHeaderSizeOfObject"# "unrecognized object"#
+             0#
 
 
 -- | Check if an object is anchored. Anchored objects are allocated outside of
@@ -209,6 +208,12 @@ ddcObjectIsAnchored [r: Region] (obj: Ptr# r Obj): Bool#
         case band# fmt8 0b1000w8# of
           0b1000w8# -> True#
           _         -> False#
+
+
+-- | Get the info table index of an object.
+ddcObjectInfoIndex [r: Region] (obj: Ptr# r Obj): Word32#
+ = do   header  = peek# [r] [Word64#] (castPtr# obj)
+        band# (truncate# [Word32#] (shr# header 8w64#)) 0x0ffffffw32#
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -247,10 +252,10 @@ ddcForwardWrite
 --   Note that unlike the GHC runtime we don't use a separate PAP
 --   (Partial Application) object type to store partially applied arguments.
 --   To perform a partial application we just create a new Thunk, copy the old
---   arguments into it, and write the extra partially applied arguments into the
---   new thunk. This is done to keep the implementation complexity down, and we
---   haven't performed any concrete performance comparisons between the two
---   approaches.
+--   arguments into it, and write the extra partially applied arguments into
+--   the new thunk. This is done to keep the implementation complexity down,
+--   and we haven't performed any concrete performance comparisons between the
+--   two approaches.
 --
 --   For the GHC approach see:
 --    How to make a fast curry, push/enter vs eval apply.
@@ -652,11 +657,9 @@ ddcRawPayloadSize [r: Region] (obj: Ptr# r Obj): Nat#
 --     uint8_t   payload[];     // Raw data that does not contain heap pointers.
 --   } ObjSmall;
 --
--- TODO: drop the tag field.
---
 ddcSmallAlloc
         [r: Region]
-        (tag: Tag#) (wordsPayload: Nat#): Ptr# r Obj
+        (info: Word32#) (wordsPayload: Nat#): Ptr# r Obj
  = do
         -- Size of the object we need to allocate.
         bytesObj
@@ -676,8 +679,9 @@ ddcSmallAlloc
 
         -- Write the header word.
         write# addr 0#
-            (bor#  (shl# (promote# [Word64#] wordsPayload) 4w64#)
-                    0b0011w64#)
+            (bor# (shl# (promote# [Word64#] wordsPayload) 4w64#)
+            (bor# (shl# (promote# [Word64#] info)         8w64#)
+                  0b0011w64#))
 
         -- Return pointer to the new object.
         makePtr# addr

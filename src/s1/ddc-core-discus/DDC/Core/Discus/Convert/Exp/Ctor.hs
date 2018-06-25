@@ -35,18 +35,18 @@ convertCtorApp
 convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 
  -- The unit constructor.
+ --  This is statically defined to have info table index 1 in Init.dcs
+ --  of the runtime system.
  | DaConUnit      <- dc
  = return $ A.xAllocBoxed a A.rTop
-                0                -- tag
-                (A.xWord a 0 32) -- info index
-                (A.xNat a 0)
-
+                0                -- constructor tag
+                (A.xWord a 1 32) -- info index
+                (A.xNat  a 0)    -- arity
 
  -- Literal values
  | DaConPrim n _  <- dc
  , E.isNameLitUnboxed n
  =      convertLitCtor a dc
-
 
  -- Applications of the record constructor.
  --   These must be fully applied.
@@ -75,7 +75,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
         -- the name field, so we shouldn't have to supply this bogus info.
         let ctorDef
                 = DataCtor
-                { dataCtorModuleName    = ModuleName ["DDC", "Types", "Discus"]
+                { dataCtorModuleName    = ModuleName ["Base"]
                 , dataCtorName          = E.NameCon $ T.pack "Record"    -- bogus name.
                 , dataCtorTag           = 0
                 , dataCtorFieldTypes    = tsArgsValues

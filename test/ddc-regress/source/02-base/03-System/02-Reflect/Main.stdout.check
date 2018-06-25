@@ -1,2 +1,5 @@
-(Boxed 1 2 (Small 8) (Boxed 0 0))
-(Thunk 2 1 1 0)
+Main.ThingOne
+(Main.ThingWrap Main.ThingOne)
+(Main.ThingWrap (Main.ThingUnit Base.Unit))
+(Data.List.Cons (SMALL "Base" "Nat" 8) Data.List.Nil)
+(THUNK 2 1 1 0)

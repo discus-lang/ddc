@@ -5,13 +5,15 @@ export foreign c value
  ddcPrimMakeInt         : [r1: Region]. Int# -> Ptr# r1 Obj
 
 import foreign c value
- ddcSmallAlloc          : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSmallAlloc          : [r1: Region]. Word32# -> Nat# -> Ptr# r1 Obj
  ddcSmallPayload        : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
 
 with letrec
 
 
 ddcPrimMakeInt [r1: Region] (i: Int#): Ptr# r1 Obj
- = do   obj     = ddcSmallAlloc (truncate# 0#) 1#
+ = do   -- CAREFUL: The '5' here is a magic numer info table index.
+        -- Which is set in Info.dcs for the Int primitive type.
+        obj     = ddcSmallAlloc (truncate# 5#) 1#
         poke# (castPtr# (ddcSmallPayload obj)) i
         obj
