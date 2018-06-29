@@ -28,8 +28,29 @@ import foreign boxed type
 -- and we can't have the two imports conflicting in the generated Salt code.
 --
 import foreign c value
- ddcPrimReifyValue    : {@a: Data} -> a -> S Reflect Value
+ -- Reification (cast a value to its generic representation)
+ ddcPrimReifyValue      : {@a: Data} -> a -> S Reflect Value
 
+ -- Reflection (cast a generic representation into a specific value)
+ --   These functions will all call fail# at runtime if the value does
+ --   not have the appropriate type.
+ ddcPrimReflectUnit     : Value -> Unit
+ ddcPrimReflectBool     : Value -> Bool
+ ddcPrimReflectNat      : Value -> Nat
+ ddcPrimReflectInt      : Value -> Int
+ ddcPrimReflectFloat32  : Value -> Float32
+ ddcPrimReflectFloat64  : Value -> Float64
+
+ -- Raw Object Access.
+ --   The generic 'Object' functions are safe to use on any sort of value,
+ --   but the others do not check that the value is of the correct sort
+ --   before attempting to read it, and will perform invalid memory
+ --   accesses given a value of the wrong sort.
+ --
+ --   TODO: don't expose any runtime functions that can perform invalid
+ --   memory accesses to the Source language, we should use versions
+ --   that are guaranteed to check the object sort first.
+ --
  ddcObjectFormat                                 : Value -> Nat
  ddcObjectInfoIndex_value  "ddcObjectInfoIndex"  : Value -> Word32
 
@@ -37,6 +58,7 @@ import foreign c value
  ddcThunkBoxes_value       "ddcThunkBoxes"       : Value -> Nat
  ddcThunkArgs_value        "ddcThunkArgs"        : Value -> Nat
  ddcThunkRuns_value        "ddcThunkRuns"        : Value -> Nat
+ ddcThunkGetField_value    "ddcThunkGetField"    : Value -> Nat -> Value
 
  ddcBoxedFields                                  : Value -> Nat
  ddcBoxedTag_value         "ddcBoxedTag"         : Value -> Nat
@@ -70,9 +92,9 @@ data ValueFormat where
 
         -- | Format of a Small heap object.
         ValueFormatSmall
-         :  Text   -- ^ Module name of definition ("Base" for builtin types)
-         -> Text   -- ^ Contructor name ("Nat", Word16 etc for builtin types)
-         -> Nat    -- ^ Size of payload.
+         :  Text        -- ^ Module name of definition ("Base" for builtin types)
+         -> Text        -- ^ Contructor name ("Nat", Word16 etc for builtin types)
+         -> Nat         -- ^ Size of payload.
          -> ValueFormat
 
 
@@ -81,11 +103,15 @@ show_ValueFormat: Show ValueFormat
 
 reflect_showValueFormat (f: ValueFormat): Text
  = case f of
-        ValueFormatThunk
-         -> "THUNK"
+        ValueFormatThunk nParams nBoxes nArgs nRuns
+         -> parens $ "THUNK"
+         %%  "{params =" %% show nParams % ", boxes ="  %% show nBoxes
+          % ", args ="   %% show nArgs   % ", runs ="   %% show nRuns %  "}"
 
-        ValueFormatBoxed moduleName ctorName tag nFields
-         -> "BOXED" %% moduleName %% ctorName %% show tag %% show nFields
+        ValueFormatBoxed txModule txCtor nTag nFields
+         -> parens $ "BOXED"
+         %%  "{module =" %% show txModule % ", ctor ="   %% show txCtor
+          % ", tag ="    %% show nTag     % ", fields =" %% show nFields % "}"
 
         ValueFormatArray
          -> "ARRAY"
@@ -93,8 +119,10 @@ reflect_showValueFormat (f: ValueFormat): Text
         ValueFormatRaw
          -> "RAW"
 
-        ValueFormatSmall nModule nCtor nSize
-         -> "SMALL" %% show nModule %% show nCtor %% show nSize
+        ValueFormatSmall txModule txCtor nSize
+         -> parens $ "SMALL"
+         %%  "{module =" %% show txModule % ", ctor ="   %% show txCtor
+          % ", size ="   %% show nSize    % "}"
 
 
 -------------------------------------------------------------------------------
@@ -122,30 +150,30 @@ reflect_toValue (x: a): S Reflect Value
 -- | Get the runtime representation format of a value.
 reflect_formatOfValue (v: Value): ValueFormat
  = case ddcObjectFormat v of
-        2 -> do nParams = ddcThunkParams_value v
-                nBoxes  = ddcThunkBoxes_value  v
-                nArgs   = ddcThunkArgs_value   v
-                nRuns   = ddcThunkRuns_value   v
+        2 -> do nParams  = ddcThunkParams_value v
+                nBoxes   = ddcThunkBoxes_value  v
+                nArgs    = ddcThunkArgs_value   v
+                nRuns    = ddcThunkRuns_value   v
                 ValueFormatThunk nParams nBoxes nArgs nRuns
 
-        3 -> do tag     = ddcBoxedTag_value v
-                nFields = ddcBoxedFields v
-                infoIdx = ddcObjectInfoIndex_value v
-                aEntry  = info_lookup infoIdx
-                nModule = info_getModuleName aEntry
-                nCtor   = info_getCtorName aEntry
-                ValueFormatBoxed nModule nCtor tag nFields
+        3 -> do nTag     = ddcBoxedTag_value v
+                nFields  = ddcBoxedFields v
+                infoIdx  = ddcObjectInfoIndex_value v
+                aEntry   = info_lookup infoIdx
+                txModule = info_getModuleName aEntry
+                txCtor   = info_getCtorName aEntry
+                ValueFormatBoxed txModule txCtor nTag nFields
 
         4 -> ValueFormatRaw
 
         5 -> ValueFormatArray
 
-        6 -> do nSize   = ddcSmallPayloadSize_value v
-                infoIdx = ddcObjectInfoIndex_value v
-                aEntry  = info_lookup infoIdx
-                nModule = info_getModuleName aEntry
-                nCtor   = info_getCtorName aEntry
-                ValueFormatSmall nModule nCtor nSize
+        6 -> do nSize    = ddcSmallPayloadSize_value v
+                infoIdx  = ddcObjectInfoIndex_value v
+                aEntry   = info_lookup infoIdx
+                txModule = info_getModuleName aEntry
+                txCtor   = info_getCtorName aEntry
+                ValueFormatSmall txModule txCtor nSize
 
         _ -> reflect_fail "formatOfValue"
 
@@ -158,15 +186,24 @@ show_Value: Show Value
 -- | Show a generic Value.
 --   Values build via the info table mechanism have enough information
 --   to print them out in a human readable way.
+---
+--   The info table indices are magic numbers defined in Info.dcs of the
+--   runtime system.
+--
 reflect_showValue (v: Value): Text
- = case reflect_formatOfValue v of
+ = let fmt = reflect_formatOfValue v
+   in  case fmt of
         ValueFormatThunk nParams nBoxes nArgs nRuns
-         -> parens
-         $ "THUNK" %% show nParams %% show nBoxes %% show nArgs %% show nRuns
+         -> parens $ show fmt
+         %  foldl pastes ""
+                (map (\n -> reflect_showValue (ddcThunkGetField_value v n))
+                     (generate nArgs id))
 
         ValueFormatBoxed txModuleName txCtorName nTag nFields
          |  nFields == 0
-         -> txModuleName % "." % txCtorName
+         -> case ddcObjectInfoIndex_value v of
+                1w32    -> show (ddcPrimReflectUnit v)
+                _       -> txModuleName % "." % txCtorName
 
          | otherwise
          -> parens
@@ -174,6 +211,7 @@ reflect_showValue (v: Value): Text
           % foldl pastes ""
                 (map (\n -> reflect_showValue (ddcBoxedGetField_value v n))
                      (generate nFields id))
+
         ValueFormatRaw
          -> "RAW"
 
@@ -181,5 +219,12 @@ reflect_showValue (v: Value): Text
          -> "ARRAY"
 
         ValueFormatSmall nModule nCtor nSize
-         -> parens $ "SMALL" %% show nModule %% show nCtor %% show nSize
+         -> case ddcObjectInfoIndex_value v of
+                1w32    -> show (ddcPrimReflectUnit    v)
+                3w32    -> show (ddcPrimReflectBool    v)
+                4w32    -> show (ddcPrimReflectNat     v)
+                5w32    -> show (ddcPrimReflectInt     v)
+                11w32   -> show (ddcPrimReflectFloat32 v)
+                12w32   -> show (ddcPrimReflectFloat64 v)
+                _       -> show fmt
 
