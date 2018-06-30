@@ -43,7 +43,10 @@ data Support n
 
           -- | Free value variables in an expression.
           --   (from the Data universe)
-        , supportDaVar          :: Set (Bound n) }
+        , supportDaVar          :: Set (Bound n)
+
+          -- | Data constructors used in an expression.
+        , supportDaCon          :: Set n }
         deriving Show
 
 
@@ -56,7 +59,8 @@ emptySupport
         , supportSpVar          = Set.empty
         , supportSpVarXArg      = Set.empty
         , supportWiVar          = Set.empty
-        , supportDaVar          = Set.empty }
+        , supportDaVar          = Set.empty
+        , supportDaCon          = Set.empty }
 
 
 -- | Union two support records.
@@ -68,7 +72,8 @@ unionSupport sp1 sp2
         , supportSpVar          = Set.unions [supportSpVar sp1,     supportSpVar sp2]
         , supportSpVarXArg      = Set.unions [supportSpVarXArg sp1, supportSpVarXArg sp2]
         , supportWiVar          = Set.unions [supportWiVar sp1,     supportWiVar sp2]
-        , supportDaVar          = Set.unions [supportDaVar sp1,     supportDaVar sp2] }
+        , supportDaVar          = Set.unions [supportDaVar sp1,     supportDaVar sp2]
+        , supportDaCon          = Set.unions [supportDaCon sp1,     supportDaCon sp2] }
 
 
 instance Ord a => Semigroup (Support a) where
@@ -132,8 +137,10 @@ instance SupportX (Exp a) where
         XPrim{}
          -> mempty
 
-        XCon{}
-         -> mempty
+        XCon _ dc
+         -> case dc of
+                DaConBound n    -> mempty { supportDaCon = Set.singleton n }
+                _               -> mempty
 
         XAbs _ (MType b) x
          -> support kenv tenv b

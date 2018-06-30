@@ -1,6 +1,6 @@
 
 module DDC.Build.Interface.Store
-        ( Store
+        ( Store (..)
         , new, wrap, load
         , importValuesOfStore
 
@@ -15,6 +15,7 @@ where
 import DDC.Build.Interface.Error
 import DDC.Build.Interface.Base
 import DDC.Core.Module
+import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Data.Pretty
 import System.Directory
@@ -27,8 +28,8 @@ import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
 import qualified DDC.Core.Discus                                as D
 import qualified Data.Map.Strict                                as Map
 import qualified Data.ByteString                                as BS
-import qualified Data.Text.Encoding                             as Text
-import qualified Data.Text                                      as Text
+import qualified Data.Text.Encoding                             as T
+import qualified Data.Text                                      as T
 
 
 ---------------------------------------------------------------------------------------------------
@@ -40,16 +41,22 @@ import qualified Data.Text                                      as Text
 data Store
         = Store
         { -- | Metadata for interface files currently in the store.
-          storeMeta       :: IORef [Meta]
+          storeMeta             :: IORef [Meta]
 
           -- | Lookup the definition of the given top-level super,
           --   from one or more of the provided modules.
-        , storeSupers     :: IORef (Map ModuleName (Map D.Name Super))
+        , storeSupers           :: IORef (Map ModuleName (Map D.Name Super))
+
+          -- | Map of data type declarations.
+        , storeDataDefs         :: IORef (Map (ModuleName, D.Name) (DataDef D.Name))
+
+          -- | Map of data constructor name to the type declaration that introduces it.
+        , storeDataDefOfCtor    :: IORef (Map (ModuleName, D.Name) (DataDef D.Name))
 
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
-        , storeInterfaces :: IORef [InterfaceAA] }
+        , storeInterfaces       :: IORef [InterfaceAA] }
 
 
 -- | Get a list of types of all top-level supers in all modules in the store.
@@ -107,28 +114,49 @@ data Super
 -- | An empty interface store.
 new :: IO Store
 new
- = do   refMeta         <- newIORef []
-        refSupers       <- newIORef Map.empty
-        refInterfaces   <- newIORef []
+ = do   refMeta          <- newIORef []
+        refSupers        <- newIORef Map.empty
+        refDataDefs      <- newIORef Map.empty
+        refDataDefOfCtor <- newIORef Map.empty
+        refInterfaces    <- newIORef []
         return  $ Store
                 { storeMeta             = refMeta
                 , storeSupers           = refSupers
+                , storeDataDefs         = refDataDefs
+                , storeDataDefOfCtor    = refDataDefOfCtor
                 , storeInterfaces       = refInterfaces }
 
 
 -- | Add a pre-loaded interface file to the store.
 wrap    :: Store -> InterfaceAA -> IO ()
 wrap store ii
- = do   modifyIORef (storeMeta store)
-         $ \meta   -> meta ++ [metaOfInterface ii]
+ = do
+        modifyIORef' (storeMeta store) $ \meta
+         -> meta ++ [metaOfInterface ii]
 
-        modifyIORef (storeSupers store)
-         $ \supers -> Map.insert (interfaceModuleName ii)
-                                 (supersOfInterface   ii)
-                                 supers
+        modifyIORef' (storeSupers store) $ \supers
+         -> Map.insert (interfaceModuleName ii)
+                       (supersFromInterface ii)
+                       supers
 
-        modifyIORef (storeInterfaces store)
-         $ \iis    -> iis ++ [ii]
+        modifyIORef' (storeDataDefs store) $ \ddefs
+         -> case interfaceDiscusModule ii of
+             Nothing -> Map.empty
+             Just mmDiscus
+              -> Map.unions
+                [ ddefs
+                , Map.fromList
+                        [ ((dataDefModuleName def, dataDefTypeName def), def)
+                        | (_, def) <- moduleImportDataDefs mmDiscus ]
+                , Map.fromList
+                        [ ((dataDefModuleName def, dataDefTypeName def), def)
+                        | (_, def) <- moduleLocalDataDefs  mmDiscus ]]
+
+        modifyIORef' (storeDataDefOfCtor store) $ \ctors
+         -> Map.union ctors (dataDefsOfCtorFromInterface ii)
+
+        modifyIORef' (storeInterfaces store) $ \iis
+         -> iis ++ [ii]
 
 
 -- | Load a new interface from a file.
@@ -154,8 +182,8 @@ load filePath
 
          -- Textual interface file in Discus Source format.
          else do
-                let tx   = Text.decodeUtf8 bs
-                let str  = Text.unpack tx
+                let tx   = T.decodeUtf8 bs
+                let str  = T.unpack tx
                 let iint = IT.decodeInterface filePath timeStamp str
 
                 -- Compact hasn't been updated for GHC 8.4.1
@@ -223,8 +251,8 @@ metaOfInterface ii
 --   This contains all the information needed to import a super into
 --   a client module.
 --
-supersOfInterface :: InterfaceAA -> Map D.Name Super
-supersOfInterface ii
+supersFromInterface :: InterfaceAA -> Map D.Name Super
+supersFromInterface ii
  | Just mmDiscus <- interfaceDiscusModule ii
  = let
         -- The current module name.
@@ -257,30 +285,32 @@ supersOfInterface ii
         takeSuperOfExport _
          = Nothing
 
-        -- Build a super decalaration from an import.
-{-      takeSuperOfImport im@ImportValueModule{}
-         = Super
-                { superName             = importValueModuleVar im
-                , superModuleName       = modName
-                , superTetraType        = importValueModuleType im
-                , superImportValue      = im }
-
-        takeSuperOfImport im@ImportValueSea{}
-         = Super
-                { superName             = D.NameVar $ importValueSeaVar im
-                , superModuleName       = modName
-                , superTetraType        = importValueSeaType im
-                , superImportValue      = im }
--}
-
    in   Map.fromList
                 [ (n, let Just s = takeSuperOfExport ex in s)
                 | (n, ex) <- moduleExportValues mmDiscus]
-{-
-         (Map.fromList
-                [ (n, takeSuperOfImport im)
-                | (n, im) <- moduleImportValues mmDiscus])
--}
+
+ | otherwise
+ = Map.empty
+
+
+-- | Take a module interface and extract a map of defined data constructor
+--   names to their defining data type declaration. This includes data types
+--   defined in the module itself, as well as imported ones.
+dataDefsOfCtorFromInterface :: InterfaceAA -> Map (ModuleName, D.Name) (DataDef D.Name)
+dataDefsOfCtorFromInterface ii
+ | Just mmDiscus <- interfaceDiscusModule ii
+ = let
+        takeCtorsOfDataDef dataDef
+         = case dataDefCtors dataDef of
+                Nothing    -> Map.empty
+                Just ctors
+                 -> Map.fromList
+                        [ ((dataCtorModuleName ctor, dataCtorName ctor), dataDef)
+                        | ctor <- ctors ]
+
+   in   Map.unions
+          [ Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleImportDataDefs mmDiscus
+          , Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleLocalDataDefs  mmDiscus ]
 
  | otherwise
  = Map.empty

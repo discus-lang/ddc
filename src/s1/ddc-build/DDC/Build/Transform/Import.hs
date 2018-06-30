@@ -19,6 +19,8 @@ import qualified Data.Set                       as Set
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Core.Discus                as E
 import qualified Data.Either                    as Either
+-- import Data.Maybe
+-- import Data.IORef
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
@@ -32,14 +34,21 @@ importNamesForModule
 
 importNamesForModule kenv tenv store mm
  = do
-        let sp      = support kenv tenv mm
-        ints    <- Store.getInterfaces store
-        let deps    = Map.fromList
+        let sp   =  support kenv tenv mm
+
+        -- Collect all interfaces currently in the interface store.
+        --   Note that these are *ALL currently loaded interfaces*,
+        --   not just the ones actually imported by the module that we
+        --   need to resolve names in.
+        ints     <- Store.getInterfaces store
+        let deps =  Map.fromList
                         [ ( interfaceModuleName i
                           , let Just m = interfaceDiscusModule i in m)
                           | i <- ints ]
+
         modNames       <- Store.getModuleNames store
 
+        -- Build imports for the data variables used in the module.
         let getDaVarImport (UName n) = do
                 eImport <- findImportSourceForDaVar store modNames n
                 case eImport of
@@ -54,6 +63,8 @@ importNamesForModule kenv tenv store mm
                 $  mapM getDaVarImport
                 $  Set.toList $ supportDaVar sp
 
+
+        -- Add imports to the module headers.
         let mm_resolved
                 = mm
                 { moduleImportTypes
@@ -65,6 +76,8 @@ importNamesForModule kenv tenv store mm
                      =  Map.toList $ Map.fromList
                      $  moduleImportDataDefs mm
                      ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
+
+--                     [ (dataDefTypeName dataDef, dataDef) | dataDef <- importDataDefs ]
 
                 , moduleImportTypeDefs
                      =  Map.toList $ Map.fromList
@@ -168,7 +181,7 @@ exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t))
-                        | (n, ExportTypeLocal _ t)   <- moduleExportTypes mm ]
+          | (n, ExportTypeLocal _ t)   <- moduleExportTypes mm ]
 
 -- | Get the type constructors that are imported abstractly by a module.
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)

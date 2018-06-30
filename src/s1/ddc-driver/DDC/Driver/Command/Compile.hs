@@ -100,8 +100,8 @@ cmdCompileRecursiveDS _config _bBuildExe _fsO _store []         _fsBlocked
 
 cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
  = do
---        liftIO $ putStrLn "\n\n* ENTER"
---        liftIO  $ putStr $ unlines
+--         liftIO $ putStrLn "\n\n* ENTER"
+--         liftIO $ putStr $ unlines
 --                [ "File            = " ++ show filePath
 --                , "Queue           = " ++ show (filePath : fs)
 --                , "Blocked         = " ++ show fsBlocked ]
@@ -125,10 +125,10 @@ cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
         let missing     = filter (\m -> not $ elem m modsNamesHave)
                         $ modNamesNeeded
 
---        liftIO  $ putStr $ unlines
---                [ "Modules Needed  = " ++ show modNamesNeeded
---                , "Modules Have    = " ++ show modsNamesHave
---                , "Modules Missing = " ++ show missing ]
+--         liftIO  $ putStr $ unlines
+--                 [ "Modules Needed  = " ++ show modNamesNeeded
+--                 , "Modules Have    = " ++ show modsNamesHave
+--                 , "Modules Missing = " ++ show missing ]
 
         case missing of
          -- We've already got all the interfaces needed by the
@@ -222,7 +222,7 @@ cmdLoadOrCompile config buildExe fsO store filePath
             -- files, so build it gain.
             search []
              = do
---                  liftIO  $ putStrLn "* Compiling"
+                  liftIO  $ putStrLn "* Compiling"
                   cmdCompile config buildExe fsO store filePath
 
         -- Check the config for where the interface might be.
