@@ -13,22 +13,20 @@ import DDC.Driver.Command.Read
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
-import qualified DDC.Driver.Stage.Tetra                         as DE
+import qualified DDC.Driver.Stage.Tetra         as DE
 
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Build.Interface.Store                                (Store)
-import qualified DDC.Build.Interface.Store                      as Store
-import qualified DDC.Build.Spec.Parser                          as Spec
-import qualified DDC.Build.Language.Discus                      as Tetra
-import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
+import DDC.Build.Interface.Store                (Store)
+import qualified DDC.Build.Spec.Parser          as Spec
+import qualified DDC.Build.Language.Discus      as Tetra
 
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Codec.Text.Pretty
-import qualified DDC.Core.Check         as C
-import qualified DDC.Core.Discus        as Tetra
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Discus                as Tetra
 
 import DDC.Data.SourcePos
 
@@ -38,8 +36,8 @@ import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
 import System.Directory
-import qualified Data.Text              as T
-import qualified Data.Map               as Map
+import qualified Data.Map                       as Map
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and transform source code, interface, or build file.
@@ -65,13 +63,6 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
         case Spec.parseBuildSpec filePath str of
          Left err       -> throwE $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
-
- -- Load a text interface file and print it as text.
- | elem (takeExtension filePath) [".di", ".sms"]
- = do   iint    <- liftIO $ Store.load filePath
-        case iint of
-         Left err    -> throwE $ renderIndent $ ppr err
-         Right iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
 
  -- Load a Discus Source module.
  | ".ds"        <- takeExtension filePath

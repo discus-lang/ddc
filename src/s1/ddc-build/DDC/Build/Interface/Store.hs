@@ -23,13 +23,10 @@ import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Map                                                 (Map)
-import qualified DDC.Build.Interface.Codec.Text.Decode          as IT
 import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
 import qualified DDC.Core.Discus                                as D
 import qualified Data.Map.Strict                                as Map
 import qualified Data.ByteString                                as BS
-import qualified Data.Text.Encoding                             as T
-import qualified Data.Text                                      as T
 
 
 ---------------------------------------------------------------------------------------------------
@@ -173,24 +170,12 @@ load filePath
          -- Binary interface file in Shimmer format.
          then do
                 let iint = IS.decodeInterface filePath timeStamp bs
-
-                -- Compact hasn't been updated for GHC 8.4.1
---                cInt    <- Compact.compactWithSharing iint
---                return  $  Compact.getCompact cInt
-
                 return iint
 
          -- Textual interface file in Discus Source format.
          else do
-                let tx   = T.decodeUtf8 bs
-                let str  = T.unpack tx
-                let iint = IT.decodeInterface filePath timeStamp str
+                return $ Left $ ErrorBadMagic filePath 0
 
-                -- Compact hasn't been updated for GHC 8.4.1
---                cInt    <- Compact.compactWithSharing iint
---                return  $  Compact.getCompact cInt
-
-                return iint
 
 
 -- | Get metadata of interfaces currently in the store.
