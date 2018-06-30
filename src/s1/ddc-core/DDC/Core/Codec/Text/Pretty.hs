@@ -16,13 +16,6 @@ import DDC.Core.Exp.Annot.Compounds
 import DDC.Type.DataDef
 import DDC.Core.Module
 import DDC.Data.Pretty
-import Data.List
-
-
--- ModuleName -------------------------------------------------------------------------------------
-instance Pretty ModuleName where
- ppr (ModuleName parts)
-        = string $ intercalate "." parts
 
 
 -- Module -----------------------------------------------------------------------------------------

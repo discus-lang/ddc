@@ -55,7 +55,8 @@ checkDaConM _config ctx xx a dc
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
-    DaConBound { daConName = nCtor }
+    -- FIXME: use the module and type names.
+    DaConBound (DaConBoundName _ _ nCtor)
      -> case Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx) of
          Just ctor       -> return $ typeOfDataCtor ctor
          Nothing         -> throw $ ErrorUndefinedCtor a xx

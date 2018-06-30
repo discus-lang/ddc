@@ -18,10 +18,11 @@ import System.FilePath
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
-import DDC.Build.Interface.Store                (Store)
-import qualified DDC.Build.Interface.Store      as Store
+import DDC.Core.Interface.Store                 (Store)
+import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Driver.Stage.Salt          as DA
+import qualified DDC.Core.Discus                as D
 
 
 -------------------------------------------------------------------------------
@@ -31,7 +32,7 @@ import qualified DDC.Driver.Stage.Salt          as DA
 --
 cmdToLlvmFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Core language definition.
         -> ExceptT String IO ()
 
@@ -57,7 +58,7 @@ cmdToLlvmFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToLlvmSourceTetraFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -83,7 +84,7 @@ cmdToLlvmSourceTetraFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToLlvmSourceTetraFromString
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
@@ -156,7 +157,7 @@ cmdToLlvmCoreFromString config language source str
 
                 |   fragName == "Salt"
                 =   DA.saltSimplify  config source
-                =<< DA.saltLoadText  config store source str
+                =<< DA.saltLoadText  config source str
 
                 -- Unrecognised.
                 | otherwise

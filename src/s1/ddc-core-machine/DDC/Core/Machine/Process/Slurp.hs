@@ -83,7 +83,7 @@ slurpNetworkBody :: Exp () Name -> Either SlurpError ([Channel], [Process])
 slurpNetworkBody xx
  = case xx of
     XCase _ processX [AAlt (PData dacon streamOutBinds) xrest]
-     | Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaCon dacon
+     | Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaConPrim dacon
      , Just (NameOpMachine (OpStream{}), streamArgs) <- takeXFragApps processX
      , processBody : streamInExps <- takeExpsFromArgs streamArgs
      , Just streamInNames  <- mapM takeNameOfExp  streamInExps
@@ -95,7 +95,7 @@ slurpNetworkBody xx
 
     _
      | Just (dacon, streamOutArgs) <- takeXConApps xx
-     , Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaCon dacon
+     , Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaConPrim dacon
      , Just streamOutNames <- mapM takeNameOfExp $ takeExpsFromArgs streamOutArgs
      -> do
         return (map Channel streamOutNames, [])

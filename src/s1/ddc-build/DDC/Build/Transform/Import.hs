@@ -12,13 +12,14 @@ import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Data.Pretty
 import Data.Map                                 (Map)
-import DDC.Build.Interface.Store                (Store)
-import DDC.Build.Interface.Base                 (Interface (..))
+import DDC.Core.Interface.Store                 (Store)
+import DDC.Core.Interface.Base                  (Interface (..))
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Core.Discus                as E
 import qualified Data.Either                    as Either
+
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
@@ -26,34 +27,44 @@ import qualified Data.Either                    as Either
 importNamesForModule
         :: KindEnv E.Name       -- ^ Kinds of primitive types.
         -> TypeEnv E.Name       -- ^ Types of primitive values.
-        -> Store                -- ^ Interface store.
+        -> Store E.Name         -- ^ Interface store.
         -> Module a E.Name      -- ^ Module to resolve names in.
         -> IO (Module a E.Name, [Error])
 
 importNamesForModule kenv tenv store mm
  = do
-        let sp      = support kenv tenv mm
-        ints    <- Store.getInterfaces store
-        let deps    = Map.fromList
+        let sp   =  support kenv tenv mm
+
+        -- Collect all interfaces currently in the interface store.
+        --   Note that these are *ALL currently loaded interfaces*,
+        --   not just the ones actually imported by the module that we
+        --   need to resolve names in.
+        ints     <- Store.getInterfaces store
+        let deps =  Map.fromList
                         [ ( interfaceModuleName i
-                          , let Just m = interfaceDiscusModule i in m)
+                          , interfaceModule i)
                           | i <- ints ]
+
         modNames       <- Store.getModuleNames store
 
+        -- Build imports for the data variables used in the module.
         let getDaVarImport (UName n) = do
                 eImport <- findImportSourceForDaVar store modNames n
                 case eImport of
                  Left err       -> return $ Left err
                  Right isrc     -> return $ Right (n, isrc)
 
-            getDaVarImport u    =   error "ddc-build.resolveNamesInModule:"
-                                $   "Cannot resolve anonymous binder: " ++ show u
+            getDaVarImport u
+                =  error $  "ddc-build.resolveNamesInModule:"
+                         ++ "Cannot resolve anonymous binder: " ++ show u
 
         (errsDaVar, importsDaVar)
                 <- fmap Either.partitionEithers
                 $  mapM getDaVarImport
                 $  Set.toList $ supportDaVar sp
 
+
+        -- Add imports to the module headers.
         let mm_resolved
                 = mm
                 { moduleImportTypes
@@ -149,7 +160,7 @@ importsTypeDef deps
 --   and produce the corresponding import statement to use it.
 --
 findImportSourceForDaVar
-        :: Store                -- ^ Interface store.
+        :: Store E.Name         -- ^ Interface store.
         -> [ModuleName]         -- ^ Modules to search for matching exports.
         -> E.Name               -- ^ Name of value.
         -> IO (Either Error (ImportValue E.Name (Type E.Name)))
@@ -168,7 +179,7 @@ exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t))
-                        | (n, ExportTypeLocal _ t)   <- moduleExportTypes mm ]
+          | (n, ExportTypeLocal _ t)   <- moduleExportTypes mm ]
 
 -- | Get the type constructors that are imported abstractly by a module.
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)

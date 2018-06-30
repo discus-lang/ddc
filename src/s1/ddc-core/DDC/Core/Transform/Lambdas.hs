@@ -26,17 +26,17 @@ import Data.Maybe
 
 ---------------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in a module.
-lambdasModule 
+lambdasModule
         :: ( Show a, Pretty a
            , Show n, Pretty n, Ord n, CompoundName n)
         => Profile n
-        -> Module a n 
+        -> Module a n
         -> S (Module a n)
 
 lambdasModule profile mm
  = do
         -- Take the top-level environment of the module.
-        let env = moduleEnvX 
+        let env = moduleEnvX
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
@@ -45,7 +45,7 @@ lambdasModule profile mm
         let c   = Context env (CtxTop env)
         x'      <- lambdasLoopX profile c $ moduleBody mm
 
-        return 
+        return
          $ mm { moduleBody = x' }
 
 
@@ -56,12 +56,12 @@ lambdasLoopX
          -> Context a n         -- ^ Enclosing context.
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
          -> S (Exp a n)         --   Replacement expression.
-        
+
 lambdasLoopX p c xx
  = do   (xx1, Result progress _)
          <- lambdasTopX p c xx
 
-        if progress 
+        if progress
          then lambdasLoopX p c xx1
          else return xx1
 
@@ -71,7 +71,7 @@ lambdasLoopX p c xx
 lambdasTopX p c xx
  = case xx of
         XLet a lts xBody
-         -> do  (lts', r1) <- lambdasTopLets p c a xBody lts 
+         -> do  (lts', r1) <- lambdasTopLets p c a xBody lts
                 (x',   r2) <- enterLetBody   c a lts xBody (lambdasTopX p)
                 return  ( foldr (XLet a) x' lts'
                         , mappend r1 r2)
@@ -97,16 +97,17 @@ lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
          -> S ( Exp a n         --   Replacement expression
               , Result a n)     --   Lifter result.
-         
+
 lambdasX p c xx
  = case xx of
-        XVar{}  
+        XVar{}
          -> return (xx, mempty)
 
         XPrim{}
          -> return (xx, mempty)
 
-        XCon a (DaConBound nCon)  
+        -- FIXME: pass through other names.
+        XCon a (DaConBound (DaConBoundName _ _ nCon))
          -> do  mResult <- etaXConApp p c a xx nCon []
                 case mResult of
                  Nothing        -> return (xx, mempty)
@@ -114,24 +115,24 @@ lambdasX p c xx
 
         XCon{}
          -> return (xx, mempty)
-         
+
         -- Lift type lambdas to top-level.
         XAbs a (MType b) x0
          -> enterLAM c a b x0 $ \c' x
          -> do  (x', r)         <- lambdasX p c' x
                 let xx'          = XLAM a b x'
                 let Result _ bxs = r
-                
+
                 -- Decide whether to lift this lambda to top-level.
                 -- If there are multiple nested lambdas then we want to lift
-                -- the whole group at once, rather than lifting each one 
+                -- the whole group at once, rather than lifting each one
                 -- individually.
                 let liftMe       = isLiftyContext (contextCtx c)   && null bxs
                 if liftMe
                  then do
                         let us'   = supportEnvFlags
                                   $ support Env.empty Env.empty xx'
-                          
+
                         (xCall, bLifted, xLifted)
                          <- liftLambda p c us' a [(True, b)] x'
 
@@ -147,7 +148,7 @@ lambdasX p c xx
          -> do  (x', r)      <- lambdasX p c' x
                 let xx'          = XLam a b x'
                 let Result _ bxs = r
-                
+
                 -- Decide whether to lift this lambda to top-level.
                 let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
@@ -158,7 +159,7 @@ lambdasX p c xx
 
                         (xCall, bLifted, xLifted)
                          <- liftLambda p c us' a [(False, b)] x'
-                      
+
                         return  ( xCall
                                 , Result True (bxs ++ [(bLifted, xLifted)]))
 
@@ -169,7 +170,7 @@ lambdasX p c xx
          -> do  (x', r)      <- lambdasX p c' x
                 let xx'          = XAbs a (MImplicit b) x'
                 let Result _ bxs = r
-                
+
                 -- Decide whether to lift this lambda to top-level.
                 let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
@@ -180,7 +181,7 @@ lambdasX p c xx
 
                         (xCall, bLifted, xLifted)
                          <- liftLambda p c us' a [(False, b)] x'
-                      
+
                         return  ( xCall
                                 , Result True (bxs ++ [(bLifted, xLifted)]))
 
@@ -199,7 +200,7 @@ lambdasX p c xx
                 -- Decide whether to lift this box to top-level.
                 let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
-                if liftMe 
+                if liftMe
                  then do
                         let us' = supportEnvFlags
                                 $ support Env.empty Env.empty xx'
@@ -214,12 +215,13 @@ lambdasX p c xx
 
 
         -- Eta-expand partially applied data contructors.
+        -- FIXME: pass through other names.
         XApp a x1 a2
-         | (XCon _a (DaConBound nCon), xsArg)   <- takeXApps1 x1 a2
+         | (XCon _a (DaConBound (DaConBoundName _ _ nCon)), xsArg)   <- takeXApps1 x1 a2
          -> do
                 mResult <- etaXConApp p c a x1 nCon xsArg
                 case mResult of
-                 Just result    
+                 Just result
                    -> return result
 
                  _ ->  do (x1', r1) <- enterAppLeft  c a x1 a2 (lambdasX   p)
@@ -234,13 +236,13 @@ lambdasX p c xx
                 (a2', r2)   <- enterAppRight c a x1 a2 (lambdasArg p)
                 return  ( XApp a x1' a2'
                         , mappend r1 r2)
-                
+
         XLet a lts x
-         -> do  (lts', r1)  <- lambdasLets  p c a x lts 
+         -> do  (lts', r1)  <- lambdasLets  p c a x lts
                 (x',   r2)  <- enterLetBody c a lts x  (lambdasX p)
                 return  ( foldr (XLet a) x' lts'
                         , mappend r1 r2)
-                
+
         XCase a x alts
          -> do  (x',    r1) <- enterCaseScrut c a x alts (lambdasX p)
                 (alts', r2) <- lambdasAlts  p c a x [] alts
@@ -252,7 +254,7 @@ lambdasX p c xx
 
 
 
-lambdasArg 
+lambdasArg
         :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
         => Profile n           -- ^ Language profile.
         -> Context a n         -- ^ Enclosing context.
@@ -265,7 +267,7 @@ lambdasArg p c aa
         RType t
          ->     return  (RType t, mempty)
 
-        RTerm x         
+        RTerm x
          -> do  (x', result)    <- lambdasX p c x
                 return  (RTerm x', result)
 
@@ -285,7 +287,7 @@ lambdasLets
         -> a -> Exp a n
         -> Lets a n
         -> S ([Lets a n], Result a n)
-           
+
 lambdasLets p c a xBody lts
  = case lts of
         LLet b x
@@ -302,7 +304,7 @@ lambdasLets p c a xBody lts
 
 -- LetRec -----------------------------------------------------------------------------------------
 -- | Perform lambda lifting in the right of a single let-rec binding.
-lambdasLetRec 
+lambdasLetRec
         :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
         => Profile n -> Context a n
         -> a -> [(Bind n, Exp a n)] -> [(Bind n, Exp a n)] -> Exp a n
@@ -312,21 +314,21 @@ lambdasLetRec _ _ _ _ [] _
         = return ([], mempty)
 
 lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
- = do   (x',   r1) 
+ = do   (x',   r1)
          <- enterLetLRec  c a bxsAcc b x bxsMore xBody (lambdasX p)
 
         case contextCtx c of
 
          -- If we're at top-level then drop lifted bindings here.
          CtxTop{}
-          -> do (bxs', Result p2 bxs2) 
+          -> do (bxs', Result p2 bxs2)
                  <- lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
                 let Result p1 bxsLifted = r1
                 return  ( bxsLifted ++ ((b, x') : bxs')
                         , Result (p1 || p2) bxs2 )
 
          _
-          -> do (bxs', r2) 
+          -> do (bxs', r2)
                  <- lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
                 return  ( (b, x') : bxs'
                         , mappend r1 r2 )
@@ -353,7 +355,7 @@ lambdasLetRecLiftAll p c a bxs
                 $ map snd bxs
 
        -- However, the functions we are lifting should not be treated as free variables
-       let us'  = Set.filter 
+       let us'  = Set.filter
                         (\(_, bo) -> not $ any (boundMatchesBind bo . fst) bxs)
                 $ us
 
@@ -361,12 +363,12 @@ lambdasLetRecLiftAll p c a bxs
        --  We allow the group of bindings to contain ones with outer lambda
        --  abstractions that need to be lifted, along with non-functional
        --  bindings that stay in place.
-       let lift _before [] 
+       let lift _before []
              = return []
 
            lift before ((b, x) : after)
             = case takeXLamFlags x of
-                -- The right of this binding has an outer abstraction, 
+                -- The right of this binding has an outer abstraction,
                 -- so we need to lift it to top-level.
                 Just (lams, xx)
                  -> do  let c'  =  ctx before b x after
@@ -407,12 +409,12 @@ lambdasLetRecLiftAll p c a bxs
 
 -- Alts -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in the right of a single alternative.
-lambdasAlts 
+lambdasAlts
         :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
         => Profile n -> Context a n
         -> a -> Exp a n -> [Alt a n] -> [Alt a n]
         -> S ([Alt a n], Result a n)
-           
+
 lambdasAlts _ _ _ _ _ []
         = return ([], mempty)
 
@@ -433,7 +435,7 @@ lambdasCast
 
 lambdasCast p c a cc x
   = case cc of
-        CastWeakenEffect{}    
+        CastWeakenEffect{}
          -> do  (x', r) <- enterCastBody c a cc x  (lambdasX p)
                 return ( XCast a cc x', r)
 
@@ -441,11 +443,11 @@ lambdasCast p c a cc x
          -> do  (x', r) <- enterCastBody c a cc x  (lambdasX p)
                 return (XCast a cc x',  r)
 
-        CastBox 
+        CastBox
          -> do  (x', r) <- enterCastBody  c a cc x (lambdasX p)
                 return (XCast a cc x',  r)
-       
-        CastRun 
+
+        CastRun
          -> do  (x', r) <- enterCastBody c a cc x (lambdasX p)
                 return (XCast a cc x',  r)
 
@@ -455,7 +457,7 @@ lambdasCast p c a cc x
 --   The code generator only handles fully applied data constructors,
 --   so we eta-expand partially applied ones so that they get turned
 --   into thunks.
-etaXConApp 
+etaXConApp
         :: (Show a, Pretty a, Pretty n, Ord n, Show n, CompoundName n)
         => Profile n    -- ^ Language Profile.
         -> Context a n  -- ^ Current context of transform.
@@ -495,7 +497,7 @@ etaXConApp !p !c !a !x1 !nCon !xsArg
                         | i <- [0..arityT - 1]
                         | b <- DataDef.dataCtorTypeParams dataCtor ]
 
-        let sub = zip (DataDef.dataCtorTypeParams dataCtor) 
+        let sub = zip (DataDef.dataCtorTypeParams dataCtor)
                       (map TVar usT)
 
         -- Make binders for the new term parameters.
@@ -511,10 +513,11 @@ etaXConApp !p !c !a !x1 !nCon !xsArg
         (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
 
         -- Build application of our new abstraction.
+        -- FIXME: repair da con bound name.
         return  $ Just
                 $ ( xApps a
-                        ( xLAMs a bsT $ xLams a bsX 
-                                $  xApps a (XCon a (DaConBound nCon))
+                        ( xLAMs a bsT $ xLams a bsX
+                                $  xApps a (XCon a (DaConBound (DaConBoundName Nothing Nothing nCon)))
                                 $  [ RType (TVar u)    | u <- usT]
                                 ++ [ RTerm (XVar  a u) | u <- usX])
                         xsArg'

@@ -30,7 +30,7 @@ import DDC.Driver.Command.Machine.Prep
 import DDC.Driver.Command.Machine.Slurp
 import DDC.Type.Universe
 
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store       as Store
 
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set

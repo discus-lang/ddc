@@ -427,7 +427,8 @@ ctorTypeOfPat _table ctx a (PData dc _)
         DaConPrim{}
          -> return $ Just $ daConType dc
 
-        DaConBound n
+        -- FIXME: use the module and type names.
+        DaConBound (DaConBoundName _ _ n)
          -- Types of algebraic data ctors should be in the defs table.
          |  Just ctor   <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
          -> return $ Just $ typeOfDataCtor ctor
@@ -480,9 +481,9 @@ checkAltsOverlapping
         -> CheckM a n ()
 
 checkAltsOverlapping a xx alts
- = do   let pats                = [p | AAlt p _ <- alts]
-        let psDefaults          = filter isPDefault pats
-        let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
+ = do   let pats           = [p | AAlt p _ <- alts]
+        let psDefaults     = filter isPDefault pats
+        let nsCtorsMatched = mapMaybe (takeBaseCtorNameOfDaCon <=< takeDaConOfAlt) alts
 
         -- Alts were overlapping because there are multiple defaults.
         when (length psDefaults > 1)
@@ -518,7 +519,7 @@ checkAltsExhaustive
         -> CheckM a n ()
 
 checkAltsExhaustive a xx mode alts
- = do   let nsCtorsMatched      = mapMaybe takeCtorNameOfAlt alts
+ = do   let nsCtorsMatched = mapMaybe (takeBaseCtorNameOfDaCon <=< takeDaConOfAlt) alts
 
         -- Check that alternatives are exhaustive.
         case mode of

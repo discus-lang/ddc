@@ -24,8 +24,8 @@ module DDC.Core.Check.Exp
         , Demand        (..)
         , Context
         , emptyContext
-        , checkExp
-        , typeOfExp
+        , checkExpIO
+        , reconOfExp, typeOfExp
 
           -- * Monadic checking.
         , Table         (..)
@@ -46,6 +46,7 @@ import DDC.Core.Check.Judge.Type.Case
 import DDC.Core.Check.Judge.Type.Cast
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Core.Transform.MapT
+import qualified System.IO.Unsafe       as S
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -60,23 +61,24 @@ import DDC.Core.Transform.MapT
 --   automatically, you don't need to supply these as part of the starting
 --   kind and type environment.
 --
-checkExp
+checkExpIO
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n                     -- ^ Static configuration.
         -> EnvX n                       -- ^ Environment of expression.
         -> Mode n                       -- ^ Check mode.
         -> Demand                       -- ^ Demand placed on the expression.
         -> Exp a n                      -- ^ Expression to check.
-        -> ( Either (Error a n)         --   Type error message.
-                    ( Exp (AnTEC a n) n --   Expression with type annots
-                    , Type n            --   Type of expression.
-                    , Effect n)         --   Effect of expression.
-           , CheckTrace)                --   Type checker debug trace.
+        -> IO ( Either (Error a n)         --   Type error message.
+                ( Exp (AnTEC a n) n     --   Expression with type annots
+                , Type n                --   Type of expression.
+                , Effect n)             --   Effect of expression.
+              , CheckTrace)                --   Type checker debug trace.
 
-checkExp !config !env !mode !demand !xx
- = (result, ct)
+checkExpIO !config !env !mode !demand !xx
+ = do   ((ct, _, _), result) <- doCheck
+        return (result, ct)
  where
-  ((ct, _, _), result)
+  doCheck
    = runCheck (mempty, 0, 0)
    $ do
         -- Check the expression, using the monadic checking function.
@@ -106,7 +108,30 @@ checkExp !config !env !mode !demand !xx
         return  (xx_annot, t', e')
 
 
--- | Like `checkExp`, but only return the value type of an expression.
+-- | Like `checkExp`, but only reconstruct the type of an expression.
+---
+--   As 'Recon' mode does not load more interface files it's safe to
+--   unsafePerformIO this.
+--
+reconOfExp
+        :: (Show a, Ord n, Pretty n, Show n)
+        => Config n             -- ^ Static configuration.
+        -> EnvX n               -- ^ Environment of expresion.
+        -> Exp a n              -- ^ Expression to check.
+        -> Either (Error a n) (Exp (AnTEC a n) n, Type n, Effect n)
+
+reconOfExp !config !env !xx
+ = S.unsafePerformIO
+ $  checkExpIO config env Recon DemandNone xx >>= \r
+ -> case fst r of
+        Left err  -> return $ Left err
+        Right r'  -> return $ Right r'
+
+
+-- | Like `checkExp`, but only reconstruct the type of an expression.
+---
+--   As 'Recon' mode does not load more interface files it's safe to
+--   unsafePerformIO this.
 typeOfExp
         :: (Show a, Ord n, Pretty n, Show n)
         => Config n             -- ^ Static configuration.
@@ -115,9 +140,11 @@ typeOfExp
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !env !xx
- = case fst $ checkExp config env Recon DemandNone xx of
-        Left err        -> Left err
-        Right (_, t, _) -> Right t
+ = S.unsafePerformIO
+ $  checkExpIO config env Recon DemandNone xx >>= \r
+ -> case fst r of
+        Left err        -> return $ Left err
+        Right (_, t, _) -> return $ Right t
 
 
 -- Monadic Checking -----------------------------------------------------------

@@ -10,10 +10,10 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Kind
 import DDC.Type.Transform.SubstituteT
-import qualified DDC.Core.Env.EnvT              as EnvT
-import qualified DDC.Core.Check.Context         as Context
-import qualified Data.Map.Strict                as Map
-
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Core.Check.Context as Context
+import qualified Data.Map.Strict        as Map
+import qualified System.IO.Unsafe       as S
 
 -- Wrappers --------------------------------------------------------------------
 -- | Check a witness.
@@ -40,7 +40,8 @@ checkWitness
                   , Type n)
 
 checkWitness config env xx
- = let  ctx     = contextOfEnvX env
+ = S.unsafePerformIO
+ $ let  ctx     = contextOfEnvX env
    in   evalCheck (mempty, 0, 0)
          $ checkWitnessM config ctx xx
 
@@ -59,9 +60,10 @@ typeOfWitness
         -> Either (Error a n) (Type n)
 
 typeOfWitness config env ww
- = case checkWitness config env ww of
-        Left  err       -> Left err
-        Right (_, t)    -> Right t
+ = S.unsafePerformIO
+ $ case checkWitness config env ww of
+        Left  err       -> return $ Left err
+        Right (_, t)    -> return $ Right t
 
 
 ------------------------------------------------------------------------------

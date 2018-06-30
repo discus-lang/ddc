@@ -153,7 +153,7 @@ convertExp ectx ctx xx
         --  before Discus -> Salt conversion.
         XApp a xa xb
          | (x1, xsArgs   )          <- takeXApps1 xa xb
-         , XCon _ dc@(DaConBound n) <- x1
+         , XCon _ dc@(DaConBound (DaConBoundName _ _ n)) <- x1
          , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
          -> if length xsArgs
                        == length (dataCtorTypeParams dataCtor)

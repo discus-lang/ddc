@@ -43,7 +43,7 @@ import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
 import qualified DDC.Core.Simplifier.Recipe     as Simplifier
 import qualified DDC.Version                    as Version
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store       as Store
 
 
 ---------------------------------------------------------------------------------------------------

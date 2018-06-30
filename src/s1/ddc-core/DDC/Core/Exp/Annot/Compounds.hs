@@ -55,7 +55,7 @@ module DDC.Core.Exp.Annot.Compounds
 
           -- * Alternatives
         , patOfAlt
-        , takeCtorNameOfAlt
+        , takeDaConOfAlt
 
           -- * Patterns
         , bindsOfPat
@@ -72,7 +72,9 @@ module DDC.Core.Exp.Annot.Compounds
 
           -- * Data Constructors
         , xUnit, dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
+        , takeBaseCtorNameOfDaCon
         , takeTypeOfDaCon
 
           -- * Bound Variables
@@ -475,10 +477,10 @@ patOfAlt (AAlt pat _)   = pat
 
 
 -- | Take the constructor name of an alternative, if there is one.
-takeCtorNameOfAlt :: Alt a n -> Maybe n
-takeCtorNameOfAlt aa
+takeDaConOfAlt :: Alt a n -> Maybe (DaCon n (Type n))
+takeDaConOfAlt aa
  = case aa of
-        AAlt (PData dc _) _     -> takeNameOfDaCon dc
+        AAlt (PData dc _) _     -> Just dc
         _                       -> Nothing
 
 

@@ -29,10 +29,9 @@ convertDaCon ctx dc
                         { daConName             = n'
                         , daConType             = t' }
 
-        DaConBound n
+        DaConBound (DaConBoundName _ _ n)
          -> do  n'      <- convertDaConNameM dc n
-                return  $ DaConBound
-                        { daConName             = n' }
+                return  $ DaConBound (DaConBoundName Nothing Nothing n')
 
 
 -- | Convert the name of a data constructor.

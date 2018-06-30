@@ -1,6 +1,7 @@
 
 module DDC.Core.Codec.Shimmer.Encode
         ( Config (..)
+        , storeInterface
         , takeModuleDecls
         , takeModuleName
         , takeExp,   takeParam,   takeArg
@@ -9,17 +10,21 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
+import qualified DDC.Core.Interface.Base        as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
 import qualified DDC.Type.Sum                   as Sum
+import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
 import qualified Data.Text                      as T
 import Data.Text                                (Text)
 import DDC.Data.Pretty
 
+import qualified Foreign.Marshal.Alloc                  as Foreign
+import qualified System.IO                              as System
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -32,6 +37,22 @@ data Config n
         { configTakeRef         :: n -> SExp
         , configTakeVarName     :: n -> Maybe Text
         , configTakeConName     :: n -> Maybe Text }
+
+
+-- Interface --------------------------------------------------------------------------------------
+-- | Store an interface at the given file path.
+storeInterface :: Config n -> FilePath -> C.Interface n -> IO ()
+storeInterface config pathDst ii
+ = do
+        let dsDecls = takeModuleDecls config $ C.interfaceModule ii
+        let len     = S.sizeOfFileDecls dsDecls
+
+        Foreign.allocaBytes len $ \pBuf
+         -> do  _ <- S.pokeFileDecls dsDecls pBuf
+                h <- System.openBinaryFile pathDst System.WriteMode
+                System.hPutBuf h pBuf len
+                System.hClose h
+                return ()
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -280,7 +301,7 @@ takeExp c xx
                 C.DaConUnit      -> xSym "xdu"
                 C.DaConRecord fs -> xAps "xdr" (map xSym fs)
                 C.DaConPrim n _  -> configTakeRef c n
-                C.DaConBound n   -> configTakeRef c n
+                C.DaConBound n   -> takeDaConBoundName c n
 
         -- Abs -----
         C.XAbs{}
@@ -402,12 +423,11 @@ takeAlt c aa
 
         -- Bound
         C.AAlt (C.PData (C.DaConBound n) []) x
-         -> let Just tx = configTakeConName c n
-            in  xAps "ab" [xTxt tx, takeExp c x]
+         -> xAps "ab"   [ takeDaConBoundName c n
+                        , takeExp c x]
 
         C.AAlt (C.PData (C.DaConBound n) bs) x
-         -> let Just tx = configTakeConName c n
-            in  xAps "ab" ((xTxt tx : map (takeBind c) bs) ++ [takeExp c x])
+         -> xAps "ab"   ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
 
 
 -- Witness ----------------------------------------------------------------------------------------
@@ -459,6 +479,15 @@ takeType c tt
 
         C.TCon tc       -> takeTyCon c tc
         C.TVar u        -> takeBound c u
+
+
+-- DaConBoundName ---------------------------------------------------------------------------------
+takeDaConBoundName :: Config n -> C.DaConBoundName n -> SExp
+takeDaConBoundName c (C.DaConBoundName mnModule mnType nCtor)
+ = xAps "dcbn"
+        [ xMaybe xModuleName mnModule
+        , xMaybe (configTakeRef c) mnType
+        , configTakeRef c nCtor ]
 
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -572,10 +601,19 @@ xNone   = xSym "n"
 xSome :: SExp -> SExp
 xSome x = xAps "s" [x]
 
+xMaybe :: (a -> SExp) -> Maybe a -> SExp
+xMaybe _ Nothing  = xNone
+xMaybe f (Just x) = xSome (f x)
+
 xPair :: SExp -> SExp -> SExp
 xPair x1 x2 = xAps "p" [x1, x2]
 
 xList :: [SExp] -> SExp
 xList [] = xSym "o"
 xList xs = xAps "l" xs
+
+xModuleName :: C.ModuleName -> SExp
+xModuleName (C.ModuleName sParts)
+        = xList $ map (xTxt . T.pack) sParts
+
 

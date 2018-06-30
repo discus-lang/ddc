@@ -117,7 +117,7 @@ loadModuleFromFile fragment filePath mode
                 -- Lex the source.
                 let toks = (F.fragmentLexModule fragment) filePath 1 src
 
-                return $ loadModuleFromTokens fragment filePath mode toks
+                loadModuleFromTokens fragment filePath mode toks
 
 
 -- | Parse and type check a core module from a string.
@@ -128,9 +128,9 @@ loadModuleFromString
         -> Int                          -- ^ Starting line number for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> String                       -- ^ Program text.
-        -> ( Either (Error n err)
-                    (Module (C.AnTEC BP.SourcePos n) n)
-           , Maybe CheckTrace)
+        -> IO ( Either (Error n err)
+                       (Module (C.AnTEC BP.SourcePos n) n)
+              , Maybe CheckTrace)
 
 loadModuleFromString fragment filePath lineStart mode src
  = do   let toks = F.fragmentLexModule fragment filePath lineStart src
@@ -144,9 +144,9 @@ loadModuleFromTokens
         -> FilePath                     -- ^ Path to source file for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> [Located (Token n)]          -- ^ Source tokens.
-        -> ( Either (Error n err)
-                    (Module (C.AnTEC BP.SourcePos n) n)
-           , Maybe CheckTrace)
+        -> IO ( Either (Error n err)
+                       (Module (C.AnTEC BP.SourcePos n) n)
+              , Maybe CheckTrace)
 
 loadModuleFromTokens fragment sourceName mode toks'
  = goParse toks'
@@ -162,26 +162,27 @@ loadModuleFromTokens fragment sourceName mode toks'
          = case BP.runTokenParser describeToken sourceName
                         (C.pModule (C.contextOfProfile profile))
                         toks of
-                Left err        -> (Left (ErrorParser err),     Nothing)
+                Left err        -> return (Left (ErrorParser err),     Nothing)
                 Right mm        -> goCheckType (spreadX kenv tenv mm)
 
         -- Check that the module is type well-typed.
         goCheckType mm
-         = case C.checkModule config mm mode of
-                (Left err,  ct) -> (Left (ErrorCheckExp err),   Just ct)
+         =  C.checkModuleIO config mm mode >>= \r
+         -> case r of
+                (Left err,  ct) -> return (Left (ErrorCheckExp err),   Just ct)
                 (Right mm', ct) -> goCheckCompliance ct mm'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct mm
          = case F.complies profile mm of
-                Just err        -> (Left (ErrorCompliance err), Just ct)
+                Just err        -> return (Left (ErrorCompliance err), Just ct)
                 Nothing         -> goCheckFragment ct mm
 
         -- Perform fragment specific checks.
         goCheckFragment ct mm
          = case F.fragmentCheckModule fragment mm of
-                Just err        -> (Left (ErrorFragment err),   Just ct)
-                Nothing         -> (Right mm,                   Just ct)
+                Just err        -> return (Left (ErrorFragment err),   Just ct)
+                Nothing         -> return (Right mm,                   Just ct)
 
 
 -- | Parse and type check a core module from a string.
@@ -233,9 +234,9 @@ loadExpFromString
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
         -> String               -- ^ Source string.
-        -> ( Either (Error n err)
-                    (Exp (C.AnTEC BP.SourcePos n) n)
-           , Maybe CheckTrace)
+        -> IO ( Either (Error n err)
+                       (Exp (C.AnTEC BP.SourcePos n) n)
+              , Maybe CheckTrace)
 
 loadExpFromString fragment modules sourceName mode src
  = do  let toks = F.fragmentLexExp fragment sourceName 1 src
@@ -253,9 +254,9 @@ loadExpFromTokens
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
         -> [Located (Token n)]  -- ^ Source tokens.
-        -> ( Either (Error n err)
+        -> IO ( Either (Error n err)
                     (Exp (C.AnTEC BP.SourcePos n) n)
-           , Maybe CheckTrace)
+              , Maybe CheckTrace)
 
 loadExpFromTokens fragment modules sourceName mode toks'
  = goParse toks'
@@ -278,26 +279,27 @@ loadExpFromTokens fragment modules sourceName mode toks'
          = case BP.runTokenParser describeToken sourceName
                         (C.pExp (C.contextOfProfile profile))
                         toks of
-                Left err              -> (Left (ErrorParser err),     Nothing)
+                Left err              -> return (Left (ErrorParser err),     Nothing)
                 Right t               -> goCheckType (spreadX kenv tenv t)
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config envx mode C.DemandNone x of
-            (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
-            (Right (x', _, _), ct)    -> goCheckCompliance ct x'
+         =  C.checkExpIO config envx mode C.DemandNone x >>= \r
+         -> case r of
+             (Left err, ct)            -> return (Left  (ErrorCheckExp err),  Just ct)
+             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct x
          = case F.compliesWithEnvs profile kenv tenv x of
-            Just err                  -> (Left (ErrorCompliance err), Just ct)
+            Just err                  -> return (Left (ErrorCompliance err), Just ct)
             Nothing                   -> goCheckFragment ct x
 
         -- Perform fragment specific checks.
         goCheckFragment ct x
          = case F.fragmentCheckExp fragment x of
-            Just err                  -> (Left (ErrorFragment err),   Just ct)
-            Nothing                   -> (Right x,                    Just ct)
+            Just err                  -> return (Left (ErrorFragment err),   Just ct)
+            Nothing                   -> return (Right x,                    Just ct)
 
 
 -- Type -------------------------------------------------------------------------------------------

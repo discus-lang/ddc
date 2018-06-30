@@ -3,7 +3,6 @@
 
 module DDC.Core.Exp.Generic.BindStruct where
 import DDC.Core.Exp.Generic.Exp
-import DDC.Core.Exp.DaCon
 import DDC.Core.Collect.FreeX
 import DDC.Core.Collect.BindStruct
 import qualified DDC.Type.Exp           as T
@@ -14,16 +13,10 @@ instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GExp l) l where
  slurpBindTree xx
   = case xx of
-        XAnnot _ x              -> slurpBindTree x
-
-        XVar u                  -> [BindUse BoundExp u]
-
-        XCon dc
-         -> case dc of
-                DaConBound n    -> [BindCon BoundExp (T.UName n) Nothing]
-                _               -> []
-
-        XPrim{}                 -> []
+        XAnnot _ x      -> slurpBindTree x
+        XVar u          -> [BindUse BoundExp u]
+        XCon{}          -> []
+        XPrim{}         -> []
 
         XApp x1 a2              -> slurpBindTree x1 ++ slurpBindTree a2
 

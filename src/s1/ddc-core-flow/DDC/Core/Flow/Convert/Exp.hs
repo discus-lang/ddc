@@ -310,8 +310,8 @@ convertDaCon dd
    DaConPrim n t
     -> DaConPrim  <$> convertName n <*> convertType t
 
-   DaConBound n
-    -> DaConBound <$> convertName n
+   DaConBound (DaConBoundName _ _ n)
+    -> DaConBound <$> (DaConBoundName <$> pure Nothing <*> pure Nothing <*> convertName n)
 
 
 ---------------------------------------------------------------------------------------------------

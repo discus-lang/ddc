@@ -288,7 +288,7 @@ checkExp defs env side xx
         tenv    = EnvX.typeEnvOfEnvX env
         xx'     = S.spreadX kenv tenv xx
 
-   in  case fst $ C.checkExp defs env C.Recon C.DemandNone xx'  of
+   in  case C.reconOfExp defs env xx' of
         Left err  -> Left $ ErrorTypeCheck side xx' err
         Right rhs -> return rhs
 

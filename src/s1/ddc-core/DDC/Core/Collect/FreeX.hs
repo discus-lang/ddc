@@ -18,7 +18,7 @@ import Control.Monad
 
 -- freeX ----------------------------------------------------------------------
 -- | Collect the free Data and Witness variables in a thing (level-0).
-freeX   :: (BindStruct c n, Ord n) 
+freeX   :: (BindStruct c n, Ord n)
         => Env n -> c -> Set (Bound n)
 freeX tenv xx = Set.unions $ map (freeOfTreeX tenv) $ slurpBindTree xx
 
@@ -53,27 +53,22 @@ instance BindStruct (Exp a n) n where
   = case xx of
         XVar _ u        -> [BindUse BoundExp u]
         XPrim{}         -> []
-
-        XCon _ dc
-         -> case dc of
-                DaConBound n    -> [BindCon BoundExp (UName n) Nothing]
-                _               -> []
-
-        XApp _ x1 x2            -> slurpBindTree x1 ++ slurpBindTree x2
+        XCon{}          -> []
+        XApp _ x1 x2    -> slurpBindTree x1 ++ slurpBindTree x2
 
         XAbs _ (MType     b) x  -> [bindDefT BindLAM [b] [x]]
-        XAbs _ (MTerm     b) x  -> [bindDefX BindLam [b] [x]]      
-        XAbs _ (MImplicit b) x  -> [bindDefX BindLam [b] [x]]      
+        XAbs _ (MTerm     b) x  -> [bindDefX BindLam [b] [x]]
+        XAbs _ (MImplicit b) x  -> [bindDefX BindLam [b] [x]]
 
         XLet _ (LLet b x1) x2
          -> slurpBindTree x1
          ++ [bindDefX BindLet [b] [x2]]
 
         XLet _ (LRec bxs) x2
-         -> [bindDefX BindLetRec 
-                     (map fst bxs) 
+         -> [bindDefX BindLetRec
+                     (map fst bxs)
                      (map snd bxs ++ [x2])]
-        
+
         XLet _ (LPrivate b mT bs) x2
          -> (concat $ liftM slurpBindTree $ maybeToList mT)
          ++ [ BindDef  BindLetRegions b
