@@ -161,7 +161,8 @@ cmdCheckCoreFromString
 
 cmdCheckCoreFromString fragment source str mode
  = do
-        let mModule = loadModuleFromString fragment
+        mModule <- liftIO
+                $  loadModuleFromString fragment
                         (nameOfSource source) (lineStartOfSource source)
                         mode str
 
@@ -301,8 +302,9 @@ cmdParseCheckExp
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExpFromTokens fragment' modules
-                        (nameOfSource source) mode toks of
+         = loadExpFromTokens fragment' modules
+                        (nameOfSource source) mode toks >>= \r
+         -> case r of
               (Left err, mct)
                -> do    outDocLn $ ppr err
 

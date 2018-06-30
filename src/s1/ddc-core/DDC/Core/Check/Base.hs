@@ -43,7 +43,7 @@ import DDC.Type.Env                     (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
-import DDC.Control.Check                (throw, runCheck, evalCheck)
+import DDC.Control.CheckIO              (throw, runCheck, evalCheck)
 import DDC.Data.ListUtils
 
 import Control.Monad
@@ -51,7 +51,7 @@ import Data.Maybe
 import Data.Set                         (Set)
 import DDC.Data.Pretty                  as P
 import qualified Data.Set               as Set
-import qualified DDC.Control.Check      as G
+import qualified DDC.Control.CheckIO    as G
 import qualified Data.Semigroup         as SG
 import Prelude                          hiding ((<$>))
 
@@ -60,6 +60,7 @@ import Prelude                          hiding ((<$>))
 --   Used to manage type errors.
 type CheckM a n
         = G.CheckM (CheckTrace, Int, Int) (Error a n)
+
 
 -- | Allocate a new existential.
 newExists :: Kind n -> CheckM a n (Exists n)

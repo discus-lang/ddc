@@ -1,6 +1,6 @@
 
 module DDC.Core.Check.Judge.Module
-        ( checkModule
+        ( checkModuleIO, reconModule
         , checkModuleM)
 where
 import DDC.Core.Check.Judge.Type.Base   (checkTypeM)
@@ -11,13 +11,14 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                (EnvX)
-import DDC.Control.Check                (runCheck, throw)
+import DDC.Control.CheckIO              (runCheck, throw)
 
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Core.Check.Post    as Post
 import qualified Data.Map.Strict        as Map
+import qualified System.IO.Unsafe       as S
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -27,19 +28,36 @@ import qualified Data.Map.Strict        as Map
 --   variables
 --
 --   If it's bad, you get a description of the error.
-checkModule
+--
+checkModuleIO
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> Module a n           -- ^ Module to check.
         -> Mode n               -- ^ Type checker mode.
+        -> IO ( Either (Error a n) (Module (AnTEC a n) n)
+              , CheckTrace )
+
+checkModuleIO !config !xx !mode
+ = do   (s, result)     <- runCheck (mempty, 0, 0)
+                        $ checkModuleM config xx mode
+        let (tr, _, _)  = s
+        return (result, tr)
+
+
+-- | Reconstruct type annotations in a module.
+---
+--   As Recon mode does not load more interface files it's safe to
+--   unsafePerformIO this.
+--
+reconModule
+        :: (Show a, Ord n, Show n, Pretty n)
+        => Config n             -- ^ Static configuration.
+        -> Module a n           -- ^ Module to check.
         -> ( Either (Error a n) (Module (AnTEC a n) n)
            , CheckTrace )
 
-checkModule !config !xx !mode
- = let  (s, result)     = runCheck (mempty, 0, 0)
-                        $ checkModuleM config xx mode
-        (tr, _, _)      = s
-   in   (result, tr)
+reconModule config xx
+ = S.unsafePerformIO $ checkModuleIO config xx Recon
 
 
 -- checkModule ------------------------------------------------------------------------------------

@@ -198,10 +198,10 @@ transExp traceTrans profile env zero simpl xx
                 ,  mempty ]
 
         let config = C.configOfProfile profile
-        let rr     = C.checkExp config env Recon C.DemandNone x'
+        let rr     = C.reconOfExp config env x'
 
         -- Check that the simplifier perserved the type of the expression.
-        case fst rr of
+        case rr of
           Right (x2, t2, eff2)
            |  equivT    envt t1 t2
            ,  subsumesT envt kEffect eff1 eff2

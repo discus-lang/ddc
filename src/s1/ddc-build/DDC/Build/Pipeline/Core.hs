@@ -366,7 +366,7 @@ pipeFlow !mm !pp
 
                 goRate
                  -- Rate inference uses the types
-                 = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
+                 = case C.reconModule (C.configOfProfile Flow.profile) mm_float of
                      (Left err, _)
                       -> return [ErrorCoreTransform err]
 
@@ -376,13 +376,14 @@ pipeFlow !mm !pp
 
                              config      = C.configOfProfile Flow.profile
                             -- Synthesise the types of any newly created bindings.
-                         in case C.checkModule config mm_flow (C.Synth [])  of
-                             (Left err, _ct)
-                              -> return [ErrorCoreTransform err]
+                         in  C.checkModuleIO config mm_flow (C.Synth []) >>= \r
+                          -> case r of
+                              (Left err, _ct)
+                               -> return [ErrorCoreTransform err]
 
-                             (Right mm_flow', _ct)
-                              -> let mm_reannot' = C.reannotate (const ()) mm_flow'
-                                 in pipeCores mm_reannot' pipes
+                              (Right mm_flow', _ct)
+                               -> let mm_reannot' = C.reannotate (const ()) mm_flow'
+                                  in pipeCores mm_reannot' pipes
             in  goRate
 
 
@@ -438,7 +439,7 @@ pipeFlow !mm !pp
             in  case Flow.tetraOfFlowModule mm_namified of
                  Left  err  -> return [ErrorFlowConvert err]
                  Right mm'  ->
-                  case C.checkModule (C.configOfProfile Salt.profile) mm' C.Recon of
+                  case C.reconModule (C.configOfProfile Salt.profile) mm' of
                    (Left err, _ct)
                     -> return [ErrorCoreTransform err]
                    (Right mm_check', _ct)

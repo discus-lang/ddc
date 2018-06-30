@@ -46,9 +46,8 @@ slotifyModule a mm@ModuleCore{}
                 $ Simp.applySimplifier
                         A.profile Env.empty Env.empty anorm mmSlots
 
-   in    case Check.checkModule
-                (Check.configOfProfile A.profile)
-                mmANF Check.Recon of
+   in    case Check.reconModule
+                (Check.configOfProfile A.profile) mmANF of
 
            -- Couldn't reconstruct type annotations.
            (Left err, _checkTrace)
