@@ -102,8 +102,8 @@ phpOfExp xx ctx m
     XCon _ (DaConPrim n _t)
      -> wrap $ sanitise_prim n
     -- constructors must be fully applied
-    XCon _ (DaConBound n)
-     -> wrap $ text "new " <> bare_name n
+    XCon _ (DaConBound _n)
+     -> wrap $ text "new " -- <> bare_name n
 
     XLAM _ _ x
      -> phpOfExp x ctx m
@@ -244,8 +244,8 @@ phpOfAlts scrut alts ctx m
   cond (DaConPrim n _t)
    = var_name_t scrut <> text " == " <> (sanitise_prim n)
 
-  cond (DaConBound n)
-   = obj_field_tt scrut "tag" <> text " == " <> string_of n
+  cond (DaConBound _n)
+   = obj_field_tt scrut "tag" <> text " == " -- <> string_of n
 
   grabfields bs
    = vcat $ zipWith grabfield bs [1 :: Int ..]

@@ -26,18 +26,18 @@ convertCase
         -> [A.Alt]              -- ^ Alternatives of case expression.
         -> ConvertM (Seq Block)
 
-convertCase ctx ectx label instrs xScrut alts 
+convertCase ctx ectx label instrs xScrut alts
  | Just mVar    <- takeLocalV ctx xScrut
  = do
         vScrut' <- mVar
 
         -- Convert all the alternatives.
-        -- If we're in a nested context we'll also get a block to join the 
+        -- If we're in a nested context we'll also get a block to join the
         -- results of each alternative.
-        (alts', blocksJoin) 
+        (alts', blocksJoin)
          <- convertAlts ctx ectx alts
 
-        -- Determine what default alternative to use for the instruction. 
+        -- Determine what default alternative to use for the instruction.
         (lDefault, blocksDefault)
          <- case last alts' of
                 AltDefault l bs -> return (l, bs)
@@ -45,7 +45,7 @@ convertCase ctx ectx label instrs xScrut alts
 
         -- Get the alternatives before the default one.
         -- This will fail if there are no alternatives at all.
-        altsTable       
+        altsTable
          <- case takeInit alts' of
                 Nothing -> throw $ ErrorInvalidExp (A.XCase xScrut alts) Nothing
                 Just as -> return as
@@ -54,15 +54,15 @@ convertCase ctx ectx label instrs xScrut alts
         let table       = mapMaybe takeAltCase altsTable
         let blocksTable = join $ fmap altResultBlocks $ Seq.fromList altsTable
 
-        let switchBlock 
+        let switchBlock
                 =  Block label
-                $  instrs 
+                $  instrs
                 |> (annotNil $ ISwitch (XVar vScrut') lDefault table)
 
-        return  $  switchBlock 
+        return  $  switchBlock
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
- | otherwise 
+ | otherwise
  = throw $ ErrorInvalidExp (A.XCase xScrut alts) Nothing
 
 
@@ -75,7 +75,7 @@ convertAlts
 
 -- Alternatives are at top level.
 convertAlts ctx ectx@ExpTop{} alts
- = do   
+ = do
         alts'   <- mapM (convertAlt ctx ectx) alts
         return  (alts', Seq.empty)
 
@@ -90,7 +90,7 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
         -- Convert all the alternatives,
         -- assiging their results into separate vars.
         (vDstAlts, alts'@(_:_))
-                <- liftM unzip 
+                <- liftM unzip
                 $  mapM (\alt -> do
                         vDst'   <- newUniqueNamedVar "alt" (typeOfVar vDst)
                         alt'    <- convertAlt ctx (ExpNest ectx vDst' lJoin) alt
@@ -99,7 +99,7 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
                 $  alts
 
         -- A block to join the result from each alternative.
-        let blockJoin   
+        let blockJoin
                 = Block lJoin
                 $ Seq.fromList $ map annotNil
                 [ IPhi vDst vDstAlts
@@ -138,7 +138,7 @@ convertAlt ctx ectx aa
                 return  $  AltDefault label blocks
 
         A.AAlt (A.PData dc []) x
-         | Just n       <- A.takeNameOfDaCon dc
+         | Just n       <- A.takeNameOfDaConPrim dc
          , Just lit     <- convPatName pp n
          -> do  label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
@@ -149,7 +149,7 @@ convertAlt ctx ectx aa
 
 -- | Convert a constructor name from a pattern to a LLVM literal.
 --
---   Only integral-ish types can be used as patterns, for others 
+--   Only integral-ish types can be used as patterns, for others
 --   such as Floats we rely on the Lite transform to have expanded
 --   cases on float literals into a sequence of boolean checks.
 convPatName :: Platform -> A.Name -> Maybe Lit
@@ -167,7 +167,7 @@ convPatName pp (A.NamePrimLit lit)
         A.PrimLitInt  i
          -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
-        A.PrimLitWord i bits 
+        A.PrimLitWord i bits
          | elem bits [8, 16, 32, 64]
          -> Just $ LitInt (TInt $ fromIntegral bits) i
 
@@ -176,7 +176,7 @@ convPatName pp (A.NamePrimLit lit)
 
         _ -> Nothing
 
-convPatName _ _ 
+convPatName _ _
  = Nothing
 
 

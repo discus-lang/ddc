@@ -46,7 +46,7 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Match against literal unboxed values.
         AAlt (PData dc []) x
-         | Just nCtor           <- takeNameOfDaCon dc
+         | Just nCtor           <- takeNameOfDaConPrim dc
          , E.isNameLit nCtor
          -> do  dc'             <- convertDaCon tctx dc
                 xBody1          <- convertX     ectx ctx  x
@@ -96,7 +96,7 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Match against user-defined algebraic data.
         AAlt (PData dc bsFields) x
-         | Just nCtor           <- takeNameOfDaCon dc
+         | Just (DaConBoundName _ _ nCtor) <- takeNameOfDaConBound dc
          , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          -> do
                 -- Convert the scrutinee.

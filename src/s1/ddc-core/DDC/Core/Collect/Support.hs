@@ -46,7 +46,7 @@ data Support n
         , supportDaVar          :: Set (Bound n)
 
           -- | Data constructors used in an expression.
-        , supportDaCon          :: Set n }
+        , supportDaCon          :: Set (DaConBoundName n) }
         deriving Show
 
 

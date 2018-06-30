@@ -179,13 +179,13 @@ spreadDaCon _kenv tenv dc
                  Just t' -> dc { daConType = t' }
                  Nothing -> dc
 
-        DaConBound n
+        DaConBound dcb@(DaConBoundName _ _ n)
          | Env.isPrim tenv n
          , Just t'      <- Env.lookup (UPrim n) tenv
          -> DaConPrim n t'
 
          | otherwise
-         -> DaConBound n
+         -> DaConBound dcb
 
 
 ---------------------------------------------------------------------------------------------------

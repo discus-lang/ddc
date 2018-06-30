@@ -264,6 +264,19 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
         DaConBound n    -> ppr n
 
 
+instance (Pretty n, Eq n) => Pretty (DaConBoundName n) where
+ ppr dc
+  = case dc of
+        DaConBoundName Nothing Nothing n
+         -> ppr n
+
+        DaConBoundName Nothing (Just nd) n
+         -> ppr nd % text "." % ppr n
+
+        DaConBoundName (Just mn) md n
+         -> ppr mn % text "." % maybe (text "") ppr md % text "." % ppr n
+
+
 -- Utils ----------------------------------------------------------------------
 -- | Insert a line or a space depending on a boolean argument.
 breakWhen :: Bool -> Doc

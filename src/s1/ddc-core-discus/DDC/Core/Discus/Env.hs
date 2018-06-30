@@ -64,14 +64,14 @@ primDataDefs
  ++     [ makeTupleDataDef arity
                 | arity <- [2..32] ]
 
- where  mn = ModuleName ["DDC", "Types", "Discus"]
+ where  mn = ModuleName ["DDC", "Base", "Discus"]
 
 
 -- | Data type definition for `Bool`.
 dataDefBool :: DataDef Name
 dataDefBool
  = makeDataDefAlg
-        (ModuleName ["DDC", "Types", "Discus"])
+        (ModuleName ["DDC", "Base", "Discus"])
         (NamePrimTyCon PrimTyConBool)
         []
         (Just   [ (NameLitBool True,  [])
@@ -82,7 +82,7 @@ dataDefBool
 makeTupleDataDef :: Int -> DataDef Name
 makeTupleDataDef n
  = makeDataDefAlg
-        (ModuleName ["DDC", "Types", "Discus"])
+        (ModuleName ["DDC", "Base", "Discus"])
         (NameTyConDiscus (TyConDiscusTuple n))
         (replicate n (BAnon kData))
         (Just   [ ( NameDaConDiscus (DaConDiscusTuple n)

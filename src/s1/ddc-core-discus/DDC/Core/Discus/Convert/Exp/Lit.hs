@@ -18,7 +18,7 @@ convertLitCtor
         -> ConvertM a (Exp a A.Name)
 
 convertLitCtor a dc
- | Just (E.NameLitUnboxed n)    <- takeNameOfDaCon dc
+ | Just (E.NameLitUnboxed n)    <- takeNameOfDaConPrim dc
  = case n of
         E.NameLitBool    b      -> return $ A.xBool    a b
         E.NameLitNat     i      -> return $ A.xNat     a i

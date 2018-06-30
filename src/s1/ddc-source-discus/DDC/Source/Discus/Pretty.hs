@@ -462,7 +462,7 @@ instance PrettyLanguage l => Pretty (GWiCon l) where
         WiConBound   u  _ -> ppr u
 
 
-instance Pretty n => Pretty (DaCon n t) where
+instance (Eq n, Pretty n) => Pretty (DaCon n t) where
  ppr dc
   = case dc of
         DaConUnit       -> text "()"
@@ -473,7 +473,7 @@ instance Pretty n => Pretty (DaCon n t) where
          <> text ")#"
 
         DaConPrim n _   -> ppr n
-        DaConBound n    -> ppr n
+        DaConBound dcb  -> ppr dcb
 
 
 -- Utils ------------------------------------------------------------------------------------------

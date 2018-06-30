@@ -57,7 +57,9 @@ module DDC.Core.Exp.Generic
 
           -- ** Data Constructors
         , dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
+        , takeBaseCtorNameOfDaCon
         , takeTypeOfDaCon
 
           ---------------------------------------
@@ -66,7 +68,7 @@ module DDC.Core.Exp.Generic
 where
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.Generic.Predicates
-import DDC.Core.Exp.Generic.Compounds   
+import DDC.Core.Exp.Generic.Compounds
 import DDC.Core.Exp.Generic.Pretty              ()
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Predicates

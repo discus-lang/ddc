@@ -19,6 +19,7 @@ import DDC.Core.Codec.Text.Lexer.Tokens
 import Control.Monad.Except
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
+import qualified DDC.Core.Exp           as C
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -231,7 +232,7 @@ pExpAtomSP
  = P.choice
  [      -- Named algebraic constructors.
    do   (con, sp)       <- pDaConBoundNameSP
-        return  (sp, XCon  (DaConBound con))
+        return  (sp, XCon  (DaConBound (C.DaConBoundName Nothing Nothing con)))
 
         -- Literals.
         --  We just fill-in the type with a hole for now, and leave it to
@@ -341,7 +342,7 @@ pExpAtomSP
                 let xs    =  xField1 : xsField'
                 let arity =  length xs
                 let nCtor =  Text.pack ("T" ++ show arity)
-                let xCon  =  XCon (DaConBound (DaConBoundName nCtor))
+                let xCon  =  XCon (DaConBound (C.DaConBoundName Nothing Nothing (DaConBoundName nCtor)))
                 return  (sp, makeXApps xCon $ map RTerm xs)
 
                 -- Parenthesised expression.

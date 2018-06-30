@@ -11,34 +11,24 @@ import DDC.Core.Flow.Exp.Simple.Exp
 instance BindStruct (Exp a n) n where
  slurpBindTree xx
   = case xx of
-        XAnnot _ x
-         -> slurpBindTree x
-
-        XVar u
-         -> [BindUse BoundExp u]
-
-        XPrim{}
-         -> []
-
-        XCon dc
-         -> case dc of
-                DaConBound n    -> [BindCon BoundExp (UName n) Nothing]
-                _               -> []
-
-        XApp x1 x2              -> slurpBindTree x1 ++ slurpBindTree x2
-        XLAM b x                -> [bindDefT BindLAM [b] [x]]
-        XLam b x                -> [bindDefX BindLam [b] [x]]      
+        XAnnot _ x      -> slurpBindTree x
+        XVar u          -> [BindUse BoundExp u]
+        XPrim{}         -> []
+        XCon{}          -> []
+        XApp x1 x2      -> slurpBindTree x1 ++ slurpBindTree x2
+        XLAM b x        -> [bindDefT BindLAM [b] [x]]
+        XLam b x        -> [bindDefX BindLam [b] [x]]
 
         XLet (LLet b x1) x2
          -> slurpBindTree x1
          ++ [bindDefX BindLet [b] [x2]]
 
         XLet (LRec bxs) x2
-         -> [bindDefX BindLetRec 
-                     (map fst bxs) 
+         -> [bindDefX BindLetRec
+                     (map fst bxs)
                      (map snd bxs ++ [x2])]
-        
-        XLet (LPrivate bsR mtExtend bs) x2                         
+
+        XLet (LPrivate bsR mtExtend bs) x2
          -> (case mtExtend of
                 Nothing -> []
                 Just tR -> slurpBindTree tR)

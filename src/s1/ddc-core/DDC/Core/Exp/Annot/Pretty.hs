@@ -228,6 +228,19 @@ instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
         DaConBound n    -> ppr n
 
 
+instance (Pretty n, Eq n) => Pretty (DaConBoundName n) where
+ ppr dc
+  = case dc of
+        DaConBoundName Nothing Nothing n
+         -> ppr n
+
+        DaConBoundName Nothing (Just nd) n
+         -> ppr nd % text "." % ppr n
+
+        DaConBoundName (Just mn) md n
+         -> ppr mn % text "." % maybe (text "") ppr md % text "." % ppr n
+
+
 -- Cast -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc

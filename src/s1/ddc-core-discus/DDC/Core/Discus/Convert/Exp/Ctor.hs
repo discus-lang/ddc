@@ -89,7 +89,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 
 
  -- Construct algebraic data.
- | Just nCtor    <- takeNameOfDaCon dc
+ | Just (DaConBoundName _ _ nCtor) <- takeNameOfDaConBound dc
  , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors (contextDataDefs ctx)
  , tsArgsTypes   <- [t | RType t <- asArgsAll]
  , xsArgsValues  <- [x | RTerm x <- drop (length tsArgsTypes) asArgsAll]

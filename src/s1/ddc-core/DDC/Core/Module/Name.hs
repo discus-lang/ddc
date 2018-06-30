@@ -8,7 +8,9 @@ module DDC.Core.Module.Name
         , QualName      (..))
 where
 import Data.Typeable
+import Data.List
 import Control.DeepSeq
+import DDC.Data.Pretty
 import qualified Data.List              as List
 import qualified System.FilePath        as System
 
@@ -22,6 +24,11 @@ data ModuleName
 instance NFData ModuleName where
  rnf (ModuleName ss)
         = rnf ss
+
+
+instance Pretty ModuleName where
+ ppr (ModuleName parts)
+        = string $ intercalate "." parts
 
 
 -- | Read a string like 'M1.M2.M3' as a module name.
@@ -57,11 +64,11 @@ moduleNameMatchesPath filePath (ModuleName mnParts)
  = checkParts (reverse fsParts) (reverse mnParts)
  where
         -- Split out the directory parts from the filename.
-        fsParts 
+        fsParts
                 = map (\f -> case List.stripPrefix "/" (reverse f) of
                                 Just f' -> reverse f'
                                 Nothing -> f)
-                $ System.splitPath 
+                $ System.splitPath
                 $ System.dropExtension filePath
 
         -- Check that the directory parts match the module name parts.
@@ -73,7 +80,7 @@ moduleNameMatchesPath filePath (ModuleName mnParts)
 
 
 -- QualName ---------------------------------------------------------------------------------------
--- | A fully qualified name, 
+-- | A fully qualified name,
 --   including the name of the module it is from.
 data QualName n
         = QualName ModuleName n

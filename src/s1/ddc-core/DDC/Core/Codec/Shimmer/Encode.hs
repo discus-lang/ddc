@@ -280,7 +280,7 @@ takeExp c xx
                 C.DaConUnit      -> xSym "xdu"
                 C.DaConRecord fs -> xAps "xdr" (map xSym fs)
                 C.DaConPrim n _  -> configTakeRef c n
-                C.DaConBound n   -> configTakeRef c n
+                C.DaConBound n   -> takeDaConBoundName c n
 
         -- Abs -----
         C.XAbs{}
@@ -402,12 +402,11 @@ takeAlt c aa
 
         -- Bound
         C.AAlt (C.PData (C.DaConBound n) []) x
-         -> let Just tx = configTakeConName c n
-            in  xAps "ab" [xTxt tx, takeExp c x]
+         -> xAps "ab"   [ takeDaConBoundName c n
+                        , takeExp c x]
 
         C.AAlt (C.PData (C.DaConBound n) bs) x
-         -> let Just tx = configTakeConName c n
-            in  xAps "ab" ((xTxt tx : map (takeBind c) bs) ++ [takeExp c x])
+         -> xAps "ab"   ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
 
 
 -- Witness ----------------------------------------------------------------------------------------
@@ -459,6 +458,15 @@ takeType c tt
 
         C.TCon tc       -> takeTyCon c tc
         C.TVar u        -> takeBound c u
+
+
+-- DaConBoundName ---------------------------------------------------------------------------------
+takeDaConBoundName :: Config n -> C.DaConBoundName n -> SExp
+takeDaConBoundName c (C.DaConBoundName mnModule mnType nCtor)
+ = xAps "dcbn"
+        [ xMaybe xModuleName mnModule
+        , xMaybe (configTakeRef c) mnType
+        , configTakeRef c nCtor ]
 
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -572,10 +580,19 @@ xNone   = xSym "n"
 xSome :: SExp -> SExp
 xSome x = xAps "s" [x]
 
+xMaybe :: (a -> SExp) -> Maybe a -> SExp
+xMaybe _ Nothing  = xNone
+xMaybe f (Just x) = xSome (f x)
+
 xPair :: SExp -> SExp -> SExp
 xPair x1 x2 = xAps "p" [x1, x2]
 
 xList :: [SExp] -> SExp
 xList [] = xSym "o"
 xList xs = xAps "l" xs
+
+xModuleName :: C.ModuleName -> SExp
+xModuleName (C.ModuleName sParts)
+        = xList $ map (xTxt . T.pack) sParts
+
 

@@ -222,7 +222,7 @@ cmdLoadOrCompile config buildExe fsO store filePath
             -- files, so build it gain.
             search []
              = do
-                  liftIO  $ putStrLn "* Compiling"
+--                  liftIO  $ putStrLn "* Compiling"
                   cmdCompile config buildExe fsO store filePath
 
         -- Check the config for where the interface might be.

@@ -137,7 +137,7 @@ module DDC.Source.Discus.Exp
         , WiCon,        GWiCon      (..)
 
           -- *** Data Constructors
-        , DaCon (..)
+        , DaCon         (..)
         , DaConBind     (..)
         , DaConBound    (..)
 
@@ -202,7 +202,8 @@ module DDC.Source.Discus.Exp
 
           -- *** Data Constructors
         , dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
         , takeTypeOfDaCon
 
           -- *** Patterns

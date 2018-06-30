@@ -15,6 +15,7 @@ import DDC.Source.Discus.Parser.Type
 import DDC.Source.Discus.Parser.Base
 import DDC.Source.Discus.Exp                    as S
 import DDC.Core.Codec.Text.Lexer.Tokens
+import qualified DDC.Core.Exp                   as C
 import qualified DDC.Control.Parser             as P
 import qualified Data.Text                      as Text
 import Data.Maybe
@@ -178,7 +179,7 @@ pPat
  [  -- Con Bind Bind ...
     do  nCon    <- pDaConBoundName
         ps      <- P.many pPatSimple
-        return  $ PData (DaConBound nCon) ps
+        return  $ PData (DaConBound (C.DaConBoundName Nothing Nothing nCon)) ps
 
     -- Base pattern.
  ,  do  p       <- pPatSimple
@@ -202,7 +203,7 @@ pPatSimple
         let ps    =  pField1 : psField'
         let arity =  length ps
         let nCtor =  Text.pack ("T" ++ show arity)
-        return    $  PData (DaConBound (DaConBoundName nCtor)) ps
+        return    $  PData (DaConBound (C.DaConBoundName Nothing Nothing (DaConBoundName nCtor))) ps
 
         -- Sugared record pattern.
         -- like (x = a, y = b, z = c)
@@ -261,7 +262,7 @@ pPatSimple
 
         -- Named algebraic constructors.
  , do   nCon    <- pDaConBoundName
-        return  $ PData (DaConBound nCon) []
+        return  $ PData (DaConBound (C.DaConBoundName Nothing Nothing nCon)) []
 
         -- 'Unit'
  , do   pTok    (KBuiltin BDaConUnit)
