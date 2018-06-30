@@ -82,7 +82,7 @@ data Interface n
 
         , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
-        , interfaceModule       :: Maybe (Module () n) }
+        , interfaceModule       :: Module () n }
 
 
 ---------------------------------------------------------------------------------------------------

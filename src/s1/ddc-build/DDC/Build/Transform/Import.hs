@@ -42,7 +42,7 @@ importNamesForModule kenv tenv store mm
         ints     <- Store.getInterfaces store
         let deps =  Map.fromList
                         [ ( interfaceModuleName i
-                          , let Just m = interfaceModule i in m)
+                          , interfaceModule i)
                           | i <- ints ]
 
         modNames       <- Store.getModuleNames store

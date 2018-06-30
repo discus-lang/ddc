@@ -44,12 +44,9 @@ data Config n
 storeInterface :: Config n -> FilePath -> C.Interface n -> IO ()
 storeInterface config pathDst ii
  = do
-        dsDecls
-         <- case C.interfaceModule ii of
-                Nothing -> return []
-                Just mm -> return $ takeModuleDecls config mm
+        let dsDecls = takeModuleDecls config $ C.interfaceModule ii
+        let len     = S.sizeOfFileDecls dsDecls
 
-        let len         = S.sizeOfFileDecls dsDecls
         Foreign.allocaBytes len $ \pBuf
          -> do  _ <- S.pokeFileDecls dsDecls pBuf
                 h <- System.openBinaryFile pathDst System.WriteMode

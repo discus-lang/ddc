@@ -69,7 +69,7 @@ decodeInterface config kenv tenv filePath timeStamp bs
         , C.interfaceTimeStamp  = timeStamp
         , C.interfaceVersion    = "version"
         , C.interfaceModuleName = C.moduleName mm_spread
-        , C.interfaceModule     = Just $ mm_spread }
+        , C.interfaceModule     = mm_spread }
 
  | otherwise
  = Nothing

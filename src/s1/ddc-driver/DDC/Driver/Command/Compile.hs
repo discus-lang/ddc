@@ -412,26 +412,30 @@ cmdCompile config bBuildExe' fsExtraO store filePath
         -- Get current time stamp for interface file.
         timeDI  <- liftIO $ getCurrentTime
 
-        -- Write out the interface file.
-        let int = Interface
-                { interfaceVersion      = Version.version
-                , interfaceFilePath     = pathDI
-                , interfaceTimeStamp    = timeDI
-                , interfaceModuleName   = C.moduleName modSalt
-                , interfaceModule       = fmap (CReannotate.reannotate (const ())) mModTetra }
+        case mModTetra of
+         Nothing        -> return ()
+         Just modTetra
+          -> do
+                -- Write out the interface file.
+                let int = Interface
+                        { interfaceVersion      = Version.version
+                        , interfaceFilePath     = pathDI
+                        , interfaceTimeStamp    = timeDI
+                        , interfaceModuleName   = C.moduleName modSalt
+                        , interfaceModule       = CReannotate.reannotate (const ()) modTetra }
 
-        let cEncode
-                = C.Encode.Config
-                { C.Encode.configTakeRef        = D.Encode.takeName
-                , C.Encode.configTakeVarName    = D.Encode.takeVarName
-                , C.Encode.configTakeConName    = D.Encode.takeConName }
+                let cEncode
+                        = C.Encode.Config
+                        { C.Encode.configTakeRef        = D.Encode.takeName
+                        , C.Encode.configTakeVarName    = D.Encode.takeVarName
+                        , C.Encode.configTakeConName    = D.Encode.takeConName }
 
-        liftIO  $ C.Encode.storeInterface cEncode pathDI int
+                liftIO  $ C.Encode.storeInterface cEncode pathDI int
 
-        -- Add the new interface to the store.
-        liftIO $ Store.wrap store int
+                -- Add the new interface to the store.
+                liftIO $ Store.wrap store int
 
-        return ()
+                return ()
 
 
 ---------------------------------------------------------------------------------------------------

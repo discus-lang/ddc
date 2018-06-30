@@ -84,10 +84,8 @@ wrap store ii
                        supers
 
         modifyIORef' (storeDataDefsByTyCon store) $ \ddefs
-         -> case interfaceModule ii of
-             Nothing        -> Map.empty
-             Just mmDiscus
-              -> Map.insert
+         -> let mmDiscus = interfaceModule ii
+             in Map.insert
                   (interfaceModuleName ii)
                   (Map.union
                         (Map.fromList [ (dataDefTypeName def, def)
@@ -197,7 +195,6 @@ metaOfInterface ii
 --
 supersFromInterface :: Ord n => Interface n -> Map n (Super n)
 supersFromInterface ii
- | Just mmDiscus <- interfaceModule ii
  = let
         -- The current module name.
         modName = interfaceModuleName ii
@@ -231,10 +228,8 @@ supersFromInterface ii
 
    in   Map.fromList
                 [ (n, let Just s = takeSuperOfExport ex in s)
-                | (n, ex) <- moduleExportValues mmDiscus]
+                | (n, ex) <- moduleExportValues $ interfaceModule ii]
 
- | otherwise
- = Map.empty
 
 
 -- | Take a module interface and extract a map of defined data constructor
