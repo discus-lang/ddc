@@ -17,7 +17,6 @@ import qualified DDC.Driver.Interface.Source            as D
 
 import qualified DDC.Build.Builder                      as B
 import qualified DDC.Build.Pipeline                     as B
-import qualified DDC.Build.Interface.Store              as B
 import qualified DDC.Build.Stage.Core                   as B
 import qualified DDC.Build.Stage.Core.Salt              as BA
 import qualified DDC.Build.Language.Salt                as BA
@@ -35,13 +34,12 @@ import qualified DDC.Llvm.Syntax                        as L
 -- | Load and type-check a Core Salt module.
 saltLoadText
         :: D.Config             -- ^ Driver config.
-        -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC SP.SourcePos A.Name) A.Name)
 
-saltLoadText config _store source str
+saltLoadText config source str
  = B.coreLoad
         "SaltLoad"
         BA.fragment

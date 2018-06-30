@@ -19,19 +19,25 @@ import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.Time.Clock
-import qualified DDC.Driver.Build.Locate        as Locate
-import qualified DDC.Build.Builder              as Builder
-import qualified DDC.Source.Discus.Module       as SE
-import qualified DDC.Source.Discus.Lexer        as SE
-import qualified DDC.Source.Discus.Parser       as SE
-import qualified DDC.Core.Codec.Text.Pretty     as P
-import qualified DDC.Core.Codec.Text.Lexer      as C
-import qualified DDC.Core.Salt.Runtime          as A
-import qualified DDC.Core.Module                as C
-import qualified DDC.Control.Parser             as BP
-import qualified DDC.Version                    as Version
-import qualified Data.List                      as List
-import qualified Data.Text                      as T
+import qualified DDC.Driver.Build.Locate                as Locate
+import qualified DDC.Build.Builder                      as Builder
+import qualified DDC.Source.Discus.Module               as SE
+import qualified DDC.Source.Discus.Lexer                as SE
+import qualified DDC.Source.Discus.Parser               as SE
+import qualified DDC.Core.Codec.Text.Pretty             as P
+import qualified DDC.Core.Codec.Text.Lexer              as C
+
+import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
+import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
+import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as D.Decode
+
+import qualified DDC.Core.Salt.Runtime                  as A
+import qualified DDC.Core.Discus                        as D
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Control.Parser                     as BP
+import qualified DDC.Version                            as Version
+import qualified Data.List                              as List
+import qualified Data.Text                              as T
 
 import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
@@ -51,7 +57,7 @@ import qualified DDC.Build.Interface.Store                      as Store
 cmdCompileRecursive
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exectable.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> [FilePath]           -- ^ Paths of files to compile.
         -> ExceptT String IO ()
 
@@ -90,7 +96,7 @@ cmdCompileRecursiveDS
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
         -> [FilePath]           -- ^ Extra object files to link with.
-        -> Store                -- ^ Inferface store.
+        -> Store D.Name         -- ^ Inferface store.
         -> [FilePath]           -- ^ Names of source files still to load.
         -> [FilePath]           -- ^ Names of source files currently blocked.
         -> ExceptT String IO ()
@@ -171,7 +177,7 @@ cmdLoadOrCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exeecutable.
         -> [FilePath]           -- ^ Extra object files to link with.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Path to source file.
         -> ExceptT String IO ()
 
@@ -211,8 +217,8 @@ cmdLoadOrCompile config buildExe fsO store filePath
                    if fresh && not (takeFileName filePath == "Main.ds")
                     then do
 --                         liftIO  $ putStrLn $ "* Loading "  ++ filePathDI
-                         result  <- liftIO $ Store.load filePathDI
-                         case result of
+                        result  <- liftIO $ Store.load D.profile D.Decode.takeName filePathDI
+                        case result of
                           Left  err -> throwE $ P.renderIndent $ P.ppr err
                           Right int -> liftIO $ Store.wrap store int
 
@@ -250,7 +256,7 @@ cmdLoadOrCompile config buildExe fsO store filePath
 --  follow the principle of least surprise in this regard.
 --
 interfaceIsFresh
-        :: Store                -- ^ Current interface store.
+        :: Store D.Name         -- ^ Current interface store.
         -> UTCTime              -- ^ Timestamp on original source file.
         -> [C.ModuleName]       -- ^ Names of modules needed by source.
         -> FilePath             -- ^ Expected path of object file.
@@ -302,7 +308,7 @@ cmdCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
         -> [FilePath]           -- ^ Extra object files to link with.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Path to source file.
         -> ExceptT String IO ()
 
@@ -381,7 +387,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 | ext == ".dcs"
                 =   fmap (CReannotate.reannotate (const ()))
                 $   DA.saltSimplify config source
-                =<< DA.saltLoadText config store source src
+                =<< DA.saltLoadText config source src
 
                 | Just modTetra <- mModTetra
                 = DE.discusToSalt  config_handler source mnsTrans
@@ -412,9 +418,15 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 , interfaceFilePath     = pathDI
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
-                , interfaceDiscusModule = fmap (CReannotate.reannotate (const ())) mModTetra }
+                , interfaceModule       = fmap (CReannotate.reannotate (const ())) mModTetra }
 
-        liftIO  $ IntShimmer.storeInterface pathDI int
+        let cEncode
+                = C.Encode.Config
+                { C.Encode.configTakeRef        = D.Encode.takeName
+                , C.Encode.configTakeVarName    = D.Encode.takeVarName
+                , C.Encode.configTakeConName    = D.Encode.takeConName }
+
+        liftIO  $ IntShimmer.storeInterface cEncode pathDI int
 
         -- Add the new interface to the store.
         liftIO $ Store.wrap store int

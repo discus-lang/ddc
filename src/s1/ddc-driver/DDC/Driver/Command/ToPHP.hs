@@ -23,6 +23,7 @@ import DDC.Core.Exp.Annot.AnTEC
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
+import qualified DDC.Core.Discus                as D
 
 
 -------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ import qualified DDC.Core.Transform.Reannotate  as CReannotate
 --
 cmdToPHPFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Core language definition.
         -> ExceptT String IO ()
 
@@ -58,7 +59,7 @@ cmdToPHPFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToPHPSourceTetraFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -84,7 +85,7 @@ cmdToPHPSourceTetraFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToPHPSourceTetraFromString
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
@@ -138,10 +139,10 @@ cmdToPHPCoreFromFile config language filePath
 --   Any errors are thrown in the `ExceptT` monad.
 --
 cmdToPHPCoreFromString
-        :: Config       -- ^ Compiler configuration.
-        -> Language     -- ^ Language definition.
-        -> Source       -- ^ Source of the code.
-        -> String       -- ^ Program module text.
+        :: Config               -- ^ Compiler configuration.
+        -> Language             -- ^ Language definition.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
         -> ExceptT String IO ()
 
 cmdToPHPCoreFromString config language source str

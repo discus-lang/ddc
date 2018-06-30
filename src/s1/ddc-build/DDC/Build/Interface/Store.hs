@@ -24,7 +24,10 @@ import Data.IORef
 import Data.Maybe
 import Data.Map                                                 (Map)
 import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
-import qualified DDC.Core.Discus                                as D
+import qualified DDC.Core.Fragment.Profile                      as C
+import qualified DDC.Core.Codec.Shimmer.Decode                  as Decode
+import qualified SMR.Core.Exp                                   as SMR
+import qualified SMR.Prim.Name                                  as SMR
 import qualified Data.Map.Strict                                as Map
 import qualified Data.ByteString                                as BS
 
@@ -35,32 +38,29 @@ import qualified Data.ByteString                                as BS
 --   This lives in IO land because in future we want to demand-load the
 --   inferface files as needed, rather than loading the full dependency
 --   tree. Keeping it in IO means that callers must also be in IO.
-data Store
+data Store n
         = Store
         { -- | Metadata for interface files currently in the store.
           storeMeta             :: IORef [Meta]
 
           -- | Lookup the definition of the given top-level super,
           --   from one or more of the provided modules.
-        , storeSupers           :: IORef (Map ModuleName (Map D.Name Super))
+        , storeSupers           :: IORef (Map ModuleName (Map n (Super n)))
 
           -- | Map of data type declarations.
-        , storeDataDefs         :: IORef (Map (ModuleName, D.Name) (DataDef D.Name))
+        , storeDataDefs         :: IORef (Map (ModuleName, n) (DataDef n))
 
           -- | Map of data constructor name to the type declaration that introduces it.
-        , storeDataDefOfCtor    :: IORef (Map (ModuleName, D.Name) (DataDef D.Name))
+        , storeDataDefOfCtor    :: IORef (Map (ModuleName, n) (DataDef n))
 
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
-        , storeInterfaces       :: IORef [InterfaceAA] }
+        , storeInterfaces       :: IORef [Interface n] }
 
 
 -- | Get a list of types of all top-level supers in all modules in the store.
-importValuesOfStore
-        :: Store
-        -> IO [(D.Name, ImportValue D.Name (Type D.Name))]
-
+importValuesOfStore :: Ord n => Store n -> IO [(n, ImportValue n (Type n))]
 importValuesOfStore store
  = do   mnns            <- readIORef $ storeSupers store
         let mns         =  Map.elems mnns
@@ -86,10 +86,10 @@ instance Pretty Meta where
 
 
 -- | Interface for some top-level super.
-data Super
+data Super n
         = Super
         { -- | Name of the super.
-          superName             :: D.Name
+          superName             :: n
 
           -- | Where the super was imported from.
           --
@@ -99,17 +99,17 @@ data Super
         , superModuleName       :: ModuleName
 
           -- | Tetra type for the super.
-        , superTetraType        :: Type D.Name
+        , superType             :: Type n
 
           -- | Import source for the super.
           --
           --   This can be used to refer to the super from a client module.
-        , superImportValue      :: ImportValue D.Name (Type D.Name) }
+        , superImportValue      :: ImportValue n (Type n) }
 
 
 ---------------------------------------------------------------------------------------------------
 -- | An empty interface store.
-new :: IO Store
+new :: IO (Store n)
 new
  = do   refMeta          <- newIORef []
         refSupers        <- newIORef Map.empty
@@ -125,7 +125,8 @@ new
 
 
 -- | Add a pre-loaded interface file to the store.
-wrap    :: Store -> InterfaceAA -> IO ()
+wrap    :: (Ord n)
+        => Store n -> Interface n -> IO ()
 wrap store ii
  = do
         modifyIORef' (storeMeta store) $ \meta
@@ -137,7 +138,7 @@ wrap store ii
                        supers
 
         modifyIORef' (storeDataDefs store) $ \ddefs
-         -> case interfaceDiscusModule ii of
+         -> case interfaceModule ii of
              Nothing -> Map.empty
              Just mmDiscus
               -> Map.unions
@@ -157,9 +158,18 @@ wrap store ii
 
 
 -- | Load a new interface from a file.
-load    :: FilePath -> IO (Either Error InterfaceAA)
-load filePath
- = do   timeStamp  <- getModificationTime filePath
+load    :: (Show n, Ord n)
+        => C.Profile n
+        -> (SMR.Exp Text SMR.Prim -> Maybe n)
+        -> FilePath
+        -> IO (Either Error (Interface n))
+
+load profile takeRef filePath
+ = do   let kenv   = C.profilePrimKinds profile
+        let tenv   = C.profilePrimTypes profile
+        let config = Decode.Config takeRef
+
+        timeStamp  <- getModificationTime filePath
 
         -- Read the file source.
         bs      <- BS.readFile filePath
@@ -169,7 +179,7 @@ load filePath
         if BS.isPrefixOf magicSMR (BS.take 4 bs)
          -- Binary interface file in Shimmer format.
          then do
-                let iint = IS.decodeInterface filePath timeStamp bs
+                let iint = IS.decodeInterface config kenv tenv filePath timeStamp bs
                 return iint
 
          -- Textual interface file in Discus Source format.
@@ -179,21 +189,21 @@ load filePath
 
 
 -- | Get metadata of interfaces currently in the store.
-getMeta :: Store -> IO [Meta]
+getMeta :: Store n -> IO [Meta]
 getMeta store
  = do   mm      <- readIORef (storeMeta store)
         return  $ mm
 
 
 -- | Get names of the modules currently in the store.
-getModuleNames :: Store -> IO [ModuleName]
+getModuleNames :: Store n -> IO [ModuleName]
 getModuleNames store
  = do   supers  <- readIORef (storeSupers store)
         return  $ Map.keys supers
 
 
 -- | Get the fully loaded interfaces.
-getInterfaces :: Store -> IO [InterfaceAA]
+getInterfaces :: Store n -> IO [Interface n]
 getInterfaces store
  = do   ints    <- readIORef (storeInterfaces store)
         return ints
@@ -207,10 +217,11 @@ getInterfaces store
 --   that the caller is also in IO, to make the refactoring easier later.
 --
 findSuper
-        :: Store
-        -> D.Name               -- ^ Name of desired super.
+        :: Ord n
+        => Store n
+        -> n                   -- ^ Name of desired super.
         -> [ModuleName]         -- ^ Names of modules to search.
-        -> IO [Super]
+        -> IO [Super n]
 
 findSuper store n modNames
  = do   supers  <- readIORef (storeSupers store)
@@ -223,7 +234,7 @@ findSuper store n modNames
 
 ---------------------------------------------------------------------------------------------------
 -- | Extract metadata from an interface.
-metaOfInterface   :: InterfaceAA -> Meta
+metaOfInterface   :: Interface n -> Meta
 metaOfInterface ii
         = Meta
         { metaFilePath   = interfaceFilePath   ii
@@ -236,9 +247,9 @@ metaOfInterface ii
 --   This contains all the information needed to import a super into
 --   a client module.
 --
-supersFromInterface :: InterfaceAA -> Map D.Name Super
+supersFromInterface :: Ord n => Interface n -> Map n (Super n)
 supersFromInterface ii
- | Just mmDiscus <- interfaceDiscusModule ii
+ | Just mmDiscus <- interfaceModule ii
  = let
         -- The current module name.
         modName = interfaceModuleName ii
@@ -248,7 +259,7 @@ supersFromInterface ii
          = Just $ Super
                 { superName        = exportValueLocalName ex
                 , superModuleName  = modName
-                , superTetraType   = exportValueLocalType ex
+                , superType        = exportValueLocalType ex
                 , superImportValue = ImportValueModule
                                    { importValueModuleName  = modName
                                    , importValueModuleVar   = exportValueLocalName ex
@@ -260,7 +271,7 @@ supersFromInterface ii
          = Just $ Super
                 { superName        = exportValueSeaNameInternal ex
                 , superModuleName  = modName
-                , superTetraType   = exportValueSeaType ex
+                , superType        = exportValueSeaType ex
                 , superImportValue = ImportValueSea
                                    { importValueSeaNameInternal = exportValueSeaNameInternal ex
                                    , importValueSeaNameExternal = exportValueSeaNameExternal ex
@@ -281,9 +292,9 @@ supersFromInterface ii
 -- | Take a module interface and extract a map of defined data constructor
 --   names to their defining data type declaration. This includes data types
 --   defined in the module itself, as well as imported ones.
-dataDefsOfCtorFromInterface :: InterfaceAA -> Map (ModuleName, D.Name) (DataDef D.Name)
+dataDefsOfCtorFromInterface :: Ord n => Interface n -> Map (ModuleName, n) (DataDef n)
 dataDefsOfCtorFromInterface ii
- | Just mmDiscus <- interfaceDiscusModule ii
+ | Just mmDiscus <- interfaceModule ii
  = let
         takeCtorsOfDataDef dataDef
          = case dataDefCtors dataDef of
@@ -292,7 +303,6 @@ dataDefsOfCtorFromInterface ii
                  -> Map.fromList
                         [ ((dataCtorModuleName ctor, dataCtorName ctor), dataDef)
                         | ctor <- ctors ]
-
    in   Map.unions
           [ Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleImportDataDefs mmDiscus
           , Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleLocalDataDefs  mmDiscus ]

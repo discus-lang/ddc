@@ -25,6 +25,7 @@ import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Driver.Stage.Salt          as DA
+import qualified DDC.Core.Discus                as D
 
 
 -------------------------------------------------------------------------------
@@ -33,7 +34,7 @@ import qualified DDC.Driver.Stage.Salt          as DA
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -59,7 +60,7 @@ cmdToSaltFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -85,7 +86,7 @@ cmdToSaltSourceTetraFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdToSaltSourceTetraFromString
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
@@ -169,7 +170,7 @@ cmdToSaltCoreFromString config language source str
 
                 |   fragName == "Salt"
                 =   DA.saltSimplify  config source
-                =<< DA.saltLoadText  config store source str
+                =<< DA.saltLoadText  config source str
 
                 -- Unrecognised.
                 | otherwise

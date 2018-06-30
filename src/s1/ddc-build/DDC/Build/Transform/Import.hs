@@ -28,7 +28,7 @@ import qualified Data.Either                    as Either
 importNamesForModule
         :: KindEnv E.Name       -- ^ Kinds of primitive types.
         -> TypeEnv E.Name       -- ^ Types of primitive values.
-        -> Store                -- ^ Interface store.
+        -> Store E.Name         -- ^ Interface store.
         -> Module a E.Name      -- ^ Module to resolve names in.
         -> IO (Module a E.Name, [Error])
 
@@ -43,7 +43,7 @@ importNamesForModule kenv tenv store mm
         ints     <- Store.getInterfaces store
         let deps =  Map.fromList
                         [ ( interfaceModuleName i
-                          , let Just m = interfaceDiscusModule i in m)
+                          , let Just m = interfaceModule i in m)
                           | i <- ints ]
 
         modNames       <- Store.getModuleNames store
@@ -162,7 +162,7 @@ importsTypeDef deps
 --   and produce the corresponding import statement to use it.
 --
 findImportSourceForDaVar
-        :: Store                -- ^ Interface store.
+        :: Store E.Name         -- ^ Interface store.
         -> [ModuleName]         -- ^ Modules to search for matching exports.
         -> E.Name               -- ^ Name of value.
         -> IO (Either Error (ImportValue E.Name (Type E.Name)))

@@ -27,6 +27,7 @@ import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Codec.Text.Pretty
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Discus                as Tetra
+import qualified DDC.Core.Discus                as D
 
 import DDC.Data.SourcePos
 
@@ -49,7 +50,7 @@ import qualified Data.Map                       as Map
 --
 cmdLoadFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Maybe String         -- ^ Simplifier specification.
         -> [FilePath]           -- ^ More modules to use as inliner templates.
         -> FilePath             -- ^ Module file name.
@@ -100,7 +101,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdLoadDiscusSourceFromFile
         :: Config                               -- ^ Driver config.
-        -> Store                                -- ^ Interface store.
+        -> Store D.Name                         -- ^ Interface store.
         -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
         -> FilePath                             -- ^ Module file path.
         -> ExceptT String IO ()
@@ -128,7 +129,7 @@ cmdLoadDiscusSourceFromFile config store bundle filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdLoadDiscusSourceFromString
         :: Config                               -- ^ Driver config.
-        -> Store                                -- ^ Interface store.
+        -> Store D.Name                         -- ^ Interface store.
         -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
         -> Source                               -- ^ Source of the code.
         -> String                               -- ^ Program module text.

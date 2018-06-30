@@ -12,6 +12,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import DDC.Build.Interface.Store        (Store)
+import qualified DDC.Core.Discus        as D
 
 
 -- | Salt source files that form the runtime system and are build with -basebuild.
@@ -52,7 +53,7 @@ baseSeaFiles _builder
 
 
 -- Buid the base libraries and runtime system.
-cmdBaseBuild :: Config  -> Store -> ExceptT String IO ()
+cmdBaseBuild :: Config  -> Store D.Name -> ExceptT String IO ()
 cmdBaseBuild config store
  = do   let builder     = configBuilder config
         let target      = buildTarget builder

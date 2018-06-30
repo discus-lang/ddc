@@ -13,13 +13,14 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import DDC.Build.Interface.Store        (Store)
 import qualified DDC.Core.Module        as C
+import qualified DDC.Core.Discus        as D
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build all the components defined by a build spec.
 buildSpec
         :: Config               -- ^ Build config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Spec                 -- ^ Build spec.
         -> ExceptT String IO ()
 
@@ -32,7 +33,7 @@ buildSpec config store spec
 -- | Build a single component of a build spec.
 buildComponent
         :: Config               -- ^ Build config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> Component            -- ^ Component to build.
         -> ExceptT String IO ()
 
@@ -62,7 +63,7 @@ buildComponent config store component@SpecExecutable{}
 -- | Build a library consisting of several modules.
 buildLibrary
         :: Config               -- ^ Build config
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> [C.ModuleName]       -- ^ Names of modules still to build
         -> ExceptT String IO ()
 
@@ -81,7 +82,7 @@ buildLibrary config store ms0
 -- | Build an executable consisting of several modules.
 buildExecutable
         :: Config               -- ^ Build config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> C.ModuleName         -- ^ Name  of main module.
         -> [C.ModuleName]       -- ^ Names of dependency modules
         -> ExceptT String IO ()
@@ -104,7 +105,7 @@ buildExecutable config store mMain msOther0
 -- | Build a single module.
 buildModule
         :: Config               -- ^ Build config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> C.ModuleName         -- ^ Module name.
         -> ExceptT String IO ()
 
