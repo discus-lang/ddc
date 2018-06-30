@@ -14,7 +14,7 @@ import System.Environment
 import System.IO
 import Control.Monad.Trans.Except
 import Data.List
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store       as Store
 
 main :: IO ()
 main

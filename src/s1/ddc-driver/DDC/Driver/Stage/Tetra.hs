@@ -11,7 +11,7 @@ import qualified DDC.Driver.Dump                as D
 import qualified DDC.Driver.Config              as D
 import qualified DDC.Driver.Interface.Source    as D
 
-import qualified DDC.Build.Interface.Store      as B
+import qualified DDC.Core.Interface.Store       as B
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Build.Stage.Core           as B

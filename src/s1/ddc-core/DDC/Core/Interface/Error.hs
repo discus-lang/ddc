@@ -1,8 +1,6 @@
 
-module DDC.Build.Interface.Error where
+module DDC.Core.Interface.Error where
 import DDC.Data.Pretty
-import qualified DDC.Core.Load                  as Load
-import qualified DDC.Core.Discus                as Discus
 
 
 -- | Problems that can arise when loading an interface file.
@@ -31,7 +29,7 @@ data Error
         | ErrorParseEnd
 
         -- | Error when loading a tetra core module from the interface file.
-        | ErrorLoadTetra FilePath (Load.Error Discus.Name Discus.Error)
+        | ErrorLoad FilePath String
 
 
 instance Pretty Error where
@@ -55,10 +53,9 @@ instance Pretty Error where
  ppr ErrorParseEnd
   = vcat [ text "Parse error at end of interface file." ]
 
- ppr (ErrorLoadTetra path err)
+ ppr (ErrorLoad path err)
   = vcat [ string path
          , text "Error when loading Tetra module from interface file."
-         , indent 2 $ ppr err ]
-
+         , indent 2 $ string err ]
 
 

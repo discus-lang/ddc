@@ -43,9 +43,9 @@ import Control.Monad.IO.Class
 import Control.Monad
 import System.FilePath
 import System.Directory
-import DDC.Build.Interface.Store                (Store)
-import qualified DDC.Core.Discus                as D
+import DDC.Core.Interface.Store                 (Store)
 import qualified DDC.Control.Parser             as BP
+import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Driver.Stage.Tetra         as DE

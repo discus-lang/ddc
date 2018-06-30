@@ -11,7 +11,7 @@ import DDC.Build.Spec
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import DDC.Build.Interface.Store        (Store)
+import DDC.Core.Interface.Store         (Store)
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Discus        as D
 

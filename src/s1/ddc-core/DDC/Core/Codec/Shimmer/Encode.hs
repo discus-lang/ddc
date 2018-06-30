@@ -1,6 +1,7 @@
 
 module DDC.Core.Codec.Shimmer.Encode
         ( Config (..)
+        , storeInterface
         , takeModuleDecls
         , takeModuleName
         , takeExp,   takeParam,   takeArg
@@ -9,17 +10,21 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
+import qualified DDC.Core.Interface.Base        as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
 import qualified DDC.Type.Sum                   as Sum
+import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
 import qualified Data.Text                      as T
 import Data.Text                                (Text)
 import DDC.Data.Pretty
 
+import qualified Foreign.Marshal.Alloc                  as Foreign
+import qualified System.IO                              as System
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -32,6 +37,25 @@ data Config n
         { configTakeRef         :: n -> SExp
         , configTakeVarName     :: n -> Maybe Text
         , configTakeConName     :: n -> Maybe Text }
+
+
+-- Interface --------------------------------------------------------------------------------------
+-- | Store an interface at the given file path.
+storeInterface :: Config n -> FilePath -> C.Interface n -> IO ()
+storeInterface config pathDst ii
+ = do
+        dsDecls
+         <- case C.interfaceModule ii of
+                Nothing -> return []
+                Just mm -> return $ takeModuleDecls config mm
+
+        let len         = S.sizeOfFileDecls dsDecls
+        Foreign.allocaBytes len $ \pBuf
+         -> do  _ <- S.pokeFileDecls dsDecls pBuf
+                h <- System.openBinaryFile pathDst System.WriteMode
+                System.hPutBuf h pBuf len
+                System.hClose h
+                return ()
 
 
 -- Module -----------------------------------------------------------------------------------------

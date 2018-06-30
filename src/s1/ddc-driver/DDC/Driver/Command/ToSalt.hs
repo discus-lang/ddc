@@ -19,8 +19,8 @@ import System.Directory
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
-import DDC.Build.Interface.Store                (Store)
-import qualified DDC.Build.Interface.Store      as Store
+import DDC.Core.Interface.Store                 (Store)
+import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Driver.Stage.Tetra         as DE

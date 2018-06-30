@@ -18,7 +18,7 @@ import qualified DDC.Control.Parser                     as Parser
 
 import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
-import qualified DDC.Build.Interface.Store              as B
+import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Build.Language.Discus              as BE
 import qualified DDC.Build.Stage.Core                   as BC
 import qualified DDC.Build.Transform.Import             as BImport

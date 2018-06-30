@@ -6,7 +6,7 @@ import DDC.Driver.Config
 import DDC.Driver.Build.Main
 import DDC.Driver.Command.Compile
 import DDC.Data.Pretty
-import DDC.Build.Interface.Store        (Store)
+import DDC.Core.Interface.Store         (Store)
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified System.FilePath        as FilePath

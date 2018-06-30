@@ -12,7 +12,7 @@ import qualified DDC.Driver.Stage.Salt          as DA
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Build.Interface.Base
+import DDC.Core.Interface.Base
 import System.FilePath
 import System.Directory
 import Control.Monad
@@ -41,9 +41,9 @@ import qualified Data.Text                              as T
 
 import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
-import DDC.Build.Interface.Store                                (Store)
-import qualified DDC.Build.Interface.Codec.Shimmer.Encode       as IntShimmer
-import qualified DDC.Build.Interface.Store                      as Store
+import DDC.Core.Interface.Store                                 (Store)
+-- import qualified DDC.Core.Codec.Shimmer.Encode          as IntShimmer
+import qualified DDC.Core.Interface.Store                       as Store
 
 
 ---------------------------------------------------------------------------------------------------
@@ -426,7 +426,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 , C.Encode.configTakeVarName    = D.Encode.takeVarName
                 , C.Encode.configTakeConName    = D.Encode.takeConName }
 
-        liftIO  $ IntShimmer.storeInterface cEncode pathDI int
+        liftIO  $ C.Encode.storeInterface cEncode pathDI int
 
         -- Add the new interface to the store.
         liftIO $ Store.wrap store int

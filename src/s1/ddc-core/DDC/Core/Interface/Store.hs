@@ -1,5 +1,5 @@
 
-module DDC.Build.Interface.Store
+module DDC.Core.Interface.Store
         ( Store (..)
         , new, wrap, load
         , importValuesOfStore
@@ -12,18 +12,16 @@ module DDC.Build.Interface.Store
         , Super (..)
         , findSuper)
 where
-import DDC.Build.Interface.Error
-import DDC.Build.Interface.Base
+import DDC.Core.Interface.Error
+import DDC.Core.Interface.Base
 import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Data.Pretty
 import System.Directory
-import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Map                                                 (Map)
-import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
 import qualified DDC.Core.Fragment.Profile                      as C
 import qualified DDC.Core.Codec.Shimmer.Decode                  as Decode
 import qualified SMR.Core.Exp                                   as SMR
@@ -33,51 +31,17 @@ import qualified Data.ByteString                                as BS
 
 
 ---------------------------------------------------------------------------------------------------
--- | Abstract API to a collection of module interfaces.
---
---   This lives in IO land because in future we want to demand-load the
---   inferface files as needed, rather than loading the full dependency
---   tree. Keeping it in IO means that callers must also be in IO.
-data Store n
-        = Store
-        { -- | Metadata for interface files currently in the store.
-          storeMeta             :: IORef [Meta]
-
-          -- | Lookup the definition of the given top-level super,
-          --   from one or more of the provided modules.
-        , storeSupers           :: IORef (Map ModuleName (Map n (Super n)))
-
-          -- | Map of data type declarations.
-        , storeDataDefs         :: IORef (Map (ModuleName, n) (DataDef n))
-
-          -- | Map of data constructor name to the type declaration that introduces it.
-        , storeDataDefOfCtor    :: IORef (Map (ModuleName, n) (DataDef n))
-
-          -- | Fully loaded interface files.
-          --   In future we want to load parts of interface files on demand,
-          --   and not the whole lot.
-        , storeInterfaces       :: IORef [Interface n] }
-
-
 -- | Get a list of types of all top-level supers in all modules in the store.
 importValuesOfStore :: Ord n => Store n -> IO [(n, ImportValue n (Type n))]
 importValuesOfStore store
- = do   mnns            <- readIORef $ storeSupers store
-        let mns         =  Map.elems mnns
-        let supers      =  concatMap Map.elems mns
+ = do   mnns       <- readIORef $ storeSupers store
+        let mns    =  Map.elems mnns
+        let supers =  concatMap Map.elems mns
         return $ [ (superName s, superImportValue s)
                         | s <- supers ]
 
 
 ---------------------------------------------------------------------------------------------------
--- | Metadata for interfaces currently loaded into the store.
-data Meta
-        = Meta
-        { metaFilePath     :: FilePath
-        , metaTimeStamp    :: UTCTime
-        , metaModuleName   :: ModuleName }
-        deriving Show
-
 instance Pretty Meta where
         ppr (Meta path stamp name)
          = hsep [ padL 60 $ string (show path)
@@ -85,42 +49,24 @@ instance Pretty Meta where
                 , string (show name)]
 
 
--- | Interface for some top-level super.
-data Super n
-        = Super
-        { -- | Name of the super.
-          superName             :: n
-
-          -- | Where the super was imported from.
-          --
-          --   This is the module that the name was resolved from. If that
-          --   module re-exported an imported name then this may not be the
-          --   module the super was actually defined in.
-        , superModuleName       :: ModuleName
-
-          -- | Tetra type for the super.
-        , superType             :: Type n
-
-          -- | Import source for the super.
-          --
-          --   This can be used to refer to the super from a client module.
-        , superImportValue      :: ImportValue n (Type n) }
-
-
 ---------------------------------------------------------------------------------------------------
 -- | An empty interface store.
 new :: IO (Store n)
 new
- = do   refMeta          <- newIORef []
-        refSupers        <- newIORef Map.empty
-        refDataDefs      <- newIORef Map.empty
-        refDataDefOfCtor <- newIORef Map.empty
-        refInterfaces    <- newIORef []
+ = do   refMeta            <- newIORef []
+        refTypeCtorNames   <- newIORef Map.empty
+        refDataCtorNames   <- newIORef Map.empty
+        refSupers          <- newIORef Map.empty
+        refDataDefsByTyCon <- newIORef Map.empty
+        refDataDefsByDaCon <- newIORef Map.empty
+        refInterfaces      <- newIORef []
         return  $ Store
                 { storeMeta             = refMeta
+                , storeTypeCtorNames    = refTypeCtorNames
+                , storeDataCtorNames    = refDataCtorNames
                 , storeSupers           = refSupers
-                , storeDataDefs         = refDataDefs
-                , storeDataDefOfCtor    = refDataDefOfCtor
+                , storeDataDefsByTyCon  = refDataDefsByTyCon
+                , storeDataDefsByDaCon  = refDataDefsByDaCon
                 , storeInterfaces       = refInterfaces }
 
 
@@ -137,21 +83,21 @@ wrap store ii
                        (supersFromInterface ii)
                        supers
 
-        modifyIORef' (storeDataDefs store) $ \ddefs
+        modifyIORef' (storeDataDefsByTyCon store) $ \ddefs
          -> case interfaceModule ii of
-             Nothing -> Map.empty
+             Nothing        -> Map.empty
              Just mmDiscus
-              -> Map.unions
-                [ ddefs
-                , Map.fromList
-                        [ ((dataDefModuleName def, dataDefTypeName def), def)
-                        | (_, def) <- moduleImportDataDefs mmDiscus ]
-                , Map.fromList
-                        [ ((dataDefModuleName def, dataDefTypeName def), def)
-                        | (_, def) <- moduleLocalDataDefs  mmDiscus ]]
+              -> Map.insert
+                  (interfaceModuleName ii)
+                  (Map.union
+                        (Map.fromList [ (dataDefTypeName def, def)
+                                      | def <- map snd $ moduleImportDataDefs mmDiscus])
+                        (Map.fromList [ (dataDefTypeName def, def)
+                                      | def <- map snd $ moduleLocalDataDefs  mmDiscus]))
+                  ddefs
 
-        modifyIORef' (storeDataDefOfCtor store) $ \ctors
-         -> Map.union ctors (dataDefsOfCtorFromInterface ii)
+--        modifyIORef' (storeDataDefOfCtor store) $ \ctors
+--         -> Map.union ctors (dataDefsOfCtorFromInterface ii)
 
         modifyIORef' (storeInterfaces store) $ \iis
          -> iis ++ [ii]
@@ -179,8 +125,10 @@ load profile takeRef filePath
         if BS.isPrefixOf magicSMR (BS.take 4 bs)
          -- Binary interface file in Shimmer format.
          then do
-                let iint = IS.decodeInterface config kenv tenv filePath timeStamp bs
-                return iint
+                let iint = Decode.decodeInterface config kenv tenv filePath timeStamp bs
+                case iint of
+                 Just i  -> return $ Right i
+                 Nothing -> return $ Left $ ErrorLoad filePath "unpack of Shimmer file failed"
 
          -- Textual interface file in Discus Source format.
          else do
@@ -292,6 +240,7 @@ supersFromInterface ii
 -- | Take a module interface and extract a map of defined data constructor
 --   names to their defining data type declaration. This includes data types
 --   defined in the module itself, as well as imported ones.
+{-
 dataDefsOfCtorFromInterface :: Ord n => Interface n -> Map (ModuleName, n) (DataDef n)
 dataDefsOfCtorFromInterface ii
  | Just mmDiscus <- interfaceModule ii
@@ -309,4 +258,4 @@ dataDefsOfCtorFromInterface ii
 
  | otherwise
  = Map.empty
-
+-}

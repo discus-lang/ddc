@@ -17,7 +17,7 @@ import qualified DDC.Driver.Stage.Tetra         as DE
 
 import DDC.Build.Pipeline
 import DDC.Build.Language
-import DDC.Build.Interface.Store                (Store)
+import DDC.Core.Interface.Store                 (Store)
 import qualified DDC.Build.Spec.Parser          as Spec
 import qualified DDC.Build.Language.Discus      as Tetra
 

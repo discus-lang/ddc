@@ -12,15 +12,14 @@ import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Data.Pretty
 import Data.Map                                 (Map)
-import DDC.Build.Interface.Store                (Store)
-import DDC.Build.Interface.Base                 (Interface (..))
+import DDC.Core.Interface.Store                 (Store)
+import DDC.Core.Interface.Base                  (Interface (..))
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Core.Discus                as E
 import qualified Data.Either                    as Either
--- import Data.Maybe
--- import Data.IORef
+
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
@@ -55,8 +54,9 @@ importNamesForModule kenv tenv store mm
                  Left err       -> return $ Left err
                  Right isrc     -> return $ Right (n, isrc)
 
-            getDaVarImport u    =   error "ddc-build.resolveNamesInModule:"
-                                $   "Cannot resolve anonymous binder: " ++ show u
+            getDaVarImport u
+                =  error $  "ddc-build.resolveNamesInModule:"
+                         ++ "Cannot resolve anonymous binder: " ++ show u
 
         (errsDaVar, importsDaVar)
                 <- fmap Either.partitionEithers
@@ -76,8 +76,6 @@ importNamesForModule kenv tenv store mm
                      =  Map.toList $ Map.fromList
                      $  moduleImportDataDefs mm
                      ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
-
---                     [ (dataDefTypeName dataDef, dataDef) | dataDef <- importDataDefs ]
 
                 , moduleImportTypeDefs
                      =  Map.toList $ Map.fromList
