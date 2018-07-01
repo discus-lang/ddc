@@ -58,7 +58,6 @@ module DDC.Source.Discus.Exp.Term.Compounds
         , dcUnit
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
-        , takeTypeOfDaCon
 
           -- ** Patterns
         , bindsOfPat
@@ -83,7 +82,6 @@ import DDC.Core.Exp.Annot
         ( dcUnit
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
-        , takeTypeOfDaCon
 
         , bindsOfPat
 

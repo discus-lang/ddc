@@ -113,8 +113,9 @@ arityOfExp xx
         XLAM _ _ e      -> liftM (+ 1) $ arityOfExp e
 
         -- Determine a data constructor's arity from its type.
-        XCon _ (DaConPrim _ t)
-                -> arityFromType t
+        -- FIXME: do we need dacon arities any more?
+--        XCon _ (DaConPrim _)
+--                -> arityFromType t
 
         -- Anything else we'll need to apply one at a time
         _               -> Just 0

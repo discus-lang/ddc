@@ -19,6 +19,7 @@ import Control.Monad
 import Data.Maybe
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
@@ -73,50 +74,50 @@ mconvAtom ctx xx
 
         -- Primitive unboxed literals.
         A.XCon dc
-         | C.DaConPrim (A.NamePrimLit lit) t <- dc
+         | C.DaConPrim (A.NamePrimLit lit) <- dc
          -> do case lit of
                 -- Literal booleans.
                 A.PrimLitBool b
                  -> let i | b           = 1
                           | otherwise   = 0
                     in Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv A.tBool
                         return $ XLit (LitInt t' i)
 
                 -- Literal natural numbers of some width.
                 A.PrimLitNat nat
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv A.tNat
                         return $ XLit (LitInt t' nat)
 
                 -- Literal integers of some width.
                 A.PrimLitInt  val
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv A.tInt
                         return $ XLit (LitInt t' val)
 
                 -- Literal size value.
                 A.PrimLitSize val
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv A.tSize
                         return $ XLit (LitInt t' val)
 
                 -- Literal binary word of some width.
-                A.PrimLitWord val _
+                A.PrimLitWord val bits
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv (A.tWord bits)
                         return $ XLit (LitInt t' val)
 
                 -- Literal floating point value of some width.
-                A.PrimLitFloat val _
+                A.PrimLitFloat val bits
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv (A.tWord bits)
                         return $ XLit (LitFloat t' val)
 
                 -- Literal character
                 A.PrimLitChar c
                  -> Just $ do
-                        return  $ XLit (LitInt (TInt 32) (fromIntegral $ Char.ord c))
+                        return $ XLit (LitInt (TInt 32) (fromIntegral $ Char.ord c))
 
 
                 -- A text literal.
@@ -135,9 +136,9 @@ mconvAtom ctx xx
                                        , XLit (LitInt (TInt w) 0) ]
 
                 -- Literal constructor tag.
-                A.PrimLitTag  tag
+                A.PrimLitTag tag
                  -> Just $ do
-                        t' <- convertType pp kenv t
+                        t' <- convertType pp kenv A.tTag
                         return $ XLit (LitInt t' tag)
 
                 _ -> Nothing

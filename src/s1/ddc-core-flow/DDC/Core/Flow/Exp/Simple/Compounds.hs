@@ -47,8 +47,7 @@ module DDC.Core.Flow.Exp.Simple.Compounds
           -- * Data Constructors
         , xUnit, C.dcUnit
         , C.takeNameOfDaConPrim
-        , C.takeNameOfDaConBound
-        , C.takeTypeOfDaCon)
+        , C.takeNameOfDaConBound)
 where
 import DDC.Core.Flow.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Compounds

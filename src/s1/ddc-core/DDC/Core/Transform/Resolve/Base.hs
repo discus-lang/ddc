@@ -13,7 +13,7 @@ import DDC.Core.Env.EnvT
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Exp.Simple.Equiv
-import DDC.Data.Pretty                  hiding ((<$>))
+import DDC.Core.Codec.Text.Pretty
 import Control.Monad.Trans.Except
 
 

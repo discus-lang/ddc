@@ -48,13 +48,11 @@ convertPrimInfo _ectx ctx xxExp
                 , [ RTerm xAddr
                   , RTerm xTag
                   , RTerm xArity
-                  , RTerm xTxtModule@(XCon _ dcTxtModuleName)
-                  , RTerm xTxtCon   @(XCon _ dcTxtCtorName) ])
+                  , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModuleName))
+                  , RTerm xTxtCon   @(XCon _ (DaConPrim nTxtCtorName)) ])
                 <- takeXNameApps xxExp
-         , D.NameLitUnboxed (D.NameLitTextLit txModuleName)
-                <- daConName dcTxtModuleName
-         , D.NameLitUnboxed (D.NameLitTextLit txCtorName)
-                <- daConName dcTxtCtorName
+         , D.NameLitUnboxed (D.NameLitTextLit txModuleName) <- nTxtModuleName
+         , D.NameLitUnboxed (D.NameLitTextLit txCtorName)   <- nTxtCtorName
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'      <- convertX ExpArg ctx xAddr

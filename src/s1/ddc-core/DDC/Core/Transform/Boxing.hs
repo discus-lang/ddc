@@ -107,13 +107,13 @@ boxingX config xx
  = case xx of
 
         -- Convert literals to their unboxed form, followed by a boxing conversion.
-        XCon a (DaConPrim n tLit)
-         | Just RepBoxed        <- configRepOfType config tLit
+        XCon a (DaConPrim n)
+         | Just tLit            <- configValueTypeOfLitName config n
+         , Just RepBoxed        <- configRepOfType config tLit
          , Just tLitU           <- configConvertRepType config RepUnboxed tLit
          , Just nU              <- configUnboxLitName   config n
-
          , Just xLit            <- configConvertRepExp  config RepBoxed a tLitU
-                                $  XCon a (DaConPrim nU tLitU)
+                                $  XCon a (DaConPrim nU)
          -> xLit
 
         -- Application of primop being run at call site.
@@ -160,8 +160,8 @@ boxingX config xx
 
         -- Unbox literal patterns in alternatives.
         XCase a xScrut alts
-         | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
-         , Just tLit1    <- configValueTypeOfLitName config (daConName p)
+         | n : _         <- [ n  | AAlt (PData (DaConPrim n) []) _ <- alts]
+         , Just tLit1    <- configValueTypeOfLitName config n
          , Just RepBoxed <- configRepOfType config tLit1
          -> let alts'    = map (boxingAlt config) alts
             in  boxingCase config a tLit1 xScrut alts'
@@ -403,11 +403,11 @@ boxingCase
 
 boxingCase config a tLit1 xScrut alts
  = let
-        unboxAlt (AAlt (PData (DaConPrim n tLit) []) x)
-         | Just RepBoxed <- configRepOfType config tLit
+        unboxAlt (AAlt (PData (DaConPrim n) []) x)
+         | Just tLit     <- configValueTypeOfLitName config n
+         , Just RepBoxed <- configRepOfType config tLit
          , Just nU       <- configUnboxLitName config n
-         , Just tLitU    <- configConvertRepType config RepUnboxed tLit
-         = Just (AAlt (PData (DaConPrim nU tLitU) []) x)
+         = Just (AAlt (PData (DaConPrim nU) []) x)
 
         unboxAlt alt@(AAlt PDefault _) = Just alt
         unboxAlt _                     = Nothing

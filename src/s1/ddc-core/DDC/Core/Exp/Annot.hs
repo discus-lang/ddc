@@ -141,7 +141,6 @@ module DDC.Core.Exp.Annot
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
         , takeBaseCtorNameOfDaCon
-        , takeTypeOfDaCon
 
           -- ** Bound Variables
         , takeBoundOfExp

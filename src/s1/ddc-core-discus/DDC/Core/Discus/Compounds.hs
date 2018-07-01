@@ -92,7 +92,7 @@ xInfoFrameNew :: a -> Int -> Exp a Name
 xInfoFrameNew a iCount
  = xApps a
         (XVar a (UName (NameOpInfo OpInfoFrameNew False)))
-        [ RTerm $ XCon a (DaConPrim (NameLitNat $ fromIntegral iCount) tNat)]
+        [ RTerm $ XCon a (DaConPrim (NameLitNat $ fromIntegral iCount))]
 
 
 -- | Type of the ddcInfoFrameNew runtime primitive.
@@ -130,8 +130,8 @@ xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
  = xApps a
         (XVar a (UName (NameOpInfo OpInfoFrameAddData False)))
         [ RTerm xPtr
-        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16) (tWord 16))
-        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16) (tWord 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16))
         , RTerm xNameModule
         , RTerm xNameData]
 

@@ -305,7 +305,7 @@ xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name -> Exp a Na
 xAllocBoxed a tR tag xInfo x2
  = xApps a (XVar a $ fst utAllocBoxed)
         [ RType tR
-        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag))  tTag)
+        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)))
         , RTerm xInfo
         , RTerm x2]
 

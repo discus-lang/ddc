@@ -260,7 +260,7 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
          %  (hcat $ punctuate (text ",") $ map text ns)
          %  text ")"
 
-        DaConPrim  n _  -> ppr n
+        DaConPrim  n    -> ppr n
         DaConBound n    -> ppr n
 
 

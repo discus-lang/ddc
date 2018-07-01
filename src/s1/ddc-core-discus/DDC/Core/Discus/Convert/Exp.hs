@@ -18,6 +18,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                           (AnTEC(..))
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Call                  as Call
 import qualified DDC.Core.Discus.Prim           as D
 import qualified DDC.Core.Salt.Compounds        as A
@@ -132,14 +133,13 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Fully applied primitive data constructor.
-        --  The type of the constructor is attached directly to this node of the AST.
         --  The data constructor must be fully applied. Partial applications of data
         --  constructors that appear in the source language need to be eta-expanded
         --  before Discus -> Salt conversion.
         XApp a xa xb
-         | (x1, xsArgs)         <- takeXApps1 xa xb
-         , XCon _ dc            <- x1
-         , Just tCon            <- takeTypeOfDaCon dc
+         | (x1, xsArgs) <- takeXApps1 xa xb
+         , XCon _ dc@(DaConPrim n) <- x1
+         , Just tCon    <- Env.lookupName n $ contextTypeEnv ctx
          -> if length xsArgs == arityOfType tCon
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
@@ -152,9 +152,9 @@ convertExp ectx ctx xx
         --  constructors that appear in the source language need to be eta-expanded
         --  before Discus -> Salt conversion.
         XApp a xa xb
-         | (x1, xsArgs   )          <- takeXApps1 xa xb
+         | (x1, xsArgs)  <- takeXApps1 xa xb
          , XCon _ dc@(DaConBound (DaConBoundName _ _ n)) <- x1
-         , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
+         , Just dataCtor <- Map.lookup n (dataDefsCtors defs)
          -> if length xsArgs
                        == length (dataCtorTypeParams dataCtor)
                        +  length (dataCtorFieldTypes dataCtor)

@@ -420,12 +420,13 @@ ctorTypeOfPat _table ctx a (PData dc _)
         DaConUnit
          -> return $ Just $ tUnit
 
-        DaConRecord{}
-         -> do  let Just t = takeTypeOfDaCon dc
-                return (Just t)
+        DaConRecord ns
+         -> return $ Just $  tForalls (map (const kData) ns)
+                   $  \tsArg -> tFunOfParamResult tsArg
+                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
 
-        DaConPrim{}
-         -> return $ Just $ daConType dc
+        DaConPrim n
+         -> return $ lookupType (UName n) ctx
 
         -- FIXME: use the module and type names.
         DaConBound (DaConBoundName _ _ n)

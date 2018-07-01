@@ -472,7 +472,7 @@ instance (Eq n, Pretty n) => Pretty (DaCon n t) where
          <> (hcat $ punctuate (text ",") $ map text ns)
          <> text ")#"
 
-        DaConPrim n _   -> ppr n
+        DaConPrim n     -> ppr n
         DaConBound dcb  -> ppr dcb
 
 

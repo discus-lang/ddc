@@ -22,9 +22,10 @@ checkDaConM _config ctx xx a dc
     DaConUnit
      -> return tUnit
 
-    DaConRecord{}
-     -> do let Just t   = takeTypeOfDaCon dc
-           return t
+    DaConRecord ns
+     -> return $ tForalls (map (const kData) ns)
+        $ \tsArg -> tFunOfParamResult tsArg
+                 $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
 
     -- Primitive data constructors need to have a corresponding data type,
     -- but there may be too many constructors to list, like with Int literals.
@@ -35,8 +36,7 @@ checkDaConM _config ctx xx a dc
     --
     -- The type of the constructor needs to be attached so we can determine
     --  what data type it belongs to.
-    DaConPrim { daConName        = nCtor
-              , daConType        = _tUnused }   -- TODO: type on DaConPrim not used.
+    DaConPrim nCtor
      | Just tPrim       <- lookupType (UName nCtor) ctx
      , tResult          <- snd $ takeTFunArgResult $ eraseTForalls tPrim
      , Just (TyConBound (UName nType) _)

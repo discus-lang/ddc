@@ -301,7 +301,7 @@ takeExp c xx
          -> case dc of
                 C.DaConUnit      -> xSym "xdu"
                 C.DaConRecord fs -> xAps "xdr" (map xSym fs)
-                C.DaConPrim n _  -> configTakeRef c n
+                C.DaConPrim n    -> configTakeRef c n
                 C.DaConBound n   -> takeDaConBoundName c n
 
         -- Abs -----
@@ -416,10 +416,10 @@ takeAlt c aa
          -> xAps "ar" ((xList (map xSym fs) : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Prim
-        C.AAlt (C.PData (C.DaConPrim n _) []) x
+        C.AAlt (C.PData (C.DaConPrim n) []) x
          -> xAps "ap" [configTakeRef c n, takeExp c x]
 
-        C.AAlt (C.PData (C.DaConPrim n _) bs) x
+        C.AAlt (C.PData (C.DaConPrim n) bs) x
          -> xAps "ap" ((configTakeRef c n  : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Bound

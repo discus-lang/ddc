@@ -300,7 +300,7 @@ toCoreX a xx
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
-        S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
+        S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})))
          -> C.XApp      <$> pure a
                         <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                         <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
@@ -542,8 +542,8 @@ toCoreDC dc
         S.DaConRecord ns
          -> pure $ C.DaConRecord ns
 
-        S.DaConPrim  n t
-         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t
+        S.DaConPrim  n
+         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n)
 
         S.DaConBound (C.DaConBoundName _ _ n)
          -> C.DaConBound <$> (C.DaConBoundName

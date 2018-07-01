@@ -60,7 +60,6 @@ module DDC.Core.Exp.Generic
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
         , takeBaseCtorNameOfDaCon
-        , takeTypeOfDaCon
 
           ---------------------------------------
           -- * Dictionaries

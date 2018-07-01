@@ -40,7 +40,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         AAlt (PData dc []) x
          | DaConUnit    <- dc
          -> do  xBody           <- convertX ectx ctx x
-                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0)
                 return  $ AAlt (PData dcTag []) xBody
 
 
@@ -62,7 +62,7 @@ convertAlt a uScrut tScrut ectx ctx alt
                 uScrut'         <-  convertDataU uScrut
                                 >>= maybe (throw $ ErrorInvalidBound uScrut) return
 
-                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0)
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertDataB tctx) bsFields
@@ -105,7 +105,7 @@ convertAlt a uScrut tScrut ectx ctx alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag) A.tTag
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag)
 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertDataB tctx) bsFields

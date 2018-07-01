@@ -37,14 +37,14 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
  -- The unit constructor.
  --  This is statically defined to have info table index 1 in Init.dcs
  --  of the runtime system.
- | DaConUnit      <- dc
+ | DaConUnit    <- dc
  = return $ A.xAllocBoxed a A.rTop
                 0                -- constructor tag
                 (A.xWord a 1 32) -- info index
                 (A.xNat  a 0)    -- arity
 
  -- Literal values
- | DaConPrim n _  <- dc
+ | DaConPrim n  <- dc
  , E.isNameLitUnboxed n
  =      convertLitCtor a dc
 
