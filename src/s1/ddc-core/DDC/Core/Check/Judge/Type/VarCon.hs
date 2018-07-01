@@ -68,7 +68,7 @@ checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc)
  = do   let config      = tableConfig table
 
         -- Lookup the type of the constructor from the environment.
-        tCtor <- checkDaConM config ctx xx a dc
+        (dc', tCtor) <- checkDaConM config ctx xx a dc
 
         ctrace  $ vcat
                 [ text "**  Con"
@@ -80,7 +80,7 @@ checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc)
 
         -- Type of the data constructor.
         returnX a
-                (\z -> XCon z dc)
+                (\z -> XCon z dc')
                 tCtor
                 (Sum.empty kEffect)
                 ctx
@@ -97,7 +97,7 @@ checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
         let config      = tableConfig table
 
         -- All data constructors need to have valid type annotations.
-        tCtor <- checkDaConM config ctx xx a dc
+        (dc', tCtor) <- checkDaConM config ctx xx a dc
 
         ctrace  $ vcat
                 [ text "**  Con"
@@ -109,7 +109,7 @@ checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
 
         -- Type of the data constructor.
         returnX a
-                (\z -> XCon z dc)
+                (\z -> XCon z dc')
                 tCtor
                 (Sum.empty kEffect)
                 ctx

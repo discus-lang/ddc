@@ -14,18 +14,18 @@ checkDaConM
         -> Exp a n              -- ^ The full expression for error messages.
         -> a                    -- ^ Annotation for error messages.
         -> DaCon n (Type n)     -- ^ Data constructor to check.
-        -> CheckM a n (Type n)
+        -> CheckM a n (DaCon n (Type n), Type n)
 
 checkDaConM _config ctx xx a dc
  = case dc of
     -- Type type of the unit data constructor is baked-in.
     DaConUnit
-     -> return tUnit
+     -> return (dc, tUnit)
 
     DaConRecord ns
-     -> return $ tForalls (map (const kData) ns)
+     -> return (dc, tForalls (map (const kData) ns)
         $ \tsArg -> tFunOfParamResult tsArg
-                 $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
+                 $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
 
     -- Primitive data constructors need to have a corresponding data type,
     -- but there may be too many constructors to list, like with Int literals.
@@ -43,22 +43,25 @@ checkDaConM _config ctx xx a dc
                         <- fmap fst $ takeTyConApps tResult
      , Just dataType    <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
      -> case dataTypeMode dataType of
-         DataModeSingle  -> return tPrim
+         DataModeSingle -> return (dc, tPrim)
 
          DataModeSmall nsCtors
-          | L.elem nCtor nsCtors -> return tPrim
+          | L.elem nCtor nsCtors -> return (dc, tPrim)
           | otherwise            -> throw $ ErrorUndefinedCtor a xx
 
-         DataModeLarge   -> return tPrim
+         DataModeLarge  -> return (dc, tPrim)
 
-     | otherwise
-     -> throw $ ErrorUndefinedCtor a xx
+     | otherwise        -> throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
     -- FIXME: use the module and type names.
     DaConBound (DaConBoundName _ _ nCtor)
-     -> case Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx) of
-         Just ctor -> return $ typeOfDataCtor ctor
-         Nothing   -> throw $ ErrorUndefinedCtor a xx
+     | Just tPrim       <- lookupType (UName nCtor) ctx
+     -> return (DaConPrim nCtor, tPrim)
+
+     | Just ctorDef     <- Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx)
+     -> return (dc, typeOfDataCtor ctorDef)
+
+     | otherwise        -> throw $ ErrorUndefinedCtor a xx
 

@@ -198,6 +198,12 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          | TyConBound u _k      <- tc
          = case u of
             UName n
+             -- The kinds of abstract imported type constructors are in the
+             -- global kind environment.
+             | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
+             , UniverseSpec     <- uni
+             -> return (TCon (TyConBound u k'), k')
+
              -- User defined data type constructors must be in the set of
              -- data defs. Attach the real kind why we're here.
              | Just def         <- Map.lookup n $ dataDefsTypes
@@ -206,12 +212,6 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
              , UniverseSpec     <- uni
              -> let k'   = kindOfDataType def
                 in  return (TCon (TyConBound u k'), k')
-
-             -- The kinds of abstract imported type constructors are in the
-             -- global kind environment.
-             | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
-             , UniverseSpec     <- uni
-             -> return (TCon (TyConBound u k'), k')
 
              -- For type synonyms, just re-check the right of the binding.
              | Just t'          <- Map.lookup n $ EnvT.envtEquations

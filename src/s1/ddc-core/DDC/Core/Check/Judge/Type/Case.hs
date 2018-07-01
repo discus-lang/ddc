@@ -279,7 +279,8 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
                 , mempty ]
 
         -- Get the constructor type associated with this pattern.
-        Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
+        (dc', tCtor)
+         <- checkPatPData table ctx a dc
 
         -- Take the type of the constructor and instantiate it with the
         -- type arguments we got from the discriminant. If the ctor type
@@ -305,7 +306,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
-         $ throw $ ErrorCaseTooManyBinders a xx dc
+         $ throw $ ErrorCaseTooManyBinders a xx dc'
                         (length tsFields_ctor) (length bsArg)
 
         -- Merge the field types we get by instantiating the constructor
@@ -343,7 +344,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of
         -- alternatives to matter for type inference.
-        return  ( AAlt (PData dc bsArg') xBody'
+        return  ( AAlt (PData dc' bsArg') xBody'
                 , tBody'
                 , effsBody
                 , ctx_cut)
@@ -407,38 +408,39 @@ checkFieldAnnots table bidir a xx tts ctx0
 --   transform won't have given it a proper type.
 --   Note that we can't simply check whether the constructor is in the
 ---  environment because literals like 42# never are.
-ctorTypeOfPat
+checkPatPData
         :: Ord n
         => Table a n            -- ^ Checker table.
         -> Context n            -- ^ Type checker context
         -> a                    -- ^ Annotation for error messages.
-        -> Pat n                -- ^ Pattern.
-        -> CheckM a n (Maybe (Type n))
+        -> DaCon n (Type n)     -- ^ Pattern data constructor.
+        -> CheckM a n (DaCon n (Type n), Type n)
 
-ctorTypeOfPat _table ctx a (PData dc _)
+checkPatPData _table ctx a dc
  = case dc of
         DaConUnit
-         -> return $ Just $ tUnit
+         -> return $ (dc, tUnit)
 
         DaConRecord ns
-         -> return $ Just $  tForalls (map (const kData) ns)
+         -> return $ (dc, tForalls (map (const kData) ns)
                    $  \tsArg -> tFunOfParamResult tsArg
-                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
+                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
 
         DaConPrim n
-         -> return $ lookupType (UName n) ctx
+         |  Just t    <- lookupType (UName n) ctx
+         -> return (dc, t)
 
         -- FIXME: use the module and type names.
         DaConBound (DaConBoundName _ _ n)
+         -- Recognise a primitive data constructor wrapped in a DaConBoundName
+         |  Just t    <- lookupType (UName n) ctx
+         -> return (DaConPrim n, t)
+
          -- Types of algebraic data ctors should be in the defs table.
-         |  Just ctor   <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
-         -> return $ Just $ typeOfDataCtor ctor
+         |  Just ctor <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
+         -> return (dc, typeOfDataCtor ctor)
 
-         | otherwise
-         -> throw  $ ErrorUndefinedCtor a $ XCon a dc
-
-ctorTypeOfPat _table _ctx _a PDefault
- = return Nothing
+        _ -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
 
 -- | Get the data type associated with a pattern,
@@ -456,11 +458,12 @@ dataTypeOfPat
         -> CheckM a n (Maybe (Type n))
 
 dataTypeOfPat table ctx a pat
- = do   mtCtor      <- ctorTypeOfPat table ctx a pat
+ = case pat of
+        PData dc _
+         -> do  (_, tCtor) <- checkPatPData table ctx a dc
+                return $ Just $ eat [] tCtor
 
-        case mtCtor of
-         Nothing    -> return Nothing
-         Just tCtor -> return $ Just $ eat [] tCtor
+        _ -> return Nothing
 
  where  eat bs tt
          = case tt of

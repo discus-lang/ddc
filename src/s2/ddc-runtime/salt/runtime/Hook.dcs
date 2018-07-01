@@ -13,10 +13,10 @@ export foreign c value
 import foreign c value
  ddcPrimStderrPutString : TextLit# -> Void#
 
- ddcRunThunk            :  [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj
+ ddcRunThunk    :  [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj
 
- ddcApply2              :  [r1 : Region]
-                        .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
+ ddcApply2      :  [r1: Region]
+                .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
 
 with letrec
 

@@ -137,14 +137,17 @@ convertAlt ctx ectx aa
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-        A.AAlt (A.PData dc []) x
-         | Just n       <- A.takeNameOfDaConPrim dc
-         , Just lit     <- convPatName pp n
+        A.AAlt (A.PData (C.DaConPrim n) []) x
+         | Just lit     <- convPatName pp n
          -> do  label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-        _ -> throw $ ErrorInvalidAlt [aa] Nothing
+        A.AAlt (A.PData dc@(C.DaConBound{}) _) _x
+         ->  throw $ ErrorInvalidAlt [aa] (Just $ "found DaConBound" ++ show dc)
+
+        A.AAlt pat _x
+         -> throw $ ErrorInvalidAlt [aa] (Just $ show pat)
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.
