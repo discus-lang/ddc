@@ -39,7 +39,7 @@ checkModuleIO
 
 checkModuleIO !config !xx !mode
  = do   (s, result)     <- runCheck (mempty, 0, 0)
-                        $ checkModuleM config xx mode
+                        $  checkModuleM config xx mode
         let (tr, _, _)  = s
         return (result, tr)
 

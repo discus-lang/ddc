@@ -36,22 +36,23 @@ checkDaConM _config ctx xx a dc
     -- The type of the constructor needs to be attached so we can determine
     --  what data type it belongs to.
     DaConPrim { daConName        = nCtor
-              , daConType        = t }
-     -> let tResult = snd $ takeTFunArgResult $ eraseTForalls t
-        in  case liftM fst $ takeTyConApps tResult of
-             Just (TyConBound u _)
-                | Just nType     <- takeNameOfBound u
-                , Just dataType  <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
-                -> case dataTypeMode dataType of
-                    DataModeSingle  -> return t
+              , daConType        = _tUnused }   -- TODO: type on DaConPrim not used.
+     | Just tPrim       <- lookupType (UName nCtor) ctx
+     , tResult          <- snd $ takeTFunArgResult $ eraseTForalls tPrim
+     , Just (TyConBound (UName nType) _)
+                        <- fmap fst $ takeTyConApps tResult
+     , Just dataType    <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
+     -> case dataTypeMode dataType of
+         DataModeSingle  -> return tPrim
 
-                    DataModeSmall nsCtors
-                        | L.elem nCtor nsCtors -> return t
-                        | otherwise            -> throw $ ErrorUndefinedCtor a xx
+         DataModeSmall nsCtors
+          | L.elem nCtor nsCtors -> return tPrim
+          | otherwise            -> throw $ ErrorUndefinedCtor a xx
 
-                    DataModeLarge   -> return t
+         DataModeLarge   -> return tPrim
 
-             _ -> throw $ ErrorUndefinedCtor a xx
+     | otherwise
+     -> throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.

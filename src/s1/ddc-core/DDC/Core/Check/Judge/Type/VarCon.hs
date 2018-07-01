@@ -7,7 +7,6 @@ import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Sum           as Sum
-import qualified Data.Map               as Map
 
 
 -------------------------------------------------------------------------------
@@ -69,7 +68,7 @@ checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc)
  = do   let config      = tableConfig table
 
         -- Lookup the type of the constructor from the environment.
-        tCtor           <- checkDaConType config ctx a dc
+        tCtor <- checkDaConM config ctx xx a dc
 
         ctrace  $ vcat
                 [ text "**  Con"
@@ -98,7 +97,7 @@ checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
         let config      = tableConfig table
 
         -- All data constructors need to have valid type annotations.
-        tCtor           <- checkDaConType config ctx a dc
+        tCtor <- checkDaConM config ctx xx a dc
 
         ctrace  $ vcat
                 [ text "**  Con"
@@ -119,33 +118,4 @@ checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
 -- others ---------------------------------------
 checkVarCon _ _ _ _ _
  = error "ddc-core.checkVarCon: no match"
-
-
--------------------------------------------------------------------------------
--- | Lookup the type of this data constructor from the context,
---   or throw an error if we can't find it.
-checkDaConType config ctx a dc
- = do
-        -- Check that the constructor is in the data type declarations.
-        checkDaConM config ctx (XCon a dc) a dc
-
-        -- Lookup the type of the constructor.
-        case dc of
-         DaConUnit   -> return tUnit
-
-         DaConRecord{}
-          -> do let Just t   = takeTypeOfDaCon dc
-                return t
-
-         DaConPrim{}
-          -> return $ daConType dc
-
-         -- FIXME: use the module and type names.
-         DaConBound (DaConBoundName _ _ n)
-          -- Types of algebraic data ctors should be in the defs table.
-          |  Just ctor <- Map.lookup n (dataDefsCtors $ contextDataDefs ctx)
-          -> return $ typeOfDataCtor ctor
-
-          | otherwise
-          -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 

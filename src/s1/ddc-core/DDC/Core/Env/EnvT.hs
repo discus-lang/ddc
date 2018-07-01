@@ -191,6 +191,7 @@ lookup uu env
 lookupName :: Ord n => n -> EnvT n -> Maybe (Type n)
 lookupName n env
           = Map.lookup n (envtMap env)
+          `mplus` envtPrimFun env n
 
 
 -- | Yield the total depth of the deBruijn stack.
