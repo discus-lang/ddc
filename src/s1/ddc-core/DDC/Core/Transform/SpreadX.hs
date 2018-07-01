@@ -93,8 +93,8 @@ spreadExportValueT kenv esrc
         ExportValueLocalNoType n
          -> ExportValueLocalNoType n
 
-        ExportValueSea n x t
-         -> ExportValueSea n x (spreadT kenv t)
+        ExportValueSea mn n x t
+         -> ExportValueSea mn n x (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -120,8 +120,8 @@ spreadImportValueX kenv _tenv isrc
         ImportValueModule mn n t mArity
          -> ImportValueModule   mn n (spreadT kenv t) mArity
 
-        ImportValueSea ni nx t
-         -> ImportValueSea ni nx (spreadT kenv t)
+        ImportValueSea mn ni nx t
+         -> ImportValueSea mn ni nx (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------

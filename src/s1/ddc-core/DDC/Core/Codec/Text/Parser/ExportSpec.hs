@@ -23,9 +23,9 @@ data ExportSpec n
 -- | Parse some export specifications.
 pExportSpecs
         :: (Ord n, Pretty n)
-        => Context n -> Parser n [ExportSpec n]
+        => Context n -> ModuleName -> Parser n [ExportSpec n]
 
-pExportSpecs c
+pExportSpecs c modName
  = do   pTok (KKeyword EExport)
 
         P.choice
@@ -45,7 +45,7 @@ pExportSpecs c
                 dst     <- fmap (renderIndent . ppr) pName
                 pKey    EValue
                 pSym    SBraceBra
-                specs   <- P.sepEndBy1 (pExportForeignValue c dst)
+                specs   <- P.sepEndBy1 (pExportForeignValue c modName dst)
                                        (pSym SSemiColon)
                 pSym    SBraceKet
                 return specs
@@ -68,20 +68,20 @@ pExportValue c
 -- | Parse a foreign value export spec.
 pExportForeignValue
         :: (Ord n, Pretty n)
-        => Context n -> String -> Parser n (ExportSpec n)
+        => Context n -> ModuleName -> String -> Parser n (ExportSpec n)
 
-pExportForeignValue c dst
-        | "c"           <- dst
-        = do    n       <- pName
-                pTokSP (KOp ":")
-                t       <- pType c
+pExportForeignValue c modName dst
+ | "c"           <- dst
+ = do   n       <- pName
+        pTokSP (KOp ":")
+        t       <- pType c
 
-                let nTxt = renderIndent $ ppr n
+        let nTxt = renderIndent $ ppr n
 
-                -- ISSUE #327: Allow external symbol to be specified
-                --             with foreign C imports and exports.
-                return  (ExportValue n (ExportValueSea n (T.pack nTxt) t))
+        -- ISSUE #327: Allow external symbol to be specified
+        --             with foreign C imports and exports.
+        return  (ExportValue n (ExportValueSea modName n (T.pack nTxt) t))
 
-        | otherwise
-        = P.unexpected "export mode for foreign value."
+ | otherwise
+ = P.unexpected "export mode for foreign value."
 

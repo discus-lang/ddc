@@ -158,9 +158,9 @@ pprExportValue esrc
                         %% text "#-}"
                  , mempty ]
 
-        ExportValueSea iName xName t
+        ExportValueSea mn iName xName t
          -> vcat [ text "export foreign c value"
-                 , indent 8 (padL 15 (ppr iName) % text ":" %% ppr t % semi)
+                 , indent 8 (padL 15 (ppr mn % text "." % ppr iName) % text ":" %% ppr t % semi)
                  , indent 8 (text " from " % string (show xName)) ]
 
 
@@ -213,9 +213,9 @@ pprImportValue isrc
 
                  , mempty ]
 
-        ImportValueSea nInternal _nExternal t
+        ImportValueSea mn nInternal _nExternal t
          -> text "import foreign c value" % line
-          % indent 8 (padL 15 (ppr nInternal) %% text ":" %% ppr t % semi)
+          % indent 8 (padL 15 (ppr mn % text "." % ppr nInternal) %% text ":" %% ppr t % semi)
           % line
 
 

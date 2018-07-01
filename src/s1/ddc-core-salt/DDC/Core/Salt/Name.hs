@@ -469,7 +469,7 @@ seaNameOfSuper mImport mExport nm
         = Just $ string $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
 
         -- Super is imported from C-land and not exported.
-        | Just (ImportValueSea _ strSea _) <- mImport
+        | Just (ImportValueSea _ _ strSea _) <- mImport
         , Nothing               <- mExport
         = Just $ text strSea
 

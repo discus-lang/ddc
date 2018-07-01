@@ -129,9 +129,10 @@ runtimeImportTypes
 
     , rn utErrorDefault]
 
- where   rn (UName n, t)  = (n, ImportValueSea n (T.pack $ renderPlain $ ppr n) t)
+ where   rn (UName n, t) = (n, ImportValueSea mn n (T.pack $ renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
+         mn     = ModuleName ["DDC", "Internal", "Runtime"]
 
 -- Thunk ------------------------------------------------------------------------------------------
 -- | Allocate a Thunk object.

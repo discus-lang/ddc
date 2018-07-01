@@ -241,17 +241,19 @@ takeDeclExVal c mpT dd
                 Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
-                        { C.exportValueLocalModuleName = fromModuleName ssModuleName
-                        , C.exportValueLocalName       = nName
-                        , C.exportValueLocalType       = fromType c ssType
-                        , C.exportValueLocalArity      = Just (fromI nT, fromI nX, fromI nB) })
+                        { C.exportValueLocalModuleName  = fromModuleName ssModuleName
+                        , C.exportValueLocalName        = nName
+                        , C.exportValueLocalType        = fromType c ssType
+                        , C.exportValueLocalArity       = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeExVal (XAps "ex-val-sea" [ssNameInternal, XTxt txNameExternal, ssType])
+        takeExVal (XAps "ex-val-sea"
+                        [ssModuleName, ssNameInternal, XTxt txNameExternal, ssType])
          = let nInternal = fromRef c ssNameInternal
            in  (nInternal,  C.ExportValueSea
-                        { C.exportValueSeaNameInternal = nInternal
-                        , C.exportValueSeaNameExternal = txNameExternal
-                        , C.exportValueSeaType         = fromType c ssType })
+                        { C.exportValueSeaModuleName    = fromModuleName ssModuleName
+                        , C.exportValueSeaNameInternal  = nInternal
+                        , C.exportValueSeaNameExternal  = txNameExternal
+                        , C.exportValueSeaType          = fromType c ssType })
 
         takeExVal _ = failDecode "takeExVal"
 
@@ -399,16 +401,18 @@ takeDeclImVal c mpT dd
          | Just n      <- configTakeRef c (ssVar :: SExp)
          , Just ssType <- Map.lookup txMacType mpT
          = (n, C.ImportValueModule
-                { C.importValueModuleName  = fromModuleName ssModuleName
-                , C.importValueModuleVar   = n
-                , C.importValueModuleType  = fromType c ssType
-                , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
+                { C.importValueModuleName       = fromModuleName ssModuleName
+                , C.importValueModuleVar        = n
+                , C.importValueModuleType       = fromType c ssType
+                , C.importValueModuleArity      = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeImVal (XAps "im-val-sea" [ssNameInternal, XTxt txNameExternal, XMac txMacType])
+        takeImVal (XAps "im-val-sea"
+                        [ssModuleName, ssNameInternal, XTxt txNameExternal, XMac txMacType])
          | Just ssType  <- Map.lookup txMacType mpT
          , Just n       <- configTakeRef c ssNameInternal
          = (n, C.ImportValueSea
-                { C.importValueSeaNameInternal  = n
+                { C.importValueSeaModuleName    = fromModuleName ssModuleName
+                , C.importValueSeaNameInternal  = n
                 , C.importValueSeaNameExternal  = txNameExternal
                 , C.importValueSeaType          = fromType c ssType })
 

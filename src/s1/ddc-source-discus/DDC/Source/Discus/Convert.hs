@@ -171,8 +171,8 @@ toCoreExportValue ev
         ExportValueLocal mn n t mArity
          -> ExportValueLocal mn    <$> toCoreXUVN n <*> toCoreT UniverseSpec t <*> pure mArity
 
-        ExportValueSea n tx t
-         -> ExportValueSea         <$> toCoreXUVN n <*> pure tx <*> toCoreT UniverseSpec t
+        ExportValueSea mn n tx t
+         -> ExportValueSea mn      <$> toCoreXUVN n <*> pure tx <*> toCoreT UniverseSpec t
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -213,9 +213,9 @@ toCoreImportValue src
                         <*> toCoreT UniverseSpec t
                         <*> pure mA
 
-        ImportValueSea n v t
+        ImportValueSea mn n v t
          -> ImportValueSea
-                        <$> toCoreXBVN n
+         <$> pure mn    <*> toCoreXBVN n
                         <*> pure v
                         <*> toCoreT UniverseSpec t
 

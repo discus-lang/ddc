@@ -75,14 +75,14 @@ convertType pp kenv tt
                 return
                   $ TPointer $ TFunction
                   $ FunctionDecl
-                  { declName                    = "dummy.function.name"
-                  , declLinkage                 = Internal
-                  , declCallConv                = CC_Ccc
-                  , declReturnType              = tResult
-                  , declParamListType           = FixedArgs
-                  , declParams                  = [Param t [] | t <- tsArgs]
-                  , declAlign                   = AlignBytes (platformAlignBytes pp)
-                  , declGarbageCollector        = Just "shadow-stack" }
+                  { declName             = "dummy.function.name"
+                  , declLinkage          = Internal
+                  , declCallConv         = CC_Ccc
+                  , declReturnType       = tResult
+                  , declParamListType    = FixedArgs
+                  , declParams           = [Param t [] | t <- tsArgs]
+                  , declAlign            = AlignBytes (platformAlignBytes pp)
+                  , declGarbageCollector = Just "shadow-stack" }
 
         C.TForall b t
          -> let kenv'   = Env.extend b kenv
@@ -153,7 +153,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
                 , declAlign             = AlignBytes (platformAlignBytes pp)
                 , declGarbageCollector  = Just "shadow-stack" }
 
- | C.ImportValueSea _ strName _  <- isrc
+ | C.ImportValueSea _ _ strName _  <- isrc
  = Just $ do
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
@@ -202,8 +202,8 @@ convTyCon platform tycon
              -- Text literals are represented as pointers to the static text data.
              A.PrimTyConTextLit   -> return $ tPtr (TInt 8)
 
-             _            -> throw $ ErrorInvalidTyCon tycon
-                                   $ Just "Not a primitive type constructor."
+             _ -> throw $ ErrorInvalidTyCon tycon
+                        $ Just "Not a primitive type constructor."
 
         _ -> throw $ ErrorInvalidTyCon tycon
                    $ Just "Cannot convert type constructor."

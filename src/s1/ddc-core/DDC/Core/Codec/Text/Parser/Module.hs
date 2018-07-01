@@ -82,7 +82,7 @@ pModule c
                 , moduleImportTypeDefs  = [(n, (k, t)) | ImportType  n k t      <- importSpecs]
 
                 , moduleImportDataDefs  = [(dataDefTypeName def, def)
-                                                        | ImportData  def        <- importSpecs]
+                                                        | ImportData  def       <- importSpecs]
 
                 , moduleLocalDataDefs   = dataDefsLocal
                 , moduleLocalTypeDefs   = typeDefsLocal
@@ -116,10 +116,10 @@ pHeadDecl :: (Ord n, Pretty n)
 
 pHeadDecl ctx modName
  = P.choice
-        [ do    imports <- pImportSpecs ctx
+        [ do    imports <- pImportSpecs ctx modName
                 return  $ HeadImportSpecs imports
 
-        , do    exports <- pExportSpecs ctx
+        , do    exports <- pExportSpecs ctx modName
                 return  $ HeadExportSpecs exports
 
         , do    def     <- pDataDef ctx (Just modName)

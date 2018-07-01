@@ -102,12 +102,13 @@ mapTypeOfImportCap f ii
 
 
 -- ImportValue ------------------------------------------------------------------------------------
--- | Define a foreign value being imported into a module.
+-- | Describes a value being imported into a module.
 data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
-        { -- | Name of the module the original value is defined in,
-          --   which may not be the module that we're importing it via.
+        { -- | Name of the module the original value is defined in.
+          --   As we have transitive imports this is not necessarily the module
+          --   via which we learned about the name.
           importValueModuleName         :: !ModuleName
 
           -- | Name of the the value that we're importing.
@@ -122,10 +123,15 @@ data ImportValue n t
 
         -- | Value imported via the C calling convention.
         | ImportValueSea
-        { -- Name we use to refer to the value internally to the module.
-          importValueSeaNameInternal    :: !n
+        { -- | Name of the module in which the original value was imported into.
+          --   As we have transitive imports this is not necessarily the module
+          --   via which we learned about the name.
+          importValueSeaModuleName      :: !ModuleName
 
-          -- Name of the value in the external C namespace.
+          -- | Name we use to refer to the value internally in source code.
+        , importValueSeaNameInternal    :: !n
+
+          -- | Name of the value in the external C name space.
         , importValueSeaNameExternal    :: !Text
 
           -- | Type of the value that we're importing.
@@ -139,8 +145,8 @@ instance (NFData n, NFData t) => NFData (ImportValue n t) where
         ImportValueModule mn n t mAV
          -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
 
-        ImportValueSea ni nx t
-         -> rnf ni `seq` rnf nx `seq` rnf t
+        ImportValueSea mn ni nx t
+         -> rnf mn `seq` rnf ni `seq` rnf nx `seq` rnf t
 
 
 -- | Take the type of an imported thing.
@@ -148,7 +154,7 @@ typeOfImportValue :: ImportValue n t -> t
 typeOfImportValue src
  = case src of
         ImportValueModule _ _ t _       -> t
-        ImportValueSea    _ _ t         -> t
+        ImportValueSea    _ _ _ t       -> t
 
 
 -- | Apply a function to the type in an ImportValue.
@@ -156,5 +162,5 @@ mapTypeOfImportValue :: (t -> t) -> ImportValue n t -> ImportValue n t
 mapTypeOfImportValue f isrc
  = case isrc of
         ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a
-        ImportValueSea ni nx t          -> ImportValueSea ni nx (f t)
+        ImportValueSea mn ni nx t       -> ImportValueSea mn ni nx (f t)
 

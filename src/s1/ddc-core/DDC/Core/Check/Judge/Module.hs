@@ -291,8 +291,8 @@ checkModuleM !config mm@ModuleCore{} !mode
         let updateExportValue e
                 -- Exported thing was foreign imported from Sea land.
                 | ExportValueLocalNoType n  <- e
-                , Just (ImportValueSea _ nExternal t) <- lookup n ntsImportValue'
-                = ExportValueSea n nExternal t
+                , Just (ImportValueSea mn _ nExternal t) <- lookup n ntsImportValue'
+                = ExportValueSea mn n nExternal t
 
                 -- Exported thing was imported from another module.
                 | ExportValueLocalNoType n <- e
@@ -620,8 +620,8 @@ checkImportValues config env mode nisrcs
                (ImportValueModule _ _ t2 a2)
          = equivT (contextEnvT ctx) t1 t2 && a1 == a2
 
-        compat (ImportValueSea _ _ t1)
-               (ImportValueSea _ _ t2)
+        compat (ImportValueSea _ _ _ t1)
+               (ImportValueSea _ _ _ t2)
          = equivT (contextEnvT ctx) t1 t2
 
         compat _ _ = False

@@ -211,7 +211,8 @@ importValuesOfInterface ii
 
         importOfExport ex@ExportValueSea{}
          = Just (exportValueSeaNameInternal ex, ImportValueSea
-         { importValueSeaNameInternal   = exportValueSeaNameInternal ex
+         { importValueSeaModuleName     = exportValueSeaModuleName ex
+         , importValueSeaNameInternal   = exportValueSeaNameInternal ex
          , importValueSeaNameExternal   = exportValueSeaNameExternal ex
          , importValueSeaType           = exportValueSeaType ex })
 

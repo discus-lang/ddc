@@ -62,11 +62,6 @@ initializeInfo mnsImport mm
         , C.moduleImportValues
             =  C.moduleImportValues mm
 
-{-
-            ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
-               , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
-               , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]
--}
                -- Import the initialization functions for transitively imported modules.
             ++ [ ( initNameOfModule mn
                  , C.ImportValueModule
@@ -204,7 +199,8 @@ initializeMain
         ivHookHandleTopLevel
          = ( nHookHandleTopLevel
            , C.ImportValueSea
-                { C.importValueSeaNameInternal  = nHookHandleTopLevel
+                { C.importValueSeaModuleName    = C.ModuleName ["DDC", "Internal", "Runtime"]
+                , C.importValueSeaNameInternal  = nHookHandleTopLevel
                 , C.importValueSeaNameExternal  = txHookHandleTopLevel
                 , C.importValueSeaType          = tHookHandleTopLevel })
 

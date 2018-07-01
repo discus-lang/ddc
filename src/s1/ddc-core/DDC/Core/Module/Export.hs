@@ -79,8 +79,13 @@ data ExportValue n t
 
         -- | A value exported via the C calling convention.
         | ExportValueSea
-        { -- | The name we use to refer to the value internally to the module.
-          exportValueSeaNameInternal    :: !n
+        { -- | Name of the module in which the original value was imported into
+          --   or defined in. This is not necessearally the module which we got
+          --   the import via.
+          exportValueSeaModuleName      :: !ModuleName
+
+          -- | The name we use to refer to the value internally to the module.
+        , exportValueSeaNameInternal    :: !n
 
           -- | The name of the value in the external C name space.
         , exportValueSeaNameExternal    :: !Text
@@ -95,7 +100,7 @@ instance (NFData n, NFData t) => NFData (ExportValue n t) where
   = case es of
         ExportValueLocalNoType n        -> rnf n
         ExportValueLocal mn n t _       -> rnf mn `seq` rnf n `seq` rnf t
-        ExportValueSea   n _ t          -> rnf n  `seq` rnf t
+        ExportValueSea   mn n _ t       -> rnf mn `seq` rnf n  `seq` rnf t
 
 
 -- | Take the type of an imported thing, if there is one.
@@ -104,7 +109,7 @@ takeTypeOfExportValue es
  = case es of
         ExportValueLocalNoType{}        -> Nothing
         ExportValueLocal _ _ t _        -> Just t
-        ExportValueSea   _ _ t          -> Just t
+        ExportValueSea   _ _ _ t        -> Just t
 
 
 -- | Apply a function to any type in an ExportSource.
@@ -113,5 +118,5 @@ mapTypeOfExportValue f esrc
  = case esrc of
         ExportValueLocalNoType n        -> ExportValueLocalNoType n
         ExportValueLocal mn n t a       -> ExportValueLocal mn n (f t) a
-        ExportValueSea   n x t          -> ExportValueSea   n x (f t)
+        ExportValueSea   mn n x t       -> ExportValueSea   mn n x (f t)
 

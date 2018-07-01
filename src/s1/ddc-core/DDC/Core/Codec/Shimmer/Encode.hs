@@ -181,10 +181,10 @@ takeExportValue c es
                         [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
         -- TODO: split type into own decl so we can import/export via the same data.
-        C.ExportValueSea n x t
+        C.ExportValueSea mn n x t
          -> let Just tx = configTakeVarName c n
             in  xAps "ex-val-sea"
-                        [ xTxt tx, xTxt x, takeType c t ]
+                        [ takeModuleName mn, xTxt tx, xTxt x, takeType c t ]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------
@@ -273,7 +273,8 @@ takeImportValue c iv
         C.ImportValueSea{}
          -> let Just tx = configTakeVarName c (C.importValueSeaNameInternal iv)
             in  ( xAps "im-val-sea"
-                        [ xTxt tx
+                        [ takeModuleName $ C.importValueSeaModuleName iv
+                        , xTxt tx
                         , xTxt (C.importValueSeaNameExternal iv)
                         , xMac ("t-" <> tx)]
                 , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueSeaType iv)])
