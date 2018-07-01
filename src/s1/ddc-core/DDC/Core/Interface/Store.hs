@@ -9,11 +9,13 @@ module DDC.Core.Interface.Store
         , getModuleNames
         , getInterfaces
 
-        , Super (..)
-        , findSuper)
+        , DataDef       (..)
+        , ImportValue   (..)
+        , findImportValue)
 where
 import DDC.Core.Interface.Error
 import DDC.Core.Interface.Base
+import DDC.Core.Module.Import
 import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp
@@ -21,24 +23,25 @@ import DDC.Data.Pretty
 import System.Directory
 import Data.IORef
 import Data.Maybe
-import Data.Map                                                 (Map)
-import qualified DDC.Core.Fragment.Profile                      as C
-import qualified DDC.Core.Codec.Shimmer.Decode                  as Decode
-import qualified SMR.Core.Exp                                   as SMR
-import qualified SMR.Prim.Name                                  as SMR
-import qualified Data.Map.Strict                                as Map
-import qualified Data.ByteString                                as BS
+import Data.Map                                 (Map)
+import qualified DDC.Core.Fragment.Profile      as C
+import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
+import qualified SMR.Core.Exp                   as SMR
+import qualified SMR.Prim.Name                  as SMR
+import qualified Data.Map.Strict                as Map
+import qualified Data.ByteString                as BS
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Get a list of types of all top-level supers in all modules in the store.
+--   TODO: multiple conflicting names get smashed together,
+--   this is used by the elaborate pass which needs to be redone to use
+--   the store directly.
 importValuesOfStore :: Ord n => Store n -> IO [(n, ImportValue n (Type n))]
 importValuesOfStore store
- = do   mnns       <- readIORef $ storeSupers store
+ = do   mnns       <- readIORef $ storeValuesByName store
         let mns    =  Map.elems mnns
-        let supers =  concatMap Map.elems mns
-        return $ [ (superName s, superImportValue s)
-                        | s <- supers ]
+        return $ concatMap Map.toList mns
 
 
 ---------------------------------------------------------------------------------------------------
@@ -56,21 +59,25 @@ new
  = do   refMeta            <- newIORef []
         refTypeCtorNames   <- newIORef Map.empty
         refDataCtorNames   <- newIORef Map.empty
-        refSupers          <- newIORef Map.empty
         refDataDefsByTyCon <- newIORef Map.empty
         refDataDefsByDaCon <- newIORef Map.empty
+        refTypeDefsByTyCon <- newIORef Map.empty
+        refCapsByName      <- newIORef Map.empty
+        refValuesByName    <- newIORef Map.empty
         refInterfaces      <- newIORef []
         return  $ Store
                 { storeMeta             = refMeta
                 , storeTypeCtorNames    = refTypeCtorNames
                 , storeDataCtorNames    = refDataCtorNames
-                , storeSupers           = refSupers
                 , storeDataDefsByTyCon  = refDataDefsByTyCon
                 , storeDataDefsByDaCon  = refDataDefsByDaCon
+                , storeTypeDefsByTyCon  = refTypeDefsByTyCon
+                , storeCapsByName       = refCapsByName
+                , storeValuesByName     = refValuesByName
                 , storeInterfaces       = refInterfaces }
 
 
--- | Add a pre-loaded interface file to the store.
+-- | Add information from a pre-loaded interface to the store.
 wrap    :: (Ord n)
         => Store n -> Interface n -> IO ()
 wrap store ii
@@ -78,21 +85,15 @@ wrap store ii
         modifyIORef' (storeMeta store) $ \meta
          -> meta ++ [metaOfInterface ii]
 
-        modifyIORef' (storeSupers store) $ \supers
-         -> Map.insert (interfaceModuleName ii)
-                       (supersFromInterface ii)
-                       supers
-
         modifyIORef' (storeDataDefsByTyCon store) $ \ddefs
-         -> let mmDiscus = interfaceModule ii
-             in Map.insert
-                  (interfaceModuleName ii)
-                  (Map.union
-                        (Map.fromList [ (dataDefTypeName def, def)
-                                      | def <- map snd $ moduleImportDataDefs mmDiscus])
-                        (Map.fromList [ (dataDefTypeName def, def)
-                                      | def <- map snd $ moduleLocalDataDefs  mmDiscus]))
-                  ddefs
+         -> Map.insert  (interfaceModuleName ii)
+                        (dataDefsByTyConOfInterface ii)
+                        ddefs
+
+        modifyIORef' (storeValuesByName store) $ \ivs
+         -> Map.insert  (interfaceModuleName ii)
+                        (importValuesOfInterface ii)
+                        ivs
 
 --        modifyIORef' (storeDataDefOfCtor store) $ \ctors
 --         -> Map.union ctors (dataDefsOfCtorFromInterface ii)
@@ -144,8 +145,8 @@ getMeta store
 -- | Get names of the modules currently in the store.
 getModuleNames :: Store n -> IO [ModuleName]
 getModuleNames store
- = do   supers  <- readIORef (storeSupers store)
-        return  $ Map.keys supers
+ = do   metas   <- readIORef (storeMeta store)
+        return  $ map metaModuleName metas
 
 
 -- | Get the fully loaded interfaces.
@@ -162,19 +163,19 @@ getInterfaces store
 --   where we load data from interface files on demand. We want to ensure
 --   that the caller is also in IO, to make the refactoring easier later.
 --
-findSuper
+findImportValue
         :: Ord n
         => Store n
-        -> n                   -- ^ Name of desired super.
-        -> [ModuleName]         -- ^ Names of modules to search.
-        -> IO [Super n]
+        -> n            -- ^ Name of desired super.
+        -> [ModuleName] -- ^ Names of modules to search.
+        -> IO [ImportValue n (Type n)]
 
-findSuper store n modNames
- = do   supers  <- readIORef (storeSupers store)
+findImportValue store n modNames
+ = do   mivs  <- readIORef (storeValuesByName store)
         return $ mapMaybe
                 (\modName -> do
-                        nSupers <- Map.lookup modName supers
-                        Map.lookup n nSupers)
+                        ivs <- Map.lookup modName mivs
+                        Map.lookup n ivs)
                 modNames
 
 
@@ -193,43 +194,40 @@ metaOfInterface ii
 --   This contains all the information needed to import a super into
 --   a client module.
 --
-supersFromInterface :: Ord n => Interface n -> Map n (Super n)
-supersFromInterface ii
+importValuesOfInterface :: Ord n => Interface n -> Map n (ImportValue n (Type n))
+importValuesOfInterface ii
  = let
-        -- The current module name.
-        modName = interfaceModuleName ii
-
-        -- Build a super declaration from an export.
-        takeSuperOfExport ex@ExportValueLocal{}
-         = Just $ Super
-                { superName        = exportValueLocalName ex
-                , superModuleName  = modName
-                , superType        = exportValueLocalType ex
-                , superImportValue = ImportValueModule
-                                   { importValueModuleName  = modName
-                                   , importValueModuleVar   = exportValueLocalName ex
-                                   , importValueModuleType  = exportValueLocalType ex
-                                   , importValueModuleArity = exportValueLocalArity ex }
-                }
-
-        takeSuperOfExport ex@ExportValueSea{}
-         = Just $ Super
-                { superName        = exportValueSeaNameInternal ex
-                , superModuleName  = modName
-                , superType        = exportValueSeaType ex
-                , superImportValue = ImportValueSea
-                                   { importValueSeaNameInternal = exportValueSeaNameInternal ex
-                                   , importValueSeaNameExternal = exportValueSeaNameExternal ex
-                                   , importValueSeaType         = exportValueSeaType ex }
-                }
-
-        takeSuperOfExport _
+        -- These should only be present in the source language before,
+        -- we've done type checking and resolved the type.
+        importOfExport ExportValueLocalNoType{}
          = Nothing
 
-   in   Map.fromList
-                [ (n, let Just s = takeSuperOfExport ex in s)
-                | (n, ex) <- moduleExportValues $ interfaceModule ii]
+        importOfExport ex@ExportValueLocal{}
+         = Just (exportValueLocalName ex, ImportValueModule
+         { importValueModuleName        = exportValueLocalModuleName ex
+         , importValueModuleVar         = exportValueLocalName ex
+         , importValueModuleType        = exportValueLocalType ex
+         , importValueModuleArity       = exportValueLocalArity ex })
 
+        importOfExport ex@ExportValueSea{}
+         = Just (exportValueSeaNameInternal ex, ImportValueSea
+         { importValueSeaNameInternal   = exportValueSeaNameInternal ex
+         , importValueSeaNameExternal   = exportValueSeaNameExternal ex
+         , importValueSeaType           = exportValueSeaType ex })
+
+   in   Map.fromList
+                $ mapMaybe importOfExport
+                $ map snd $ moduleExportValues $ interfaceModule ii
+
+
+-- | Extract a map of all data declarations by type constructor from a module interface.
+dataDefsByTyConOfInterface :: Ord n => Interface n -> Map n (DataDef n)
+dataDefsByTyConOfInterface ii
+ = Map.union
+        (Map.fromList [ (dataDefTypeName def, def)
+                      | def <- map snd $ moduleImportDataDefs $ interfaceModule ii])
+        (Map.fromList [ (dataDefTypeName def, def)
+                      | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
 
 
 -- | Take a module interface and extract a map of defined data constructor

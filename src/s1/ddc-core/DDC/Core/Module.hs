@@ -72,7 +72,8 @@ import Data.Maybe
 
 
 -- Module -----------------------------------------------------------------------------------------
--- | A module can be mutually recursive with other modules.
+-- | A module definition is closed, and carries has enough information
+--   to type check it without loading interface files.
 data Module a n
         = ModuleCore
         { -- | Name of this module.
@@ -91,6 +92,10 @@ data Module a n
         , moduleExportValues    :: ![(n, ExportValue  n (Type n))]
 
           -- Imports ------------------
+          -- These are things that we have imported from other modules and are needed
+          -- to type check the locally defined things.
+          -- TODO: Imported things are not necessesarally visible, we might have a data
+          --       type D1 defined in terms of another D2, but D1 is exported but not D2.
           -- | Imported foreign types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 

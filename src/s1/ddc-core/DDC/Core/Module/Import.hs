@@ -106,7 +106,8 @@ mapTypeOfImportCap f ii
 data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
-        { -- | Name of the module that we're importing from.
+        { -- | Name of the module the original value is defined in,
+          --   which may not be the module that we're importing it via.
           importValueModuleName         :: !ModuleName
 
           -- | Name of the the value that we're importing.

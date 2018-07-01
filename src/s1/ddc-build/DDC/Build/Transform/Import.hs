@@ -166,11 +166,14 @@ findImportSourceForDaVar
         -> IO (Either Error (ImportValue E.Name (Type E.Name)))
 
 findImportSourceForDaVar store modNames nSuper
- = do   result  <- Store.findSuper store nSuper modNames
+ = do   result  <- Store.findImportValue store nSuper modNames
         case result of
-         []      -> return $ Left  $ ErrorNotFound nSuper
-         [super] -> return $ Right $ Store.superImportValue super
-         supers  -> return $ Left  $ ErrorMultiple nSuper (map Store.superModuleName supers)
+         []     -> return $ Left  $ ErrorNotFound nSuper
+         [iv]   -> return $ Right $ iv
+
+         -- TODO: also return defining module for sea imports.
+         ivs    -> return $ Left  $ ErrorMultiple nSuper
+                        [ importValueModuleName iv | iv@ImportValueModule{} <- ivs ]
 
 
 ---------------------------------------------------------------------------------------------------
