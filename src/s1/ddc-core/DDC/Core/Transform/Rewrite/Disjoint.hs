@@ -183,9 +183,7 @@ areDistinctBound env p q
         where   -- Check if region is 'concrete' either a region handle (R0#)
                 -- or bound by a letregion in a higher scope.
                 concrete r
-                 = case r of
-                        UPrim _ -> True
-                        _       -> RE.containsRegion r env
+                 = RE.containsRegion r env
 
                 check w
                  | (TCon (TyConWitness (TwConDistinct _)) : args)

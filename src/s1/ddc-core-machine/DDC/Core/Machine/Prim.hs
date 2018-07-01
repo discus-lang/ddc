@@ -401,10 +401,10 @@ tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConMachine (TyConTuple (length tys))) tys
 
 tStream :: Type Name -> Type Name
-tStream tA      = tApps (tConTyConMachine TyConStream)    [tA]
+tStream tA      = tApps (tConTyConMachine TyConStream)  [tA]
 
 tSource :: Type Name -> Type Name
-tSource tA      = tApps (tConTyConMachine TyConSource)    [tA]
+tSource tA      = tApps (tConTyConMachine TyConSource)  [tA]
 
 tSink   :: Type Name -> Type Name
 tSink   tA      = tApps (tConTyConMachine TyConSink)    [tA]
@@ -416,7 +416,7 @@ tProcess = tConTyConMachine TyConProcess
 tConTyConMachine :: TyConMachine -> Type Name
 tConTyConMachine tcm
  = let  k       = kindTyConMachine tcm
-        u       = UPrim (NameTyConMachine tcm)
+        u       = UName (NameTyConMachine tcm)
         tc      = TyConBound u k
    in   TCon tc
 

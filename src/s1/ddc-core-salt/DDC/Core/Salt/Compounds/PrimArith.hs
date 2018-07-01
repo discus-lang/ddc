@@ -41,13 +41,13 @@ xBXOr   = xOp2 PrimArithBXOr
 
 xOp1 :: PrimArith -> a -> Type Name -> Exp a Name -> Exp a Name
 xOp1 p a tElem x1
- = let  u       = UPrim (NamePrimOp $ PrimArith $ p)
+ = let  u       = UName (NamePrimOp $ PrimArith $ p)
    in   xApps a (XVar a u) [RType tElem, RTerm x1]
 
 
 xOp2 :: PrimArith -> a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
 xOp2 p a tElem x1 x2
- = let  u       = UPrim (NamePrimOp $ PrimArith $ p)
+ = let  u       = UName (NamePrimOp $ PrimArith $ p)
    in   xApps a (XVar a u) [RType tElem, RTerm x1, RTerm x2]
 
 

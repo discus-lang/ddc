@@ -223,12 +223,6 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
              |  otherwise
              -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
 
-            -- Lookup the kinds of primitives from the prim environment.
-            UPrim{}
-             -> case EnvT.lookup u $ contextEnvT ctx0 of
-                 Just k' -> return (tt, k')
-                 _       -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
-
             -- Type constructors are always defined at top-level and not
             -- by anonymous debruijn binding.
             UIx{}   -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u

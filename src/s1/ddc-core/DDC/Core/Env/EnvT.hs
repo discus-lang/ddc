@@ -185,7 +185,6 @@ lookup uu env
          `mplus` envtPrimFun env n
 
         UIx i    -> P.lookup i (zip [0..] (envtStack env))
-        UPrim n  -> envtPrimFun env n
 
 
 -- | Lookup a bound name from an environment.

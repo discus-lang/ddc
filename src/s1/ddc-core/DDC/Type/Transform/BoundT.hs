@@ -21,17 +21,16 @@ liftAtDepthT
 
 liftAtDepthT n d
  = mapBoundAtDepthT liftU d
- where  
+ where
         liftU d' u
          = case u of
                 UName{}         -> u
-                UPrim{}         -> u
                 UIx i
                  | d' <= i      -> UIx (i + n)
                  | otherwise    -> u
 
 
--- | Wrapper for `liftAtDepthX` that starts at depth 0.       
+-- | Wrapper for `liftAtDepthX` that starts at depth 0.
 liftT   :: MapBoundT c n => Int -> c n -> c n
 liftT n xx  = liftAtDepthT n 0 xx
 
@@ -47,17 +46,16 @@ lowerAtDepthT
 
 lowerAtDepthT n d
  = mapBoundAtDepthT lowerU d
- where  
+ where
         lowerU d' u
          = case u of
                 UName{}         -> u
-                UPrim{}         -> u
                 UIx i
                  | d' <= i      -> UIx (i - n)
                  | otherwise    -> u
 
 
--- | Wrapper for `lowerAtDepthX` that starts at depth 0.       
+-- | Wrapper for `lowerAtDepthX` that starts at depth 0.
 lowerT   :: MapBoundT c n => Int -> c n -> c n
 lowerT n xx  = lowerAtDepthT n 0 xx
 
@@ -68,7 +66,7 @@ class MapBoundT (c :: * -> *) n where
  --   The function is passed the current binding depth.
  --   This is used to defined both `liftT` and `lowerT`.
  mapBoundAtDepthT
-        :: (Int -> Bound n -> Bound n)  
+        :: (Int -> Bound n -> Bound n)
                         -- ^ Function to apply to the bound occ.
                         --   It is passed the current binding depth.
         -> Int          -- ^ Current binding depth.

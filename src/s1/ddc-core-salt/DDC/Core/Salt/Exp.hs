@@ -58,7 +58,7 @@ data ErrorFromAnnot
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
-        N.XVar  _ (C.UPrim (A.NamePrimVal (A.PrimValOp op)))
+        N.XVar  _ (C.UName (A.NamePrimVal (A.PrimValOp op)))
          -> G.XPrim <$> pure op
 
         N.XVar  _ u

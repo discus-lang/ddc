@@ -127,5 +127,5 @@ xSplit n tK xRN xDownFn xTailFn
 -- Utils -----------------------------------------------------------------------
 xVarOpControl :: OpControl -> ExpF
 xVarOpControl op
-        = XVar (UPrim (NameOpControl op))
+        = XVar (UName (NameOpControl op))
 

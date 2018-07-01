@@ -24,7 +24,6 @@ import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
-import DDC.Driver.Command.ToPHP
 import qualified DDC.Core.Flow          as Flow
 
 import DDC.Driver.Interface.Source
@@ -148,12 +147,6 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdToLlvmFromFile dconfig store filePath
-
-        -- Convert a module to C
-        ModeToPHP filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
-                runError $ cmdToPHPFromFile  dconfig store filePath
 
         -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.

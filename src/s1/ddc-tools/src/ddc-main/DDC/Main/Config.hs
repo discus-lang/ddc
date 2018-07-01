@@ -57,9 +57,6 @@ data Mode
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 
-        -- | Convert a module to PHP.
-        | ModeToPHP     FilePath
-
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.
         | ModeFlowPrep          FilePath

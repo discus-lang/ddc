@@ -36,7 +36,7 @@ ukTop
 
 -- | All the Prim Store vars have this form.
 xPrimStore a p
- = XVar a (UPrim (NamePrimOp $ PrimStore p))
+ = XVar a (UName (NamePrimOp $ PrimStore p))
 
 
 -- | Take the number of bytes needed to store a value of a primitive type.

@@ -122,12 +122,12 @@ toCoreTC uu tc
                 -- Primitive TyCons
                 S.TyConPrimTyCon tcy
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyCon tcy
-                        return  $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy)) k
+                        return  $ Just $ C.TyConBound (C.UName (C.NamePrimTyCon tcy)) k
 
                 S.TyConPrimDiscus tct
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyConDiscus tct
                         let tct' =  toCoreTyConDiscus tct
-                        return  $ Just $ C.TyConBound (C.UPrim (C.NameTyConDiscus tct')) k
+                        return  $ Just $ C.TyConBound (C.UName (C.NameTyConDiscus tct')) k
 
         -- Bound type constructors.
         --   The embedded kind is set to Bot. We rely on the spreader

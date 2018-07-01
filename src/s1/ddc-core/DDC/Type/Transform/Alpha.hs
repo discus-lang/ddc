@@ -40,7 +40,6 @@ instance Alpha Bound where
   = case uu of
         UIx i           -> UIx i
         UName n         -> UName (f n)
-        UPrim n         -> UPrim (f n)
 
 
 instance Alpha TyCon where

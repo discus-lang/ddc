@@ -188,11 +188,6 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
 
-        | "-to-php"  : file : rest  <- args
-        = parseArgs rest
-        $ setMode config $ ModeToPHP file
-
-
         -- Language Server ----------------------
         | "-lsp" : rest <- args
         = parseArgs rest
@@ -279,7 +274,6 @@ flagOfMode mode
         ModeLSP{}               -> Just "-lsp"
         ModeToSalt{}            -> Just "-to-salt"
         ModeToLLVM{}            -> Just "-to-llvm"
-        ModeToPHP{}             -> Just "-to-php"
         ModeFlowPrep{}          -> Just "-flow-prep"
         ModeFlowLower{}         -> Just "-flow-lower"
         ModeFlowLowerKernel{}   -> Just "-flow-lower-kernel"

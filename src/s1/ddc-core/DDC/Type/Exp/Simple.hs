@@ -120,7 +120,7 @@ module DDC.Type.Exp.Simple
         , tApp,          ($:)
         , tApps,         takeTApps
         , takeTyConApps
-        , takePrimTyConApps
+        , takeNameTyConApps
         , takeDataTyConApps
         , takePrimeRegion
 

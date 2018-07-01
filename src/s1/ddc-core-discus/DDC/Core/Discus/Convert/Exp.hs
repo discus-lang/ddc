@@ -365,7 +365,7 @@ takeNameFragAppX :: Exp a D.Name -> Maybe D.Name
 takeNameFragAppX xx
  = case xx of
         XApp{}
-          -> case takeXFragApps xx of
+          -> case takeXNameApps xx of
                 Just (n, _)     -> Just n
                 Nothing         -> Nothing
 

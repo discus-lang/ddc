@@ -148,19 +148,19 @@ data ExpContext
 ---------------------------------------------------------------------------------------------------
 xConvert :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xConvert a t1 t2 x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)))
+        = xApps a (XVar a  (UName (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)))
                   [ RType t1, RType t2, RTerm x1 ]
 
 
 xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xTakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)))
+        = xApps a (XVar a  (UName (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)))
                   [ RType tR, RType tA, RTerm x1 ]
 
 
 xMakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xMakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)))
+        = xApps a (XVar a  (UName (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)))
                   [ RType tR, RType tA, RTerm x1 ]
 
 

@@ -25,7 +25,6 @@ instance NFData n => NFData (Bound n) where
   = case uu of
         UIx   i         -> rnf i
         UName n         -> rnf n
-        UPrim u         -> rnf u
 
 
 instance NFData n => NFData (Type n) where

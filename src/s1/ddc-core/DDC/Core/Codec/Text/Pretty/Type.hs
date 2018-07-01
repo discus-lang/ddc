@@ -52,7 +52,6 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName n        -> ppr n
-        UPrim n        -> ppr n
         UIx i          -> text "^" <> ppr i
 
 

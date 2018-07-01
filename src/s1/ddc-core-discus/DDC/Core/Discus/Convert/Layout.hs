@@ -46,16 +46,16 @@ heapObjectOfDataCtor pp ctor
         -- All of the primitive numeric types will fit in a RawSmall object.
         --   Each field needs to be non-abstract, and have a real width.
         | [t1]                                    <- dataCtorFieldTypes ctor
-        , Just (NameTyConDiscus TyConDiscusU, [tp]) <- takePrimTyConApps t1
-        , Just (NamePrimTyCon  ptc,         [])   <- takePrimTyConApps tp
+        , Just (NameTyConDiscus TyConDiscusU, [tp]) <- takeNameTyConApps t1
+        , Just (NamePrimTyCon  ptc,         [])   <- takeNameTyConApps tp
         , isJust $ A.primTyConWidth pp ptc
         = Just HeapObjectSmall
 
         -- Unboxed strings are represented as pointers to static memory.
         -- The pointer will fit in a RawSmall object.
         | [t1]                                        <- dataCtorFieldTypes ctor
-        , Just (NameTyConDiscus TyConDiscusU, [tp])     <- takePrimTyConApps t1
-        , Just (NamePrimTyCon  PrimTyConTextLit, [])  <- takePrimTyConApps tp
+        , Just (NameTyConDiscus TyConDiscusU, [tp])     <- takeNameTyConApps t1
+        , Just (NamePrimTyCon  PrimTyConTextLit, [])  <- takeNameTyConApps tp
         = Just HeapObjectSmall
 
         | otherwise
@@ -104,9 +104,11 @@ fieldSizeOfType platform tt
         -- Type constructor might be a primitive or boxed value type.
         TCon tc
          -> case tc of
-                TyConBound (UPrim n) _ -> fieldSizeOfPrim platform n
-                TyConBound _ _         -> Just $ platformAddrBytes platform
-                _                      -> Nothing
+                TyConBound (UName n) _
+                 -> case fieldSizeOfPrim platform n of
+                        Just bytes      -> Just bytes
+                        _               -> Just $ platformAddrBytes platform
+                _                       -> Nothing
 
         --- Higher kinded types are not value types.
         TAbs{}          -> Nothing

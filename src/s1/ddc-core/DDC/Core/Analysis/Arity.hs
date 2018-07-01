@@ -59,7 +59,6 @@ getArity (named, anon) u
 
         -- Lookup arities of named things from the stack.
         UName n -> Map.lookup n named
-        UPrim n -> Map.lookup n named
 
 
 -- Slurp ----------------------------------------------------------------------

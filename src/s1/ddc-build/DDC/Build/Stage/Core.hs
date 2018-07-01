@@ -31,7 +31,6 @@ import qualified DDC.Core.Simplifier            as C
 
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 import qualified DDC.Core.Transform.Resolve     as CResolve
-import qualified DDC.Core.Transform.SpreadX     as CSpread
 
 
 ---------------------------------------------------------------------------------------------------
@@ -105,12 +104,7 @@ coreParse fragment srcName srcLine sinkTokens str
                         Left err -> throwE [B.ErrorLoad err]
                         Right mm -> return mm
 
-        -- Detect names of primitives values and types in parsed code.
-        let kenv      = C.profilePrimKinds profile
-        let tenv      = C.profilePrimTypes profile
-        let mm_spread = CSpread.spreadX kenv tenv mm_parsed
-
-        return mm_spread
+        return mm_parsed
 
 
 ---------------------------------------------------------------------------------------------------

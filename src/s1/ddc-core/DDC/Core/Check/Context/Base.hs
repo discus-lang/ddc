@@ -269,22 +269,26 @@ popToPos pos ctx
 lookupType :: Eq n => Bound n -> Context n -> Maybe (Type n)
 lookupType u ctx
  = case u of
-        UPrim{}         -> Nothing
-        UName n         -> goName n    (contextElems ctx)
-        UIx   ix        -> goIx   ix 0 (contextElems ctx)
+        UName n  -> goName n    (contextElems ctx)
+        UIx   ix -> goIx   ix 0 (contextElems ctx)
  where
-        goName _n []    = Nothing
+        goName n []
+         = EnvX.envxPrimFun (contextEnvX ctx) n
+
         goName n  (ElemType (BName n' t) : ls)
          | n == n'      = Just t
          | otherwise    = goName n ls
+
         goName  n (_ : ls)
          = goName n ls
 
 
         goIx _ix _d []  = Nothing
+
         goIx ix d  (ElemType (BAnon t) : ls)
          | ix == d      = Just t
          | otherwise    = goIx   ix (d + 1) ls
+
         goIx ix d  (_ : ls)
          = goIx ix d ls
 
@@ -294,26 +298,28 @@ lookupType u ctx
 lookupKind :: Ord n => Bound n -> Context n -> Maybe (Kind n, Role)
 lookupKind u ctx
  = case u of
-        UPrim{}
-         -> case EnvT.lookup u (contextEnvT ctx) of
+        UName n  -> goName n    (contextElems ctx)
+        UIx   ix -> goIx   ix 0 (contextElems ctx)
+ where
+        goName _ []
+         = case EnvT.lookup u (contextEnvT ctx) of
                 Nothing -> Nothing
                 Just k  -> Just (k, RoleAbstract)
 
-        UName n         -> goName n    (contextElems ctx)
-        UIx   ix        -> goIx   ix 0 (contextElems ctx)
- where
-        goName _n []    = Nothing
         goName n  (ElemKind (BName n' t) role : ls)
          | n == n'      = Just (t, role)
          | otherwise    = goName n ls
+
         goName  n (_ : ls)
          = goName n ls
 
 
         goIx _ix _d []  = Nothing
+
         goIx ix d  (ElemKind (BAnon t) role : ls)
          | ix == d      = Just (t, role)
          | otherwise    = goIx   ix (d + 1) ls
+
         goIx ix d  (_ : ls)
          = goIx ix d ls
 

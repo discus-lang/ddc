@@ -79,7 +79,7 @@ tFloat bits = tConPrim (PrimTyConFloat bits)
 -- | Primitive `Ptr` type with given region and data type
 tPtr   :: Type Name -> Type Name -> Type Name
 tPtr r a
-         = tConPrim PrimTyConPtr `TApp` r `TApp` a
+ = tConPrim PrimTyConPtr `TApp` r `TApp` a
 
 
 -- | The text literal type.
@@ -91,6 +91,6 @@ tTextLit = tConPrim PrimTyConTextLit
 tConPrim :: PrimTyCon -> Type Name
 tConPrim tc
  = let k = kindPrimTyCon tc
-   in      TCon (TyConBound (UPrim (NamePrimTyCon tc)) k)
+   in      TCon (TyConBound (UName (NamePrimTyCon tc)) k)
 
 

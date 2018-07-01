@@ -177,13 +177,13 @@ slurpArgUpdates _ _ args []
 -- | Build an expression that increments a natural.
 xIncrement :: a -> Exp a Name -> Exp a Name
 xIncrement a xx
-        = xApps a (XVar a (UPrim (NamePrimArith PrimArithAdd)))
+        = xApps a (XVar a (UName (NamePrimArith PrimArithAdd)))
                   [ RType tNat, RTerm xx, RTerm (XCon a (dcNat 1)) ]
 
 -- | Build an expression that substracts two integers.
 xSubInt    :: a -> Exp a Name -> Exp a Name -> Exp a Name
 xSubInt a x1 x2
-        = xApps a (XVar a (UPrim (NamePrimArith PrimArithSub)))
+        = xApps a (XVar a (UName (NamePrimArith PrimArithSub)))
                   [ RType tNat, RTerm x1, RTerm x2]
 
 
@@ -226,7 +226,7 @@ windBodyX refMap context xx
         --
         XLet a (LLet (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
-                , [RType tElem, RTerm xVal] ) <- takeXFragApps x
+                , [RType tElem, RTerm xVal] ) <- takeXNameApps x
          -> let
                 -- Add the new ref record to the map.
                 info        = RefInfo
@@ -254,7 +254,7 @@ windBodyX refMap context xx
          | Just ( NameOpStore OpStoreRead
                 , [ RType _tElem
                   , RTerm (XVar _ (UName nRef))] )
-                                        <- takeXFragApps x
+                                        <- takeXNameApps x
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
          ->     XLet a  (LLet bResult (XVar a (UName nVal)))
@@ -268,7 +268,7 @@ windBodyX refMap context xx
          | Just ( NameOpStore OpStoreWrite
                 , [RType _tElem
                 ,  RTerm (XVar _ (UName nRef))
-                ,  RTerm xVal])         <- takeXFragApps x
+                ,  RTerm xVal])         <- takeXNameApps x
          , refMap'      <- bumpVersionInRefMap nRef refMap
          , Just info    <- lookupRefInfo refMap' nRef
          , Just nVal    <- nameOfRefInfo info
@@ -284,7 +284,7 @@ windBodyX refMap context xx
                 , [ RType tK
                   , RTerm xLength
                   , RTerm (XLam  _ bIx@(BName nIx _) xBody)])
-                                        <- takeXFragApps x
+                                        <- takeXNameApps x
          -> let
                 -- Name of the new loop function.
                 nLoop           = NameVar "loop"
@@ -373,7 +373,7 @@ windBodyX refMap context xx
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlGuard
                 , [ RTerm xFlag
-                  , RTerm (XLam _ _unit xBody) ]) <- takeXFragApps x
+                  , RTerm (XLam _ _unit xBody) ]) <- takeXNameApps x
          -> let
                 context' = context
                          ++ [ ContextGuard
@@ -402,7 +402,7 @@ windBodyX refMap context xx
         XApp{}
          | Just ( NameOpControl (OpControlSplit n)
                 , [ RType tK, RTerm xN, RTerm xBranch1, RTerm xBranch2 ])
-                        <- takeXFragApps xx
+                        <- takeXNameApps xx
          -> let xBranch1'       = down xBranch1
                 xBranch2'       = down xBranch2
             in  xSplit n tK xN xBranch1' xBranch2'
@@ -452,7 +452,7 @@ xNatOfRateNat tK xR
 
 xVarOpConcrete :: OpConcrete -> Exp () Name
 xVarOpConcrete op
-        = XVar  () (UPrim (NameOpConcrete op))
+        = XVar  () (UName (NameOpConcrete op))
 
 
 
@@ -468,7 +468,7 @@ xSplit n tK xRN xDownFn xTailFn
 
 xVarOpControl :: OpControl -> Exp () Name
 xVarOpControl op
-        = XVar  () (UPrim (NameOpControl op))
+        = XVar  () (UName (NameOpControl op))
 
 
 -------------------------------------------------------------------------------

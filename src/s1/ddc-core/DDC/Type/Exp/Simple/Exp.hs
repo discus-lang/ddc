@@ -57,9 +57,6 @@ data Bound n
 
         -- | Named variable that should be in the environment.
         | UName !n
-
-        -- | Named primitive
-        | UPrim !n
         deriving Show
 
 

@@ -81,7 +81,7 @@ liftWorker lifting envScalar envLift xx
          -- ISSUE #328: Element type for rep opretora is hard coded to Float32
          | any (boundMatchesBind u) envScalar
          , nPrim        <- PrimVecRep (liftingFactor lifting)
-         -> Right $ XApp (XApp  (XVar (UPrim (NamePrimVec nPrim)))
+         -> Right $ XApp (XApp  (XVar (UName (NamePrimVec nPrim)))
                                 (XType $ tFloat 32))
                          xx
 
@@ -91,14 +91,14 @@ liftWorker lifting envScalar envLift xx
          | DaConPrim (NameLitFloat _ 32) _
                     <- dc
          , nPrim    <- PrimVecRep (liftingFactor lifting)
-         -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim)))
+         -> Right $ XApp (XApp (XVar (UName (NamePrimVec nPrim)))
                                (XType $ tFloat 32))
                          xx
 
         -- Replace scalar primops by vector versions.
-        XApp (XVar (UPrim (NamePrimArith prim))) (XType tElem)
+        XApp (XVar (UName (NamePrimArith prim))) (XType tElem)
          |  Just prim'  <- liftPrimArithToVec (liftingFactor lifting) prim
-         -> Right $ XApp (XVar (UPrim (NamePrimVec prim')))
+         -> Right $ XApp (XVar (UName (NamePrimVec prim')))
                          (XType tElem)
 
 
@@ -118,7 +118,7 @@ liftWorker lifting envScalar envLift xx
 lowerSeriesRate :: Lifting -> TypeF -> Maybe TypeF
 lowerSeriesRate lifting tt
  | Just (NameTyConFlow TyConFlowSeries, [tP, tK, tA])
-        <- takePrimTyConApps tt
+        <- takeNameTyConApps tt
  , c    <- liftingFactor lifting
  = Just (tSeries tP (tDown c tK) tA)
 

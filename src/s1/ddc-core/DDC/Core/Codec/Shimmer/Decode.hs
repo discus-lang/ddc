@@ -5,7 +5,6 @@ module DDC.Core.Codec.Shimmer.Decode
         , takeModuleDecls
         , takeTyCon)
 where
-import qualified DDC.Core.Transform.SpreadX     as SpreadX
 import qualified DDC.Core.Interface.Base        as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -58,18 +57,15 @@ decodeInterface
         -> BS.ByteString        -- ^ Interface file contents.
         -> Maybe (C.Interface n)
 
-decodeInterface config kenv tenv filePath timeStamp bs
+decodeInterface config _kenv _tenv filePath timeStamp bs
  | Just mm <- takeModuleDecls config
            $  S.unpackFileDecls bs
- = let
-        mm_spread = SpreadX.spreadX kenv tenv mm
-
-   in   Just $ C.Interface
+ = Just $ C.Interface
         { C.interfaceFilePath   = filePath
         , C.interfaceTimeStamp  = timeStamp
         , C.interfaceVersion    = "version"
-        , C.interfaceModuleName = C.moduleName mm_spread
-        , C.interfaceModule     = mm_spread }
+        , C.interfaceModuleName = C.moduleName mm
+        , C.interfaceModule     = mm }
 
  | otherwise
  = Nothing
@@ -521,14 +517,8 @@ fromBound c ss
 takeBound :: Ord n => Config n -> SExp -> Maybe (C.Bound n)
 takeBound c ss
  = case ss of
-        XNat n
-          -> Just $ C.UIx $ fromIntegral n
-
-        XAps "up" [ssRef]
-          | Just n       <- configTakeRef c ssRef
-          -> Just $ C.UPrim n
-
-        _ -> fmap C.UName $ configTakeRef c ss
+        XNat n  -> Just $ C.UIx $ fromIntegral n
+        _       -> fmap C.UName $ configTakeRef c ss
 
 
 -- TyCon ------------------------------------------------------------------------------------------

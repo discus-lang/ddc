@@ -71,7 +71,6 @@ elem t ts@TypeSumSet{}
  = case t of
         TVar (UName n)   -> Map.member n (typeSumBoundNamed ts)
         TVar (UIx   i)   -> Map.member i (typeSumBoundAnon  ts)
-        TVar (UPrim n)   -> Map.member n (typeSumBoundNamed ts)
         TCon{}           -> L.elem t (typeSumSpill ts)
 
         TAbs{}           -> L.elem t (typeSumSpill ts)
@@ -111,7 +110,6 @@ insert t ts@TypeSumSet{}
    in case t of
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
-        TVar (UPrim n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
 
         TCon{}          -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
 
@@ -141,7 +139,6 @@ delete t ts@TypeSumSet{}
  = case t of
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
-        TVar (UPrim n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TCon{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
 
         TAbs{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
@@ -334,11 +331,8 @@ instance Eq n => Eq (TypeSum n) where
 instance Ord n => Ord (Bound n) where
  compare (UName n1)     (UName n2)              = compare n1 n2
  compare (UIx   i1)     (UIx   i2)              = compare i1 i2
- compare (UPrim n1)     (UPrim n2)              = compare n1 n2
  compare UIx{}          _                       = LT
  compare UName{}        UIx{}                   = GT
- compare UName{}        UPrim{}                 = LT
- compare UPrim{}        _                       = GT
 
 
 instance Eq n => Eq (TypeSumVarCon n) where

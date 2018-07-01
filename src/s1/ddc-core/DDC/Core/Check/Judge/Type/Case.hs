@@ -71,8 +71,8 @@ checkCase !table !ctx0 mode demand
               -> return ( lookupModeOfDataType nTyCon dataDefs
                         , ts )
 
-              -- Primitive data types.
-              | TyConBound u@(UPrim nTyCon) _ <- tc
+              -- Primitive types in the environment.
+              | TyConBound u@(UName nTyCon) _ <- tc
               , Just (k, _)    <- lookupKind u ctx0
               , takeResultKind k == kData
               -> return ( lookupModeOfDataType nTyCon dataDefs

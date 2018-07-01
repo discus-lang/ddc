@@ -13,7 +13,7 @@ import DDC.Core.Exp.Annot
 
 -- | All the Prim Cast vars have this form.
 xPrimCast a p
- = XVar a (UPrim (NamePrimOp $ PrimCast p))
+ = XVar a (UName (NamePrimOp $ PrimCast p))
 
 
 -- | Convert a value to a similarly sized type.

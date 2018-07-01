@@ -292,7 +292,7 @@ toCoreX a xx
 
         S.XPrim p
          -> case toCorePrimVal p of
-                Just p' -> return $ C.XVar a (C.UPrim p')
+                Just p' -> return $ C.XVar a (C.UName p')
                 _       -> error "ddc-source-discus: cannot convert prim"
 
         S.XVar u

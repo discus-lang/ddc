@@ -39,7 +39,7 @@ repOfType tt
         -- These types are listed out in full so anyone who adds more
         -- constructors to the PrimTyCon type is forced to specify what
         -- the representation is.
-        | Just (NamePrimTyCon n, _)     <- takePrimTyConApps tt
+        | Just (NamePrimTyCon n, _)     <- takeNameTyConApps tt
         = case n of
                 PrimTyConVoid           -> Just RepNone
 
@@ -56,11 +56,11 @@ repOfType tt
                 PrimTyConTag{}          -> Just RepBoxed
 
         -- Explicitly unboxed things.
-        | Just (n, _)   <- takePrimTyConApps tt
+        | Just (n, _)   <- takeNameTyConApps tt
         , NameTyConDiscus TyConDiscusU    <- n
         = Just RepUnboxed
 
-        | Just (NameTyConDiscus n, _)    <- takePrimTyConApps tt
+        | Just (NameTyConDiscus n, _)    <- takeNameTyConApps tt
         = case n of
                 -- These are all higher-kinded type constructors,
                 -- which don't have any associated values.
@@ -78,12 +78,12 @@ repOfType tt
 convertRepType :: Rep -> Type Name -> Maybe (Type Name)
 convertRepType RepBoxed tt
         -- Produce the value type from an unboxed one.
-        | Just (n, [t]) <- takePrimTyConApps tt
+        | Just (n, [t]) <- takeNameTyConApps tt
         , NameTyConDiscus TyConDiscusU    <- n
         = Just t
 
 convertRepType RepUnboxed tt
-        | Just (NamePrimTyCon tc, [])   <- takePrimTyConApps tt
+        | Just (NamePrimTyCon tc, [])   <- takeNameTyConApps tt
         = case tc of
                 PrimTyConBool           -> Just $ tUnboxed tBool
                 PrimTyConNat            -> Just $ tUnboxed tNat
@@ -95,7 +95,7 @@ convertRepType RepUnboxed tt
                 PrimTyConTextLit        -> Just $ tUnboxed tTextLit
                 _                       -> Nothing
 
-        | Just (NameTyConDiscus tc, [])   <- takePrimTyConApps tt
+        | Just (NameTyConDiscus tc, [])   <- takeNameTyConApps tt
         = case tc of
                 _                       -> Nothing
 

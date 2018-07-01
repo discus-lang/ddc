@@ -57,19 +57,17 @@ equivWithBindsT env stack1 stack2 t1 t2
          -- (forall a. a) != (forall b. a)
          | Nothing         <- getBindType stack1 u1
          , Nothing         <- getBindType stack2 u2
-         , u1 == u2        -> checkBounds u1 u2 True
+         , u1 == u2        -> True
 
          -- Both variables are bound in foralls, so check the stack
          -- to see if they would be equivalent if we named them.
          | Just (ix1, t1a) <- getBindType stack1 u1
          , Just (ix2, t2a) <- getBindType stack2 u2
          , ix1 == ix2
-         -> checkBounds u1 u2
-         $  equivWithBindsT env stack1 stack2 t1a t2a
+         -> equivWithBindsT env stack1 stack2 t1a t2a
 
          | otherwise
-         -> checkBounds u1 u2
-         $  False
+         -> False
 
         -- Lookup type equations.
         (TCon (TyConBound (UName n) _), _)
@@ -121,26 +119,6 @@ equivWithBindsT env stack1 stack2 t1 t2
             &&  (checkFast || checkSlow)
 
         (_, _)  -> False
-
-
--- | If we have a UName and UPrim with the same name then these won't match
---   even though they pretty print the same. This will only happen due to
---   a compiler bugs, but is very confusing when it does, so we check for
---   this case explicitly.
-checkBounds :: Eq n => Bound n -> Bound n -> a -> a
-checkBounds u1 u2 x
- = case (u1, u2) of
-        (UName n2, UPrim n1)
-         | n1 == n2     -> die
-
-        (UPrim n1, UName n2)
-         | n1 == n2     -> die
-
-        _               -> x
- where
-  die   = error $ unlines
-        [ "DDC.Type.Equiv"
-        , "  Found a primitive and non-primitive bound variable with the same name."]
 
 
 -- | Unpack single element sums into plain types.

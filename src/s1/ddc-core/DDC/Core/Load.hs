@@ -29,7 +29,6 @@ module DDC.Core.Load
         , loadWitnessFromString
         , loadWitnessFromTokens)
 where
-import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
 import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Core.Check                           (Mode(..), CheckTrace)
@@ -37,7 +36,6 @@ import DDC.Core.Exp
 import DDC.Core.Exp.Annot.AnT                   (AnT)
 import DDC.Core.Module
 import DDC.Core.Fragment                        (Fragment)
-import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Data.Pretty
 import qualified DDC.Core.Transform.Reannotate  as Reannotate
@@ -154,8 +152,6 @@ loadModuleFromTokens fragment sourceName mode toks'
         -- Type checker config kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile profile
-        kenv    = profilePrimKinds  profile
-        tenv    = profilePrimTypes  profile
 
         -- Parse the tokens.
         goParse toks
@@ -163,7 +159,7 @@ loadModuleFromTokens fragment sourceName mode toks'
                         (C.pModule (C.contextOfProfile profile))
                         toks of
                 Left err        -> return (Left (ErrorParser err),     Nothing)
-                Right mm        -> goCheckType (spreadX kenv tenv mm)
+                Right mm        -> goCheckType mm
 
         -- Check that the module is type well-typed.
         goCheckType mm
@@ -210,8 +206,6 @@ parseModuleFromTokens fragment sourceName toks'
  = goParse toks'
  where
         profile = F.fragmentProfile fragment
-        kenv    = profilePrimKinds  profile
-        tenv    = profilePrimTypes  profile
 
         -- Parse the tokens.
         goParse toks
@@ -219,7 +213,7 @@ parseModuleFromTokens fragment sourceName toks'
                         (C.pModule (C.contextOfProfile profile))
                         toks of
                 Left err        -> Left  $ ErrorParser err
-                Right mm        -> Right $ Reannotate.reannotate (const ()) $ spreadX kenv tenv mm
+                Right mm        -> Right $ Reannotate.reannotate (const ()) mm
 
 
 
@@ -279,27 +273,27 @@ loadExpFromTokens fragment modules sourceName mode toks'
          = case BP.runTokenParser describeToken sourceName
                         (C.pExp (C.contextOfProfile profile))
                         toks of
-                Left err              -> return (Left (ErrorParser err),     Nothing)
-                Right t               -> goCheckType (spreadX kenv tenv t)
+            Left err    -> return (Left (ErrorParser err),     Nothing)
+            Right t     -> goCheckType t
 
         -- Check the kind of the type.
         goCheckType x
          =  C.checkExpIO config envx mode C.DemandNone x >>= \r
          -> case r of
-             (Left err, ct)            -> return (Left  (ErrorCheckExp err),  Just ct)
-             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
+             (Left err, ct)             -> return (Left  (ErrorCheckExp err),  Just ct)
+             (Right (x', _, _), ct)     -> goCheckCompliance ct x'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct x
          = case F.compliesWithEnvs profile kenv tenv x of
-            Just err                  -> return (Left (ErrorCompliance err), Just ct)
-            Nothing                   -> goCheckFragment ct x
+            Just err    -> return (Left (ErrorCompliance err), Just ct)
+            Nothing     -> goCheckFragment ct x
 
         -- Perform fragment specific checks.
         goCheckFragment ct x
          = case F.fragmentCheckExp fragment x of
-            Just err                  -> return (Left (ErrorFragment err),   Just ct)
-            Nothing                   -> return (Right x,                    Just ct)
+            Just err    -> return (Left (ErrorFragment err),   Just ct)
+            Nothing     -> return (Right x,                    Just ct)
 
 
 -- Type -------------------------------------------------------------------------------------------
@@ -339,7 +333,7 @@ loadTypeFromTokens fragment uni sourceName toks'
                         (C.pType (C.contextOfProfile profile))
                         toks of
                 Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadT (profilePrimKinds profile) t)
+                Right t   -> goCheckType t
 
         -- Check the kind of the type.
         goCheckType t
@@ -383,16 +377,13 @@ loadWitnessFromTokens fragment sourceName toks'
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
 
-        kenv    = profilePrimKinds profile
-        tenv    = profilePrimTypes profile
-
         -- Parse the tokens.
         goParse toks
          = case BP.runTokenParser describeToken sourceName
                 (C.pWitness (C.contextOfProfile profile))
                 toks of
                 Left err  -> Left (ErrorParser err)
-                Right t   -> goCheckType (spreadX kenv tenv t)
+                Right t   -> goCheckType t
 
         -- Check the kind of the type.
         goCheckType w

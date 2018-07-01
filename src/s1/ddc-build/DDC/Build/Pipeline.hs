@@ -17,10 +17,6 @@ module DDC.Build.Pipeline
         , PipeCore        (..)
         , pipeCore
 
-          -- * Core Tetra modules
-        , PipeTetra       (..)
-        , pipeTetra
-
           -- * Core Flow modules
         , PipeFlow        (..)
         , pipeFlow

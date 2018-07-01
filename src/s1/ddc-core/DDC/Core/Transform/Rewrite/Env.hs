@@ -146,9 +146,6 @@ containsRegion r env
         go (UName n) (w:ws)
          = any (T.boundMatchesBind (UName n)) w || go r ws
 
-        go (UPrim _) _
-         = False
-
 
 -- Defs -----------------------------------------------------------------------
 -- | Insert a rewrite definition into the environment.

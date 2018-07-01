@@ -35,7 +35,7 @@ threadConfig
 wrapResultType :: Type Name -> Type Name
 wrapResultType tt
  | Just (TyConBound u _, tsArgs)        <- takeTyConApps tt
- , UPrim n                              <- u
+ , UName n                              <- u
  , NameTyConFlow (TyConFlowTuple _)     <- n
  = tTupleN (tWorld : tsArgs)
 

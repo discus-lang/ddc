@@ -28,7 +28,7 @@ convertX xx
  = withRateXLAM b $ removeXLAM b <$> convertX x
 
  -- Operators that just need a region added as first argument
- | Just (op, xs@(_:_)) <- takeXFragApps xx
+ | Just (op, xs@(_:_)) <- takeXNameApps xx
  = case op of
 
     F.NameOpStore F.OpStoreNew
@@ -257,7 +257,7 @@ convertX xx
 
 
 prim anno n args
- = xApps anno (XVar anno (UPrim (T.NamePrimOp n))) args
+ = xApps anno (XVar anno (UName (T.NamePrimOp n))) args
 
 
 ---------------------------------------------------------------------------------------------------

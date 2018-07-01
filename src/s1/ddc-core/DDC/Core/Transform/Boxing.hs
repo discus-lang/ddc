@@ -118,23 +118,23 @@ boxingX config xx
 
         -- Application of primop being run at call site.
         XCast _ CastRun xx'@(XApp a _ _)
-         |  Just (n, asArgsAll) <- takeXFragApps xx'
+         |  Just (n, asArgsAll) <- takeXNameApps xx'
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a True xx' (XVar a (UPrim n'))
+            in  boxingPrimitive config a True xx' (XVar a (UName n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
         -- Application of primop.
         XApp a _ _
-         |  Just (n, asArgsAll) <- takeXFragApps xx
+         |  Just (n, asArgsAll) <- takeXNameApps xx
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a False xx (XVar a (UPrim n'))
+            in  boxingPrimitive config a False xx (XVar a (UName n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 

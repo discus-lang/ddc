@@ -80,6 +80,6 @@ tFunValue t     = tApp (tConTyConDiscus TyConDiscusF) t
 tConTyConDiscus :: TyConDiscus -> Type Name
 tConTyConDiscus tcf
  = let  k       = kindTyConDiscus tcf
-        u       = UPrim (NameTyConDiscus tcf)
+        u       = UName (NameTyConDiscus tcf)
         tc      = TyConBound u k
    in   TCon tc

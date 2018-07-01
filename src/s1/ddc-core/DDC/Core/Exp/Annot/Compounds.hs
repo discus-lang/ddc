@@ -36,7 +36,7 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXAppsWithAnnots
         , takeXConApps
         , takeXPrimApps
-        , takeXFragApps
+        , takeXNameApps
 
           -- ** Arguments
         , takeRType
@@ -340,14 +340,14 @@ takeXPrimApps xx
         _                       -> Nothing
 
 
--- | Flatten an application of a fragment specific primop into the variable
+-- | Flatten an application of a named function into the variable
 --   and its arguments.
 --
---   Returns `Nothing` if the expression isn't a primop application.
-takeXFragApps :: Exp a n -> Maybe (n, [Arg a n])
-takeXFragApps xx
+--   Returns `Nothing` if the expression isn't such an application.
+takeXNameApps :: Exp a n -> Maybe (n, [Arg a n])
+takeXNameApps xx
  = case takeXApps xx of
-        Just (XVar _ (UPrim p), as)   -> Just (p, as)
+        Just (XVar _ (UName p), as)   -> Just (p, as)
         _                             -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
@@ -536,7 +536,7 @@ takeWAppsAsList ww
 takePrimWiConApps :: Witness a n -> Maybe (n, [Witness a n])
 takePrimWiConApps ww
  = case takeWAppsAsList ww of
-        WCon _ wc : args | WiConBound (UPrim n) _ <- wc
+        WCon _ wc : args | WiConBound (UName n) _ <- wc
           -> Just (n, args)
         _ -> Nothing
 

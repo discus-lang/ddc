@@ -66,7 +66,7 @@ collectExp :: Exp a A.Name -> Support
 collectExp xx
  -- Collect names of global variables defined with the globali# primitive.
  | Just ( A.NamePrimOp (A.PrimStore (A.PrimStoreGlobal bDefineHere))
-        , [RType t, RTerm x])              <- takeXFragApps xx
+        , [RType t, RTerm x])              <- takeXNameApps xx
  , XCon _ (C.DaConPrim name _)             <- x
  , A.NamePrimLit (A.PrimLitTextLit txName) <- name
  = mempty { supportGlobal = Map.singleton txName [(t, bDefineHere)] }

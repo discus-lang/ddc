@@ -46,7 +46,7 @@ vecBuffers
         -> [LetsF]
 vecBuffers (BName n t)
  | isVectorType t
- , Just (_, [t']) <- takePrimTyConApps t
+ , Just (_, [t']) <- takeNameTyConApps t
  = [ LLet (BName (NameVarMod n "buf") (tBuffer t'))
           (xBufOfVector t' $ XVar $ UName n) ]
 
@@ -76,7 +76,7 @@ extractLoop (NestLoop tRate starts bodys inner ends)
 
         -- The loop itself.
         lLoop   = LLet  (BNone tUnit)
-                        (xApps (XVar (UPrim (NameOpControl OpControlLoop)))
+                        (xApps (XVar (UName (NameOpControl OpControlLoop)))
                                 [ XType tRate           -- loop rate
                                 , xBody ])              -- loop body
 

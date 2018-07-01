@@ -6,9 +6,6 @@ module DDC.Build.Pipeline.Core
         , pipeCores
         , coreCheck
 
-        , PipeTetra (..)
-        , pipeTetra
-
         , PipeFlow (..)
         , pipeFlow
 
@@ -34,10 +31,6 @@ import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Machine                       as Machine
-
-import qualified DDC.Core.Discus                        as Discus
-
-import qualified DDC.Core.Babel.PHP                     as PHP
 import qualified DDC.Core.Salt                          as Salt
 
 import qualified DDC.Core.Transform.Reannotate          as C
@@ -99,11 +92,6 @@ data PipeCore a n where
         -> !(Simplifier s a n)
         -> ![PipeCore () n]
         -> PipeCore a n
-
-  -- Treat a module as belonging to the Core Tetra fragment from now on.
-  PipeCoreAsTetra
-        :: ![PipeTetra a]
-        -> PipeCore a Discus.Name
 
   -- Treat a module as belonging to the Core Flow fragment from now on.
   PipeCoreAsFlow
@@ -171,10 +159,6 @@ pipeCore !mm !pp
                 --       release type annotations on the expression tree.
             in  mm2 `deepseq` pipeCores mm2 pipes
 
-        PipeCoreAsTetra !pipes
-         -> {-# SCC "PipeCoreAsTetra" #-}
-            liftM concat $ mapM (pipeTetra mm) pipes
-
         PipeCoreAsFlow !pipes
          -> {-# SCC "PipeCoreAsFlow" #-}
             liftM concat $ mapM (pipeFlow mm) pipes
@@ -200,39 +184,6 @@ pipeCores !mm !pipes
         go !errs (pipe : rest)
          = do   !err     <- pipeCore mm pipe
                 go (errs ++ err) rest
-
-
--- PipeTetra --------------------------------------------------------------------------------------
--- | Process a Core Tetra module.
-data PipeTetra a where
-        -- Print as PHP code
-        PipeTetraToPHP
-         :: (NFData a, Show a)
-         => !Sink
-         -> PipeTetra a
-
-
--- | Process a Core Tetra module.
-pipeTetra
-        :: C.Module a Discus.Name
-        -> PipeTetra a
-        -> IO [Error]
-
-pipeTetra !mm !pp
- = case pp of
-        PipeTetraToPHP !sink
-         -> {-# SCC "PipeTetraToPHP" #-}
-            let -- Snip program to expose intermediate bindings.
-                mm_snip         = Flatten.flatten
-                                $ Snip.snip (Snip.configZero) mm
-
-                -- The floater needs bindings to be fully named.
-                namifierT       = C.makeNamifier (Discus.freshT "t") Env.empty
-                namifierX       = C.makeNamifier (Discus.freshX "x") Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
-
-                doc  = PHP.phpOfModule mm_namified
-            in  pipeSink (renderIndent doc) sink
 
 
 -- PipeFlow ---------------------------------------------------------------------------------------
@@ -536,7 +487,7 @@ pipeMachine !mm !pp
                 -- The types are:
                 --   Process#; Stream# a; Sink# a; Source# a; and Tuple# [Stream# a...]
                 forwardType t
-                 | Just (con,args) <- C.takePrimTyConApps $ takeRet t
+                 | Just (con,args) <- C.takeNameTyConApps $ takeRet t
                  , Machine.NameTyConMachine tycon <- con
                  = case tycon of
                     Machine.TyConProcess -> True
@@ -559,8 +510,8 @@ pipeMachine !mm !pp
                      -- Do not forward top-level processes
                      -- as these are what will be slurped and fused
                      -- (They should probably be exported anyway)
-                     | Just (_,xx) <- C.takeXLamFlags x
-                     , Just (prim,_) <- C.takeXFragApps xx
+                     | Just (_,xx)   <- C.takeXLamFlags x
+                     , Just (prim,_) <- C.takeXNameApps xx
                      , Machine.NameOpMachine Machine.OpProcess{} <- prim
                      -> Forward.FloatDeny
 

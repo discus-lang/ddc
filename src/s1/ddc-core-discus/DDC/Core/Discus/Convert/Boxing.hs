@@ -92,7 +92,7 @@ isBoxedRepType tt
 isUnboxedRepType :: Type Name -> Bool
 isUnboxedRepType tt
         | Just ( NameTyConDiscus TyConDiscusU
-               , [ti])                  <- takePrimTyConApps tt
+               , [ti])                  <- takeNameTyConApps tt
         , isNumericType ti || isTextLitType ti || isAddrType ti
         = True
 
@@ -103,7 +103,7 @@ isUnboxedRepType tt
 -- | Check if some type is an address type.
 isAddrType :: Type Name -> Bool
 isAddrType tt
-         | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
+         | Just (NamePrimTyCon n, [])   <- takeNameTyConApps tt
          = case n of
                 PrimTyConAddr           -> True
                 _                       -> False
@@ -114,7 +114,7 @@ isAddrType tt
 -- | Check if some type is a numeric or other primtitype.
 isNumericType :: Type Name -> Bool
 isNumericType tt
-        | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
+        | Just (NamePrimTyCon n, [])   <- takeNameTyConApps tt
         = case n of
                 PrimTyConBool           -> True
                 PrimTyConNat            -> True
@@ -131,7 +131,7 @@ isNumericType tt
 -- | Check if some type is the boxed vector type.
 isVectorType :: Type Name -> Bool
 isVectorType tt
-        | Just (NameTyConDiscus n, _)   <- takePrimTyConApps tt
+        | Just (NameTyConDiscus n, _)   <- takeNameTyConApps tt
         = case n of
                 TyConDiscusVector        -> True
                 _                       -> False
@@ -142,7 +142,7 @@ isVectorType tt
 -- | Check if this is the string type.
 isTextLitType :: Type Name -> Bool
 isTextLitType tt
-        | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt
+        | Just (NamePrimTyCon n, [])    <- takeNameTyConApps tt
         = case n of
                 PrimTyConTextLit        -> True
                 _                       -> False
@@ -154,7 +154,7 @@ isTextLitType tt
 -- | Generic data type definition for a primitive numeric type.
 makeBoxedPrimDataType :: Type Name -> Maybe (DataType Name)
 makeBoxedPrimDataType tt
-        | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
+        | Just (n@NamePrimTyCon{}, []) <- takeNameTyConApps tt
         = Just $ DataType
         { dataTypeModuleName    = ModuleName ["Base"]
         , dataTypeName          = n
@@ -169,7 +169,7 @@ makeBoxedPrimDataType tt
 -- | Generic data constructor definition for a primtive numeric type.
 makeBoxedPrimDataCtor :: Type Name -> Maybe (DataCtor Name)
 makeBoxedPrimDataCtor tt
-        | Just (n@NamePrimTyCon{}, []) <- takePrimTyConApps tt
+        | Just (n@NamePrimTyCon{}, []) <- takeNameTyConApps tt
         = Just $ DataCtor
         { dataCtorModuleName    = ModuleName ["Base"]
         , dataCtorName          = n

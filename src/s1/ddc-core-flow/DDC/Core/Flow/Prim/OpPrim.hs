@@ -122,5 +122,5 @@ xvScatter c tA xVec xIxs xElems
 -- Utils -----------------------------------------------------------------------
 xVarPrimVec :: PrimVec -> Exp () Name
 xVarPrimVec op
-        = XVar  (UPrim (NamePrimVec op))
+        = XVar  (UName (NamePrimVec op))
 

@@ -26,7 +26,7 @@ convertPrimInfo _ectx ctx xxExp
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFrameNew True
                 , [RTerm xLength])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          -> Just $ do
                 let a'   =  annotTail a
                 xLength' <- convertX ExpArg ctx xLength
@@ -36,7 +36,7 @@ convertPrimInfo _ectx ctx xxExp
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFramePush True
                 , [RTerm xAddr])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'   <- convertX ExpArg ctx xAddr
@@ -50,7 +50,7 @@ convertPrimInfo _ectx ctx xxExp
                   , RTerm xArity
                   , RTerm xTxtModule@(XCon _ dcTxtModuleName)
                   , RTerm xTxtCon   @(XCon _ dcTxtCtorName) ])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          , D.NameLitUnboxed (D.NameLitTextLit txModuleName)
                 <- daConName dcTxtModuleName
          , D.NameLitUnboxed (D.NameLitTextLit txCtorName)

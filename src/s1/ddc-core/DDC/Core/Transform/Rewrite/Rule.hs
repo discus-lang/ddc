@@ -24,10 +24,8 @@ import DDC.Data.Pretty
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
-import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Exp.Simple            as T
-import qualified DDC.Type.Transform.SpreadT     as S
 import qualified Data.Map                       as Map
 import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
@@ -169,15 +167,13 @@ checkRewriteRule config env
  = do
         -- Extend the environments with variables bound by the rule.
         let (env', bs') = extendBinds bs env
-        let kenv'       = EnvX.kindEnvOfEnvX env'
-        let csSpread    = map (S.spreadT kenv') cs
 
         -- Check that all constraints are valid types.
-        mapM_ (checkConstraint config) csSpread
+        mapM_ (checkConstraint config) cs
 
         -- Typecheck, spread and annotate with type information
         (lhs', _, _)
-                <- checkExp config env' Lhs lhs
+         <- checkExp config env' Lhs lhs
 
         -- If the extra left part is there, typecheck and annotate it.
         hole' <- case hole of
@@ -241,7 +237,7 @@ checkRewriteRule config env
                       `Set.difference` binds
 
         return  $ RewriteRule
-                        bs'' csSpread
+                        bs'' cs
                         lhs' hole' rhs'
                         effWeak []
                         freeVars
@@ -263,14 +259,11 @@ extendBinds binds env0
          = (env, acc)
 
         go ((bm,b):bs) env acc
-         = let  kenv    = EnvX.kindEnvOfEnvX env
-                tenv    = EnvX.typeEnvOfEnvX env
-                b'      = S.spreadX kenv tenv b
-                env'    = case bm of
-                             BMSpec    -> EnvX.extendT b' env
-                             BMValue _ -> EnvX.extendX b' env
+         = let  env'    = case bm of
+                             BMSpec    -> EnvX.extendT b env
+                             BMValue _ -> EnvX.extendX b env
 
-           in  go bs env' (acc ++ [(bm,b')])
+           in  go bs env' (acc ++ [(bm,b)])
 
 
 -- | Type check the expression on one side of the rule.
@@ -284,12 +277,8 @@ checkExp
                   (Exp (C.AnTEC a n) n, Type n, Effect n)
 
 checkExp defs env side xx
- = let  kenv    = EnvX.kindEnvOfEnvX env
-        tenv    = EnvX.typeEnvOfEnvX env
-        xx'     = S.spreadX kenv tenv xx
-
-   in  case C.reconOfExp defs env xx' of
-        Left err  -> Left $ ErrorTypeCheck side xx' err
+ = case C.reconOfExp defs env xx of
+        Left err  -> Left $ ErrorTypeCheck side xx err
         Right rhs -> return rhs
 
 

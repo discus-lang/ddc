@@ -245,9 +245,6 @@ lookupX uu env
         UIx i
          -> P.lookup i (zip [0..] (envxLocalStack env))
 
-        UPrim n
-         -> envxPrimFun env n
-
 
 -- | Lookup a bound name from an environment.
 lookupNameX :: Ord n => n -> EnvX n -> Maybe (Type n)

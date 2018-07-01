@@ -36,7 +36,7 @@ module DDC.Type.Exp.Simple.Compounds
         , tApp,          ($:)
         , tApps,         takeTApps
         , takeTyConApps
-        , takePrimTyConApps
+        , takeNameTyConApps
         , takeDataTyConApps
         , takePrimeRegion
 
@@ -158,7 +158,6 @@ takeNameOfBound :: Bound n -> Maybe n
 takeNameOfBound uu
  = case uu of
         UName n         -> Just n
-        UPrim n         -> Just n
         UIx{}           -> Nothing
 
 
@@ -259,13 +258,13 @@ takeTyConApps tt
 
 
 -- | Flatten a sequence of type applications, returning the type constructor
---   and arguments, if there is one. Only accept primitive type constructors.
-takePrimTyConApps :: Type n -> Maybe (n, [Type n])
-takePrimTyConApps tt
+--   and arguments, if there is one. Only accept named constructors.
+takeNameTyConApps :: Type n -> Maybe (n, [Type n])
+takeNameTyConApps tt
  = case takeTApps tt of
         TCon tc : args
-         | TyConBound (UPrim n) _ <- tc
-          -> Just (n, args)
+         |  TyConBound (UName n) _ <- tc
+         -> Just (n, args)
         _ -> Nothing
 
 
@@ -279,6 +278,8 @@ takeDataTyConApps tt
          , TCon (TyConKind KiConData)   <- takeResultKind k
           -> Just (tc, args)
         _ -> Nothing
+
+
 
 
 -- | Take the prime region variable of a data type.

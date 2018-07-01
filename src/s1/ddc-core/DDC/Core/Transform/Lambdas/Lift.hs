@@ -149,8 +149,10 @@ needParamForFreeBound nsSuper bfsParam (bType, u)
 
         -- We don't need new parameters for primitives,
         -- as we can reference those directly.
-        | UPrim{}  <- u
-        = False
+        -- FIXME: need to fix this for lambda lifting. Need the env.
+
+--        | UPrim{}  <- u
+--        = False
 
         -- We don't need new paramters for variables that
         -- are already bound by the abstractions that we're lifting.
