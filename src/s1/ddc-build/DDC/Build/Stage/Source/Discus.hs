@@ -18,10 +18,8 @@ import qualified DDC.Control.Parser                     as Parser
 
 import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
-import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Build.Language.Discus              as BE
 import qualified DDC.Build.Stage.Core                   as BC
-import qualified DDC.Build.Transform.Import             as BImport
 
 import qualified DDC.Source.Discus.Exp                  as S
 import qualified DDC.Source.Discus.Module               as S
@@ -40,9 +38,8 @@ import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
-import qualified DDC.Core.Discus.Env                    as CE
+import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Core.Transform.Resolve             as CResolve
-import qualified DDC.Core.Transform.SpreadX             as CSpread
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Expose              as CExpose
 
@@ -259,34 +256,15 @@ sourceLower
         -> S.Module S.SourcePos
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
-sourceLower store sinkCore sinkImport sinkSpread mm
+sourceLower _store sinkCore _sinkImport _sinkSpread mm
  = do
         -- Lower source tetra to core tetra.
-        let sp          = SP.SourcePos "<top level>" 1 1
-        mm_core         <- case SConvert.coreOfSourceModule sp mm of
-                            Left err    -> throwE [B.ErrorLoad [err]]
-                            Right mm'   -> return mm'
+        let sp  =  SP.SourcePos "<top level>" 1 1
+        mm_core <- case SConvert.coreOfSourceModule sp mm of
+                        Left err    -> throwE [B.ErrorLoad [err]]
+                        Right mm'   -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkCore
 
-        -- Resolve which module imported names are from,
-        -- and attach arity information to the import statements.
-        --
-        -- We're currently ignoring the resolver errors as they don't come
-        -- with source locations. The type checker will give its own Undefined
-        -- variable errors, but not multiple import errors.
-        --
-        (mm_import, _errs_import)
-         <- liftIO $ BImport.importNamesForModule
-                CE.primKindEnv CE.primTypeEnv
-                store mm_core
-
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_import) sinkImport
-
-        -- Spread types of data constructors into uses.
-        let mm_spread   = CSpread.spreadX CE.primKindEnv CE.primTypeEnv mm_import
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_spread)  sinkSpread
-
-        return mm_spread
-
+        return mm_core
 

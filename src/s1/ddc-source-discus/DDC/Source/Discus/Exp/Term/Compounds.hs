@@ -74,11 +74,11 @@ module DDC.Source.Discus.Exp.Term.Compounds
         , makeXErrorDefault)
 where
 import DDC.Source.Discus.Exp.Term.Base
-import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Type.Compounds     as T
 import Data.Maybe
 import Data.Text        (Text)
 
+import qualified DDC.Core.Exp.Annot             as C
 import DDC.Core.Exp.Annot
         ( dcUnit
         , takeNameOfDaConPrim
@@ -296,6 +296,6 @@ makeXErrorDefault :: Text -> Integer -> GExp l
 makeXErrorDefault name n
  = makeXApps
         (XPrim (PrimValError OpErrorDefault))
-        [ RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
-        , RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
+        [ RTerm $ XCon (C.DaConBound (C.DaConBoundName Nothing Nothing (DaConBoundLit (PrimLitTextLit name))))
+        , RTerm $ XCon (C.DaConBound (C.DaConBoundName Nothing Nothing (DaConBoundLit (PrimLitNat     n))))]
 

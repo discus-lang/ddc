@@ -68,7 +68,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 [ text "**  Sub_SynR"
                 , text "    tL:  " <> ppr tL
                 , text "    tR:  " <> ppr tR
-                , text "    tR': " <> ppr tR
+                , text "    tR': " <> ppr tR'
                 , mempty ]
 
         makeSub config a ctx0 x0 xL tL tR' err

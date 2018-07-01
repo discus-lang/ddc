@@ -25,7 +25,7 @@ data Store n
         { -- | Metadata for interface files currently represented in the store.
           storeMeta             :: IORef [Meta]
 
-          -- Name Indices -----------------------
+          -- Name Indexes ---------------------
           -- These maps are used when resolving qualified names to determine
           -- which module a name is defined in. They just say where a thing of that
           -- name is defined, not whether it should be visible to the client module.
@@ -37,6 +37,12 @@ data Store n
 
           -- | Map of data constructor names to modules that define one of that name.
         , storeDataCtorNames    :: IORef (Map n (Set ModuleName))
+
+          -- | Map of capability names to modules that define one of that name.
+        , storeCapNames         :: IORef (Map n (Set ModuleName))
+
+          -- | Map of value names to modules that define one of that name.
+        , storeValueNames       :: IORef (Map n (Set ModuleName))
 
           -- Module Data -----------------------
           -- These maps contain information about top level declarations of a module
@@ -70,7 +76,8 @@ data Store n
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
-        , storeInterfaces       :: IORef [Interface n] }
+        , storeInterfaces       :: IORef [Interface n]
+        }
 
 
 ---------------------------------------------------------------------------------------------------

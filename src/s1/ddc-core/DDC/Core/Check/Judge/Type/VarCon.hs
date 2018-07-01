@@ -125,7 +125,8 @@ checkVarCon _ _ _ _ _
 -- | Lookup the type of this data constructor from the context,
 --   or throw an error if we can't find it.
 checkDaConType config ctx a dc
- = do   -- Check that the constructor is in the data type declarations.
+ = do
+        -- Check that the constructor is in the data type declarations.
         checkDaConM config ctx (XCon a dc) a dc
 
         -- Lookup the type of the constructor.

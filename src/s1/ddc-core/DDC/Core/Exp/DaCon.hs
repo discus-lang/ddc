@@ -50,7 +50,8 @@ data DaCon n t
 
 -- | Bound occurrence of data constructor that is associated with a data type
 --   declaration. This includes user defined data types, as well as primitive
---   algebraic data types like 'Tuple'.
+--   algebraic data types like 'Bool'. Once we have noticed a data constructor
+--   is primitive it will be rewritten to a 'DaConPrim' by the type checker.
 --
 --   The module and enclosing type names are optional as we also use this
 --   representation when they have not been resolved yet.

@@ -27,15 +27,16 @@ export
         filter; filterS;
         all; any;
 }
-import  Data.Numeric.Nat
-import  Data.Numeric.Bool
-import  Data.Tuple
-import  Data.Maybe
-import  Data.Function
-import  Class.Functor
-import  Class.Monad
-import  Class.Ord
-import  Class.Eq
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import Data.Tuple
+import Data.Maybe
+import Data.Function
+import Class.Category
+import Class.Functor
+import Class.Monad
+import Class.Ord
+import Class.Eq
 where
 
 
