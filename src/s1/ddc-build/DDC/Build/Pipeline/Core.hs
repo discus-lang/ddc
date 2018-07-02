@@ -131,8 +131,9 @@ pipeCore !mm !pp
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
         PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
-         -> do  result'  <- runExceptT
-                        $   coreCheck stage fragment mode sinkTrace  SinkDiscard mm
+         -> do  result'
+                 <- runExceptT
+                 $  coreCheck stage fragment Nothing mode sinkTrace  SinkDiscard mm
                 case result' of
                  Left  errs     -> return errs
                  Right mm'      -> pipeCores mm' pipes
@@ -327,7 +328,7 @@ pipeFlow !mm !pp
 
                              config      = C.configOfProfile Flow.profile
                             -- Synthesise the types of any newly created bindings.
-                         in  C.checkModuleIO config mm_flow (C.Synth []) >>= \r
+                         in  C.checkModuleIO config Nothing mm_flow (C.Synth []) >>= \r
                           -> case r of
                               (Left err, _ct)
                                -> return [ErrorCoreTransform err]

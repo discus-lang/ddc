@@ -25,7 +25,6 @@ import qualified DDC.Core.Simplifier.Recipe             as C
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
 
-
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Platform                 as A
 import qualified DDC.Core.Salt.Transform.Transfer       as ATransfer
@@ -146,7 +145,7 @@ saltToLlvm
         -- Check normalized code to produce type annotations on every node.
         mm_checked
          <- BC.coreCheck
-                "saltToLlvm" BA.fragment C.Recon
+                "saltToLlvm" BA.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
 
         liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep

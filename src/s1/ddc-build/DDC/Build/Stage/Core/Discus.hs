@@ -81,7 +81,7 @@ discusToSalt platform runtimeConfig mnsInit mm config
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck
-                "DiscusToSalt/lambdas" BD.fragment C.Recon
+                "DiscusToSalt/lambdas" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_initialize
 
@@ -99,7 +99,7 @@ discusToSalt platform runtimeConfig mnsInit mm config
         --   The unsharing transform needs every node annotated with its type.
         mm_checked_unshare
          <- B.coreCheck
-                "DiscusToSalt/unshare" BD.fragment C.Recon
+                "DiscusToSalt/unshare" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_lambdas
 
@@ -157,7 +157,7 @@ discusToSalt platform runtimeConfig mnsInit mm config
         --   The to-salt conversion needs every node annotated with its type.
         mm_checked_salt
          <- B.coreCheck
-                "DiscusToSalt/toSalt" BD.fragment C.Recon
+                "DiscusToSalt/toSalt" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_prep_salt
 

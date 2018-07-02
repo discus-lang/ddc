@@ -7,6 +7,7 @@ import DDC.Core.Check.Judge.Type.Base   (checkTypeM)
 import DDC.Core.Check.Judge.DataDefs
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
+import DDC.Core.Interface.Store
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
@@ -31,16 +32,18 @@ import qualified System.IO.Unsafe       as S
 --
 checkModuleIO
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> Module a n           -- ^ Module to check.
-        -> Mode n               -- ^ Type checker mode.
+        => Config n         -- ^ Type checker configuration defines what features to support.
+        -> Maybe (Store n)  -- ^ Interface store if we want to allow imports from other modules.
+        -> Module a n       -- ^ Module to check.
+        -> Mode n           -- ^ Type checker mode.
         -> IO ( Either (Error a n) (Module (AnTEC a n) n)
               , CheckTrace )
 
-checkModuleIO !config !xx !mode
- = do   (s, result)     <- runCheck (mempty, 0, 0)
-                        $  checkModuleM config xx mode
-        let (tr, _, _)  = s
+checkModuleIO config mStore xx mode
+ = do   ((tr, _, _), result)
+         <- runCheck (mempty, 0, 0)
+         $  checkModuleM config mStore xx mode
+
         return (result, tr)
 
 
@@ -51,25 +54,27 @@ checkModuleIO !config !xx !mode
 --
 reconModule
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> Module a n           -- ^ Module to check.
+        => Config n          -- ^ Type checker configuration defines what features to support.
+        -> Module a n        -- ^ Module to check.
         -> ( Either (Error a n) (Module (AnTEC a n) n)
            , CheckTrace )
 
 reconModule config xx
- = S.unsafePerformIO $ checkModuleIO config xx Recon
+        = S.unsafePerformIO
+        $ checkModuleIO config Nothing xx Recon
 
 
 -- checkModule ------------------------------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> Module a n           -- ^ Module to check.
-        -> Mode n               -- ^ Type checker mode.
+        => Config n          -- ^ Type checker configuration defines what features to support.
+        -> Maybe (Store n)   -- ^ Interface store if we want to allow imports from other modules.
+        -> Module a n        -- ^ Module check.
+        -> Mode n            -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM !config mm@ModuleCore{} !mode
+checkModuleM config _mStore mm@ModuleCore{} !mode
  = do
         let envT_prim
                 = EnvT.empty

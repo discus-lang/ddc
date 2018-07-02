@@ -77,7 +77,7 @@ discusLoadText
 discusLoadText config _store source str
  = B.coreLoad
         "DiscusLoad"
-        BE.fragment
+        BE.fragment Nothing
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)

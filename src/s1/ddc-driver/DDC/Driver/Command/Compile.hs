@@ -385,8 +385,8 @@ cmdCompile config bBuildExe' fsExtraO store filePath
         mnsTrans <- liftIO $ Store.getModuleNames store
         let makeSalt
                 | ext == ".dcs"
-                =   fmap (CReannotate.reannotate (const ()))
-                $   DA.saltSimplify config source
+                = fmap (CReannotate.reannotate (const ()))
+                $ DA.saltSimplify config source
                 =<< DA.saltLoadText config source src
 
                 | Just modTetra <- mModTetra

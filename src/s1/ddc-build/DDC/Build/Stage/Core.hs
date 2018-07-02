@@ -21,6 +21,7 @@ import qualified DDC.Data.SourcePos             as SP
 import qualified DDC.Build.Pipeline.Sink        as B
 import qualified DDC.Build.Pipeline.Error       as B
 
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
@@ -42,33 +43,37 @@ data ConfigCoreLoad
         , configSinkTrace       :: B.Sink       -- ^ Sink for type checker trace.
         }
 
+
 -- | Load a core module from text.
 coreLoad
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
-        => String                       -- ^ Name of compiler stage.
-        -> C.Fragment n err             -- ^ Language fragment to check.
-        -> C.Mode n                     -- ^ Checker mode.
-        -> String                       -- ^ Name of source file.
-        -> Int                          -- ^ Line of source file.
-        -> String                       -- ^ Textual core code.
-        -> ConfigCoreLoad               -- ^ Sinked config.
+        => String               -- ^ Name of compiler stage.
+        -> C.Fragment n err     -- ^ Language fragment to check.
+        -> Maybe (C.Store n)    -- ^ Interface store to allow imports from other modules.
+        -> C.Mode n             -- ^ Checker mode.
+        -> String               -- ^ Name of source file.
+        -> Int                  -- ^ Line of source file.
+        -> String               -- ^ Textual core code.
+        -> ConfigCoreLoad       -- ^ Sinked config.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
+coreLoad !_stage !fragment !mStore !mode !srcName !srcLine !str !config
  = do
         -- Parse the module.
-        mm_core    <- coreParse fragment srcName srcLine
-                        (configSinkTokens config)
-                        str
+        mm_core
+         <- coreParse fragment srcName srcLine
+                (configSinkTokens config)
+                str
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core)
                             (configSinkParsed config)
 
         -- Type check the module.
-        mm_checked <- coreCheck "CoreLoad" fragment mode
-                        (configSinkTrace   config)
-                        (configSinkChecked config)
-                        mm_core
+        mm_checked
+         <- coreCheck "CoreLoad" fragment mStore mode
+                (configSinkTrace   config)
+                (configSinkChecked config)
+                mm_core
 
         return mm_checked
 
@@ -113,15 +118,16 @@ coreCheck
         :: ( Pretty a, Show a
            , Pretty (err (C.AnTEC a n))
            , Ord n, Show n, Pretty n)
-        => String                       -- ^ Name of compiler stage.
-        -> C.Fragment n err             -- ^ Language fragment to check.
-        -> C.Mode n                     -- ^ Checker mode.
-        -> B.Sink                       -- ^ Sink for checker trace.
-        -> B.Sink                       -- ^ Sink for checked core code.
-        -> C.Module a n                 -- ^ Core module to check.
+        => String               -- ^ Name of compiler stage.
+        -> C.Fragment n err     -- ^ Language fragment to check.
+        -> Maybe (C.Store n)    -- ^ Interface store to allow imports from other modules.
+        -> C.Mode n             -- ^ Checker mode.
+        -> B.Sink               -- ^ Sink for checker trace.
+        -> B.Sink               -- ^ Sink for checked core code.
+        -> C.Module a n         -- ^ Core module to check.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC a n) n)
 
-coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
+coreCheck !stage !fragment !mStore !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreCheck" #-}
    do
         let profile  = C.fragmentProfile fragment
@@ -129,7 +135,7 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 
         -- Type check the module with the generic core type checker.
         mm_checked
-         <- liftIO (C.checkModuleIO config mm mode) >>= \r
+         <- liftIO (C.checkModuleIO config mStore mm mode) >>= \r
          -> case r of
                 (Left err,  C.CheckTrace doc)
                  -> do  liftIO $  B.pipeSink (renderIndent doc) sinkTrace
@@ -174,9 +180,8 @@ coreReCheck
 
 coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreReCheck" #-}
-   do
-        let mm_reannot  = CReannotate.reannotate C.annotTail mm
-        coreCheck stage fragment mode sinkTrace sinkChecked mm_reannot
+   do   let mm_reannot  = CReannotate.reannotate C.annotTail mm
+        coreCheck stage fragment Nothing mode sinkTrace sinkChecked mm_reannot
 
 
 ---------------------------------------------------------------------------------------------------

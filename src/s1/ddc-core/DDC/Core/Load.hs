@@ -163,7 +163,7 @@ loadModuleFromTokens fragment sourceName mode toks'
 
         -- Check that the module is type well-typed.
         goCheckType mm
-         =  C.checkModuleIO config mm mode >>= \r
+         =  C.checkModuleIO config Nothing mm mode >>= \r
          -> case r of
                 (Left err,  ct) -> return (Left (ErrorCheckExp err),   Just ct)
                 (Right mm', ct) -> goCheckCompliance ct mm'

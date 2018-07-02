@@ -120,9 +120,10 @@ sourceLoad srcName srcLine str store config
         let kenv    = C.profilePrimKinds profile
         let tenv    = C.profilePrimTypes profile
         let mm_namified
-             = evalState (CNamify.namify (CNamify.makeNamifier (CE.freshT "t$S") kenv)
-                                         (CNamify.makeNamifier (CE.freshX "x$S") tenv)
-                                        mm_core)
+             = evalState (CNamify.namify
+                                (CNamify.makeNamifier (CE.freshT "t$S") kenv)
+                                (CNamify.makeNamifier (CE.freshX "x$S") tenv)
+                                mm_core)
                         (100 :: Int)
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
@@ -131,7 +132,7 @@ sourceLoad srcName srcLine str store config
         mm_checked
          <- BC.coreCheck
                 "SourceLoadText"
-                fragment
+                fragment (Just store)
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)

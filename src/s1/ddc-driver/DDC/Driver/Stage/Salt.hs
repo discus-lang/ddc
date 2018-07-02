@@ -42,7 +42,7 @@ saltLoadText
 saltLoadText config source str
  = B.coreLoad
         "SaltLoad"
-        BA.fragment
+        BA.fragment Nothing
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
