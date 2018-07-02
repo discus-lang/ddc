@@ -5,6 +5,7 @@ module DDC.Control.CheckIO
         , throw
         , runCheck
         , evalCheck
+        , mapErr
         , get
         , put)
 where
@@ -56,6 +57,15 @@ evalCheck s m   = fmap snd $ runCheck s m
 throw :: err -> CheckM s err a
 throw !e        = CheckM $ \s -> return (s, Left e)
 {-# INLINE throw #-}
+
+
+-- | Map a function over any thrown errors.
+mapErr :: (err1 -> err2) -> CheckM s err1 a -> CheckM s err2 a
+mapErr fErr !(CheckM f)
+ = CheckM $ \s
+ -> f s >>= \r -> case r of
+        (s', Left err)  -> return (s', Left (fErr err))
+        (s', Right x)   -> return (s', Right x)
 
 
 -- | Get the state from the monad.

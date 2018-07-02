@@ -12,7 +12,7 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                (EnvX)
-import DDC.Control.CheckIO              (runCheck, throw)
+import DDC.Control.CheckIO              (runCheck, throw, mapErr)
 
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -103,7 +103,6 @@ checkModuleM config _mStore mm@ModuleCore{} !mode
         nksImportDataDef'
                 <- checkSortsOfDataTypes config mode
                 $  map snd $ moduleImportDataDefs  mm
-
 
         ctrace  $ vcat
                 [ text "* Checking Sorts of Local Data Types." ]
@@ -467,7 +466,9 @@ checkSortsOfDataTypes config mode defs
         -- Check kind of a data type constructor.
         check def
          = do   let k   = kindOfDataDef def
-                (k', _, _) <- checkTypeM config emptyContext UniverseKind k modeCheckDataTypes
+                (k', _, _)
+                  <- mapErr (ErrorCtxData (dataDefTypeName def))
+                   $ checkTypeM config emptyContext UniverseKind k modeCheckDataTypes
                 return (dataDefTypeName def, k')
 
    in do

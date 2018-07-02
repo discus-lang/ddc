@@ -14,7 +14,7 @@ module DDC.Core.Check.Base
         , ctrace
 
           -- Things defined elsewhere.
-        , throw, runCheck, evalCheck
+        , throw, runCheck, evalCheck, mapErr
         , EnvX,  EnvT, TypeEnv, KindEnv
         , Set
         , module DDC.Core.Check.Error
@@ -43,7 +43,7 @@ import DDC.Type.Env                     (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
-import DDC.Control.CheckIO              (throw, runCheck, evalCheck)
+import DDC.Control.CheckIO              (throw, runCheck, evalCheck, mapErr)
 import DDC.Data.ListUtils
 
 import Control.Monad
