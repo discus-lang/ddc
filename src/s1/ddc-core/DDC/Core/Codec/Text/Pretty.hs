@@ -37,6 +37,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         { moduleName            = name
         , moduleExportTypes     = exportTypes
         , moduleExportValues    = exportValues
+        , moduleImportModules   = importModules
         , moduleImportTypes     = importTypes
         , moduleImportCaps      = importCaps
         , moduleImportValues    = importValues
@@ -59,6 +60,10 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | otherwise            = (vcat $ map (pprExportValue . snd) exportValues) <> line
 
         -- Imports --------------------
+        dImportModules
+         | null $ importModules = mempty
+         | otherwise            = (vcat $ map pprImportModule importModules) <> line
+
         dImportTypes
          | null $ importTypes   = mempty
          | otherwise            = (vcat $ map pprImportType  importTypes)  <> line
@@ -83,7 +88,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
          | otherwise
          = line % dExportTypes % dExportValues
-                % dImportTypes % dImportCaps % dImportValues
+                % dImportModules % dImportTypes % dImportCaps % dImportValues
 
         -- Data Definitions -----
         docsDataImport
@@ -165,6 +170,12 @@ pprExportValue esrc
 
 
 -- Imports ----------------------------------------------------------------------------------------
+-- | Pretty print a module import.
+pprImportModule :: ModuleName -> Doc
+pprImportModule mn
+ =      text "import module" %% ppr mn
+
+
 -- | Pretty print a type import.
 pprImportType :: (Pretty n, Pretty t) => (n, ImportType n t) -> Doc
 pprImportType (n, isrc)

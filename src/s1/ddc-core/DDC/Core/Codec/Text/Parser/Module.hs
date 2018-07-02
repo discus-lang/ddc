@@ -75,11 +75,12 @@ pModule c
                 { moduleName            = modName
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = []
-                , moduleExportValues    = [(n, s)      | ExportValue n s        <- exportSpecs]
-                , moduleImportTypes     = [(n, s)      | ImportForeignType  n s <- importSpecs]
-                , moduleImportCaps      = [(n, s)      | ImportForeignCap   n s <- importSpecs]
-                , moduleImportValues    = [(n, s)      | ImportForeignValue n s <- importSpecs]
-                , moduleImportTypeDefs  = [(n, (k, t)) | ImportType  n k t      <- importSpecs]
+                , moduleExportValues    = [(n, s)       | ExportValue n s        <- exportSpecs]
+                , moduleImportModules   = [mn           | ImportModule mn        <- importSpecs]
+                , moduleImportTypes     = [(n, s)       | ImportForeignType  n s <- importSpecs]
+                , moduleImportCaps      = [(n, s)       | ImportForeignCap   n s <- importSpecs]
+                , moduleImportValues    = [(n, s)       | ImportForeignValue n s <- importSpecs]
+                , moduleImportTypeDefs  = [(n, (k, t))  | ImportType  n k t      <- importSpecs]
 
                 , moduleImportDataDefs  = [(dataDefTypeName def, def)
                                                         | ImportData  def       <- importSpecs]

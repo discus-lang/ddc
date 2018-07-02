@@ -24,8 +24,11 @@ import qualified Data.Text              as T
 --   buckets if it wants to.
 --
 data ImportSpec n
+        -- | Import modules.
+        = ImportModule          ModuleName
+
         -- | Foreign imported types.
-        = ImportForeignType  n (ImportType   n (Type n))
+        | ImportForeignType  n (ImportType   n (Type n))
 
         -- | Foreign imported capabilities.
         | ImportForeignCap   n (ImportCap    n (Type n))
@@ -52,8 +55,13 @@ pImportSpecs c modName
         pTok (KKeyword EImport)
 
         P.choice
-         [      -- data ...
-           do   def     <- pDataDef c Nothing
+         [      -- module ...
+            do  pTok (KKeyword EModule)
+                mn      <- pModuleName
+                return  [ ImportModule mn ]
+
+                -- data ...
+         ,  do  def     <- pDataDef c Nothing
                 return  [ ImportData def ]
 
                 -- type { (NAME :: KIND)+ }

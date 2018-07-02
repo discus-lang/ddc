@@ -74,21 +74,29 @@ instance PrettyLanguage l => Pretty (Module l) where
         { moduleName            = name
         , moduleExportTypes     = _exportedTypes
         , moduleExportValues    = _exportedValues
-        , moduleImportModules   = _importedModules
+        , moduleImportModules   = importedModules
         , moduleImportTypes     = importedTypes
         , moduleImportValues    = importedValues
         , moduleTops            = tops }
   = vcat
   [ text "module"
         %% ppr name
+        <>  sImportedModules
         <>  sImportedTypes
         <>  sImportedValues
-        <>   (if null importedTypes && null importedValues
+        <>   (if null importedModules && null importedTypes && null importedValues
                 then space <> text "where"
                 else text "where")
   , vcat $ map ppr tops]
 
-  where sImportedTypes
+  where sImportedModules
+         | null importedModules = mempty
+         | otherwise
+         = line
+         <> (vcat $ map pprImportModule importedModules)
+         <> line
+
+        sImportedTypes
          | null importedTypes   = mempty
          | otherwise
          = line
@@ -101,6 +109,8 @@ instance PrettyLanguage l => Pretty (Module l) where
          = (vcat $ map (pprImportValue . snd) importedValues)
          <> line
 
+        pprImportModule mn
+         = text "import module" %% ppr mn
 
 -- Top --------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (Top l) where

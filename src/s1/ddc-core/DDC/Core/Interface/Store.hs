@@ -64,36 +64,49 @@ instance Pretty Meta where
 new :: IO (Store n)
 new
  = do   -- Interface metadata.
-        refMeta            <- newIORef []
+        refMeta                         <- newIORef Map.empty
 
         -- Name Indexes
-        refTypeCtorNames   <- newIORef Map.empty
-        refDataCtorNames   <- newIORef Map.empty
-        refCapNames        <- newIORef Map.empty
-        refValueNames      <- newIORef Map.empty
+        refTypeCtorNames                <- newIORef Map.empty
+        refDataCtorNames                <- newIORef Map.empty
+        refCapNames                     <- newIORef Map.empty
+        refValueNames                   <- newIORef Map.empty
+
+        -- Module Exports
+        refExportTypesOfModule          <- newIORef Map.empty
+        refExportValuesOfModule         <- newIORef Map.empty
 
         -- Module Data
-        refDataDefsByTyCon <- newIORef Map.empty
-        refDataDefsByDaCon <- newIORef Map.empty
-        refTypeDefsByTyCon <- newIORef Map.empty
-        refCapsByName      <- newIORef Map.empty
-        refValuesByName    <- newIORef Map.empty
+        refDataDefsByTyCon              <- newIORef Map.empty
+        refDataDefsByDaCon              <- newIORef Map.empty
+        refTypeDefsByTyCon              <- newIORef Map.empty
+        refCapsByName                   <- newIORef Map.empty
+        refValuesByName                 <- newIORef Map.empty
 
         -- Complete Interfaces
-        refInterfaces      <- newIORef []
+        refInterfaces                   <- newIORef []
 
-        return  $ Store
-                { storeMeta             = refMeta
-                , storeTypeCtorNames    = refTypeCtorNames
-                , storeDataCtorNames    = refDataCtorNames
-                , storeCapNames         = refCapNames
-                , storeValueNames       = refValueNames
-                , storeDataDefsByTyCon  = refDataDefsByTyCon
-                , storeDataDefsByDaCon  = refDataDefsByDaCon
-                , storeTypeDefsByTyCon  = refTypeDefsByTyCon
-                , storeCapsByName       = refCapsByName
-                , storeValuesByName     = refValuesByName
-                , storeInterfaces       = refInterfaces }
+        return
+         $ Store
+         { storeMeta                    = refMeta
+
+         -- Name Indices
+         , storeTypeCtorNames           = refTypeCtorNames
+         , storeDataCtorNames           = refDataCtorNames
+         , storeCapNames                = refCapNames
+         , storeValueNames              = refValueNames
+
+         -- Module Exports
+         , storeExportTypesOfModule     = refExportTypesOfModule
+         , storeExportValuesOfModule    = refExportValuesOfModule
+
+         -- Module Data
+         , storeDataDefsByTyCon         = refDataDefsByTyCon
+         , storeDataDefsByDaCon         = refDataDefsByDaCon
+         , storeTypeDefsByTyCon         = refTypeDefsByTyCon
+         , storeCapsByName              = refCapsByName
+         , storeValuesByName            = refValuesByName
+         , storeInterfaces              = refInterfaces }
 
 
 -- | Add information from a pre-loaded interface to the store.
@@ -102,7 +115,9 @@ wrap    :: (Ord n, Show n)
 wrap store ii
  = do
         modifyIORef' (storeMeta store) $ \meta
-         -> meta ++ [metaOfInterface ii]
+         -> Map.insert  (interfaceModuleName ii)
+                        (metaOfInterface ii)
+                        meta
 
         modifyIORef' (storeDataDefsByTyCon store) $ \ddefs
          -> Map.insert  (interfaceModuleName ii)
@@ -156,14 +171,14 @@ load profile takeRef filePath
 getMeta :: Store n -> IO [Meta]
 getMeta store
  = do   mm      <- readIORef (storeMeta store)
-        return  $ mm
+        return  $ Map.elems mm
 
 
 -- | Get names of the modules currently in the store.
 getModuleNames :: Store n -> IO [ModuleName]
 getModuleNames store
  = do   metas   <- readIORef (storeMeta store)
-        return  $ map metaModuleName metas
+        return  $ Map.keys metas
 
 
 -- | Get the fully loaded interfaces.

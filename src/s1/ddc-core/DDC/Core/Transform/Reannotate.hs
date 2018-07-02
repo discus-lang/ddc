@@ -13,24 +13,25 @@ class Reannotate c where
  reannotate f xx
   = runIdentity (reannotateM (\x -> return $ f x) xx)
 
- reannotateM :: forall m a b n. Monad m 
+ reannotateM :: forall m a b n. Monad m
              => (a -> m b) -> c a n -> m (c b n)
 
 
 instance Reannotate Module where
  reannotateM f
      (ModuleCore name isHeader
-                 exportKinds   exportTypes 
-                 importKinds   importCaps   importTypes  importDataDefs importTypeDefs
-                 dataDefsLocal typeDefsLocal
-                 body)
+        exportKinds   exportTypes
+        importMods    importKinds   importCaps   importTypes  importDataDefs importTypeDefs
+        dataDefsLocal typeDefsLocal
+        body)
 
-  = do  body'   <- reannotateM f body
-        return  $  ModuleCore name isHeader
-                        exportKinds  exportTypes
-                        importKinds  importCaps   importTypes  importDataDefs importTypeDefs
-                        dataDefsLocal typeDefsLocal
-                        body'
+  =  reannotateM f body >>= \body'
+  -> return
+   $ ModuleCore name isHeader
+        exportKinds  exportTypes
+        importMods   importKinds  importCaps   importTypes  importDataDefs importTypeDefs
+        dataDefsLocal typeDefsLocal
+        body'
 
 
 instance Reannotate Exp where
@@ -64,7 +65,7 @@ instance Reannotate Lets where
         LLet b x
          -> LLet <$> pure b <*> down x
 
-        LRec bxs 
+        LRec bxs
          -> do  let (bs, xs) = unzip bxs
                 xs'     <- mapM down xs
                 return  $ LRec $ zip bs xs'

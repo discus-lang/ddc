@@ -122,18 +122,19 @@ coreOfSourceModuleM a mm
 
         return
          $ C.ModuleCore
-                { C.moduleName           = S.moduleName mm
-                , C.moduleIsHeader       = False
-                , C.moduleExportTypes    = exportTypes'
-                , C.moduleExportValues   = exportValues_main
-                , C.moduleImportTypes    = importTypes'
-                , C.moduleImportCaps     = importCaps'
-                , C.moduleImportValues   = importValues'
-                , C.moduleImportDataDefs = []
-                , C.moduleImportTypeDefs = []
-                , C.moduleLocalDataDefs  = dataDefsLocal
-                , C.moduleLocalTypeDefs  = typeDefsLocal
-                , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
+         { C.moduleName           = S.moduleName mm
+         , C.moduleIsHeader       = False
+         , C.moduleExportTypes    = exportTypes'
+         , C.moduleExportValues   = exportValues_main
+         , C.moduleImportModules  = S.moduleImportModules mm
+         , C.moduleImportTypes    = importTypes'
+         , C.moduleImportCaps     = importCaps'
+         , C.moduleImportValues   = importValues'
+         , C.moduleImportDataDefs = []
+         , C.moduleImportTypeDefs = []
+         , C.moduleLocalDataDefs  = dataDefsLocal
+         , C.moduleLocalTypeDefs  = typeDefsLocal
+         , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 
 -- Tops -------------------------------------------------------------------------------------------

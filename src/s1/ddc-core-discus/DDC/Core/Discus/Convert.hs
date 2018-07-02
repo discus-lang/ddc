@@ -166,6 +166,7 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleExportTypes     = []
                 , moduleExportValues    = ntsExports'
 
+                , moduleImportModules   = []
                 , moduleImportTypes     = Map.toList A.runtimeImportKinds
                 , moduleImportCaps      = []
 

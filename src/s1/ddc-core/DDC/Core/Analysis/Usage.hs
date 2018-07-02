@@ -93,6 +93,7 @@ usageModule
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
+                , moduleImportModules   = importMods
                 , moduleImportTypes     = importTypes
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
@@ -107,6 +108,7 @@ usageModule
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
+                , moduleImportModules   = importMods
                 , moduleImportTypes     = importTypes
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues

@@ -151,6 +151,7 @@ instance Forward Module where
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
+                , moduleImportModules   = importModules
                 , moduleImportTypes     = importTypes
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
@@ -166,6 +167,7 @@ instance Forward Module where
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
+                , moduleImportModules   = importModules
                 , moduleImportTypes     = importTypes
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues

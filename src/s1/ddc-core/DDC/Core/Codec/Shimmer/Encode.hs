@@ -64,18 +64,15 @@ storeInterface config pathDst ii
 takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
 takeModuleDecls c mm@C.ModuleCore{}
  =  [ dName,   dExTyp,  dExTrm
-    , dImTyp,  dImDat, dImSyn, dImCap, dImTrm
+    , dImMod,  dImTyp,  dImDat, dImSyn, dImCap, dImTrm
     , dLcDat,  dLcSyn ]
  ++ concat
     [ dsImDat, dsImSyn, dsImTrm
     , dsLcDat, dsLcSyn, dsLcTrm ]
  where
-
+        -- Module Name.
         dName
-         = S.DeclSet "m-name"
-         $ case C.moduleName mm of
-                C.ModuleName sParts
-                 -> xList $ map (xTxt . T.pack) sParts
+         = S.DeclSet "m-name" $ takeModuleName $ C.moduleName mm
 
         -- Exported Types.
         dExTyp
@@ -88,6 +85,11 @@ takeModuleDecls c mm@C.ModuleCore{}
         dExTrm
          = S.DeclSet "m-ex-val"
          $ xList $ map (takeExportValue c) $ map snd $ C.moduleExportValues mm
+
+        -- Imported Modules.
+        dImMod
+         = S.DeclSet "m-im-mod" $ xList xsImport
+         where xsImport  = map takeModuleName  $ C.moduleImportModules mm
 
         -- Imported Types.
         dImTyp

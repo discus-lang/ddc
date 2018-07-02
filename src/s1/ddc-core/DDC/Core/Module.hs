@@ -72,8 +72,6 @@ import Data.Maybe
 
 
 -- Module -----------------------------------------------------------------------------------------
--- | A module definition is closed, and carries has enough information
---   to type check it without loading interface files.
 data Module a n
         = ModuleCore
         { -- | Name of this module.
@@ -92,6 +90,9 @@ data Module a n
         , moduleExportValues    :: ![(n, ExportValue  n (Type n))]
 
           -- Imports ------------------
+          -- | Import all things the given modules export into this one.
+        , moduleImportModules   :: ![ModuleName]
+
           -- These are things that we have imported from other modules and are needed
           -- to type check the locally defined things.
           -- TODO: Imported things are not necessesarally visible, we might have a data
@@ -132,6 +133,7 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleIsHeader       mm)
         `seq` rnf (moduleExportTypes    mm)
         `seq` rnf (moduleExportValues   mm)
+        `seq` rnf (moduleImportModules  mm)
         `seq` rnf (moduleImportTypes    mm)
         `seq` rnf (moduleImportCaps     mm)
         `seq` rnf (moduleImportValues   mm)

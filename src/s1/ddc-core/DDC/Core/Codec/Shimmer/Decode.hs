@@ -92,6 +92,7 @@ takeModuleDecls c decls
          , C.moduleIsHeader        = False
          , C.moduleExportTypes     = concatMap (takeDeclExTyp c)     $ colExTyp col
          , C.moduleExportValues    = concatMap (takeDeclExVal c mpT) $ colExVal col
+         , C.moduleImportModules   = concatMap (takeDeclImMod c)     $ colImMod col
          , C.moduleImportTypes     = concatMap (takeDeclImTyp c)     $ colImTyp col
          , C.moduleImportDataDefs  = concatMap (takeDeclDat   c mpD) $ colImDat col
          , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c mpS) $ colImSyn col
@@ -119,7 +120,8 @@ collectModuleDecls decls
 
         refName  <- new;
         refExTyp <- new; refExVal <- new;
-        refImTyp <- new; refImDat <- new; refImSyn <- new; refImCap <- new; refImVal <- new
+        refImMod <- new; refImTyp <- new; refImDat <- new;
+        refImSyn <- new; refImCap <- new; refImVal <- new
         refLcDat <- new; refLcSyn <- new
         refD     <- new; refS     <- new; refT     <- new; refX     <- new
 
@@ -127,6 +129,7 @@ collectModuleDecls decls
              | T.isPrefixOf "m-name"   tx = do { modifyIORef' refName  (d :); eat ds }
              | T.isPrefixOf "m-ex-typ" tx = do { modifyIORef' refExTyp (d :); eat ds }
              | T.isPrefixOf "m-ex-val" tx = do { modifyIORef' refExVal (d :); eat ds }
+             | T.isPrefixOf "m-im-mod" tx = do { modifyIORef' refImMod (d :); eat ds }
              | T.isPrefixOf "m-im-typ" tx = do { modifyIORef' refImTyp (d :); eat ds }
              | T.isPrefixOf "m-im-dat" tx = do { modifyIORef' refImDat (d :); eat ds }
              | T.isPrefixOf "m-im-syn" tx = do { modifyIORef' refImSyn (d :); eat ds }
@@ -149,7 +152,7 @@ collectModuleDecls decls
 
         dsName  <- read refName
         dsExTyp <- read refExTyp; dsExVal <- read refExVal
-        dsImTyp <- read refImTyp; dsImDat <- read refImDat
+        dsImMod <- read refImMod; dsImTyp <- read refImTyp; dsImDat <- read refImDat
         dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImVal <- read refImVal
         dsLcDat <- read refLcDat; dsLcSym <- read refLcSyn
         dsD     <- read refD;     dsS     <- read refS;     dsT     <- read refT
@@ -158,7 +161,7 @@ collectModuleDecls decls
         return  $ Collect
                 { colName  = rev dsName
                 , colExTyp = rev dsExTyp, colExVal = rev dsExVal
-                , colImTyp = rev dsImTyp, colImDat = rev dsImDat
+                , colImMod = rev dsImMod, colImTyp = rev dsImTyp, colImDat = rev dsImDat
                 , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImVal = rev dsImVal
                 , colLcDat = rev dsLcDat, colLcSyn = rev dsLcSym
                 , colDsD   = rev dsD,     colDsS   = rev dsS,     colDsT   = rev dsT
@@ -168,7 +171,7 @@ data Collect
         = Collect
         { colName  :: [SDecl]
         , colExTyp :: [SDecl], colExVal :: [SDecl]
-        , colImTyp :: [SDecl], colImDat :: [SDecl]
+        , colImMod :: [SDecl], colImTyp :: [SDecl], colImDat :: [SDecl]
         , colImSyn :: [SDecl], colImCap :: [SDecl], colImVal :: [SDecl]
         , colLcDat :: [SDecl], colLcSyn :: [SDecl]
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
@@ -181,7 +184,6 @@ fromModuleName ss
         XAps "module-name" ssParts
           |  Just txs     <- sequence $ map takeXTxt ssParts
           -> C.ModuleName $ map T.unpack txs
-
         _ -> failDecode "takeModuleName"
 
 
@@ -252,6 +254,17 @@ takeDeclExVal c mpT dd
                         , C.exportValueSeaType          = fromType c ssType })
 
         takeExVal _ = failDecode "takeExVal"
+
+
+-- DeclImMod --------------------------------------------------------------------------------------
+takeDeclImMod :: Ord n => Config n -> SDecl -> [C.ModuleName]
+takeDeclImMod _c dd
+ = case dd of
+        S.DeclSet "m-im-mod" ssListImMod
+          -> map takeImMod $ fromList ssListImMod
+        _ -> failDecode "takeDeclImMod failed"
+ where
+        takeImMod ss    = fromModuleName ss
 
 
 -- DeclImTyp --------------------------------------------------------------------------------------

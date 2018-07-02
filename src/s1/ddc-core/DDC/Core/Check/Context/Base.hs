@@ -46,6 +46,7 @@ module DDC.Core.Check.Context.Base
         , lowerTypes)
 where
 import DDC.Core.Check.Context.Elem
+import DDC.Core.Check.Context.Oracle
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT
@@ -73,8 +74,13 @@ import Prelude                          hiding ((<$>))
 --
 data Context n
         = Context
-        { -- | Top level environment for terms.
-          contextEnvX           :: !(EnvX n)
+        { -- | Oracle knows the types and kinds of things in other modules
+          --   (or can find out about them). This can be set to Nothing if
+          --   we're just checking a closed module.
+          contextOracle         :: !(Maybe (Oracle n))
+
+          -- | Top level environment of the current module.
+        , contextEnvX           :: !(EnvX n)
 
           -- | Fresh name generator for context positions.
         , contextGenPos         :: !Int
@@ -94,7 +100,7 @@ data Context n
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
- ppr (Context _ genPos genExists ls _solved)
+ ppr (Context _oracle _envX genPos genExists ls _solved)
   = vcat
   [ text "Context "
   , text "  genPos    = " % int genPos
@@ -105,13 +111,13 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
                 | i <- [0..]]]
 
 
-
 -- Construction ---------------------------------------------------------------
 -- | An empty context.
 emptyContext :: Context n
 emptyContext
         = Context
-        { contextEnvX           = EnvX.empty
+        { contextOracle         = Nothing
+        , contextEnvX           = EnvX.empty
         , contextGenPos         = 0
         , contextGenExists      = 0
         , contextElems          = []

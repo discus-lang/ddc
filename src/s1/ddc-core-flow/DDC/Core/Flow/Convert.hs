@@ -73,6 +73,7 @@ convertM mm
                 , moduleExportTypes     = tsExportT'
                 , moduleExportValues    = tsExportV'
 
+                , moduleImportModules   = []
                 , moduleImportTypes     = tsImportT'
                 , moduleImportCaps      = []
                 , moduleImportValues    = tsImportV' ++ tsImportV'rest

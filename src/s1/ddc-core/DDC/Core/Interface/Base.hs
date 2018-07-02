@@ -20,10 +20,13 @@ import Data.Set         (Set)
 --   It contains information about loaded interfaces, but does not specify
 --   whether that information should be visible to a particular client module.
 --
+--   We do not store client specific visibility here because we want to reuse
+--   the loaded data when compiling multiple separate client modules.
+--
 data Store n
         = Store
-        { -- | Metadata for interface files currently represented in the store.
-          storeMeta             :: IORef [Meta]
+        { -- | Metadata for module interfaces currently represented in the store.
+          storeMeta             :: IORef (Map ModuleName Meta)
 
           -- Name Indexes ---------------------
           -- These maps are used when resolving qualified names to determine
@@ -33,16 +36,23 @@ data Store n
           -- | Map of type constructor names to modules that define one of that name.
           --   The type name can be of a foreign type, data type, or type synonym.
           --   A client will need to check the other fields of the store to determine which.
-        , storeTypeCtorNames    :: IORef (Map n (Set ModuleName))
+        , storeTypeCtorNames        :: IORef (Map n (Set ModuleName))
 
           -- | Map of data constructor names to modules that define one of that name.
-        , storeDataCtorNames    :: IORef (Map n (Set ModuleName))
+        , storeDataCtorNames        :: IORef (Map n (Set ModuleName))
 
           -- | Map of capability names to modules that define one of that name.
-        , storeCapNames         :: IORef (Map n (Set ModuleName))
+        , storeCapNames             :: IORef (Map n (Set ModuleName))
 
           -- | Map of value names to modules that define one of that name.
-        , storeValueNames       :: IORef (Map n (Set ModuleName))
+        , storeValueNames           :: IORef (Map n (Set ModuleName))
+
+          -- Module Exports --------------------
+          -- | Map of type names that a module exports.
+        , storeExportTypesOfModule  :: IORef (Map ModuleName (Set n))
+
+          -- | Map of value names that a module exports.
+        , storeExportValuesOfModule :: IORef (Map ModuleName (Set n))
 
           -- Module Data -----------------------
           -- These maps contain information about top level declarations of a module
@@ -52,31 +62,31 @@ data Store n
           -- client module, so the visibility needs to be determined separately.
 
           -- | Map of data type names to their declarations.
-        , storeDataDefsByTyCon  :: IORef (Map ModuleName (Map n (DataDef n)))
+        , storeDataDefsByTyCon      :: IORef (Map ModuleName (Map n (DataDef n)))
 
           -- | Map of data constructor names to their enclosing type declarations.
-        , storeDataDefsByDaCon  :: IORef (Map ModuleName (Map n (DataDef n)))
+        , storeDataDefsByDaCon      :: IORef (Map ModuleName (Map n (DataDef n)))
 
           -- | Map of type synonym names to their declarations.
-        , storeTypeDefsByTyCon  :: IORef (Map ModuleName (Map n (Kind n, Type n)))
+        , storeTypeDefsByTyCon      :: IORef (Map ModuleName (Map n (Kind n, Type n)))
 
           -- | Map of capability names to their declarations.
           --   The 'Import' in 'ImportCap' means this is the information a client
           --   module can use to access the declaration. The defining module might
           --   not have imported it itself.
-        , storeCapsByName       :: IORef (Map ModuleName (Map n (ImportCap n (Type n))))
+        , storeCapsByName           :: IORef (Map ModuleName (Map n (ImportCap n (Type n))))
 
           -- | Map of value names to their import declarations.
           --   The 'Import' in 'ImportValue' means this is the information a client
           --   module can use to access the declaration. The defining module might
           --   not have imported it itself.
-        , storeValuesByName     :: IORef (Map ModuleName (Map n (ImportValue n (Type n))))
+        , storeValuesByName         :: IORef (Map ModuleName (Map n (ImportValue n (Type n))))
 
           -- Complete Interfaces ----------------
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
-        , storeInterfaces       :: IORef [Interface n]
+        , storeInterfaces           :: IORef [Interface n]
         }
 
 
@@ -84,9 +94,9 @@ data Store n
 -- | Metadata for interfaces currently loaded into the store.
 data Meta
         = Meta
-        { metaFilePath          :: FilePath
-        , metaTimeStamp         :: UTCTime
-        , metaModuleName        :: ModuleName }
+        { metaModuleName        :: ModuleName
+        , metaFilePath          :: FilePath
+        , metaTimeStamp         :: UTCTime }
         deriving Show
 
 
