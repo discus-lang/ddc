@@ -64,20 +64,23 @@ isBoxedRepType tt
                 Just (TyConSpec  TcConUnit,         _)  -> True
                 Just (TyConSpec  (TcConRecord _ns), _)  -> True
                 Just (TyConSpec  TcConSusp,         _)  -> True
-                Just (TyConBound (UName _) _,       _)  -> True
-                _                                       -> False)
+
+                Just (TyConBound (UName (NameTyConDiscus TyConDiscusU)) _, _)
+                  -> False
+
+                Just (TyConBound (UName _) _,       _)
+                  -> True
+
+                _ -> False)
         = True
 
         -- Boxed numeric types
-        | isNumericType tt
-        = True
+        | isNumericType tt      = True
 
         -- The primitive vector type.
-        | isVectorType tt
-        = True
+        | isVectorType tt       = True
 
-        | otherwise
-        = False
+        | otherwise             = False
 
 
 -- | Check if some representation type is unboxed.
@@ -92,7 +95,7 @@ isBoxedRepType tt
 isUnboxedRepType :: Type Name -> Bool
 isUnboxedRepType tt
         | Just ( NameTyConDiscus TyConDiscusU
-               , [ti])                  <- takeNameTyConApps tt
+               , [ti])  <- takeNameTyConApps tt
         , isNumericType ti || isTextLitType ti || isAddrType ti
         = True
 
@@ -133,7 +136,7 @@ isVectorType :: Type Name -> Bool
 isVectorType tt
         | Just (NameTyConDiscus n, _)   <- takeNameTyConApps tt
         = case n of
-                TyConDiscusVector        -> True
+                TyConDiscusVector       -> True
                 _                       -> False
 
         | otherwise                     = False
@@ -156,7 +159,7 @@ makeBoxedPrimDataType :: Type Name -> Maybe (DataType Name)
 makeBoxedPrimDataType tt
         | Just (n@NamePrimTyCon{}, []) <- takeNameTyConApps tt
         = Just $ DataType
-        { dataTypeModuleName    = ModuleName ["Base"]
+        { dataTypeModuleName    = ModuleName ["DDC", "Internal", "Base"]
         , dataTypeName          = n
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
@@ -171,7 +174,7 @@ makeBoxedPrimDataCtor :: Type Name -> Maybe (DataCtor Name)
 makeBoxedPrimDataCtor tt
         | Just (n@NamePrimTyCon{}, []) <- takeNameTyConApps tt
         = Just $ DataCtor
-        { dataCtorModuleName    = ModuleName ["Base"]
+        { dataCtorModuleName    = ModuleName ["DDC", "Internal", "Base"]
         , dataCtorName          = n
         , dataCtorTag           = 0
         , dataCtorFieldTypes    = [tUnboxed tt]

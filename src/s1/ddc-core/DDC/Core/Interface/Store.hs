@@ -45,6 +45,7 @@ importValuesOfStore store
  = do   mnns       <- readIORef $ storeValuesByName store
         let mns    =  concatMap Map.toList $ Map.elems mnns
 
+        -- FIXME: debugging.
         putStrLn $ unlines $ map show mns
 
         return mns
