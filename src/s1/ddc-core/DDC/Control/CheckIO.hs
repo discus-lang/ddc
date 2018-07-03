@@ -1,7 +1,7 @@
 
 -- | A simple exception monad where the inner computation is in IO.
 module DDC.Control.CheckIO
-        ( CheckM (..)
+        ( CheckM (..), MonadIO(..)
         , throw
         , runCheck
         , evalCheck
@@ -10,6 +10,7 @@ module DDC.Control.CheckIO
         , put)
 where
 import Control.Monad
+import Control.Monad.IO.Class
 
 
 -- | Checker monad maintains some state and manages errors during type checking.
@@ -37,6 +38,11 @@ instance Monad (CheckM s err) where
         (s', Left err)  -> return (s', Left err)
         (s', Right x)   -> s `seq` x `seq` runCheck s' (g x)
  {-# INLINE (>>=) #-}
+
+
+instance MonadIO (CheckM s err) where
+ liftIO action
+  = CheckM $ \s -> action >>= \r -> return (s, Right r)
 
 
 -- | Run a checker computation,

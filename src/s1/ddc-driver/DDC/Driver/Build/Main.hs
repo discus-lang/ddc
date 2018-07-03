@@ -5,9 +5,10 @@ module DDC.Driver.Build.Main
         , buildModule)
 where
 import DDC.Driver.Command.Compile
-import DDC.Driver.Build.Locate
+import DDC.Build.Interface.Locate
 import DDC.Driver.Config
 import DDC.Build.Spec
+import qualified DDC.Data.Pretty        as P
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
@@ -92,8 +93,13 @@ buildExecutable config store mMain msOther0
  where
         go []
          = do   let dirs = configModuleBaseDirectories config
-                path     <- locateModuleFromPaths dirs mMain "ds"
-                _        <- cmdCompile config True [] store path
+
+                path    <- liftIO (locateModuleFromPaths dirs mMain "source" "ds")
+                        >>= \case
+                                Left err        -> throwE $ P.renderIndent $ P.ppr err
+                                Right int       -> return int
+
+                _       <- cmdCompile config True [] store path
                 return ()
 
         go (m : more)
@@ -111,7 +117,12 @@ buildModule
 
 buildModule config store name
  = do   let dirs = configModuleBaseDirectories config
-        path    <- locateModuleFromPaths dirs name "ds"
+
+        path    <- liftIO (locateModuleFromPaths dirs name "source" "ds")
+                >>= \case
+                        Left err        -> throwE $ P.renderIndent $ P.ppr err
+                        Right int       -> return int
+
         _       <- cmdCompile config False [] store path
         return ()
 

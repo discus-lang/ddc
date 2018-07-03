@@ -11,7 +11,6 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Exp.Simple.Compounds  as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
-import qualified DDC.Type.Env                   as C
 import qualified DDC.Type.Sum                   as Sum
 
 import qualified SMR.Core.Exp                   as S
@@ -28,7 +27,6 @@ import qualified System.IO.Unsafe               as System
 import qualified Data.Map.Strict                as Map
 import qualified Data.ByteString                as BS
 import Prelude hiding (read)
-
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -49,17 +47,14 @@ fromRef c ss
 -- Interface --------------------------------------------------------------------------------------
 decodeInterface
         :: (Show n, Ord n)
-        => Config n
-        -> C.Env n
-        -> C.Env n
+        => Config n             -- ^ Decode configuration.
         -> FilePath             -- ^ Path of interace file, for error messages.
         -> UTCTime              -- ^ Timestamp of interface file.
         -> BS.ByteString        -- ^ Interface file contents.
         -> Maybe (C.Interface n)
 
-decodeInterface config _kenv _tenv filePath timeStamp bs
- | Just mm <- takeModuleDecls config
-           $  S.unpackFileDecls bs
+decodeInterface config filePath timeStamp bs
+ | Just mm <- takeModuleDecls config $ S.unpackFileDecls bs
  = Just $ C.Interface
         { C.interfaceFilePath   = filePath
         , C.interfaceTimeStamp  = timeStamp

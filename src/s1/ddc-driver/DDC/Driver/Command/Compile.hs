@@ -13,23 +13,25 @@ import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Core.Interface.Base
+import qualified DDC.Data.Pretty                as P
+
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.Time.Clock
-import qualified DDC.Driver.Build.Locate                as Locate
+import qualified DDC.Build.Interface.Locate             as Locate
 import qualified DDC.Build.Builder                      as Builder
 import qualified DDC.Source.Discus.Module               as SE
 import qualified DDC.Source.Discus.Lexer                as SE
 import qualified DDC.Source.Discus.Parser               as SE
-import qualified DDC.Core.Codec.Text.Pretty             as P
+-- import qualified DDC.Core.Codec.Text.Pretty             as P
 import qualified DDC.Core.Codec.Text.Lexer              as C
 
 import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
 import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
-import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as D.Decode
+-- import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as D.Decode
 
 import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Discus                        as D
@@ -106,11 +108,11 @@ cmdCompileRecursiveDS _config _bBuildExe _fsO _store []         _fsBlocked
 
 cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
  = do
---         liftIO $ putStrLn "\n\n* ENTER"
---         liftIO $ putStr $ unlines
---                [ "File            = " ++ show filePath
---                , "Queue           = " ++ show (filePath : fs)
---                , "Blocked         = " ++ show fsBlocked ]
+        liftIO $ putStrLn "\n\n* Compile ENTER"
+        liftIO $ putStr $ unlines
+               [ "File            = " ++ show filePath
+               , "Queue           = " ++ show (filePath : fs)
+               , "Blocked         = " ++ show fsBlocked ]
 
         -- Check if the requested file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -124,17 +126,17 @@ cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
         -- other modules it imports.
         modNamesNeeded  <- tasteNeeded filePath src
 
-        -- Names of all the modules that we have interfaces for.
+        -- Names of all the modules that we currently have interfaces for.
         modsNamesHave   <- liftIO $ Store.getModuleNames store
 
         -- Names of modules that we are missing interfaces for.
         let missing     = filter (\m -> not $ elem m modsNamesHave)
                         $ modNamesNeeded
 
---         liftIO  $ putStr $ unlines
---                 [ "Modules Needed  = " ++ show modNamesNeeded
---                 , "Modules Have    = " ++ show modsNamesHave
---                 , "Modules Missing = " ++ show missing ]
+        liftIO  $ putStr $ unlines
+                [ "Modules Needed  = " ++ show modNamesNeeded
+                , "Modules Have    = " ++ show modsNamesHave
+                , "Modules Missing = " ++ show missing ]
 
         case missing of
          -- We've already got all the interfaces needed by the
@@ -203,24 +205,23 @@ cmdLoadOrCompile config buildExe fsO store filePath
              = do
                    -- The .di file for the same module should be next to
                    -- any .o file for it.
-                   let filePathDI = replaceExtension filePathO ".di"
+--                   let filePathDI = replaceExtension filePathO ".di"
 
                    -- Check if we have a fresh interface and object
                    -- at this path.
                    fresh <- liftIO
-                         $ interfaceIsFresh
-                                store timeDS modNamesNeeded filePathO
+                         $ interfaceIsFresh store timeDS modNamesNeeded filePathO
 
-                   -- If we indeed have a fresh interface and object
-                   -- then we can load it directly. Otherwise search the rest
-                   -- of the paths.
+                   -- If we indeed have a fresh interface and object then we can
+                   -- load it directly. Otherwise search the rest of the paths.
                    if fresh && not (takeFileName filePath == "Main.ds")
                     then do
 --                         liftIO  $ putStrLn $ "* Loading "  ++ filePathDI
-                        result  <- liftIO $ Store.load D.profile D.Decode.takeName filePathDI
+--                        result  <- liftIO $ Store.load D.Decode.takeName filePathDI
+                        let result = error "cmdLoadOrCompile: load interface"
                         case result of
-                          Left  err -> throwE $ P.renderIndent $ P.ppr err
-                          Right int -> liftIO $ Store.wrap store int
+                          Left  _err -> throwE $ P.renderIndent $ P.string "FIXME" -- $ P.ppr err
+                          Right int  -> liftIO $ Store.wrap store int
 
                     else search filePathsMoreO
 
@@ -492,7 +493,10 @@ locateModuleFromConfig config mname
                 =  configModuleBaseDirectories config
                 ++ [Builder.buildBaseSrcDir (configBuilder config) </> "base"]
 
-        Locate.locateModuleFromPaths baseDirs mname ".ds"
+        liftIO (Locate.locateModuleFromPaths baseDirs mname "source" ".ds")
+         >>= \case
+                Left  err  -> throwE $ P.renderIndent $ P.ppr err
+                Right path -> return path
 
 
 -- | If the given file exists then get its modification time,

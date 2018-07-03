@@ -93,7 +93,7 @@ run config
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
-                result  <- runExceptT $  cmdCheckFromFile dconfig store filePath
+                result  <- runExceptT $ cmdCheckFromFile dconfig store filePath
 
                 case result of
                  Left err

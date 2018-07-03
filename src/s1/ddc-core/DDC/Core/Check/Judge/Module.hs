@@ -3,7 +3,7 @@ module DDC.Core.Check.Judge.Module
         ( checkModuleIO, reconModule
         , checkModuleM)
 where
-import DDC.Core.Check.Judge.Type.Base   (checkTypeM)
+import DDC.Core.Check.Judge.Type.Base           (checkTypeM)
 import DDC.Core.Check.Judge.DataDefs
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
@@ -11,15 +11,16 @@ import DDC.Core.Interface.Store
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
-import DDC.Core.Env.EnvX                (EnvX)
-import DDC.Control.CheckIO              (runCheck, throw, mapErr)
+import DDC.Core.Env.EnvX                        (EnvX)
+import DDC.Control.CheckIO                      (runCheck, throw, mapErr)
 
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified DDC.Core.Check.Post    as Post
-import qualified Data.Map.Strict        as Map
-import qualified System.IO.Unsafe       as S
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Core.Env.EnvX              as EnvX
+import qualified DDC.Core.Check.Context.Oracle  as Oracle
+import qualified DDC.Core.Check.Post            as Post
+import qualified Data.Map.Strict                as Map
+import qualified System.IO.Unsafe               as S
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -74,8 +75,20 @@ checkModuleM
         -> Mode n            -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM config _mStore mm@ModuleCore{} !mode
+checkModuleM config mStore mm@ModuleCore{} !mode
  = do
+        -- Wrap the store into a new interface oracle.
+        mOracle
+         <- case mStore of
+                Nothing    -> return $ Nothing
+                Just store -> return $ Just $ Oracle.newOracleOfStore store
+
+        -- Tell the oracle to bring bindings from the imported modules into scope.
+        (case mOracle of
+          Nothing     -> return ()
+          Just oracle -> liftIO $ Oracle.importModules oracle $ moduleImportModules mm)
+
+        -- Build the primitive environment.
         let envT_prim
                 = EnvT.empty
                 { EnvT.envtPrimFun

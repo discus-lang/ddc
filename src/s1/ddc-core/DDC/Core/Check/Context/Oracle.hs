@@ -1,7 +1,8 @@
 
 module DDC.Core.Check.Context.Oracle
         ( Oracle (..)
-        , newOracleOfStore)
+        , newOracleOfStore
+        , importModules)
 where
 import DDC.Core.Module.Name
 import DDC.Core.Interface.Store
@@ -34,4 +35,9 @@ newOracleOfStore store
         { oracleStore           = store
         , oracleImportedModules = [] }
 
+
+-- | Import bindings for some modules into the current scope.
+importModules :: Oracle n -> [ModuleName] -> IO ()
+importModules _oracle _mns
+ = return ()
 

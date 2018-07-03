@@ -1,7 +1,7 @@
 
 module DDC.Core.Interface.Store
         ( Store (..)
-        , new, wrap, load
+        , new, wrap
         , importValuesOfStore
 
         , Meta  (..)
@@ -13,42 +13,24 @@ module DDC.Core.Interface.Store
         , ImportValue   (..)
         , findImportValue)
 where
-import DDC.Core.Interface.Error
 import DDC.Core.Interface.Base
 import DDC.Core.Module.Import
 import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Data.Pretty
-import System.Directory
 import Data.IORef
 import Data.Maybe
 import Data.Map                                 (Map)
 import qualified Data.List                      as List
-import qualified DDC.Core.Fragment.Profile      as C
-import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
-import qualified SMR.Core.Exp                   as SMR
-import qualified SMR.Prim.Name                  as SMR
 import qualified Data.Map.Strict                as Map
-import qualified Data.ByteString                as BS
 
-
----------------------------------------------------------------------------------------------------
--- | Get a list of types of all top-level supers in all modules in the store.
---
---   TODO: multiple conflicting names get smashed together,
---   this is used by the elaborate pass which needs to be redone to use
---   the store directly.
---
-importValuesOfStore :: (Ord n, Show n) => Store n -> IO [(n, ImportValue n (Type n))]
-importValuesOfStore store
- = do   mnns       <- readIORef $ storeValuesByName store
-        let mns    =  concatMap Map.toList $ Map.elems mnns
-
-        -- FIXME: debugging.
-        putStrLn $ unlines $ map show mns
-
-        return mns
+-- import DDC.Core.Interface.Error
+-- import System.Directory
+-- import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
+-- import qualified SMR.Core.Exp                   as SMR
+-- import qualified SMR.Prim.Name                  as SMR
+-- import qualified Data.ByteString                as BS
 
 
 ---------------------------------------------------------------------------------------------------
@@ -106,7 +88,10 @@ new
          , storeTypeDefsByTyCon         = refTypeDefsByTyCon
          , storeCapsByName              = refCapsByName
          , storeValuesByName            = refValuesByName
-         , storeInterfaces              = refInterfaces }
+         , storeInterfaces              = refInterfaces
+
+         -- Fetch Functions
+         , storeLoadInterface           = Nothing }
 
 
 -- | Add information from a pre-loaded interface to the store.
@@ -134,39 +119,6 @@ wrap store ii
          -> iis ++ [ii]
 
 
--- | Load a new interface from a file.
-load    :: (Show n, Ord n)
-        => C.Profile n
-        -> (SMR.Exp Text SMR.Prim -> Maybe n)
-        -> FilePath
-        -> IO (Either Error (Interface n))
-
-load profile takeRef filePath
- = do   let kenv   = C.profilePrimKinds profile
-        let tenv   = C.profilePrimTypes profile
-        let config = Decode.Config takeRef
-
-        timeStamp  <- getModificationTime filePath
-
-        -- Read the file source.
-        bs      <- BS.readFile filePath
-
-        let magicSMR    = BS.pack [0x53, 0x4d, 0x52, 0x31]
-
-        if BS.isPrefixOf magicSMR (BS.take 4 bs)
-         -- Binary interface file in Shimmer format.
-         then do
-                let iint = Decode.decodeInterface config kenv tenv filePath timeStamp bs
-                case iint of
-                 Just i  -> return $ Right i
-                 Nothing -> return $ Left $ ErrorLoad filePath "unpack of Shimmer file failed"
-
-         -- Textual interface file in Discus Source format.
-         else do
-                return $ Left $ ErrorBadMagic filePath 0
-
-
-
 -- | Get metadata of interfaces currently in the store.
 getMeta :: Store n -> IO [Meta]
 getMeta store
@@ -188,6 +140,7 @@ getInterfaces store
         return ints
 
 
+---------------------------------------------------------------------------------------------------
 -- | See if a super is defined in any of the given modules, and if so
 --   return the module name and super type.
 --
@@ -325,3 +278,23 @@ dataDefsOfCtorFromInterface ii
  | otherwise
  = Map.empty
 -}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Get a list of types of all top-level supers in all modules in the store.
+--
+--   TODO: multiple conflicting names get smashed together,
+--   this is used by the elaborate pass which needs to be redone to use
+--   the store directly.
+--
+importValuesOfStore :: (Ord n, Show n) => Store n -> IO [(n, ImportValue n (Type n))]
+importValuesOfStore store
+ = do   mnns       <- readIORef $ storeValuesByName store
+        let mns    =  concatMap Map.toList $ Map.elems mnns
+
+        -- FIXME: debugging.
+        putStrLn $ unlines $ map show mns
+
+        return mns
+
+

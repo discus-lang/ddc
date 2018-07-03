@@ -23,9 +23,14 @@ import Data.Set         (Set)
 --   We do not store client specific visibility here because we want to reuse
 --   the loaded data when compiling multiple separate client modules.
 --
+--   The store contains methods to load interfaces from the underlying file system,
+--   (or across the network), so that is abstract in the concrete representation
+--   of interfaces.
+--
 data Store n
         = Store
-        { -- | Metadata for module interfaces currently represented in the store.
+        { -- Meta data ------------------------
+          -- | Metadata for module interfaces currently represented in the store.
           storeMeta             :: IORef (Map ModuleName Meta)
 
           -- Name Indexes ---------------------
@@ -87,6 +92,10 @@ data Store n
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
         , storeInterfaces           :: IORef [Interface n]
+
+          -- Fetch functions --------------------
+          -- | Load a complete module interface from the file system.
+        , storeLoadInterface        :: Maybe (ModuleName -> IO (Either String (Interface n)))
         }
 
 
