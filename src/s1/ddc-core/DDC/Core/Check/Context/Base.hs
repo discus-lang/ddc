@@ -74,9 +74,9 @@ import Prelude                          hiding ((<$>))
 --
 data Context n
         = Context
-        { -- | Oracle knows the types and kinds of things in other modules
-          --   (or can find out about them). This can be set to Nothing if
-          --   we're just checking a closed module.
+        { -- | The oracle knows the types and kinds of things in other
+          --   modules (or can find out). When checking a closed module
+          --   this can be set to Nothing.
           contextOracle         :: !(Maybe (Oracle n))
 
           -- | Top level environment of the current module.

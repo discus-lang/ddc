@@ -7,9 +7,6 @@ import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
--- import qualified DDC.Core.Check.Context as Context
--- import qualified DDC.Core.Env.EnvT      as EnvT
--- import qualified Data.Map.Strict        as Map
 import qualified DDC.Type.Sum           as Sum
 
 
