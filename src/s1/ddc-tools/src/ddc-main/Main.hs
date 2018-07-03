@@ -24,25 +24,33 @@ import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
-import qualified DDC.Core.Flow          as Flow
+
+import qualified DDC.Build.Interface.Locate             as Build
+import qualified DDC.Build.Interface.Load               as Build
+import qualified DDC.Build.Builder                      as Build
+
+import qualified DDC.Core.Flow                          as Flow
+import qualified DDC.Core.Discus                        as Discus
+import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as Discus
 
 import DDC.Driver.Interface.Source
 import DDC.Build.Builder
 import DDC.Data.Pretty
 import System.Environment
+import System.FilePath
 import System.IO
 import System.Exit
 import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Except
-import qualified System.FilePath                as System
-import qualified System.Directory               as System
-import qualified DDC.Driver.Stage               as Driver
-import qualified DDC.Driver.Config              as Driver
-import qualified DDC.Core.Salt.Runtime          as Runtime
-import qualified DDC.Core.Simplifier.Recipe     as Simplifier
-import qualified DDC.Version                    as Version
-import qualified DDC.Core.Interface.Store       as Store
+import qualified System.FilePath                        as System
+import qualified System.Directory                       as System
+import qualified DDC.Driver.Stage                       as Driver
+import qualified DDC.Driver.Config                      as Driver
+import qualified DDC.Core.Salt.Runtime                  as Runtime
+import qualified DDC.Core.Simplifier.Recipe             as Simplifier
+import qualified DDC.Version                            as Version
+import qualified DDC.Core.Interface.Store               as Store
 
 
 ---------------------------------------------------------------------------------------------------
@@ -92,7 +100,7 @@ run config
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 result  <- runExceptT $ cmdCheckFromFile dconfig store filePath
 
                 case result of
@@ -106,7 +114,7 @@ run config
         -- Parse, type check and transform a module.
         ModeLoad filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdLoadFromFile dconfig store
                                 (configTrans config) (configWith config)
                                 filePath
@@ -115,7 +123,7 @@ run config
         ModeCompile filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdCompileRecursive dconfig False store [filePath]
 
         -- Compile a module into an executable.
@@ -123,14 +131,14 @@ run config
         ModeMake fsPath@(filePath1 : _)
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath1)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdCompileRecursive dconfig True store fsPath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdBuild dconfig store filePath
 
         ModeLSP
@@ -139,13 +147,13 @@ run config
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdToSaltFromFile dconfig store filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig
                 runError $ cmdToLlvmFromFile dconfig store filePath
 
         -- Flow specific ------------------------------------------------------
@@ -287,6 +295,35 @@ getDriverConfig config mFilePath
 
         return  $ dconfig
                 { Driver.configSimplSalt        = simplSalt }
+
+
+---------------------------------------------------------------------------------------------------
+-- | Create a new interface store that knows how to load Discus interface files.
+newDiscusStore :: Driver.Config -> IO (Store.Store Discus.Name)
+newDiscusStore config
+ = do   store   <- Store.new
+        return  $ store { Store.storeLoadInterface = Just goLocate }
+ where
+        basePaths
+         =  Driver.configModuleBaseDirectories config
+         ++ [Build.buildBaseSrcDir (Driver.configBuilder config) </> "base"]
+
+        goLocate nModule
+         = Build.locateModuleFromPaths basePaths nModule "interface" ".di"
+         >>= \case
+                Left err   -> failStore err
+                Right path -> goLoad path
+
+        goLoad path
+         = Build.loadInterface Discus.takeName path
+         >>= \case
+                Left err   -> failStore err
+                Right ii   -> return ii
+
+failStore :: Pretty err => err -> IO a
+failStore err
+ = do   hPutStrLn stderr $ renderIndent $ ppr err
+        exitWith $ ExitFailure 1
 
 
 ---------------------------------------------------------------------------------------------------

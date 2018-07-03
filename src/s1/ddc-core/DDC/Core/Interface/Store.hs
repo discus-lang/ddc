@@ -25,13 +25,6 @@ import Data.Map                                 (Map)
 import qualified Data.List                      as List
 import qualified Data.Map.Strict                as Map
 
--- import DDC.Core.Interface.Error
--- import System.Directory
--- import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
--- import qualified SMR.Core.Exp                   as SMR
--- import qualified SMR.Prim.Name                  as SMR
--- import qualified Data.ByteString                as BS
-
 
 ---------------------------------------------------------------------------------------------------
 instance Pretty Meta where
