@@ -1,11 +1,18 @@
 
 module DDC.Core.Check.Context.Oracle
         ( Oracle (..)
+        , Store.TyConThing (..)
+        , Store.kindOfTyConThing
         , newOracleOfStore
-        , importModules)
+        , importModules
+        , resolveTyConThing)
 where
+import DDC.Core.Check.State
 import DDC.Core.Module.Name
+import DDC.Core.Check.Error
+import DDC.Type.Exp
 import qualified DDC.Core.Interface.Store       as Store
+import qualified DDC.Core.Interface.Resolve     as Store
 import qualified Data.Set                       as Set
 import DDC.Core.Interface.Store                 (Store)
 import Data.Set                                 (Set)
@@ -47,8 +54,9 @@ importModules oracle mns
  = do
         -- Check that the store already contains the interface files we need.
         -- This should have been guaranteed by the compilation driver.
-        bs <- mapM (Store.loadInterface (oracleStore oracle)) mns
+        bs <- mapM (Store.ensureInterface (oracleStore oracle)) mns
 
+        -- FIXME: convert hard errors to internal errors.
         when (not $ and bs)
          $ error "ddc-core.Oracle.importModules: store did not load the interfaces we wanted"
 
@@ -56,3 +64,36 @@ importModules oracle mns
                 oracleImportedModules
                  = Set.union (Set.fromList mns)
                  $ oracleImportedModules oracle }
+
+
+-- FIXME: add oracle cache for things that we've found.
+--   We want to cache visible things relative to the module being checked,
+--   rather than hitting the Store indexes each time.
+--   We can also then use the oracle cache to close the module after type checking,
+--   as it is guaranteed to contain all used declarations.
+resolveTyConThing
+        :: forall n a. (Ord n, Show n)
+        => Oracle n -> n -> CheckM a n (Maybe (Store.TyConThing n))
+
+resolveTyConThing oracle n
+ = goStore
+ where
+        goStore
+         = (liftIO $ Store.resolveTyConThing
+                        (oracleStore oracle)
+                        (oracleImportedModules oracle) n)
+         >>= \case
+                Left Store.ErrorNotFound{} -> return Nothing
+                Left err    -> throw  $ checkOfResolveError n err
+                Right thing -> return $ Just thing
+
+
+
+-- TODO: convert the rest of the errors.
+-- TODO: add tests for these errors.
+checkOfResolveError :: (Ord n, Show n) => n -> Store.Error n -> Error a n
+checkOfResolveError n err
+ = case err of
+        Store.ErrorNotFound _   -> ErrorType $ ErrorTypeUndefinedTypeCtor (UName n)
+        _                       -> error $ "some error " ++ show err
+

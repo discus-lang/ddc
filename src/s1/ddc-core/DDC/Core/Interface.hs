@@ -7,7 +7,7 @@ module DDC.Core.Interface
 
         , new
         , addInterface
-        , loadInterface
+        , ensureInterface
         , getMeta
         , getModuleNames
         , getInterfaces

@@ -1,6 +1,6 @@
 
 module DDC.Core.Check.Context
-        ( 
+        (
           -- * Type Checker Mode.
           Mode    (..)
 
@@ -68,8 +68,14 @@ module DDC.Core.Check.Context
         , applySolvedEither
 
           -- * Effects
-        , effectSupported)
+        , effectSupported
+
+          -- * Oracle
+        , TyConThing (..)
+        , resolveTyConThing
+        , lookupTypeSyn)
 where
+import DDC.Core.Check.Context.Resolve
 import DDC.Core.Check.Context.Effect
 import DDC.Core.Check.Context.Apply
 import DDC.Core.Check.Context.Elem

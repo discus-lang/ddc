@@ -55,8 +55,8 @@ checkModuleIO config mStore xx mode
 --
 reconModule
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n          -- ^ Type checker configuration defines what features to support.
-        -> Module a n        -- ^ Module to check.
+        => Config n         -- ^ Type checker configuration defines what features to support.
+        -> Module a n       -- ^ Module to check.
         -> ( Either (Error a n) (Module (AnTEC a n) n)
            , CheckTrace )
 
@@ -69,10 +69,10 @@ reconModule config xx
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n          -- ^ Type checker configuration defines what features to support.
-        -> Maybe (Store n)   -- ^ Interface store if we want to allow imports from other modules.
-        -> Module a n        -- ^ Module check.
-        -> Mode n            -- ^ Type checker mode.
+        => Config n         -- ^ Type checker configuration defines what features to support.
+        -> Maybe (Store n)  -- ^ Interface store if we want to allow imports from other modules.
+        -> Module a n       -- ^ Module check.
+        -> Mode n           -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
 checkModuleM config mStore mm@ModuleCore{} !mode
@@ -91,7 +91,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 Just store -> return $ Just $ Oracle.newOracleOfStore store
 
         -- Tell the oracle to bring bindings from the imported modules into scope.
-        _mOracle
+        mOracle
          <- case mOracle_init of
                 Nothing     -> return mOracle_init
                 Just oracle
@@ -254,7 +254,9 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         --  These contain names that are visible to bindings in the module.
         let envT_top    = envT_importCaps
         let envX_top    = envX_importValues
-        let ctx_top     = emptyContext { contextEnvX = envX_top }
+        let ctx_top     = emptyContext
+                        { contextOracle = mOracle
+                        , contextEnvX   = envX_top }
 
         -- Check the sigs of exported types ---------------
         esrcsType'  <- checkExportTypes   config envT_top

@@ -16,16 +16,13 @@ import Data.Set         (Set)
 ---------------------------------------------------------------------------------------------------
 -- | Abstract API to a collection of module interfaces.
 --
---   The store is a global data structure that is not specific to one module.
---   It contains information about loaded interfaces, but does not specify
---   whether that information should be visible to a particular client module.
+--   The store is a global data structure that can be reused while compiling
+--   multiple client modules. It contains information about loaded interfaces,
+--   but does not specify whether that information should be visible to a
+--   particular client module.
 --
---   We do not store client specific visibility here because we want to reuse
---   the loaded data when compiling multiple separate client modules.
---
---   The store contains methods to load interfaces from the underlying file system,
---   (or across the network), so that is abstract in the concrete representation
---   of interfaces.
+--   We keep the underling file system abstract by parameterising the store
+--   over functions to load the concrete interface file data.
 --
 data Store n
         = Store
@@ -67,10 +64,10 @@ data Store n
           -- client module, so the visibility needs to be determined separately.
 
           -- | Map of data type names to their declarations.
-        , storeDataDefsByTyCon      :: IORef (Map ModuleName (Map n (DataDef n)))
+        , storeDataTypesByTyCon     :: IORef (Map ModuleName (Map n (DataType n)))
 
           -- | Map of data constructor names to their enclosing type declarations.
-        , storeDataDefsByDaCon      :: IORef (Map ModuleName (Map n (DataDef n)))
+        , storeDataCtorsByDaCon     :: IORef (Map ModuleName (Map n (DataCtor n)))
 
           -- | Map of type synonym names to their declarations.
         , storeTypeDefsByTyCon      :: IORef (Map ModuleName (Map n (Kind n, Type n)))
@@ -96,7 +93,8 @@ data Store n
           -- Fetch functions --------------------
           -- | Load a complete module interface from the file system.
           --   This returns Nothing if the interface cannot be found,
-          --   and will throw an error in the IO monad if it exists but cannot be loaded.
+          --   and will throw an error in the IO monad if it exists but cannot be loaded
+          --   due to a deserialization error.
         , storeLoadInterface        :: Maybe (ModuleName -> IO (Maybe (Interface n)))
         }
 

@@ -4,12 +4,13 @@ module DDC.Core.Check.Judge.Kind
 where
 import DDC.Core.Check.Judge.Kind.TyCon
 import DDC.Core.Check.Judge.EqT
+import DDC.Core.Check.Context.Resolve
 import DDC.Core.Check.Context
 import DDC.Core.Check.Error
 import DDC.Core.Check.Config
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Predicates
-import DDC.Type.DataDef
+-- import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp
 import DDC.Data.Pretty
@@ -18,9 +19,9 @@ import Control.Monad
 import DDC.Core.Check.Base              (CheckM)
 import qualified DDC.Core.Check.Base    as C
 import qualified DDC.Type.Sum           as TS
-import qualified DDC.Core.Env.EnvX      as EnvX
+-- import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified Data.Map               as Map
+-- import qualified Data.Map               as Map
 
 
 import DDC.Core.Check.Base
@@ -198,34 +199,13 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          | TyConBound u _k      <- tc
          = case u of
             UName n
-             -- The kinds of abstract imported type constructors are in the
-             -- global kind environment.
-             | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
-             , UniverseSpec     <- uni
-             -> return (TCon (TyConBound u k'), k')
-
-             -- User defined data type constructors must be in the set of
-             -- data defs. Attach the real kind why we're here.
-             | Just def         <- Map.lookup n $ dataDefsTypes
-                                                $ EnvX.envxDataDefs
-                                                $ contextEnvX ctx0
-             , UniverseSpec     <- uni
-             -> let k'   = kindOfDataType def
-                in  return (TCon (TyConBound u k'), k')
-
-             -- For type synonyms, just re-check the right of the binding.
-             | Just t'          <- Map.lookup n $ EnvT.envtEquations
-                                                $ contextEnvT ctx0
-             -> do  (tt', k', _) <- checkTypeM config ctx0 uni t' mode
-                    return (tt', k')
-
-             -- We don't have a type for this constructor.
-             |  otherwise
-             -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
+             -> do (_thing, kThing) <- resolveTyConThing ctx0 n
+                   return (TCon (TyConBound u kThing), kThing)
 
             -- Type constructors are always defined at top-level and not
             -- by anonymous debruijn binding.
-            UIx{}   -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
+            UIx{} -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
+
 
          -- Existentials can be either in the Spec or Kind universe,
          -- and their kinds/sorts are directly attached.

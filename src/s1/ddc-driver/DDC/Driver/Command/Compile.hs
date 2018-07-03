@@ -128,7 +128,7 @@ cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
  = do   -- Try to load an existing interface file.
         -- This will return True if we find an interface file,
         --  *and* it is fresh relative to the associated source file.
-        bFoundFresh <- liftIO $ Store.loadInterface store nModule
+        bFoundFresh <- liftIO $ Store.ensureInterface store nModule
         if bFoundFresh
          then   cmdCompileRecursiveDS config bBuildExe fsO store
                         jsMore jsBlocked

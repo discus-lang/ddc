@@ -1,15 +1,15 @@
 
 module DDC.Core.Interface.Store
         ( Store (..)
-        , new
-        , addInterface
-        , loadInterface
-        , importValuesOfStore
-
         , Meta  (..)
         , getMeta
         , getModuleNames
         , getInterfaces
+
+        , new
+        , addInterface
+        , ensureInterface
+        , importValuesOfStore
 
         , DataDef       (..)
         , ImportValue   (..)
@@ -23,9 +23,10 @@ import DDC.Type.Exp
 import DDC.Data.Pretty
 import Data.IORef
 import Data.Maybe
-import Data.Map                                 (Map)
-import qualified Data.List                      as List
-import qualified Data.Map.Strict                as Map
+import Data.Map                         (Map)
+import qualified Data.List              as List
+import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
 
 
 ---------------------------------------------------------------------------------------------------
@@ -54,8 +55,8 @@ new
         refExportValuesOfModule         <- newIORef Map.empty
 
         -- Module Data
-        refDataDefsByTyCon              <- newIORef Map.empty
-        refDataDefsByDaCon              <- newIORef Map.empty
+        refDataTypesByTyCon             <- newIORef Map.empty
+        refDataCtorsByDaCon             <- newIORef Map.empty
         refTypeDefsByTyCon              <- newIORef Map.empty
         refCapsByName                   <- newIORef Map.empty
         refValuesByName                 <- newIORef Map.empty
@@ -78,8 +79,8 @@ new
          , storeExportValuesOfModule    = refExportValuesOfModule
 
          -- Module Data
-         , storeDataDefsByTyCon         = refDataDefsByTyCon
-         , storeDataDefsByDaCon         = refDataDefsByDaCon
+         , storeDataTypesByTyCon        = refDataTypesByTyCon
+         , storeDataCtorsByDaCon        = refDataCtorsByDaCon
          , storeTypeDefsByTyCon         = refTypeDefsByTyCon
          , storeCapsByName              = refCapsByName
          , storeValuesByName            = refValuesByName
@@ -87,71 +88,6 @@ new
 
          -- Fetch Functions
          , storeLoadInterface           = Nothing }
-
-
----------------------------------------------------------------------------------------------------
--- | Add information from a pre-loaded interface to the store.
-addInterface
-        :: (Ord n, Show n)
-        => Store n -> Interface n -> IO ()
-
-addInterface store ii
- = do
-        modifyIORef' (storeMeta store) $ \meta
-         -> Map.insert  (interfaceModuleName ii)
-                        (metaOfInterface ii)
-                        meta
-
-        modifyIORef' (storeDataDefsByTyCon store) $ \ddefs
-         -> Map.insert  (interfaceModuleName ii)
-                        (dataDefsByTyConOfInterface ii)
-                        ddefs
-
-        modifyIORef' (storeValuesByName store) $ \ivs
-         -> Map.unionWith Map.union ivs (importValuesOfInterface ii)
-
---        modifyIORef' (storeDataDefOfCtor store) $ \ctors
---         -> Map.union ctors (dataDefsOfCtorFromInterface ii)
-
-        modifyIORef' (storeInterfaces store) $ \iis
-         -> iis ++ [ii]
-
-
--- | Try to find and load the interface file for the given module into the store,
---   or do nothing if we already have it.
-
---   If the interface file cannot be found then return False, otherwise True.
---   If the interface file exists but cannot be loaded then `error`.
---   If there is no load function defined then `error`.
---
---   FIXME: we need to check that the interface file is fresh relative
---   to any existing source files and dependent modules. When statting the dep
---   modules make sure to avoid restatting the same module over and over.
---
-loadInterface
-        :: (Ord n, Show n)
-        => Store n -> ModuleName -> IO Bool
-
-loadInterface store nModule
- | Just load   <- storeLoadInterface store
- = let
-        goCheckMeta
-         = do   meta <- readIORef $ storeMeta store
-                case Map.lookup nModule meta of
-                 Just _  -> return True
-                 Nothing -> goLoad
-
-        goLoad
-         = do   result <- load nModule
-                case result of
-                 Nothing -> return False
-                 Just ii
-                  -> do addInterface store ii
-                        return True
-   in   goCheckMeta
-
- | otherwise
- = error "ddc-core.loadInterface: no load function defined"
 
 
 ---------------------------------------------------------------------------------------------------
@@ -174,6 +110,90 @@ getInterfaces :: Store n -> IO [Interface n]
 getInterfaces store
  = do   ints    <- readIORef (storeInterfaces store)
         return ints
+
+
+---------------------------------------------------------------------------------------------------
+-- | Try to find and load the interface file for the given module into the store,
+--   or do nothing if we already have it.
+
+--   If the interface file cannot be found then return False, otherwise True.
+--   If the interface file exists but cannot be loaded then `error`.
+--   If there is no load function defined then `error`.
+--
+--   FIXME: we need to check that the interface file is fresh relative
+--          to any existing source files and dependent modules. When statting the dep
+--          modules also make sure to avoid restatting the same module over and over.
+--          The top level compile driver used to do this job.
+--
+ensureInterface
+        :: (Ord n, Show n)
+        => Store n -> ModuleName -> IO Bool
+
+ensureInterface store nModule
+ | Just load   <- storeLoadInterface store
+ = let
+        goCheckMeta
+         = do   meta <- readIORef $ storeMeta store
+                case Map.lookup nModule meta of
+                 Just _  -> return True
+                 Nothing -> goLoad
+
+        goLoad
+         = do   result <- load nModule
+                case result of
+                 Nothing -> return False
+                 Just ii
+                  -> do addInterface store ii
+                        return True
+   in   goCheckMeta
+
+ | otherwise
+ = return False
+
+
+---------------------------------------------------------------------------------------------------
+-- | Add information from a pre-loaded interface to the store.
+addInterface
+        :: (Ord n, Show n)
+        => Store n -> Interface n -> IO ()
+
+addInterface store ii
+ = do   let nModule  = interfaceModuleName ii
+
+        -- Add interface metadata.
+        modifyIORef' (storeMeta store) $ \meta
+         -> Map.insert  (interfaceModuleName ii)
+                        (metaOfInterface ii)
+                        meta
+
+        -- Add whole interface to store.
+        modifyIORef' (storeInterfaces store) $ \iis
+         -> iis ++ [ii]
+
+        -- Add data type definitions.
+        let dataTypesByTyCon = dataTypesByTyConOfInterface ii
+        modifyIORef' (storeDataTypesByTyCon store) $ \ddefs
+         -> Map.insert nModule dataTypesByTyCon ddefs
+
+        -- Add type synonym definitions.
+        let typeDefsByTyCon  = typeDefsByTyConOfInterface ii
+        modifyIORef' (storeTypeDefsByTyCon store) $ \tdefs
+         -> Map.insert nModule typeDefsByTyCon tdefs
+
+        -- Add value definitions.
+        modifyIORef' (storeValuesByName store) $ \ivs
+         -> Map.unionWith Map.union ivs (importValuesOfInterface ii)
+
+        -- Update type ctor index.
+        modifyIORef' (storeTypeCtorNames store) $ \names
+         -> Map.unionsWith Set.union
+                [ names
+                , Map.fromList  [ (n, Set.singleton nModule)
+                                | n <- Map.keys dataTypesByTyCon ]
+                , Map.fromList  [ (n, Set.singleton nModule)
+                                | n <- Map.keys typeDefsByTyCon  ] ]
+
+        return ()
 
 
 ---------------------------------------------------------------------------------------------------
@@ -200,16 +220,6 @@ findImportValue store n modNames
                 modNames
 
 
----------------------------------------------------------------------------------------------------
--- | Extract metadata from an interface.
-metaOfInterface   :: Interface n -> Meta
-metaOfInterface ii
-        = Meta
-        { metaFilePath   = interfaceFilePath   ii
-        , metaTimeStamp  = interfaceTimeStamp  ii
-        , metaModuleName = interfaceModuleName ii }
-
-
 -- | Build nested maps from a list of triples.
 --   Any values with duplicate 'a' and 'b' keys get overwritten by later ones.
 nestMaps :: (Ord a, Ord b) => [(a, b, c)] -> Map a (Map b c)
@@ -221,6 +231,18 @@ nestMaps xs
                         Nothing   -> Just (Map.singleton b c)
                         Just mpBC -> Just (Map.insert b c mpBC))
                 a mpABC
+
+
+---------------------------------------------------------------------------------------------------
+-- | Extract metadata from an interface.
+metaOfInterface   :: Interface n -> Meta
+metaOfInterface ii
+        = Meta
+        { metaFilePath   = interfaceFilePath   ii
+        , metaTimeStamp  = interfaceTimeStamp  ii
+        , metaModuleName = interfaceModuleName ii }
+
+
 
 -- Caps -------------------------------------------------------------------------------------------
 {-
@@ -282,14 +304,24 @@ importValuesOfInterface ii
                    $ map snd $ moduleImportValues $ interfaceModule ii)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Extract a map of all data declarations by type constructor from a module interface.
-dataDefsByTyConOfInterface :: Ord n => Interface n -> Map n (DataDef n)
-dataDefsByTyConOfInterface ii
- = Map.union
-        (Map.fromList [ (dataDefTypeName def, def)
+dataTypesByTyConOfInterface :: Ord n => Interface n -> Map n (DataType n)
+dataTypesByTyConOfInterface ii
+ = dataDefsTypes
+        $ fromListDataDefs $ Map.elems
+        $ Map.union
+                (Map.fromList [ (dataDefTypeName def, def)
                       | def <- map snd $ moduleImportDataDefs $ interfaceModule ii])
-        (Map.fromList [ (dataDefTypeName def, def)
+                (Map.fromList [ (dataDefTypeName def, def)
                       | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
+
+
+-- | Extract a map of all type definitions by type constructor from a module interface.
+typeDefsByTyConOfInterface :: Ord n => Interface n -> Map n (Kind n, Type n)
+typeDefsByTyConOfInterface ii
+ = Map.union    (Map.fromList $ moduleImportTypeDefs $ interfaceModule ii)
+                (Map.fromList $ moduleLocalTypeDefs  $ interfaceModule ii)
 
 
 -- | Take a module interface and extract a map of defined data constructor
