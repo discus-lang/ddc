@@ -94,3 +94,7 @@ locateModuleFromPath pathBase (ModuleName parts) ext
         if exists
          then return $ Just pathFile
          else return Nothing
+
+--      FIXME: we need to check that the interface is current.
+
+

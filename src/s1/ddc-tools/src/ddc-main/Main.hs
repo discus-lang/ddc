@@ -311,6 +311,8 @@ newDiscusStore config
         goLocate nModule
          = Build.locateModuleFromPaths basePaths nModule "interface" ".di"
          >>= \case
+                Left Build.ErrorLocateNotFound{}
+                           -> return Nothing
                 Left err   -> failStore err
                 Right path -> goLoad path
 
@@ -318,7 +320,8 @@ newDiscusStore config
          = Build.loadInterface Discus.takeName path
          >>= \case
                 Left err   -> failStore err
-                Right ii   -> return ii
+                Right ii   -> return $ Just ii
+
 
 failStore :: Pretty err => err -> IO a
 failStore err

@@ -95,8 +95,9 @@ data Store n
 
           -- Fetch functions --------------------
           -- | Load a complete module interface from the file system.
-          --   If the interface cannot be found then it fails in the IO monad.
-        , storeLoadInterface        :: Maybe (ModuleName -> IO (Interface n))
+          --   This returns Nothing if the interface cannot be found,
+          --   and will throw an error in the IO monad if it exists but cannot be loaded.
+        , storeLoadInterface        :: Maybe (ModuleName -> IO (Maybe (Interface n)))
         }
 
 

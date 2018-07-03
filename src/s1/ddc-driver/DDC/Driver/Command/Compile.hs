@@ -1,7 +1,7 @@
 module DDC.Driver.Command.Compile
         ( cmdCompileRecursive
         , cmdCompileRecursiveDS
-        , cmdLoadOrCompile
+--        , cmdLoadOrCompile
         , cmdCompile
         , getModificationTimeIfExists)
 where
@@ -49,6 +49,17 @@ import qualified DDC.Core.Interface.Store                       as Store
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Jobs we need to do in the compilation.
+data Job
+        -- | Find and load a Discus module.
+        = JobLoadDiscusModule   C.ModuleName
+
+        -- | Build the source file at the given path.
+        | JobBuildFilePath      FilePath
+        deriving (Eq, Ord, Show)
+
+
+---------------------------------------------------------------------------------------------------
 -- | Recursively compile source modules into @.o@ files,
 --   or load existing interfaces if we have them and the @.o@ file is
 --   still fresh.
@@ -80,7 +91,10 @@ cmdCompileRecursive config bBuildExe store fsPath
         let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
 
         -- Start recursive build.
-        cmdCompileRecursiveDS config bBuildExe fsO store fsDS []
+        cmdCompileRecursiveDS
+                config bBuildExe fsO store
+                (map JobBuildFilePath fsDS)
+                []
 
  | otherwise
  = do   mapM_ (cmdCompile config bBuildExe [] store) fsPath
@@ -95,25 +109,39 @@ cmdCompileRecursive config bBuildExe store fsPath
 --     are added to the interface store.
 --
 cmdCompileRecursiveDS
-        :: Config               -- ^ Build driver config.
-        -> Bool                 -- ^ Build an executable.
-        -> [FilePath]           -- ^ Extra object files to link with.
-        -> Store D.Name         -- ^ Inferface store.
-        -> [FilePath]           -- ^ Names of source files still to load.
-        -> [FilePath]           -- ^ Names of source files currently blocked.
+        :: Config       -- ^ Build driver config.
+        -> Bool         -- ^ Build an executable.
+        -> [FilePath]   -- ^ Extra object files to link with.
+        -> Store D.Name -- ^ Inferface store.
+        -> [Job]        -- ^ Jobs we still need to perform.
+        -> [Job]        -- ^ Jobs that we have already attempted in the context.
         -> ExceptT String IO ()
 
-cmdCompileRecursiveDS _config _bBuildExe _fsO _store []         _fsBlocked
+cmdCompileRecursiveDS _config _bBuildExe _fsO _store [] _jsBlocked
  = return ()
 
-cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
- = do
-        liftIO $ putStrLn "\n\n* Compile ENTER"
-        liftIO $ putStr $ unlines
-               [ "File            = " ++ show filePath
-               , "Queue           = " ++ show (filePath : fs)
-               , "Blocked         = " ++ show fsBlocked ]
+cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
 
+ -- Load a named Discus module, either from an existing interface,
+ -- or try to locate and build the source file.
+ | JobLoadDiscusModule nModule <- jNext
+ = do   -- Try to load an existing interface file.
+        -- This will return True if we find an interface file,
+        --  *and* it is fresh relative to the associated source file.
+        bFoundFresh <- liftIO $ Store.loadInterface store nModule
+        if bFoundFresh
+         then   cmdCompileRecursiveDS config bBuildExe fsO store
+                        jsMore jsBlocked
+         else do
+                -- We can't load the interface, so try to build the module
+                -- from source instead.
+                path <- locateModuleFromConfig config nModule
+                cmdCompileRecursiveDS config bBuildExe fsO store
+                        (JobBuildFilePath path : jsMore) jsBlocked
+
+ -- Build
+ | JobBuildFilePath filePath <- jNext
+ = do
         -- Check if the requested file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -143,154 +171,35 @@ cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
          -- current module.
          [] -> do
                 -- Compile the current module.
-                cmdLoadOrCompile config bBuildExe fsO store filePath
+                cmdCompile config bBuildExe fsO store filePath
 
-                -- Build other modules that are still queued.
-                cmdCompileRecursiveDS config bBuildExe fsO store fs []
+                -- Perform the other jobs that are still queued.
+                cmdCompileRecursiveDS config bBuildExe fsO store jsMore []
 
          -- We still need to load or compile dependent modules.
          ms -> do
                 -- Determine filepaths for all dependent modules.
-                fsMore  <- mapM (locateModuleFromConfig config) ms
+                let jsDep = map JobLoadDiscusModule ms
 
                 -- Check that we're not on a recursive loop,
                 -- trying to compile a module that's importing itself.
+{-              FIXME: fix the recursive check, note multiple reps
+                       of job moduleName vs filePath
+
                 let fsRec = List.intersect fsMore fsBlocked
                 when (not $ null fsRec)
                  $ throwE $ unlines
                  $  [ "Cannot build recursive module" ]
                  ++ [ "    " ++ show fsRec ]
-
+-}
                 -- Shift the current module to the end of the queue,
                 -- compiling the dependent modules first.
                 cmdCompileRecursiveDS config bBuildExe fsO store
-                        (List.nub $ fsMore ++ fs ++ [filePath])
-                        (filePath : fsBlocked)
+                        (List.nub $ jsDep ++ jsMore ++ [jNext])
+                        (JobBuildFilePath filePath : jsBlocked)
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load the interface correponding to a source file,
---   or re-compile the source if it's fresher than the interface.
---
---   * Interfaces for dependent modules must already be in the
---     interface store.
---
-cmdLoadOrCompile
-        :: Config               -- ^ Build driver config.
-        -> Bool                 -- ^ Build an exeecutable.
-        -> [FilePath]           -- ^ Extra object files to link with.
-        -> Store D.Name         -- ^ Interface store.
-        -> FilePath             -- ^ Path to source file.
-        -> ExceptT String IO ()
-
-cmdLoadOrCompile config buildExe fsO store filePath
- = do
-        -- Check that the source file exists.
-        exists  <- liftIO $ doesFileExist filePath
-        when (not exists)
-         $ throwE $ "No such file " ++ show filePath
-
-        -- Read in the source file and get the current timestamp.
-        src             <- liftIO $ readFile filePath
-        Just timeDS     <- liftIO $ getModificationTimeIfExists filePath
-
-        -- Parse just the header of the module to determine
-        -- what other modules it imports.
-        modNamesNeeded  <- tasteNeeded filePath src
-
-        -- Search through the likely paths that might hold a pre-compiled
-        -- interface and object file. If we find it then we can reload it,
-        -- otherwise we'll need to build the module from source again.
-        let search (filePathO : filePathsMoreO)
-             = do
-                   -- The .di file for the same module should be next to
-                   -- any .o file for it.
---                   let filePathDI = replaceExtension filePathO ".di"
-
-                   -- Check if we have a fresh interface and object
-                   -- at this path.
-                   fresh <- liftIO
-                         $ interfaceIsFresh store timeDS modNamesNeeded filePathO
-
-                   -- If we indeed have a fresh interface and object then we can
-                   -- load it directly. Otherwise search the rest of the paths.
-                   if fresh && not (takeFileName filePath == "Main.ds")
-                    then do
---                         liftIO  $ putStrLn $ "* Loading "  ++ filePathDI
---                        result  <- liftIO $ Store.load D.Decode.takeName filePathDI
-                        let result = error "cmdLoadOrCompile: load interface"
-                        case result of
-                          Left  _err -> throwE $ P.renderIndent $ P.string "FIXME" -- $ P.ppr err
-                          Right int  -> liftIO $ Store.wrap store int
-
-                    else search filePathsMoreO
-
-            -- We're out of places to search for pre-existing interface
-            -- files, so build it gain.
-            search []
-             = do
---                  liftIO  $ putStrLn "* Compiling"
-                  cmdCompile config buildExe fsO store filePath
-
-        -- Check the config for where the interface might be.
-        -- It'll either be next to the source file or in the auxilliary
-        -- output directory if that was specified.
-        let (filePathO_output, filePathO_libs)
-                =  objectPathsOfConfig config filePath
-
-        -- Search all the likely places.
-        search (filePathO_output : filePathO_libs)
-
-
--- | Look for an interface file in the given directory.
---   If there's one there see if it's fresh enough to reload (True)
---   or whether we need to rebuild it (False).
---
---  It's safe to reload the module from an inteface file if:
---   1. There is an existing interface which is fresher than the source.
---   2. There is an existing object    which is fresher than the source.
---   3. There is an existing interface which is fresher than the
---      interfaces of all dependencies.
---
---  Additionally, we force rebuild for the top level module, because
---  that's what was mentioned on the command line. We're trying to
---  follow the principle of least surprise in this regard.
---
-interfaceIsFresh
-        :: Store D.Name         -- ^ Current interface store.
-        -> UTCTime              -- ^ Timestamp on original source file.
-        -> [C.ModuleName]       -- ^ Names of modules needed by source.
-        -> FilePath             -- ^ Expected path of object file.
-        -> IO Bool
-
-interfaceIsFresh store timeDS modNamesNeeded filePathO
- = do
-        let filePathDI  =  replaceExtension filePathO ".di"
-        mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
-        mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
-        meta'           <- liftIO $ Store.getMeta store
-
-        -- object is fresher than source
-        let bFreshO
-                | Just timeO  <- mTimeO,  timeDS < timeO  = True
-                | otherwise                               = False
-
-        -- interface is fresher than source.
-        let bFreshDI
-                | Just timeDI <- mTimeDI, timeDS < timeDI = True
-                | otherwise                               = False
-
-        let bFreshDep
-                | Just timeDI <- mTimeDI
-                = and   [ Store.metaTimeStamp m <= timeDI
-                                | m <- meta'
-                                , elem (Store.metaModuleName m) modNamesNeeded ]
-
-                | otherwise
-                = False
-
-        return  $ and [bFreshO, bFreshDI, bFreshDep]
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Compile a source module into a @.o@ file.
@@ -434,7 +343,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 liftIO  $ C.Encode.storeInterface cEncode pathDI int
 
                 -- Add the new interface to the store.
-                liftIO $ Store.wrap store int
+                liftIO $ Store.addInterface store int
 
                 return ()
 
@@ -523,6 +432,132 @@ dropBody toks = go toks
                         = []
 
         go (t : moar)   = t : go moar
+
+
+-------------------------------------------------------------------------------
+-- | Look for an interface file in the given directory.
+--   If there's one there see if it's fresh enough to reload (True)
+--   or whether we need to rebuild it (False).
+--
+--  It's safe to reload the module from an inteface file if:
+--   1. There is an existing interface which is fresher than the source.
+--   2. There is an existing object    which is fresher than the source.
+--   3. There is an existing interface which is fresher than the
+--      interfaces of all dependencies.
+--
+--  Additionally, we force rebuild for the top level module, because
+--  that's what was mentioned on the command line. We're trying to
+--  follow the principle of least surprise in this regard.
+--
+{- FIXME: we need to reinstate this in the module source locator.
+interfaceIsFresh
+        :: Store D.Name         -- ^ Current interface store.
+        -> UTCTime              -- ^ Timestamp on original source file.
+        -> [C.ModuleName]       -- ^ Names of modules needed by source.
+        -> FilePath             -- ^ Expected path of object file.
+        -> IO Bool
+
+interfaceIsFresh store timeDS modNamesNeeded filePathO
+ = do
+        let filePathDI  =  replaceExtension filePathO ".di"
+        mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
+        mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
+        meta'           <- liftIO $ Store.getMeta store
+
+        -- object is fresher than source
+        let bFreshO
+                | Just timeO  <- mTimeO,  timeDS < timeO  = True
+                | otherwise                               = False
+
+        -- interface is fresher than source.
+        let bFreshDI
+                | Just timeDI <- mTimeDI, timeDS < timeDI = True
+                | otherwise                               = False
+
+        let bFreshDep
+                | Just timeDI <- mTimeDI
+                = and   [ Store.metaTimeStamp m <= timeDI
+                                | m <- meta'
+                                , elem (Store.metaModuleName m) modNamesNeeded ]
+
+                | otherwise
+                = False
+
+        return  $ and [bFreshO, bFreshDI, bFreshDep]
+-}
+
+-- | Load the interface correponding to a source file,
+--   or re-compile the source if it's fresher than the interface.
+--
+--   * Interfaces for dependent modules must already be in the
+--     interface store.
+--
+{- FIXME: make sure we're using the aux source libs.
+cmdLoadOrCompile
+        :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build an exeecutable.
+        -> [FilePath]           -- ^ Extra object files to link with.
+        -> Store D.Name         -- ^ Interface store.
+        -> FilePath             -- ^ Path to source file.
+        -> ExceptT String IO ()
+
+cmdLoadOrCompile config buildExe fsO store filePath
+ = do
+        -- Check that the source file exists.
+        exists  <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwE $ "No such file " ++ show filePath
+
+        -- Read in the source file and get the current timestamp.
+        src             <- liftIO $ readFile filePath
+        Just timeDS     <- liftIO $ getModificationTimeIfExists filePath
+
+        -- Parse just the header of the module to determine
+        -- what other modules it imports.
+        modNamesNeeded  <- tasteNeeded filePath src
+
+        -- Search through the likely paths that might hold a pre-compiled
+        -- interface and object file. If we find it then we can reload it,
+        -- otherwise we'll need to build the module from source again.
+        let search (filePathO : filePathsMoreO)
+             = do
+                   -- The .di file for the same module should be next to
+                   -- any .o file for it.
+--                   let filePathDI = replaceExtension filePathO ".di"
+
+                   -- Check if we have a fresh interface and object
+                   -- at this path.
+                   fresh <- liftIO $ interfaceIsFresh store timeDS modNamesNeeded filePathO
+
+                   -- If we indeed have a fresh interface and object then we can
+                   -- load it directly. Otherwise search the rest of the paths.
+                   if fresh && not (takeFileName filePath == "Main.ds")
+                    then do
+--                         liftIO  $ putStrLn $ "* Loading "  ++ filePathDI
+                        result  <- Store.loadInterface store D.Decode.takeName filePathDI
+                        let result = error "cmdLoadOrCompile: load interface"
+                        case result of
+                          Left  _err -> throwE $ P.renderIndent $ P.string "FIXME" -- $ P.ppr err
+                          Right int  -> liftIO $ Store.addInterface store int
+
+                    else search filePathsMoreO
+
+            -- We're out of places to search for pre-existing interface
+            -- files, so build it gain.
+            search []
+             = do
+--                  liftIO  $ putStrLn "* Compiling"
+                  cmdCompile config buildExe fsO store filePath
+
+        -- Check the config for where the interface might be.
+        -- It'll either be next to the source file or in the auxilliary
+        -- output directory if that was specified.
+        let (filePathO_output, filePathO_libs)
+                =  objectPathsOfConfig config filePath
+
+        -- Search all the likely places.
+        search (filePathO_output : filePathO_libs)
+-}
 
 
 -- [Note: Timestamp acccuracy during rebuild]

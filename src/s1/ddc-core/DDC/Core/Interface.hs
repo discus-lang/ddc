@@ -5,7 +5,9 @@ module DDC.Core.Interface
         , Meta          (..)
         , Error         (..)
 
-        , new, wrap
+        , new
+        , addInterface
+        , loadInterface
         , getMeta
         , getModuleNames
         , getInterfaces

@@ -1,7 +1,9 @@
 
 module DDC.Core.Interface.Store
         ( Store (..)
-        , new, wrap
+        , new
+        , addInterface
+        , loadInterface
         , importValuesOfStore
 
         , Meta  (..)
@@ -87,10 +89,13 @@ new
          , storeLoadInterface           = Nothing }
 
 
+---------------------------------------------------------------------------------------------------
 -- | Add information from a pre-loaded interface to the store.
-wrap    :: (Ord n, Show n)
+addInterface
+        :: (Ord n, Show n)
         => Store n -> Interface n -> IO ()
-wrap store ii
+
+addInterface store ii
  = do
         modifyIORef' (storeMeta store) $ \meta
          -> Map.insert  (interfaceModuleName ii)
@@ -112,6 +117,34 @@ wrap store ii
          -> iis ++ [ii]
 
 
+-- | Try to find and load the interface file for the given module into the store.
+--   If the interface file cannot be found then return False, otherwise True.
+--   If the interface file exists but cannot be loaded then `error`.
+--   If there is no load function defined then `error`.
+--
+--   FIXME: we need to check that the interface file is fresh relative
+--   to any existing source files and dependent modules. When statting the dep
+--   modules make sure to avoid restatting the same module over and over.
+loadInterface
+        :: (Ord n, Show n)
+        => Store n -> ModuleName -> IO Bool
+
+loadInterface store nModule
+ | Just load   <- storeLoadInterface store
+ = do   result <- load nModule
+        case result of
+         Nothing
+          ->    return False
+
+         Just ii
+          -> do addInterface store ii
+                return True
+
+ | otherwise
+ = error "ddc-core.loadInterface: no load function defined"
+
+
+---------------------------------------------------------------------------------------------------
 -- | Get metadata of interfaces currently in the store.
 getMeta :: Store n -> IO [Meta]
 getMeta store
