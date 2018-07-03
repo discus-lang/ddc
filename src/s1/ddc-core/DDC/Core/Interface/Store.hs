@@ -117,7 +117,9 @@ addInterface store ii
          -> iis ++ [ii]
 
 
--- | Try to find and load the interface file for the given module into the store.
+-- | Try to find and load the interface file for the given module into the store,
+--   or do nothing if we already have it.
+
 --   If the interface file cannot be found then return False, otherwise True.
 --   If the interface file exists but cannot be loaded then `error`.
 --   If there is no load function defined then `error`.
@@ -125,20 +127,28 @@ addInterface store ii
 --   FIXME: we need to check that the interface file is fresh relative
 --   to any existing source files and dependent modules. When statting the dep
 --   modules make sure to avoid restatting the same module over and over.
+--
 loadInterface
         :: (Ord n, Show n)
         => Store n -> ModuleName -> IO Bool
 
 loadInterface store nModule
  | Just load   <- storeLoadInterface store
- = do   result <- load nModule
-        case result of
-         Nothing
-          ->    return False
+ = let
+        goCheckMeta
+         = do   meta <- readIORef $ storeMeta store
+                case Map.lookup nModule meta of
+                 Just _  -> return True
+                 Nothing -> goLoad
 
-         Just ii
-          -> do addInterface store ii
-                return True
+        goLoad
+         = do   result <- load nModule
+                case result of
+                 Nothing -> return False
+                 Just ii
+                  -> do addInterface store ii
+                        return True
+   in   goCheckMeta
 
  | otherwise
  = error "ddc-core.loadInterface: no load function defined"

@@ -5,7 +5,11 @@ module DDC.Core.Check.Context.Oracle
         , importModules)
 where
 import DDC.Core.Module.Name
-import DDC.Core.Interface.Store
+import qualified DDC.Core.Interface.Store       as Store
+import qualified Data.Set                       as Set
+import DDC.Core.Interface.Store                 (Store)
+import Data.Set                                 (Set)
+import Control.Monad
 
 
 -- | The oracle knows the types and kinds of things in external modules
@@ -23,7 +27,7 @@ data Oracle n
           oracleStore           :: Store n
 
           -- | These modules have been imported into the current scope.
-        , oracleImportedModules :: [ModuleName]
+        , oracleImportedModules :: Set ModuleName
         }
 
 
@@ -33,11 +37,22 @@ newOracleOfStore :: Store n -> Oracle n
 newOracleOfStore store
         = Oracle
         { oracleStore           = store
-        , oracleImportedModules = [] }
+        , oracleImportedModules = Set.empty }
 
 
 -- | Import bindings for some modules into the current scope.
-importModules :: Oracle n -> [ModuleName] -> IO ()
-importModules _oracle _mns
- = return ()
+--   The store already needs to have the
+importModules :: (Ord n, Show n) => Oracle n -> [ModuleName] -> IO (Oracle n)
+importModules oracle mns
+ = do
+        -- Check that the store already contains the interface files we need.
+        -- This should have been guaranteed by the compilation driver.
+        bs <- mapM (Store.loadInterface (oracleStore oracle)) mns
 
+        when (not $ and bs)
+         $ error "ddc-core.Oracle.importModules: store did not load the interfaces we wanted"
+
+        return $ oracle {
+                oracleImportedModules
+                 = Set.union (Set.fromList mns)
+                 $ oracleImportedModules oracle }

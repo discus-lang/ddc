@@ -77,16 +77,26 @@ checkModuleM
 
 checkModuleM config mStore mm@ModuleCore{} !mode
  = do
+        -- Initialize the Environemnt -----------------------------------------
+        ctrace  $ vcat
+                [ text "* Priming the Oracle"
+                , text "  Imported Modules:"
+                , indent 4 $ vcat $ map ppr $ moduleImportModules mm
+                , mempty ]
+
         -- Wrap the store into a new interface oracle.
-        mOracle
+        mOracle_init
          <- case mStore of
                 Nothing    -> return $ Nothing
                 Just store -> return $ Just $ Oracle.newOracleOfStore store
 
         -- Tell the oracle to bring bindings from the imported modules into scope.
-        (case mOracle of
-          Nothing     -> return ()
-          Just oracle -> liftIO $ Oracle.importModules oracle $ moduleImportModules mm)
+        _mOracle
+         <- case mOracle_init of
+                Nothing     -> return mOracle_init
+                Just oracle
+                 -> fmap Just $ liftIO
+                 $  Oracle.importModules oracle $ moduleImportModules mm
 
         -- Build the primitive environment.
         let envT_prim
@@ -226,7 +236,8 @@ checkModuleM config mStore mm@ModuleCore{} !mode
 
         -- Check types of imported values ------------------------------------
         ctrace  $ vcat
-                [ text "* Checking Types of Imported Values."]
+                [ text "* Checking Types of Imported Values."
+                , mempty ]
 
         ntsImportValue'
                 <- checkImportValues  config envT_importCaps mode
