@@ -75,7 +75,8 @@ module DDC.Core.Check.Context
         , resolveTyConThing
         , lookupTypeSyn
         , lookupDataType
-        , lookupDataCtor)
+        , lookupDataCtor
+        , lookupTypeOfValueName)
 where
 import DDC.Core.Check.Context.Resolve
 import DDC.Core.Check.Context.Effect

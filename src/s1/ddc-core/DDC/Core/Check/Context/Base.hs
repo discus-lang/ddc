@@ -278,8 +278,8 @@ lookupType u ctx
         UName n  -> goName n    (contextElems ctx)
         UIx   ix -> goIx   ix 0 (contextElems ctx)
  where
-        goName n []
-         = EnvX.envxPrimFun (contextEnvX ctx) n
+        goName _n []
+         = Nothing
 
         goName n  (ElemType (BName n' t) : ls)
          | n == n'      = Just t

@@ -5,11 +5,17 @@ module DDC.Core.Check.Context.Resolve
         , resolveTyConThing
         , lookupTypeSyn
         , lookupDataType
-        , lookupDataCtor)
+        , lookupDataCtor
+        , lookupTypeOfValueName)
 where
-import DDC.Core.Check.Base
+import DDC.Core.Check.State
+import DDC.Core.Check.Context.Base
 import DDC.Core.Check.Context.Oracle    (TyConThing(..))
+import DDC.Core.Check.Error
+import DDC.Type.Exp
+import DDC.Type.DataDef
 import qualified DDC.Core.Check.Context.Oracle  as Oracle
+import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map.Strict        as Map
@@ -121,6 +127,33 @@ lookupDataCtor ctx n
  -- It's just not there.
  | otherwise    = return Nothing
 
+
+-------------------------------------------------------------------------------
+-- | Lookup the type of a value.
+--   If we can't find then `Nothing`.
+lookupTypeOfValueName
+        :: (Ord n, Show n)
+        => Context n -> n -> CheckM a n (Maybe (Type n))
+
+lookupTypeOfValueName ctx n
+ -- Look for value on the context stack.
+ | Just t       <- lookupType (UName n) ctx
+ = return $ Just t
+
+ -- Look for value at the top level of the current module,
+ -- or as a primitive.
+ | Just t       <- EnvX.lookupX (UName n) $ contextEnvX ctx
+ = return $ Just t
+
+ -- Look for value in imported modules.
+ | Just oracle  <- contextOracle ctx
+ = Oracle.resolveValueName oracle n
+ >>= \case
+        Just ivs  -> return $ Just $ C.typeOfImportValue ivs
+        Nothing   -> return Nothing
+
+ -- Its just not there.
+ | otherwise    = return Nothing
 
 
 

@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Judge.Type.DaCon
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Sum           as Sum
 
 
@@ -14,52 +13,38 @@ checkVarCon :: Checker a n
 
 -- variables ------------------------------------
 checkVarCon !table !ctx mode demand xx@(XVar a u)
+ = goLookupBound u
+ where
+        goLookupBound (UName n)
+         = goWithType =<< lookupTypeOfValueName ctx n
 
- -- Look in the local context.
- | Just t       <- lookupType u ctx
- = case mode of
-        -- Check subsumption against an existing type.
-        -- This may instantiate existentials in the exising type.
-        Check tExpect
-         ->     checkSub table a ctx demand xx tExpect
+        goLookupBound _u
+         = goWithType $   lookupType u ctx
 
-        _ -> do ctrace  $ vcat
-                        [ text "**  Var Local"
-                        , indent 4 $ ppr xx
-                        , text "    tVar: " <> ppr t
-                        , indent 4 $ ppr ctx
-                        , mempty ]
+        goWithType mType
+         = case mType of
+                Nothing -> throw $ ErrorUndefinedVar a u UniverseData
+                Just t  -> goCheckExpect t
 
-                returnX a
-                        (\z -> XVar z u)
-                        t
-                        (Sum.empty kEffect)
-                        ctx
+        goCheckExpect tActual
+         = case mode of
+                -- Check subsumption against an existing type.
+                -- This may instantiate existentials in the exising type.
+                Check tExpect
+                 ->     checkSub table a ctx demand xx tExpect
 
- -- Look in the global environment.
- | Just t      <- EnvX.lookupX u (contextEnvX ctx)
- = case mode of
-        -- Check subsumption against an existing type.
-        -- This may instantiate existentials in the exising type.
-        Check tExpect
-         ->     checkSub table a ctx demand xx tExpect
+                _ -> do ctrace  $ vcat
+                                [ text "**  Var Local"
+                                , indent 4 $ ppr xx
+                                , text "    tVar: " <> ppr tActual
+                                , indent 4 $ ppr ctx
+                                , mempty ]
 
-        _ -> do ctrace  $ vcat
-                        [ text "**  Var Global"
-                        , indent 4 $ ppr xx
-                        , text "    tVar: " <> ppr t
-                        , indent 4 $ ppr ctx
-                        , mempty ]
-
-                returnX a
-                        (\z -> XVar z u)
-                        t
-                        (Sum.empty kEffect)
-                        ctx
-
- -- Can't find this variable name in the environment.
- | otherwise
- = throw $ ErrorUndefinedVar a u UniverseData
+                        returnX a
+                                (\z -> XVar z u)
+                                tActual
+                                (Sum.empty kEffect)
+                                ctx
 
 
 -- constructors ---------------------------------

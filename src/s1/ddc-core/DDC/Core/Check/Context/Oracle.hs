@@ -6,7 +6,8 @@ module DDC.Core.Check.Context.Oracle
         , newOracleOfStore
         , importModules
         , resolveTyConThing
-        , resolveDataCtor)
+        , resolveDataCtor
+        , resolveValueName)
 where
 import DDC.Core.Check.State
 import DDC.Core.Module.Name
@@ -100,6 +101,23 @@ resolveDataCtor oracle n
  = goStore
  where  goStore
          = (liftIO $ Store.resolveDataCtor
+                        (oracleStore oracle)
+                        (oracleImportedModules oracle) n)
+         >>= \case
+                Left Store.ErrorNotFound{} -> return Nothing
+                Left err    -> throw  $ checkOfResolveError n err
+                Right thing -> return $ Just thing
+
+
+---------------------------------------------------------------------------------------------------
+resolveValueName
+        :: (Ord n, Show n)
+        => Oracle n -> n -> CheckM a n (Maybe (Store.ImportValue n (Type n)))
+
+resolveValueName oracle n
+ = goStore
+ where  goStore
+         = (liftIO $ Store.resolveValueName
                         (oracleStore oracle)
                         (oracleImportedModules oracle) n)
          >>= \case

@@ -24,7 +24,6 @@ import DDC.Data.Pretty
 import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
-import qualified Data.List              as List
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 
@@ -186,8 +185,9 @@ addInterface store ii
          -> Map.insert nModule dataCtorsByDaCon ddefs
 
         -- Add value definitions.
+        let importValues = importValuesOfInterface ii
         modifyIORef' (storeValuesByName store) $ \ivs
-         -> Map.unionWith Map.union ivs (importValuesOfInterface ii)
+         -> Map.insert nModule importValues ivs
 
         -- Update type ctor index.
         modifyIORef' (storeTypeCtorNames store) $ \names
@@ -205,6 +205,12 @@ addInterface store ii
                 , Map.fromList  [ (n, Set.singleton nModule)
                                 | n <- Map.keys dataCtorsByDaCon ] ]
 
+        -- Update value names index.
+        modifyIORef' (storeValueNames store) $ \names
+         -> Map.unionsWith Set.union
+                [ names
+                , Map.fromList  [ (n, Set.singleton nModule)
+                                | n <- Map.keys importValues ] ]
 
         return ()
 
@@ -235,6 +241,7 @@ findImportValue store n modNames
 
 -- | Build nested maps from a list of triples.
 --   Any values with duplicate 'a' and 'b' keys get overwritten by later ones.
+{-
 nestMaps :: (Ord a, Ord b) => [(a, b, c)] -> Map a (Map b c)
 nestMaps xs
  = List.foldl' insert Map.empty xs
@@ -244,7 +251,7 @@ nestMaps xs
                         Nothing   -> Just (Map.singleton b c)
                         Just mpBC -> Just (Map.insert b c mpBC))
                 a mpABC
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Extract metadata from an interface.
@@ -272,9 +279,9 @@ importCapsOfInterface
 --   This contains all the information needed to import a super into
 --   a client module.
 --
-importValuesOfInterface
-        :: Ord n => Interface n
-        -> Map ModuleName (Map n (ImportValue n (Type n)))
+--   TODO: don't auto expose imported values, only ones exported.
+
+importValuesOfInterface :: Ord n => Interface n -> Map n (ImportValue n (Type n))
 importValuesOfInterface ii
  = let
         -- These should only be present in the source language before,
@@ -283,8 +290,7 @@ importValuesOfInterface ii
          = Nothing
 
         importOfExport ex@ExportValueLocal{}
-         = Just ( exportValueLocalModuleName ex
-                , exportValueLocalName ex
+         = Just ( exportValueLocalName ex
                 , ImportValueModule
                   { importValueModuleName        = exportValueLocalModuleName ex
                   , importValueModuleVar         = exportValueLocalName ex
@@ -292,8 +298,7 @@ importValuesOfInterface ii
                   , importValueModuleArity       = exportValueLocalArity ex })
 
         importOfExport ex@ExportValueSea{}
-         = Just ( exportValueSeaModuleName ex
-                , exportValueSeaNameInternal ex
+         = Just ( exportValueSeaNameInternal ex
                 , ImportValueSea
                   { importValueSeaModuleName     = exportValueSeaModuleName ex
                   , importValueSeaNameInternal   = exportValueSeaNameInternal ex
@@ -301,20 +306,18 @@ importValuesOfInterface ii
                   , importValueSeaType           = exportValueSeaType ex })
 
         importOfImport im@ImportValueModule{}
-         = Just ( importValueModuleName im
-                , importValueModuleVar im
+         = Just ( importValueModuleVar im
                 , im)
 
         importOfImport im@ImportValueSea{}
-         = Just ( importValueSeaModuleName im
-                , importValueSeaNameInternal im
+         = Just ( importValueSeaNameInternal im
                 , im)
 
-   in   Map.unionWith Map.union
-         (nestMaps $ mapMaybe importOfExport
-                   $ map snd $ moduleExportValues $ interfaceModule ii)
-         (nestMaps $ mapMaybe importOfImport
-                   $ map snd $ moduleImportValues $ interfaceModule ii)
+   in   Map.union
+         (Map.fromList  $ mapMaybe importOfExport
+                        $ map snd $ moduleExportValues $ interfaceModule ii)
+         (Map.fromList  $ mapMaybe importOfImport
+                        $ map snd $ moduleImportValues $ interfaceModule ii)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -348,29 +351,6 @@ dataCtorsByDaConOfInterface ii
                 (Map.fromList [ (dataDefTypeName def, def)
                       | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
 
-
--- | Take a module interface and extract a map of defined data constructor
---   names to their defining data type declaration. This includes data types
---   defined in the module itself, as well as imported ones.
-{-
-dataDefsOfCtorFromInterface :: Ord n => Interface n -> Map (ModuleName, n) (DataDef n)
-dataDefsOfCtorFromInterface ii
- | Just mmDiscus <- interfaceModule ii
- = let
-        takeCtorsOfDataDef dataDef
-         = case dataDefCtors dataDef of
-                Nothing    -> Map.empty
-                Just ctors
-                 -> Map.fromList
-                        [ ((dataCtorModuleName ctor, dataCtorName ctor), dataDef)
-                        | ctor <- ctors ]
-   in   Map.unions
-          [ Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleImportDataDefs mmDiscus
-          , Map.unions $ map takeCtorsOfDataDef $ map snd $ moduleLocalDataDefs  mmDiscus ]
-
- | otherwise
- = Map.empty
--}
 
 
 ---------------------------------------------------------------------------------------------------

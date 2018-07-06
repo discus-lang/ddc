@@ -4,7 +4,8 @@ module DDC.Core.Interface.Resolve
         , Error(..)
         , kindOfTyConThing
         , resolveTyConThing
-        , resolveDataCtor)
+        , resolveDataCtor
+        , resolveValueName)
 where
 import DDC.Core.Interface.Store
 import DDC.Core.Module.Name
@@ -131,4 +132,42 @@ resolveDataCtor store mnsImported n
                   -> case Map.lookup n dataCtors of
                         Nothing         -> return $ Left $ ErrorNotFound n
                         Just dataCtor   -> return $ Right $ dataCtor
+
+
+---------------------------------------------------------------------------------------------------
+-- | Resolve the name of a value binding.
+--
+--   This returns the `ImportValue` that could be added to a module
+--   to import the value into scope.
+resolveValueName
+        :: (Ord n, Show n)
+        => Store n          -- ^ Interface store.
+        -> Set ModuleName   -- ^ Modules whose exports we will search for the name.
+        -> n                -- ^ Name of desired value.
+        -> IO (Either (Error n) (ImportValue n (Type n)))
+
+resolveValueName store mnsImported n
+ = goModules
+ where
+        -- Use the store index to determine which modules visibly expose a
+        -- data ctor with the desired name. If multiple modules do then
+        -- the reference is ambiguous, and we produce an error.
+        goModules
+         = do   mnsWithValue    <- readIORef $ storeValueNames store
+                let mnsAvail    = fromMaybe Set.empty $ Map.lookup n mnsWithValue
+                let mnsVisible  = Set.intersection mnsAvail mnsImported
+                case Set.toList mnsVisible of
+                 []             -> return $ Left $ ErrorNotFound n
+                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules mnsVisible
+                 [mn]           -> goGetImportValue mn
+
+
+        goGetImportValue mn
+         = do   valuesByName    <- readIORef $ storeValuesByName store
+                case Map.lookup mn valuesByName of
+                 Nothing        -> return $ Left $ ErrorInternal "broken store index"
+                 Just importValues
+                  -> case Map.lookup n importValues of
+                        Nothing          -> return $ Left $ ErrorNotFound n
+                        Just importValue -> return $ Right $ importValue
 
