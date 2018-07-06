@@ -180,6 +180,11 @@ addInterface store ii
         modifyIORef' (storeTypeDefsByTyCon store) $ \tdefs
          -> Map.insert nModule typeDefsByTyCon tdefs
 
+        -- Add data ctor definitions.
+        let dataCtorsByDaCon = dataCtorsByDaConOfInterface ii
+        modifyIORef' (storeDataCtorsByDaCon store) $ \ddefs
+         -> Map.insert nModule dataCtorsByDaCon ddefs
+
         -- Add value definitions.
         modifyIORef' (storeValuesByName store) $ \ivs
          -> Map.unionWith Map.union ivs (importValuesOfInterface ii)
@@ -192,6 +197,14 @@ addInterface store ii
                                 | n <- Map.keys dataTypesByTyCon ]
                 , Map.fromList  [ (n, Set.singleton nModule)
                                 | n <- Map.keys typeDefsByTyCon  ] ]
+
+        -- Update data ctor index.
+        modifyIORef' (storeDataCtorNames store) $ \names
+         -> Map.unionsWith Set.union
+                [ names
+                , Map.fromList  [ (n, Set.singleton nModule)
+                                | n <- Map.keys dataCtorsByDaCon ] ]
+
 
         return ()
 
@@ -322,6 +335,18 @@ typeDefsByTyConOfInterface :: Ord n => Interface n -> Map n (Kind n, Type n)
 typeDefsByTyConOfInterface ii
  = Map.union    (Map.fromList $ moduleImportTypeDefs $ interfaceModule ii)
                 (Map.fromList $ moduleLocalTypeDefs  $ interfaceModule ii)
+
+
+-- | Extract a map of all data ctor definitions by data constructor from a module interface.
+dataCtorsByDaConOfInterface :: Ord n => Interface n -> Map n (DataCtor n)
+dataCtorsByDaConOfInterface ii
+ = dataDefsCtors
+        $ fromListDataDefs $ Map.elems
+        $ Map.union
+                (Map.fromList [ (dataDefTypeName def, def)
+                      | def <- map snd $ moduleImportDataDefs $ interfaceModule ii])
+                (Map.fromList [ (dataDefTypeName def, def)
+                      | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
 
 
 -- | Take a module interface and extract a map of defined data constructor

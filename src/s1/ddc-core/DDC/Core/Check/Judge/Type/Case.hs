@@ -8,7 +8,6 @@ import DDC.Core.Check.Judge.Type.Base
 import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum           as Sum
 import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified Data.Map               as Map
 import Data.List                        as L
 
 
@@ -45,47 +44,37 @@ checkCase !table !ctx0 mode demand
         -- data type constructor (if there is one).
         let tDiscrim' = crushHeadT (contextEnvT ctx2) tDiscrim
 
-        let dataDefs  = EnvX.envxDataDefs $ contextEnvX ctx2
-
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc.
-        (mDataMode, tsArgs)
+        (dataMode, tsArgs)
          <- case takeTyConApps tDiscrim' of
              Just (tc, ts)
               -- The unit data type.
               | TyConSpec TcConUnit         <- tc
-              -> return ( Just (DataModeSmall [])
+              -> return ( DataModeSmall []
                         , [] )
 
               -- Primitive record types.
               | TyConSpec (TcConRecord _)   <- tc
-              -> return ( Just DataModeSingle
+              -> return ( DataModeSingle
                         , ts)
 
               -- User defined or imported data types.
-              | TyConBound (UName nTyCon) _ <- tc
-              , Just dataType  <- Map.lookup nTyCon $ dataDefsTypes dataDefs
-              , k              <- kindOfDataType dataType
-              , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon dataDefs
-                        , ts )
-
-              -- Primitive types in the environment.
               | TyConBound u@(UName nTyCon) _ <- tc
-              , Just (k, _)    <- lookupKind u ctx0
-              , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon dataDefs
-                        , ts )
+              -> lookupDataType ctx2 nTyCon
+              >>= \case Nothing
+                         -> throw $ ErrorType $ ErrorTypeUndefined u
+
+                        Just dataType
+                         | k <- kindOfDataType dataType
+                         , takeResultKind k == kData
+                         -> return ( dataTypeMode dataType
+                                   , ts)
+
+                        _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
 
              _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
-
-        -- Get the mode of the data type,
-        --   this tells us how many constructors there are.
-        dataMode
-         <- case mDataMode of
-             Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
-             Just m  -> return m
 
         -- If we're doing bidirectional checking then we don't infer a separate
         -- type for each alternative. Instead, pass down the same existential.
@@ -155,7 +144,7 @@ checkCase _ _ _ _ _
 --   the expected type when checking the discriminant.
 --
 takeDiscrimCheckModeFromAlts
-        :: Ord n
+        :: (Ord n, Show n)
         => Table a n          -- ^ Checker table.
         -> a                  -- ^ Annotation for error messages.
         -> Context n          -- ^ Current context.
@@ -409,7 +398,7 @@ checkFieldAnnots table bidir a xx tts ctx0
 --   Note that we can't simply check whether the constructor is in the
 ---  environment because literals like 42# never are.
 checkPatPData
-        :: Ord n
+        :: (Ord n, Show n)
         => Table a n            -- ^ Checker table.
         -> Context n            -- ^ Type checker context
         -> a                    -- ^ Annotation for error messages.
@@ -422,25 +411,29 @@ checkPatPData _table ctx a dc
          -> return $ (dc, tUnit)
 
         DaConRecord ns
-         -> return $ (dc, tForalls (map (const kData) ns)
-                   $  \tsArg -> tFunOfParamResult tsArg
-                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
+         -> return
+                ( dc
+                , tForalls (map (const kData) ns) $ \tsArg
+                        -> tFunOfParamResult tsArg
+                        $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
 
-        DaConPrim n
-         |  Just t    <- lookupType (UName n) ctx
-         -> return (dc, t)
+        DaConPrim nCtor
+         -> case EnvX.envxPrimFun (contextEnvX ctx) nCtor of
+                Nothing         -> throw $ ErrorUndefinedCtor a $ XCon a dc
+                Just tPrim      -> return (dc, tPrim)
 
         -- FIXME: use the module and type names.
-        DaConBound (DaConBoundName _ _ n)
+        DaConBound (DaConBoundName Nothing Nothing nCtor)
          -- Recognise a primitive data constructor wrapped in a DaConBoundName
-         |  Just t    <- lookupType (UName n) ctx
-         -> return (DaConPrim n, t)
+         |  Just t    <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
+         -> return (DaConPrim nCtor, t)
 
-         -- Types of algebraic data ctors should be in the defs table.
-         |  Just ctor <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
-         -> return (dc, typeOfDataCtor ctor)
-
-        _ -> throw  $ ErrorUndefinedCtor a $ XCon a dc
+        -- TODO: use module ids.
+        DaConBound (DaConBoundName _ _ nCtor)
+         -> lookupDataCtor ctx nCtor
+         >>= \case
+                Nothing         -> throw $ ErrorUndefinedCtor a $ XCon a dc
+                Just dataCtor   -> return (dc, typeOfDataCtor dataCtor)
 
 
 -- | Get the data type associated with a pattern,
@@ -450,7 +443,7 @@ checkPatPData _table ctx a dc
 --   For example, given pattern (Cons x xs), return (forall [a : Data]. List a)
 --
 dataTypeOfPat
-        :: Ord n
+        :: (Ord n, Show n)
         => Table a n            -- ^ Checker table.
         -> Context n            -- ^ Type Checker context.
         -> a                    -- ^ Annotation for error messages.

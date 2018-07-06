@@ -73,7 +73,9 @@ module DDC.Core.Check.Context
           -- * Oracle
         , TyConThing (..)
         , resolveTyConThing
-        , lookupTypeSyn)
+        , lookupTypeSyn
+        , lookupDataType
+        , lookupDataCtor)
 where
 import DDC.Core.Check.Context.Resolve
 import DDC.Core.Check.Context.Effect

@@ -3,7 +3,8 @@ module DDC.Core.Interface.Resolve
         ( TyConThing (..)
         , Error(..)
         , kindOfTyConThing
-        , resolveTyConThing)
+        , resolveTyConThing
+        , resolveDataCtor)
 where
 import DDC.Core.Interface.Store
 import DDC.Core.Module.Name
@@ -16,6 +17,7 @@ import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
 
 
+---------------------------------------------------------------------------------------------------
 -- | Things named after type constructors.
 data TyConThing n
         = TyConThingData n (DataType n)
@@ -29,6 +31,7 @@ kindOfTyConThing thing
         TyConThingSyn _ k _     -> k
 
 
+---------------------------------------------------------------------------------------------------
 -- | Things that can go wrong during name resolution.
 data Error n
         = ErrorNotFound n
@@ -94,4 +97,38 @@ resolveTyConThing store mnsImported n
                   -> case Map.lookup n typeDefs of
                         Nothing         -> return $ Right Nothing
                         Just (k, t)     -> return $ Right $ Just $ TyConThingSyn n k t
+
+
+---------------------------------------------------------------------------------------------------
+-- | Resolve the name of a data constructor.
+resolveDataCtor
+        :: (Ord n, Show n)
+        => Store n         -- ^ Interface store.
+        -> Set ModuleName  -- ^ Modules whose exports we will search for the ctor.
+        -> n               -- ^ Name of desired ctor.
+        -> IO (Either (Error n) (DataCtor n))
+
+resolveDataCtor store mnsImported n
+ = goModules
+ where
+        -- Use the store index to determine which modules visibly expose a
+        -- data ctor with the desired name. If multiple modules do then
+        -- the reference is ambiguous, and we produce an error.
+        goModules
+         = do   mnsWithDaCon    <- readIORef $ storeDataCtorNames store
+                let mnsAvail    = fromMaybe Set.empty $ Map.lookup n mnsWithDaCon
+                let mnsVisible  = Set.intersection mnsAvail mnsImported
+                case Set.toList mnsVisible of
+                 []             -> return $ Left $ ErrorNotFound n
+                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules mnsVisible
+                 [mn]           -> goGetDataCtor mn
+
+        goGetDataCtor mn
+         = do   dataCtorsByDaCon <- readIORef $ storeDataCtorsByDaCon store
+                case Map.lookup mn dataCtorsByDaCon of
+                 Nothing        -> return $ Left $ ErrorInternal "broken store index"
+                 Just dataCtors
+                  -> case Map.lookup n dataCtors of
+                        Nothing         -> return $ Left $ ErrorNotFound n
+                        Just dataCtor   -> return $ Right $ dataCtor
 

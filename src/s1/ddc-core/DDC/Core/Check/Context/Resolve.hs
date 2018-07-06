@@ -3,7 +3,9 @@
 module DDC.Core.Check.Context.Resolve
         ( TyConThing(..)
         , resolveTyConThing
-        , lookupTypeSyn)
+        , lookupTypeSyn
+        , lookupDataType
+        , lookupDataCtor)
 where
 import DDC.Core.Check.Base
 import DDC.Core.Check.Context.Oracle    (TyConThing(..))
@@ -14,6 +16,7 @@ import qualified Data.Map.Strict        as Map
 
 
 
+-------------------------------------------------------------------------------
 -- | Resolve the name of a type constructor or synonym.
 --   If we can't find one then throw an error in the `CheckM` monad.
 resolveTyConThing
@@ -21,26 +24,38 @@ resolveTyConThing
         => Context n -> n -> CheckM a n (TyConThing n, Kind n)
 
 resolveTyConThing ctx n
+ = lookupTyConThing ctx n
+ >>= \case
+        Nothing -> throw  $ ErrorType $ ErrorTypeUndefinedTypeCtor (UName n)
+        Just tk -> return tk
+
+
+lookupTyConThing
+        :: (Ord n, Show n)
+        => Context n -> n -> CheckM a n (Maybe (TyConThing n, Kind n))
+
+lookupTyConThing ctx n
  -- Look for a data type declaration in the current module.
  | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
  , Just dataType <- Map.lookup n (dataDefsTypes dataDefs)
- = return ( TyConThingData n dataType
-          , kindOfDataType dataType)
+ = return $ Just
+        ( TyConThingData n dataType
+        , kindOfDataType dataType)
 
  -- Look for a data type or synonym declaration in an imported module.
  | Just oracle  <- contextOracle ctx
- =   Oracle.resolveTyConThing oracle n
+ = Oracle.resolveTyConThing oracle n
  >>= \case
-        Nothing    -> throw  $ ErrorType $ ErrorTypeUndefinedTypeCtor (UName n)
-        Just thing -> return $ (thing, Oracle.kindOfTyConThing thing)
+        Nothing    -> return Nothing
+        Just thing -> return $ Just (thing, Oracle.kindOfTyConThing thing)
 
- | otherwise
- = error "no oracle" -- throw $ ErrorType $
+ -- It's just not there.
+ | otherwise    = return Nothing
 
 
-
--- | Lookup the definition of a type synonym.
---   If we can't fine one then return Nothing.
+-------------------------------------------------------------------------------
+-- | Lookup the definition of a type synonym from its name.
+--   If we can't find it then `Nothing`.
 lookupTypeSyn
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (Type n))
@@ -52,25 +67,66 @@ lookupTypeSyn ctx n
 
  -- Look for synonym in imported modules.
  | Just oracle <- contextOracle ctx
- = do   mThing  <- Oracle.resolveTyConThing oracle n
-        case mThing of
-         Just (TyConThingSyn _ _ t) -> return $ Just t
-         Just _  -> return Nothing
-         Nothing -> return Nothing
+ = Oracle.resolveTyConThing oracle n
+ >>= \case
+        Just (TyConThingSyn _ _ t) -> return $ Just t
+        Just _  -> return Nothing
+        Nothing -> return Nothing
 
- -- We can't find one.
- | otherwise
- = return Nothing
-
+ -- It's just not there.
+ | otherwise    = return Nothing
 
 
+-------------------------------------------------------------------------------
+-- | Lookup the definition of a data type from its constructor name.
+lookupDataType
+        :: (Ord n, Show n)
+        => Context n -> n -> CheckM a n (Maybe (DataType n))
+
+lookupDataType ctx n
+ -- Look for data type definition in the current module.
+ | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
+ , Just dataType <- Map.lookup n (dataDefsTypes dataDefs)
+ = return $ Just dataType
+
+ -- Look for data type definition in an imported module.
+ | Just oracle <- contextOracle ctx
+ = Oracle.resolveTyConThing oracle n
+ >>= \case
+        Nothing   -> return Nothing
+        Just (TyConThingData _ dataType) -> return $ Just dataType
+        Just _    -> return Nothing
+
+ -- It's just not there.
+ | otherwise    = return Nothing
 
 
+-------------------------------------------------------------------------------
+-- | Lookup the definition of a data constructor.
+--   If we can't find it then `Nothing`.
+lookupDataCtor
+        :: (Ord n, Show n)
+        => Context n -> n -> CheckM a n (Maybe (DataCtor n))
+
+lookupDataCtor ctx n
+ -- Look for data ctor in the current module.
+ | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
+ , Just dataCtor <- Map.lookup n (dataDefsCtors dataDefs)
+ = return $ Just dataCtor
+
+ -- Look for data ctor in imported modules.
+ | Just oracle <- contextOracle ctx
+ = Oracle.resolveDataCtor oracle n
+
+ -- It's just not there.
+ | otherwise    = return Nothing
 
 
 
 
 {- This was from the old kind judgment.
+   This checks the right of the bindings as well as returns the type.
+   do we need to re-check at this point?
 
              -- The kinds of abstract imported type constructors are in the
              -- global kind environment.

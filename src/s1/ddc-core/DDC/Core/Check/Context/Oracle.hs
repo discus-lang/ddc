@@ -5,11 +5,13 @@ module DDC.Core.Check.Context.Oracle
         , Store.kindOfTyConThing
         , newOracleOfStore
         , importModules
-        , resolveTyConThing)
+        , resolveTyConThing
+        , resolveDataCtor)
 where
 import DDC.Core.Check.State
 import DDC.Core.Module.Name
 import DDC.Core.Check.Error
+import DDC.Type.DataDef
 import DDC.Type.Exp
 import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Core.Interface.Resolve     as Store
@@ -19,6 +21,7 @@ import Data.Set                                 (Set)
 import Control.Monad
 
 
+---------------------------------------------------------------------------------------------------
 -- | The oracle knows the types and kinds of things in external modules
 --   (or can find out). It is responsible to managing import visibility
 --   for the module being checked, and can demand load more data via the
@@ -66,19 +69,19 @@ importModules oracle mns
                  $ oracleImportedModules oracle }
 
 
+---------------------------------------------------------------------------------------------------
 -- FIXME: add oracle cache for things that we've found.
 --   We want to cache visible things relative to the module being checked,
 --   rather than hitting the Store indexes each time.
 --   We can also then use the oracle cache to close the module after type checking,
 --   as it is guaranteed to contain all used declarations.
 resolveTyConThing
-        :: forall n a. (Ord n, Show n)
+        :: (Ord n, Show n)
         => Oracle n -> n -> CheckM a n (Maybe (Store.TyConThing n))
 
 resolveTyConThing oracle n
  = goStore
- where
-        goStore
+ where  goStore
          = (liftIO $ Store.resolveTyConThing
                         (oracleStore oracle)
                         (oracleImportedModules oracle) n)
@@ -88,7 +91,24 @@ resolveTyConThing oracle n
                 Right thing -> return $ Just thing
 
 
+---------------------------------------------------------------------------------------------------
+resolveDataCtor
+        :: (Ord n, Show n)
+        => Oracle n -> n -> CheckM a n (Maybe (DataCtor n))
 
+resolveDataCtor oracle n
+ = goStore
+ where  goStore
+         = (liftIO $ Store.resolveDataCtor
+                        (oracleStore oracle)
+                        (oracleImportedModules oracle) n)
+         >>= \case
+                Left Store.ErrorNotFound{} -> return Nothing
+                Left err    -> throw  $ checkOfResolveError n err
+                Right thing -> return $ Just thing
+
+
+---------------------------------------------------------------------------------------------------
 -- TODO: convert the rest of the errors.
 -- TODO: add tests for these errors.
 checkOfResolveError :: (Ord n, Show n) => n -> Store.Error n -> Error a n
