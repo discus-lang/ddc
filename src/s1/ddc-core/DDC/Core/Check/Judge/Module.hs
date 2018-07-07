@@ -210,6 +210,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
 
+
         -- Check the local data defs ------------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Kinds of Local Data Types."]
@@ -241,13 +242,18 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                            = Map.fromList
                            $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }]
 
+        let envX_importCaps
+                = EnvX.empty
+                { EnvX.envxEnvT         = envT_importCaps
+                , EnvX.envxDataDefs     = dataDefs_top }
+
         -- Check types of imported values ------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Types of Imported Values."
                 , mempty ]
 
         ntsImportValue'
-                <- checkImportValues  config envT_importCaps mode
+                <- checkImportValues  config envX_importCaps mode
                 $  moduleImportValues mm
 
         let envX_importValues
@@ -616,14 +622,14 @@ checkImportCaps config env mode nisrcs
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvT n
+        -> EnvX n
         -> Mode n
         -> [(n, ImportValue n (Type n))]
         -> CheckM a n [(n, ImportValue n (Type n))]
 
 checkImportValues config env mode nisrcs
  = let
-        ctx = contextOfEnvT env
+        ctx = contextOfEnvX env
 
         -- Checker mode to use.
         modeCheckImportTypes

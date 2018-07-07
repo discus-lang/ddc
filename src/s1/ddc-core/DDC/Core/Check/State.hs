@@ -74,5 +74,9 @@ ctrace doc'
  = do   (tr, ix, pos)       <- G.get
         let tr' = tr { checkTraceDoc = checkTraceDoc tr `P.pline` doc' }
         G.put (tr', ix, pos)
+
+        -- FIXME: tracing
+--        G.liftIO $ putStrLn $ renderIndent doc'
+
         return  ()
 
