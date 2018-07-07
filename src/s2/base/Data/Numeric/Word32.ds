@@ -6,6 +6,9 @@ export
         bits_Word32;
 }
 import Class.Numeric
+import Class.Bits
+import Class.Ord
+import Class.Eq
 where
 
 
@@ -35,19 +38,19 @@ add_Word32: Add Word32
 
 
 -- | Sub dictionary for Nat.
-sub_Word32: Sub Word32 
+sub_Word32: Sub Word32
  = Sub (\x y -> if gt# [Word32#] y x
                  then 0w32
                  else sub# [Word32#] x y)
 
 
 -- | Mul dictionary for Word32.
-mul_Word32: Mul Word32 
+mul_Word32: Mul Word32
  = Mul (\x y -> mul# [Word32#] x y)
 
 
 -- | Div dictionary for Word32.
-div_Word32: Div Word32 
+div_Word32: Div Word32
  = Div (\x y -> div# [Word32#] x y)
 
 

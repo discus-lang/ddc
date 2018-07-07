@@ -65,54 +65,66 @@ resolveTyConThing store mnsImported n
         -- type thing with the desired name. If multiple modules do then
         -- the reference is ambiguous, and we produce an error.
         goModules
-         = do   mnsWithTyCon    <- readIORef $ storeTypeCtorNames store
+         = do   -- Set of all modules that export a tycon thing with the desired name,
+                -- independent of whether that module is imported into the current one.
+                mnsWithTyCon    <- readIORef $ storeTypeCtorNames store
                 let mnsAvail    = fromMaybe Set.empty $ Map.lookup n mnsWithTyCon
-                let mnsVisible  = Set.intersection mnsAvail mnsImported
-                case Set.toList mnsVisible of
-                 []             -> return $ Left $ ErrorNotFound n
-                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
-                 [mn]           -> goDetermine mn
 
-        -- We know that a type thing of the required name is in the given module,
-        -- so find out if it's a data type or synonym name.
-        goDetermine mn
-         = do   mDataDef        <- goGetDataTypes mn
-                mTypeDef        <- goGetTypeDefs  mn
-                mForeignDef     <- goGetForeignType mn
-                case catMaybes $ concat $ sequence [ mDataDef, mTypeDef, mForeignDef ] of
-                 []             -> return $ Left $ ErrorInternal "broken store index"
+                -- Set of all modules that export a tycon thing with the desired name,
+                -- and are visibly imported into the current one.
+                let mnsVisible  = Set.intersection mnsAvail mnsImported
+
+                -- We know that type things with the given names are visible via these
+                -- modules, so go find out what they are.
+                dataDefs       <- goGetDataTypes   mnsVisible
+                typeDefs       <- goGetTypeDefs    mnsVisible
+                foreignDefs    <- goGetForeignType mnsVisible
+
+                let things      = concat [ dataDefs, typeDefs, foreignDefs ]
+
+                case things of
+                 []             -> return $ Left $ ErrorNotFound n
                  ts@(_ : _ : _) -> return $ Left $ ErrorMultipleTyConThing ts
                  [thing]        -> return $ Right thing
 
-        -- Look for a data type declaration in the given module.
-        goGetDataTypes mn
-         = do   dataTypesByTyCon        <- readIORef $ storeDataTypesByTyCon store
-                case Map.lookup mn dataTypesByTyCon of
-                 Nothing                -> return $ Left $ ErrorInternal "broken store index"
-                 Just dataTypes
-                  -> case Map.lookup n dataTypes of
-                        Nothing         -> return $ Right Nothing
-                        Just dataType   -> return $ Right $ Just $ TyConThingData n dataType
+        -- Look for a data type declarations in the given modules.
+        goGetDataTypes mns
+         = do   dataTypesByTyCon
+                 <- readIORef $ storeDataTypesByTyCon store
+
+                return  $ map (TyConThingData n)
+                        $ mapMaybe (\mn -> Map.lookup mn dataTypesByTyCon >>= Map.lookup n)
+                        $ Set.toList mns
 
         -- Look for a foreign type declaration in the given module.
-        goGetForeignType mn
-         = do   foreignTypesByTyCon     <- readIORef $ storeForeignTypesByTyCon store
-                case Map.lookup mn foreignTypesByTyCon of
-                 Nothing                -> return $ Left $ ErrorInternal "broken store index"
-                 Just importTypes
-                  -> case Map.lookup n importTypes of
-                        Nothing         -> return $ Right Nothing
-                        Just it         -> return $ Right $ Just $ TyConThingForeign n it
+        goGetForeignType mns
+         = do   foreignTypesByTyCon
+                 <- readIORef $ storeForeignTypesByTyCon store
+
+                return  $ map (TyConThingForeign n)
+                        $ mapMaybe (\mn -> Map.lookup mn foreignTypesByTyCon >>= Map.lookup n)
+                        $ Set.toList mns
+
 
         -- Look for a type synonym declaration in the given module.
-        goGetTypeDefs mn
-         = do   typeSynsByTyCon         <- readIORef $ storeTypeSynsByTyCon store
-                case Map.lookup mn typeSynsByTyCon of
-                 Nothing                -> return $ Left $ ErrorInternal "broken store index"
-                 Just typeDefs
-                  -> case Map.lookup n typeDefs of
-                        Nothing         -> return $ Right Nothing
-                        Just (k, t)     -> return $ Right $ Just $ TyConThingSyn n k t
+        goGetTypeDefs mns
+         = do   typeSynsByTyCon
+                 <- readIORef $ storeTypeSynsByTyCon store
+
+                return  $ map (\(k, t) -> TyConThingSyn n k t)
+                        $ squashTypeSyns
+                        $ mapMaybe (\mn -> Map.lookup mn typeSynsByTyCon >>= Map.lookup n)
+                        $ Set.toList mns
+
+        -- Eliminate duplicate synonym decls from the given list.
+        -- TODO: we should really tag these with the original definition module,
+        --       to ensure multiple of the same type and name are not defined
+        --       in separate modules.
+        squashTypeSyns kts
+         = case kts of
+                []              -> []
+                ((k, t) : moar) -> (k, t) : filter (\(k', t') -> k /= k' && t /= t') moar
+
 
 
 ---------------------------------------------------------------------------------------------------

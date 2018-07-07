@@ -71,8 +71,7 @@ lookupTyConThing ctx n
 
  -- It's just not there.
  | otherwise
- = error $ show n
- -- return Nothing
+ = return Nothing
 
 
 -------------------------------------------------------------------------------
