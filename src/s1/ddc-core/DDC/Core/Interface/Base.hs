@@ -66,11 +66,14 @@ data Store n
           -- | Map of data type names to their declarations.
         , storeDataTypesByTyCon     :: IORef (Map ModuleName (Map n (DataType n)))
 
-          -- | Map of data constructor names to their enclosing type declarations.
-        , storeDataCtorsByDaCon     :: IORef (Map ModuleName (Map n (DataCtor n)))
+          -- | Map of foreign type names to their declarations.
+        , storeForeignTypesByTyCon  :: IORef (Map ModuleName (Map n (ImportType n (Kind n))))
 
           -- | Map of type synonym names to their declarations.
-        , storeTypeDefsByTyCon      :: IORef (Map ModuleName (Map n (Kind n, Type n)))
+        , storeTypeSynsByTyCon      :: IORef (Map ModuleName (Map n (Kind n, Type n)))
+
+          -- | Map of data constructor names to their enclosing type declarations.
+        , storeDataCtorsByDaCon     :: IORef (Map ModuleName (Map n (DataCtor n)))
 
           -- | Map of capability names to their declarations.
           --   The 'Import' in 'ImportCap' means this is the information a client

@@ -36,6 +36,7 @@ module DDC.Core.Env.EnvT
 where
 import DDC.Type.Exp
 import DDC.Type.Transform.BoundT
+import DDC.Core.Module.Import
 import Data.Maybe
 import Data.Map                         (Map)
 import Prelude                          hiding (lookup)
@@ -50,6 +51,9 @@ data EnvT n
         = EnvT
         { -- | Types of baked in, primitive names.
           envtPrimFun      :: !(n -> Maybe (Type n))
+
+          -- | Foreign types.
+        , envtForeignTypes :: !(Map n (ImportType n (Kind n)))
 
           -- | Map of constructor name to bound type for type equations.
         , envtEquations    :: !(Map n (Type n))
@@ -70,12 +74,13 @@ data EnvT n
 -- | An empty environment.
 empty :: EnvT n
 empty   = EnvT
-        { envtPrimFun      = \_ -> Nothing
-        , envtEquations    = Map.empty
-        , envtCapabilities = Map.empty
-        , envtMap          = Map.empty
-        , envtStack        = []
-        , envtStackLength  = 0 }
+        { envtPrimFun           = \_ -> Nothing
+        , envtForeignTypes      = Map.empty
+        , envtEquations         = Map.empty
+        , envtCapabilities      = Map.empty
+        , envtMap               = Map.empty
+        , envtStack             = []
+        , envtStackLength       = 0 }
 
 
 -- | Construct a singleton type environment.
@@ -147,6 +152,7 @@ union :: Ord n => EnvT n -> EnvT n -> EnvT n
 union env1 env2
         = EnvT
         { envtMap          = envtMap          env1 `Map.union` envtMap          env2
+        , envtForeignTypes = envtForeignTypes env1 `Map.union` envtForeignTypes env2
         , envtStack        = envtStack        env2  ++ envtStack                env1
         , envtStackLength  = envtStackLength  env2  +  envtStackLength          env1
         , envtEquations    = envtEquations    env1 `Map.union` envtEquations    env2
@@ -211,6 +217,7 @@ lift :: Ord n => Int -> EnvT n -> EnvT n
 lift n env
         = EnvT
         { envtMap          = Map.map (liftT n) (envtMap env)
+        , envtForeignTypes = envtForeignTypes env
         , envtStack        = map (liftT n) (envtStack env)
         , envtStackLength  = envtStackLength  env
         , envtEquations    = envtEquations    env

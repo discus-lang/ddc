@@ -198,6 +198,9 @@ moduleEnvT kenvPrim mm
         [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
         , Map.fromList [(n, t)  | (n, (_, t)) <- moduleLocalTypeDefs  mm]]
 
+ , EnvT.envtForeignTypes
+        = Map.fromList $ moduleImportTypes mm
+
  , EnvT.envtCapabilities
         = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
 

@@ -45,13 +45,24 @@ lookupTyConThing ctx n
  | Just k        <- EnvT.envtPrimFun (contextEnvT ctx) n
  = return $ Just (TyConThingPrim n k, k)
 
- -- Look for a data type declaration in the current module.
+ -- Look for a data type defined in the current module.
  | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
  , Just dataType <- Map.lookup n (dataDefsTypes dataDefs)
  = return $ Just ( TyConThingData n dataType
                  , kindOfDataType dataType)
 
- -- Look for a data type or synonym declaration in an imported module.
+ -- Look for a type synonym defined in the current module.
+ | Just tBind    <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx
+ , Just kBind    <- Map.lookup n $ EnvT.envtMap $ contextEnvT ctx
+ = return $ Just  ( TyConThingSyn n kBind tBind
+                  , kBind)
+
+ -- Look for a foreign type defined in the current module.
+ | Just it      <- Map.lookup n $ EnvT.envtForeignTypes $ contextEnvT ctx
+ = return $ Just  ( TyConThingForeign n it
+                  , C.kindOfImportType it )
+
+ -- Look for a data type, synonym or foreign type in an imported module.
  | Just oracle  <- contextOracle ctx
  = Oracle.resolveTyConThing oracle n
  >>= \case
@@ -60,7 +71,8 @@ lookupTyConThing ctx n
 
  -- It's just not there.
  | otherwise
- = return Nothing
+ = error $ show n
+ -- return Nothing
 
 
 -------------------------------------------------------------------------------

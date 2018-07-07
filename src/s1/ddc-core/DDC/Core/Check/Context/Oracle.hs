@@ -46,25 +46,28 @@ import qualified Data.Map.Strict                as Map
 data Oracle n
         = Oracle
         { -- | Store remembers data loaded from module interfaces.
-          oracleStore                   :: Store n
+          oracleStore                           :: Store n
 
           -- | These modules have been imported into the current scope.
-        , oracleImportedModules         :: Set ModuleName
+        , oracleImportedModules                 :: Set ModuleName
 
           -- | Data types previously loaded via the oracle.
-        , oracleCacheDataTypesByTyCon   :: IORef (Map n (DataType n))
+        , oracleCacheDataTypesByTyCon           :: IORef (Map n (DataType n))
 
-          -- | Data ctors previously loaded via the oracle.
-        , oracleCacheDataCtorsByDaCon   :: IORef (Map n (DataCtor n))
+          -- | Foreign types previously loaded via the oracle.
+        , oracleCacheForeignTypesByTyCon        :: IORef (Map n (ImportType n (Kind n)))
 
           -- | Type synonyms previously loaded via the oracle.
-        , oracleCacheTypeDefsByTyCon    :: IORef (Map n (Kind n, Type n))
+        , oracleCacheTypeSynsByTyCon            :: IORef (Map n (Kind n, Type n))
+
+          -- | Data ctors previously loaded via the oracle.
+        , oracleCacheDataCtorsByDaCon           :: IORef (Map n (DataCtor n))
 
           -- | Capabilities previously loaded via the oracle.
-        , oracleCacheCapsByName         :: IORef (Map n (ImportCap n (Type n)))
+        , oracleCacheCapsByName                 :: IORef (Map n (ImportCap n (Type n)))
 
           -- | Values previously loaded via the oracle.
-        , oracleCacheValuesByName       :: IORef (Map n (ImportValue n (Type n)))
+        , oracleCacheValuesByName               :: IORef (Map n (ImportValue n (Type n)))
         }
 
 
@@ -74,20 +77,22 @@ newOracleOfStore :: Store n -> IO (Oracle n)
 newOracleOfStore store
  = do
         refDataTypesByTyCon     <- newIORef Map.empty
+        refForeignTypesByTyCon  <- newIORef Map.empty
+        refTypeSynsByTyCon      <- newIORef Map.empty
         refDataCtorsByDaCon     <- newIORef Map.empty
-        refTypeDefsByTyCon      <- newIORef Map.empty
         refCapsByName           <- newIORef Map.empty
         refValuesByName         <- newIORef Map.empty
 
         return
          $ Oracle
-         { oracleStore                   = store
-         , oracleImportedModules         = Set.empty
-         , oracleCacheDataTypesByTyCon   = refDataTypesByTyCon
-         , oracleCacheDataCtorsByDaCon   = refDataCtorsByDaCon
-         , oracleCacheTypeDefsByTyCon    = refTypeDefsByTyCon
-         , oracleCacheCapsByName         = refCapsByName
-         , oracleCacheValuesByName       = refValuesByName }
+         { oracleStore                    = store
+         , oracleImportedModules          = Set.empty
+         , oracleCacheDataTypesByTyCon    = refDataTypesByTyCon
+         , oracleCacheForeignTypesByTyCon = refForeignTypesByTyCon
+         , oracleCacheTypeSynsByTyCon     = refTypeSynsByTyCon
+         , oracleCacheDataCtorsByDaCon    = refDataCtorsByDaCon
+         , oracleCacheCapsByName          = refCapsByName
+         , oracleCacheValuesByName        = refValuesByName }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -131,15 +136,22 @@ resolveTyConThing
         => Oracle n -> n -> CheckM a n (Maybe (Store.TyConThing n))
 
 resolveTyConThing oracle n
- = goCacheType
- where  goCacheType
+ = goCacheDataType
+ where
+        goCacheDataType
          = do   cache   <- liftIO $ readIORef (oracleCacheDataTypesByTyCon oracle)
                 case Map.lookup n cache of
                  Just dataType  -> return $ Just $ Store.TyConThingData n dataType
+                 Nothing        -> goCacheForeignType
+
+        goCacheForeignType
+         = do   cache   <- liftIO $ readIORef (oracleCacheForeignTypesByTyCon oracle)
+                case Map.lookup n cache of
+                 Just it        -> return $ Just $ Store.TyConThingForeign n it
                  Nothing        -> goCacheSyn
 
         goCacheSyn
-         = do   cache   <- liftIO $ readIORef (oracleCacheTypeDefsByTyCon oracle)
+         = do   cache   <- liftIO $ readIORef (oracleCacheTypeSynsByTyCon oracle)
                 case Map.lookup n cache of
                  Just (k, t)    -> return $ Just $ Store.TyConThingSyn n k t
                  Nothing        -> goStore
@@ -154,18 +166,24 @@ resolveTyConThing oracle n
                  Left err       -> throw $ checkOfResolveError n err
                  Right thing    -> goUpdate thing
 
+        goUpdate thing@(Store.TyConThingPrim{})
+         =      return  $ Just thing
+
         goUpdate thing@(Store.TyConThingData _ dataType)
          = do   liftIO  $ modifyIORef' (oracleCacheDataTypesByTyCon oracle)
                         $ \dts  -> Map.insert n dataType dts
                 return  $ Just thing
 
+        goUpdate thing@(Store.TyConThingForeign _ it)
+         = do   liftIO  $ modifyIORef' (oracleCacheForeignTypesByTyCon oracle)
+                        $ \its -> Map.insert n it its
+                return  $ Just thing
+
         goUpdate thing@(Store.TyConThingSyn _ k t)
-         = do   liftIO  $ modifyIORef' (oracleCacheTypeDefsByTyCon oracle)
+         = do   liftIO  $ modifyIORef' (oracleCacheTypeSynsByTyCon oracle)
                         $ \decls -> Map.insert n (k, t) decls
                 return  $ Just thing
 
-        goUpdate thing@(Store.TyConThingPrim{})
-         =      return  $ Just thing
 
 ---------------------------------------------------------------------------------------------------
 -- | Resolve the name of a data constructor,

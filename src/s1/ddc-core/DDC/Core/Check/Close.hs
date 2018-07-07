@@ -25,7 +25,7 @@ closeModuleWithOracle
 closeModuleWithOracle oracle mm
  = do
         dataTypesByTyCon <- liftIO $ readIORef (oracleCacheDataTypesByTyCon oracle)
-        typeDefsByTyCon  <- liftIO $ readIORef (oracleCacheTypeDefsByTyCon oracle)
+        typeSynsByTyCon  <- liftIO $ readIORef (oracleCacheTypeSynsByTyCon oracle)
         valuesByName     <- liftIO $ readIORef (oracleCacheValuesByName oracle)
 
         return $ mm
@@ -37,7 +37,7 @@ closeModuleWithOracle oracle mm
                 ++ (Map.toList $ Map.map dataDefOfDataType dataTypesByTyCon)
 
          , moduleImportTypeDefs
-                =  moduleImportTypeDefs mm ++ Map.toList typeDefsByTyCon
+                =  moduleImportTypeDefs mm ++ Map.toList typeSynsByTyCon
 
          , moduleImportValues
                 =  moduleImportValues   mm ++ Map.toList valuesByName

@@ -8,7 +8,7 @@ module DDC.Core.Interface.Resolve
         , resolveValueName)
 where
 import DDC.Core.Interface.Store
-import DDC.Core.Module.Name
+import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import Data.IORef
@@ -21,17 +21,19 @@ import qualified Data.Map.Strict        as Map
 ---------------------------------------------------------------------------------------------------
 -- | Things named after type constructors.
 data TyConThing n
-        = TyConThingData n (DataType n)
-        | TyConThingSyn  n (Kind n) (Type n)
-        | TyConThingPrim n (Kind n)
+        = TyConThingPrim    n (Kind n)
+        | TyConThingData    n (DataType n)
+        | TyConThingForeign n (ImportType n (Kind n))
+        | TyConThingSyn     n (Kind n) (Type n)
         deriving Show
 
 kindOfTyConThing :: TyConThing n -> Kind n
 kindOfTyConThing thing
  = case thing of
-        TyConThingData _ def    -> kindOfDataType def
-        TyConThingSyn  _ k _    -> k
-        TyConThingPrim _ k      -> k
+        TyConThingPrim    _ k   -> k
+        TyConThingData    _ def -> kindOfDataType def
+        TyConThingSyn     _ k _ -> k
+        TyConThingForeign _ def -> kindOfImportType def
 
 
 ---------------------------------------------------------------------------------------------------
@@ -76,7 +78,8 @@ resolveTyConThing store mnsImported n
         goDetermine mn
          = do   mDataDef        <- goGetDataTypes mn
                 mTypeDef        <- goGetTypeDefs  mn
-                case catMaybes $ concat $ sequence [ mDataDef, mTypeDef ] of
+                mForeignDef     <- goGetForeignType mn
+                case catMaybes $ concat $ sequence [ mDataDef, mTypeDef, mForeignDef ] of
                  []             -> return $ Left $ ErrorInternal "broken store index"
                  ts@(_ : _ : _) -> return $ Left $ ErrorMultipleTyConThing ts
                  [thing]        -> return $ Right thing
@@ -91,11 +94,21 @@ resolveTyConThing store mnsImported n
                         Nothing         -> return $ Right Nothing
                         Just dataType   -> return $ Right $ Just $ TyConThingData n dataType
 
+        -- Look for a foreign type declaration in the given module.
+        goGetForeignType mn
+         = do   foreignTypesByTyCon     <- readIORef $ storeForeignTypesByTyCon store
+                case Map.lookup mn foreignTypesByTyCon of
+                 Nothing                -> return $ Left $ ErrorInternal "broken store index"
+                 Just importTypes
+                  -> case Map.lookup n importTypes of
+                        Nothing         -> return $ Right Nothing
+                        Just it         -> return $ Right $ Just $ TyConThingForeign n it
+
         -- Look for a type synonym declaration in the given module.
         goGetTypeDefs mn
-         = do   typeDefsByTyCon <- readIORef $ storeTypeDefsByTyCon store
-                case Map.lookup mn typeDefsByTyCon of
-                 Nothing        -> return $ Left $ ErrorInternal "broken store index"
+         = do   typeSynsByTyCon         <- readIORef $ storeTypeSynsByTyCon store
+                case Map.lookup mn typeSynsByTyCon of
+                 Nothing                -> return $ Left $ ErrorInternal "broken store index"
                  Just typeDefs
                   -> case Map.lookup n typeDefs of
                         Nothing         -> return $ Right Nothing

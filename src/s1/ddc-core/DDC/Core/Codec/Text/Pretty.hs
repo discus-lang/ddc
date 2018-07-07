@@ -166,7 +166,8 @@ pprExportValue esrc
         ExportValueSea mn iName xName t
          -> vcat [ text "export foreign c value"
                  , indent 8 (padL 15 (ppr mn % text "." % ppr iName) % text ":" %% ppr t % semi)
-                 , indent 8 (text " from " % string (show xName)) ]
+                 , indent 8 (text " from " % string (show xName))
+                 , mempty ]
 
 
 -- Imports ----------------------------------------------------------------------------------------

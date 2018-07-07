@@ -179,7 +179,7 @@ readName str
         -- Constructors.
         | Just (c, _)   <- T.uncons str
         , isUpper c
-        = Just $ NameVar str
+        = Just $ NameCon str
 
         -- Variables.
         | Just (c, _)   <- T.uncons str

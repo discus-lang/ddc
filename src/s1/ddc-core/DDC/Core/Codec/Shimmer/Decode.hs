@@ -73,10 +73,9 @@ takeModuleDecls c decls
 
         Just mn
          = case colName col of
-                [S.DeclSet _ (XAps "l" ssParts)]
-                  |  Just sParts <- sequence $ map takeXTxt ssParts
-                  -> Just $ C.ModuleName $ map T.unpack sParts
-                _ -> Nothing
+                [S.DeclSet _ ssModuleName]
+                        -> Just $ fromModuleName ssModuleName
+                _       -> Nothing
 
         mpT     = Map.fromList [(tx, ss) | S.DeclMac tx ss <- colDsT col]
         mpD     = Map.fromList [(tx, ss) | S.DeclMac tx ss <- colDsD col]

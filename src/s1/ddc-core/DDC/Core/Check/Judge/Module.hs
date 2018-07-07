@@ -118,6 +118,11 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         let nksImportType'
                 = [(n, kindOfImportType i) | (n, i) <- nitsImportType']
 
+        let envT_import
+                = EnvT.empty
+                { EnvT.envtForeignTypes
+                        = Map.fromList $ nitsImportType' }
+
         -- Check sorts of imported data types ---------------------------------
         ctrace  $ vcat
                 [ text "* Checking Sorts of Imported Data Types." ]
@@ -138,6 +143,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         let envT_dataDefs
                 = EnvT.unions
                 [ envT_prim
+                , envT_import
                 , EnvT.fromListNT nksImportType'
                 , EnvT.fromListNT nksImportDataDef'
                 , EnvT.fromListNT nksLocalDataDef' ]
