@@ -5,6 +5,7 @@ module DDC.Core.Check.Judge.Module
 where
 import DDC.Core.Check.Judge.Type.Base           (checkTypeM)
 import DDC.Core.Check.Judge.DataDefs
+import DDC.Core.Check.Close
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Interface.Store
@@ -223,8 +224,8 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Imported Capabilities."]
 
         ntsImportCap'
-                <- checkImportCaps   config  envT_localTypeDefs mode
-                $  moduleImportCaps  mm
+                <- checkImportCaps  config envT_localTypeDefs mode
+                $  moduleImportCaps mm
 
         let envT_importCaps
                 = EnvT.unions
@@ -263,8 +264,9 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                     $  moduleExportTypes  mm
 
         -- Check the sigs of exported values --------------
-        esrcsValue' <- checkExportValues  config envT_top
+        esrcsValue' <- checkExportValues  config envX_top
                     $  moduleExportValues mm
+
 
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
@@ -340,11 +342,18 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 = [ (n, updateExportValue e) | (n, e) <- esrcsValue' ]
 
         -- Return the checked bindings as they have explicit type annotations.
-        let mm_final
+        let mm_updated
                 = mm_inferred
                 { moduleExportValues    = esrcsValue_updated  }
 
-        return mm_final
+        -- Use the oracle cache to add import declarations that close the module,
+        -- also remove any 'import module' constructs.
+        mm_closed
+         <- case contextOracle ctx of
+                Nothing     -> return mm_updated
+                Just oracle -> closeModuleWithOracle oracle mm_updated
+
+        return mm_closed
 
 
 ---------------------------------------------------------------------------------------------------
@@ -384,13 +393,13 @@ checkExportTypes config env nesrcs
 checkExportValues
         :: (Show n, Pretty n, Ord n)
         => Config n
-        -> EnvT   n
+        -> EnvX   n
         -> [(n, ExportValue n (Type n))]
         -> CheckM a n [(n, ExportValue n (Type n))]
 
-checkExportValues config env nesrcs
+checkExportValues config envX nesrcs
  = let
-        ctx     = contextOfEnvT env
+        ctx     = contextOfEnvX envX
 
         check (n, esrc)
          | Just t          <- takeTypeOfExportValue esrc

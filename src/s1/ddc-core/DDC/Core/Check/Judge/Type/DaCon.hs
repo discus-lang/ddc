@@ -38,7 +38,7 @@ checkDaConM _config ctx _xx _a dc
     -- The type of the constructor needs to be attached so we can determine
     --  what data type it belongs to.
     DaConPrim nCtor
-     | Just tPrim       <- lookupType (UName nCtor) ctx
+     | Just tPrim       <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
      , tResult          <- snd $ takeTFunArgResult $ eraseTForalls tPrim
      , Just (TyConBound (UName nType) _)
                         <- fmap fst $ takeTyConApps tResult
@@ -52,7 +52,9 @@ checkDaConM _config ctx _xx _a dc
 
          DataModeLarge  -> return (dc, tPrim)
 
-     | otherwise        -> error $ show dc -- throw $ ErrorUndefinedCtor a xx
+     | otherwise        -> error $ show dc
+
+     -- throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
@@ -68,13 +70,3 @@ checkDaConM _config ctx _xx _a dc
      >>= \case
         Nothing         -> error $ show dc -- throw $ ErrorUndefinedCtor a xx
         Just dataCtor   -> return (dc, typeOfDataCtor dataCtor)
-
-{-
-     | Just tPrim       <- lookupType (UName nCtor) ctx
-     -> return (DaConPrim nCtor, tPrim)
-
-     | Just ctorDef     <- Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx)
-     -> return (dc, typeOfDataCtor ctorDef)
-
-     | otherwise        -> throw $ ErrorUndefinedCtor a xx
--}

@@ -23,13 +23,15 @@ import qualified Data.Map.Strict        as Map
 data TyConThing n
         = TyConThingData n (DataType n)
         | TyConThingSyn  n (Kind n) (Type n)
+        | TyConThingPrim n (Kind n)
         deriving Show
 
 kindOfTyConThing :: TyConThing n -> Kind n
 kindOfTyConThing thing
  = case thing of
         TyConThingData _ def    -> kindOfDataType def
-        TyConThingSyn _ k _     -> k
+        TyConThingSyn  _ k _    -> k
+        TyConThingPrim _ k      -> k
 
 
 ---------------------------------------------------------------------------------------------------

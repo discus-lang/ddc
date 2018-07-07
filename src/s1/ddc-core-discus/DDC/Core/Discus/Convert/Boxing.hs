@@ -163,6 +163,8 @@ makeBoxedPrimDataType tt
         , dataTypeName          = n
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
+        , dataTypeCtors         = maybe Nothing (\c -> Just [c])
+                                $ makeBoxedPrimDataCtor tt
         , dataTypeIsAlgebraic   = False }
 
         | otherwise

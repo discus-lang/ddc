@@ -308,9 +308,7 @@ lookupKind u ctx
         UIx   ix -> goIx   ix 0 (contextElems ctx)
  where
         goName _ []
-         = case EnvT.lookup u (contextEnvT ctx) of
-                Nothing -> Nothing
-                Just k  -> Just (k, RoleAbstract)
+         = Nothing
 
         goName n  (ElemKind (BName n' t) role : ls)
          | n == n'      = Just (t, role)

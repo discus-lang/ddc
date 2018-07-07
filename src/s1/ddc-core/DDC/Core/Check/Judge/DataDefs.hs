@@ -17,14 +17,15 @@ import qualified Data.Map               as Map
 
 -------------------------------------------------------------------------------
 -- | Check some data type definitions.
-checkDataDefs 
+--   TODO: we're not kind checking the data type declarations.
+checkDataDefs
         :: (Ord n, Show n, Pretty n)
         => Config n
         -> EnvT   n
         -> [DataDef n]
         -> ([ErrorData n], [DataDef n])
 
-checkDataDefs config env defs 
+checkDataDefs config env defs
  = let
         -- Primitive type constructors.
         primTypeCtors
@@ -32,13 +33,13 @@ checkDataDefs config env defs
                 $ Map.keys $ Env.envMap   $ configPrimKinds config
 
         -- Primitive data type constructors
-        primDataTypeCtors  
-                = Set.fromList 
+        primDataTypeCtors
+                = Set.fromList
                 $ Map.keys $ dataDefsTypes $ configPrimDataDefs config
 
         -- Primitive data constructors
-        primDataCtors   
-                = Set.fromList 
+        primDataCtors
+                = Set.fromList
                 $ Map.keys $ dataDefsCtors $ configPrimDataDefs config
 
    in   checkDataDefs' env
@@ -62,20 +63,20 @@ checkDataDefs' env nsTypes nsCtors errs dsChecked ds
  -- We've checked all the defs.
  | []   <- ds
  = (reverse errs, reverse dsChecked)
- 
+
  -- Keep checking defs.
  | d : ds' <- ds
  = case checkDataDef env nsTypes nsCtors d of
 
     -- There are errors in this def.
-    Left errs' 
+    Left errs'
      -> checkDataDefs' env
                 (Set.insert (dataDefTypeName d) nsTypes)
                 (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
                 (errs ++ errs') dsChecked ds'
 
     -- This def is ok.
-    Right d'   
+    Right d'
      -> checkDataDefs' env
                 (Set.insert (dataDefTypeName d') nsTypes)
                 (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
@@ -87,7 +88,7 @@ checkDataDefs' env nsTypes nsCtors errs dsChecked ds
 
 -- DataDef --------------------------------------------------------------------
 -- | Check a data type definition.
-checkDataDef 
+checkDataDef
         :: (Ord n, Show n, Pretty n)
         => EnvT n               -- ^ Environment of types.
         -> Set n                -- ^ Names of existing data types.
@@ -96,7 +97,7 @@ checkDataDef
         -> Either [ErrorData n] (DataDef n)
 
 checkDataDef env nsTypes nsCtors def
-        
+
  -- Check the data type name is not already defined.
  | Set.member (dataDefTypeName def) nsTypes
  = Left [ErrorDataDupTypeName (dataDefTypeName def)]
@@ -114,7 +115,7 @@ checkDataDef env nsTypes nsCtors def
  | otherwise
  = error "ddc-core.checkDataDef: bogus warning suppression"
 
- 
+
 -- Ctors ----------------------------------------------------------------------
 -- | Check the data constructor definitions from a single data type.
 checkDataCtors
@@ -142,7 +143,7 @@ checkDataCtors env nsCtors errs def csChecked cs
         Left  err -> checkDataCtors env
                         (Set.insert (dataCtorName c) nsCtors)
                         (err : errs) def csChecked cs'
-        
+
         Right c'  -> checkDataCtors env
                         (Set.insert (dataCtorName c') nsCtors)
                         errs         def (c' : csChecked) cs'
@@ -153,7 +154,7 @@ checkDataCtors env nsCtors errs def csChecked cs
 
 -- Ctor -----------------------------------------------------------------------
 -- | Check a single data constructor definition.
-checkDataCtor 
+checkDataCtor
         :: (Ord n, Show n, Pretty n)
         => EnvT n               -- ^ Environment of types.
         -> Set n                -- ^ Names of existing data constructors.
@@ -162,20 +163,18 @@ checkDataCtor
         -> Either (ErrorData n) (DataCtor n)
 
 checkDataCtor env nsCtors def ctor
-        
+
  -- Check the constructor name is not already defined.
- | Set.member (dataCtorName ctor) nsCtors 
+ | Set.member (dataCtorName ctor) nsCtors
  = Left $ ErrorDataDupCtorName (dataCtorName ctor)
 
  -- Check that the constructor produces a value of the associated data type.
  | not $ equivT env (dataTypeOfDataDef def) (dataCtorResultType ctor)
- = Left $ ErrorDataWrongResult 
+ = Left $ ErrorDataWrongResult
                 (dataCtorName ctor)
                 (dataCtorResultType ctor) (dataTypeOfDataDef def)
 
  -- This constructor looks ok.
  | otherwise
  = Right ctor
-
-
 

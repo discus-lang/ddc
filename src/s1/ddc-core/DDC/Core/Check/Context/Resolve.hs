@@ -41,12 +41,15 @@ lookupTyConThing
         => Context n -> n -> CheckM a n (Maybe (TyConThing n, Kind n))
 
 lookupTyConThing ctx n
+ -- Look for a primitive type of the same name.
+ | Just k        <- EnvT.envtPrimFun (contextEnvT ctx) n
+ = return $ Just (TyConThingPrim n k, k)
+
  -- Look for a data type declaration in the current module.
  | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
  , Just dataType <- Map.lookup n (dataDefsTypes dataDefs)
- = return $ Just
-        ( TyConThingData n dataType
-        , kindOfDataType dataType)
+ = return $ Just ( TyConThingData n dataType
+                 , kindOfDataType dataType)
 
  -- Look for a data type or synonym declaration in an imported module.
  | Just oracle  <- contextOracle ctx
@@ -56,7 +59,8 @@ lookupTyConThing ctx n
         Just thing -> return $ Just (thing, Oracle.kindOfTyConThing thing)
 
  -- It's just not there.
- | otherwise    = return Nothing
+ | otherwise
+ = return Nothing
 
 
 -------------------------------------------------------------------------------
@@ -115,7 +119,8 @@ lookupDataCtor
         => Context n -> n -> CheckM a n (Maybe (DataCtor n))
 
 lookupDataCtor ctx n
- -- Look for data ctor in the current module.
+
+ -- Look for data ctor in the current module, or as a primitive.
  | dataDefs      <- EnvX.envxDataDefs $ contextEnvX ctx
  , Just dataCtor <- Map.lookup n (dataDefsCtors dataDefs)
  = return $ Just dataCtor

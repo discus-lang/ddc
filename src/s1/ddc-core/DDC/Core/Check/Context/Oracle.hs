@@ -164,6 +164,8 @@ resolveTyConThing oracle n
                         $ \decls -> Map.insert n (k, t) decls
                 return  $ Just thing
 
+        goUpdate thing@(Store.TyConThingPrim{})
+         =      return  $ Just thing
 
 ---------------------------------------------------------------------------------------------------
 -- | Resolve the name of a data constructor,
