@@ -173,33 +173,3 @@ lookupTypeOfValueName ctx n
  | otherwise    = return Nothing
 
 
-
-{- This was from the old kind judgment.
-   This checks the right of the bindings as well as returns the type.
-   do we need to re-check at this point?
-
-             -- The kinds of abstract imported type constructors are in the
-             -- global kind environment.
-             | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
-             , UniverseSpec     <- uni
-             -> return (TCon (TyConBound u k'), k')
-
-             -- User defined data type constructors must be in the set of
-             -- data defs. Attach the real kind why we're here.
-             | Just def         <- Map.lookup n $ dataDefsTypes
-                                                $ EnvX.envxDataDefs
-                                                $ contextEnvX ctx0
-             , UniverseSpec     <- uni
-             -> let k'   = kindOfDataType def
-                in  return (TCon (TyConBound u k'), k')
-
-             -- For type synonyms, just re-check the right of the binding.
-             | Just t'          <- Map.lookup n $ EnvT.envtEquations
-                                                $ contextEnvT ctx0
-             -> do  (tt', k', _) <- checkTypeM config ctx0 uni t' mode
-                    return (tt', k')
-
-             -- We don't have a type for this constructor.
-             |  otherwise
-             -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
--}

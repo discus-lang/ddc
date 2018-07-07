@@ -40,7 +40,7 @@ kindOfTyConThing thing
 -- | Things that can go wrong during name resolution.
 data Error n
         = ErrorNotFound n
-        | ErrorMultipleModules    (Set ModuleName)
+        | ErrorMultipleModules    n (Set ModuleName)
         | ErrorMultipleTyConThing [TyConThing n]
 
         -- | The index maps in the interface store are broken.
@@ -70,7 +70,7 @@ resolveTyConThing store mnsImported n
                 let mnsVisible  = Set.intersection mnsAvail mnsImported
                 case Set.toList mnsVisible of
                  []             -> return $ Left $ ErrorNotFound n
-                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules mnsVisible
+                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
                  [mn]           -> goDetermine mn
 
         -- We know that a type thing of the required name is in the given module,
@@ -136,7 +136,7 @@ resolveDataCtor store mnsImported n
                 let mnsVisible  = Set.intersection mnsAvail mnsImported
                 case Set.toList mnsVisible of
                  []             -> return $ Left $ ErrorNotFound n
-                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules mnsVisible
+                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
                  [mn]           -> goGetDataCtor mn
 
         goGetDataCtor mn
@@ -173,7 +173,7 @@ resolveValueName store mnsImported n
                 let mnsVisible  = Set.intersection mnsAvail mnsImported
                 case Set.toList mnsVisible of
                  []             -> return $ Left $ ErrorNotFound n
-                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules mnsVisible
+                 (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
                  [mn]           -> goGetImportValue mn
 
 
