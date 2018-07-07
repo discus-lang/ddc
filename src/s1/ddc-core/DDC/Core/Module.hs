@@ -93,10 +93,6 @@ data Module a n
           -- | Import all things the given modules export into this one.
         , moduleImportModules   :: ![ModuleName]
 
-          -- These are things that we have imported from other modules and are needed
-          -- to type check the locally defined things.
-          -- TODO: Imported things are not necessesarally visible, we might have a data
-          --       type D1 defined in terms of another D2, but D1 is exported but not D2.
           -- | Imported foreign types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
