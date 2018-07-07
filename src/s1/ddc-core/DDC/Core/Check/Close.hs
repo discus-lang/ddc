@@ -26,6 +26,7 @@ closeModuleWithOracle oracle mm
  = do
         dataTypesByTyCon <- liftIO $ readIORef (oracleCacheDataTypesByTyCon oracle)
         typeSynsByTyCon  <- liftIO $ readIORef (oracleCacheTypeSynsByTyCon oracle)
+        _dataCtorsByDaCon <- liftIO $ readIORef (oracleCacheDataCtorsByDaCon oracle)
         valuesByName     <- liftIO $ readIORef (oracleCacheValuesByName oracle)
 
         return $ mm

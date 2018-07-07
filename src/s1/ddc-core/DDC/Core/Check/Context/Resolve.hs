@@ -71,9 +71,7 @@ lookupTyConThing ctx n
 
  -- It's just not there.
  | otherwise
- = error $ show (n, EnvX.envxDataDefs $ contextEnvX ctx)
-
---        return Nothing
+ = return Nothing
 
 
 -------------------------------------------------------------------------------

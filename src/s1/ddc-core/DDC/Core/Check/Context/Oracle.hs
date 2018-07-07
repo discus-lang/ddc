@@ -212,6 +212,26 @@ resolveDataCtor oracle n
         goUpdate ctor
          = do   liftIO  $ modifyIORef' (oracleCacheDataCtorsByDaCon oracle)
                         $ \ctors -> Map.insert n ctor ctors
+
+                dataTypesByTyCon
+                 <- liftIO $ readIORef $ Store.storeDataTypesByTyCon (oracleStore oracle)
+
+                let mDataType
+                     =   Map.lookup (dataCtorModuleName ctor) dataTypesByTyCon
+                     >>= Map.lookup (dataCtorTypeName ctor)
+
+                dataType
+                 <- case mDataType of
+                        Nothing -> error "resolveDataCtor: store is broken"
+                        Just dt -> return dt
+
+                -- TODO: we currently need to add data types to the cache so they
+                --       end up being picked up by the 'close' transform, but
+                --       we might not want the type to be automatically imported into
+                --       the top level namespace if the ctor is used.
+                liftIO  $ modifyIORef' (oracleCacheDataTypesByTyCon oracle)
+                        $ \dts -> Map.insert (dataTypeName dataType) dataType dts
+
                 return  $ Just ctor
 
 

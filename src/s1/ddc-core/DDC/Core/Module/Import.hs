@@ -44,7 +44,7 @@ data ImportType n t
         --
         | ImportTypeBoxed
         { importTypeBoxed        :: !t }
-        deriving Show
+        deriving (Show, Eq)
 
 
 instance (NFData n, NFData t) => NFData (ImportType n t) where

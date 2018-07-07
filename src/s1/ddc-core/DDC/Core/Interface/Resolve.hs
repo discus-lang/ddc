@@ -61,6 +61,7 @@ resolveTyConThing
 resolveTyConThing store mnsImported n
  = goModules
  where
+        ---------------------------------------------------
         -- Use the store index to determine which modules visibly expose a
         -- type thing with the desired name. If multiple modules do then
         -- the reference is ambiguous, and we produce an error.
@@ -77,37 +78,68 @@ resolveTyConThing store mnsImported n
                 -- We know that type things with the given names are visible via these
                 -- modules, so go find out what they are.
                 dataDefs       <- goGetDataTypes   mnsVisible
-                typeDefs       <- goGetTypeDefs    mnsVisible
+                typeSyns       <- goGetTypeSyns    mnsVisible
                 foreignDefs    <- goGetForeignType mnsVisible
-
-                let things      = concat [ dataDefs, typeDefs, foreignDefs ]
+                let things      = concat [ dataDefs, typeSyns, foreignDefs ]
 
                 case things of
+                 -- There actually weren't any things with the given name.
                  []             -> return $ Left $ ErrorNotFound n
+
+                 -- We found multiple distinct things with the same name.
                  ts@(_ : _ : _) -> return $ Left $ ErrorMultipleTyConThing ts
+
+                 -- We found a single thing with the desired name.
                  [thing]        -> return $ Right thing
 
-        -- Look for a data type declarations in the given modules.
+        ---------------------------------------------------
+        -- Look for a data type declarations with the desired name in the given modules.
         goGetDataTypes mns
          = do   dataTypesByTyCon
                  <- readIORef $ storeDataTypesByTyCon store
 
                 return  $ map (TyConThingData n)
+                        $ squashDataTypes
                         $ mapMaybe (\mn -> Map.lookup mn dataTypesByTyCon >>= Map.lookup n)
                         $ Set.toList mns
 
-        -- Look for a foreign type declaration in the given module.
+        -- Eliminate duplicate data type decls from the list.
+        squashDataTypes dts
+         = case dts of
+                []        -> []
+                dt : dts' -> dt : filter (not . isSameDataType dt) dts'
+
+        -- Check if these are the same data type declaration, assuming if the
+        -- module and type names are the same then the other info is also the same.
+        isSameDataType dt1 dt2
+         =  (dataTypeModuleName dt1 == dataTypeModuleName dt2)
+         && (dataTypeName dt1       == dataTypeName dt2)
+
+        ---------------------------------------------------
+        -- Look for foreign type declarations with the desired name in the given modules.
         goGetForeignType mns
          = do   foreignTypesByTyCon
                  <- readIORef $ storeForeignTypesByTyCon store
 
                 return  $ map (TyConThingForeign n)
+                        $ squashForeignTypes
                         $ mapMaybe (\mn -> Map.lookup mn foreignTypesByTyCon >>= Map.lookup n)
                         $ Set.toList mns
 
+        -- TODO: we should tag these with the original definition module,
+        --       to ensure multiple of the same type and name are not defined
+        --       in separate modules.
+        squashForeignTypes ivs
+         = case ivs of
+                []        -> []
+                iv : ivs' -> iv : filter (not . isSameForeignType iv) ivs'
 
-        -- Look for a type synonym declaration in the given module.
-        goGetTypeDefs mns
+        isSameForeignType iv1 iv2
+         = iv1 == iv2
+
+        ---------------------------------------------------
+        -- Look for a type synonym declarations with the desired name in the given modules.
+        goGetTypeSyns mns
          = do   typeSynsByTyCon
                  <- readIORef $ storeTypeSynsByTyCon store
 
@@ -117,14 +149,16 @@ resolveTyConThing store mnsImported n
                         $ Set.toList mns
 
         -- Eliminate duplicate synonym decls from the given list.
-        -- TODO: we should really tag these with the original definition module,
+        -- TODO: we should tag these with the original definition module,
         --       to ensure multiple of the same type and name are not defined
         --       in separate modules.
         squashTypeSyns kts
          = case kts of
-                []              -> []
-                ((k, t) : moar) -> (k, t) : filter (\(k', t') -> k /= k' && t /= t') moar
+                []        -> []
+                kt : kts' -> kt : filter (not . isSameTypeSyn kt) kts'
 
+        isSameTypeSyn kt1 kt2
+         = kt1 == kt2
 
 
 ---------------------------------------------------------------------------------------------------
@@ -146,19 +180,28 @@ resolveDataCtor store mnsImported n
          = do   mnsWithDaCon    <- readIORef $ storeDataCtorNames store
                 let mnsAvail    = fromMaybe Set.empty $ Map.lookup n mnsWithDaCon
                 let mnsVisible  = Set.intersection mnsAvail mnsImported
-                case Set.toList mnsVisible of
+                ctors           <- goGetDataCtors mnsVisible
+                case ctors of
                  []             -> return $ Left $ ErrorNotFound n
                  (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
-                 [mn]           -> goGetDataCtor mn
+                 [ctor]         -> return $ Right ctor
 
-        goGetDataCtor mn
-         = do   dataCtorsByDaCon <- readIORef $ storeDataCtorsByDaCon store
-                case Map.lookup mn dataCtorsByDaCon of
-                 Nothing        -> return $ Left $ ErrorInternal "broken store index"
-                 Just dataCtors
-                  -> case Map.lookup n dataCtors of
-                        Nothing         -> return $ Left $ ErrorNotFound n
-                        Just dataCtor   -> return $ Right $ dataCtor
+        goGetDataCtors mns
+         = do   dataCtorsByDaCon
+                 <- readIORef $ storeDataCtorsByDaCon store
+
+                return  $ squashDataCtors
+                        $ mapMaybe (\mn -> Map.lookup mn dataCtorsByDaCon >>= Map.lookup n)
+                        $ Set.toList mns
+
+        squashDataCtors ctors
+         = case ctors of
+                []        -> []
+                ct : cts' -> ct : filter (not . isSameDataCtor ct) cts'
+
+        isSameDataCtor ct1 ct2
+         =  (dataCtorModuleName ct1 == dataCtorModuleName ct2)
+         && (dataCtorName ct1       == dataCtorName ct2)
 
 
 ---------------------------------------------------------------------------------------------------
