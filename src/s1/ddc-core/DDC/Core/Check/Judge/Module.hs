@@ -88,7 +88,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         mOracle_init
          <- case mStore of
                 Nothing    -> return $ Nothing
-                Just store -> return $ Just $ Oracle.newOracleOfStore store
+                Just store -> fmap Just $ liftIO $ Oracle.newOracleOfStore store
 
         -- Tell the oracle to bring bindings from the imported modules into scope.
         mOracle
