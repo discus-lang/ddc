@@ -172,6 +172,25 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                         { EnvT.envtEquations
                         = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef']}]
 
+
+        -- Check imported data type defs --------------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Imported Data Types."]
+
+        let dataDefsImported = map snd $ moduleImportDataDefs mm
+        dataDefsImported'
+         <- case checkDataDefs config envT_importedTypeDefs dataDefsImported of
+                (err : _, _)            -> throw $ ErrorData err
+                ([], dataDefsImported') -> return dataDefsImported'
+
+        -- TODO: this is dodgy.
+        -- The data defs / synonyms / foreign type should be able to be recursive.
+        let envT_importedDataDefs
+                = EnvT.unions
+                [ envT_importedTypeDefs
+                , EnvT.fromListNT [ (dataDefTypeName def, kindOfDataDef def)
+                                  | def <- dataDefsImported' ] ]
+
         -- Check kinds of local type equations --------------------------------
         --   The right of each type equation can mention
         --   imported abstract types, imported and local data type definitions.
@@ -183,14 +202,14 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         nktsLocalTypeDef'
                 <- checkKindsOfTypeDefs
                         config
-                        envT_importedTypeDefs
+                        envT_importedDataDefs
                          { EnvT.envtEquations
                          = Map.map snd $ Map.fromList $ moduleLocalTypeDefs mm }
                 $  moduleLocalTypeDefs  mm
 
         let envT_localTypeDefs
                 = EnvT.unions
-                [ envT_importedTypeDefs
+                [ envT_importedDataDefs
                 , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']
                 , EnvT.empty
                         { EnvT.envtEquations
@@ -199,17 +218,6 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                                 , Map.fromList [ (n, t) | (n, (_, t)) <- nktsImportTypeDef' ]]
                         }
                 ]
-
-        -- Check imported data type defs --------------------------------------
-        ctrace  $ vcat
-                [ text "* Checking Kinds of Imported Data Types."]
-
-        let dataDefsImported = map snd $ moduleImportDataDefs mm
-        dataDefsImported'
-         <- case checkDataDefs config envT_localTypeDefs dataDefsImported of
-                (err : _, _)            -> throw $ ErrorData err
-                ([], dataDefsImported') -> return dataDefsImported'
-
 
         -- Check the local data defs ------------------------------------------
         ctrace  $ vcat
@@ -251,6 +259,9 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         ctrace  $ vcat
                 [ text "* Checking Types of Imported Values."
                 , mempty ]
+
+--        ctrace  $ string $ show (Map.keys $ EnvT.envtEquations envT_importCaps)
+        ctrace  $ string $ show nktsImportTypeDef'
 
         ntsImportValue'
                 <- checkImportValues  config envX_importCaps mode
@@ -533,17 +544,18 @@ checkKindsOfTypeDefs
         -> [(n, (Kind n, Type n))]
         -> CheckM a n [(n, (Kind n, Type n))]
 
-checkKindsOfTypeDefs config env nkts
+checkKindsOfTypeDefs _config env nkts
  = let
-        ctx     = contextOfEnvT env
+        -- TODO: we're not checking type synonyms at all.
+        _ctx     = contextOfEnvT env
 
         -- Check a single type equation.
-        check (n, (_k, t))
-         = do   (t', k', _)
-                 <- checkTypeM config ctx UniverseSpec t Recon
+        check (n, (k, t))
+         = do   -- (t', k', _)
+                -- <- checkTypeM config ctx UniverseSpec t Recon
 
                 -- ISSUE #374: Check specified kinds of type equations against inferred kinds.
-                return (n, (k', t'))
+                return (n, (k, t))
 
    in do
         -- ISSUE #373: Check that type equations are not recursive.
