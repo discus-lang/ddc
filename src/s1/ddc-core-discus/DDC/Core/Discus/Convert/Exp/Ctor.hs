@@ -7,7 +7,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Exp.Lit
-import DDC.Core.Codec.Text.Pretty
+-- import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Core.Module.Name
 import DDC.Core.Check                    (AnTEC(..))
@@ -118,5 +118,6 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 convertCtorApp _ _ dc xsArgsAll
  = throw $  ErrorMalformed
          $  "Invalid constructor application "
-         ++ (renderIndent $ ppr (dc, xsArgsAll))
+         ++ (show (dc, xsArgsAll))
+--         ++ (renderIndent $ ppr (dc, xsArgsAll))
 
