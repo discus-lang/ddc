@@ -23,8 +23,13 @@ import qualified Data.Map.Strict        as Map
 
 
 -------------------------------------------------------------------------------
--- | Resolve the name of a type constructor or synonym.
+-- | Resolve the name of a data type, type synonym, for foreign type.
+--
+--   These are all named after a type constructor, but they have different
+--   sorts of declarations.
+--
 --   If we can't find one then throw an error in the `CheckM` monad.
+--
 resolveTyConThing
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (TyConThing n, Kind n)
@@ -36,6 +41,10 @@ resolveTyConThing ctx n
         Just tk -> return tk
 
 
+-- | Lookup the name of a data type, type synonym, for foreign type.
+--
+--   If we can't find it then `Nothing`.
+--
 lookupTyConThing
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (TyConThing n, Kind n))
@@ -76,7 +85,9 @@ lookupTyConThing ctx n
 
 -------------------------------------------------------------------------------
 -- | Lookup the definition of a type synonym from its name.
+--
 --   If we can't find it then `Nothing`.
+--
 lookupTypeSyn
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (Type n))

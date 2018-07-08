@@ -126,11 +126,9 @@ checkOfResolveError n err
 
 
 ---------------------------------------------------------------------------------------------------
--- FIXME: add oracle cache for things that we've found.
---   We want to cache visible things relative to the module being checked,
---   rather than hitting the Store indexes each time.
---   We can also then use the oracle cache to close the module after type checking,
---   as it is guaranteed to contain all used declarations.
+-- | Lookup the name of a data type, type synonym or foreign type in
+--   an imported module. If we find it then add it to the oracle cache,
+--   before returning it. If not then `Nothing`.
 resolveTyConThing
         :: (Ord n, Show n)
         => Oracle n -> n -> CheckM a n (Maybe (Store.TyConThing n))
@@ -138,24 +136,28 @@ resolveTyConThing
 resolveTyConThing oracle n
  = goCacheDataType
  where
+        -- Check the oracle cache for a data type of the desired name.
         goCacheDataType
          = do   cache   <- liftIO $ readIORef (oracleCacheDataTypesByTyCon oracle)
                 case Map.lookup n cache of
                  Just dataType  -> return $ Just $ Store.TyConThingData n dataType
-                 Nothing        -> goCacheForeignType
-
-        goCacheForeignType
-         = do   cache   <- liftIO $ readIORef (oracleCacheForeignTypesByTyCon oracle)
-                case Map.lookup n cache of
-                 Just it        -> return $ Just $ Store.TyConThingForeign n it
                  Nothing        -> goCacheSyn
 
+        -- Check the oracle cache for a type synonym of the desired name.
         goCacheSyn
          = do   cache   <- liftIO $ readIORef (oracleCacheTypeSynsByTyCon oracle)
                 case Map.lookup n cache of
                  Just (k, t)    -> return $ Just $ Store.TyConThingSyn n k t
+                 Nothing        -> goCacheForeignType
+
+        -- Check the oracle cache for a foreign type of the desired name.
+        goCacheForeignType
+         = do   cache   <- liftIO $ readIORef (oracleCacheForeignTypesByTyCon oracle)
+                case Map.lookup n cache of
+                 Just it        -> return $ Just $ Store.TyConThingForeign n it
                  Nothing        -> goStore
 
+        -- Look for a thing of the desired name in the interface store.
         goStore
          = do   r       <- liftIO $ Store.resolveTyConThing
                                 (oracleStore oracle)
@@ -166,21 +168,23 @@ resolveTyConThing oracle n
                  Left err       -> throw $ checkOfResolveError n err
                  Right thing    -> goUpdate thing
 
-        goUpdate thing@(Store.TyConThingPrim{})
-         =      return  $ Just thing
+        -- Update the oracle cache with a found tycon thing.
+        goUpdate thing = case thing of
+         Store.TyConThingPrim{}
+          -> do return  $ Just thing
 
-        goUpdate thing@(Store.TyConThingData _ dataType)
-         = do   liftIO  $ modifyIORef' (oracleCacheDataTypesByTyCon oracle)
+         Store.TyConThingData _ dataType
+          -> do liftIO  $ modifyIORef' (oracleCacheDataTypesByTyCon oracle)
                         $ \dts  -> Map.insert n dataType dts
                 return  $ Just thing
 
-        goUpdate thing@(Store.TyConThingForeign _ it)
-         = do   liftIO  $ modifyIORef' (oracleCacheForeignTypesByTyCon oracle)
+         Store.TyConThingForeign _ it
+          -> do liftIO  $ modifyIORef' (oracleCacheForeignTypesByTyCon oracle)
                         $ \its -> Map.insert n it its
                 return  $ Just thing
 
-        goUpdate thing@(Store.TyConThingSyn _ k t)
-         = do   liftIO  $ modifyIORef' (oracleCacheTypeSynsByTyCon oracle)
+         Store.TyConThingSyn _ k t
+          -> do liftIO  $ modifyIORef' (oracleCacheTypeSynsByTyCon oracle)
                         $ \decls -> Map.insert n (k, t) decls
                 return  $ Just thing
 
@@ -194,12 +198,15 @@ resolveDataCtor
 
 resolveDataCtor oracle n
  = goCache
- where  goCache
+ where
+        -- Check the oracle cache for a data constructor of the desired name.
+        goCache
          = do   cache <- liftIO $ readIORef (oracleCacheDataCtorsByDaCon oracle)
                 case Map.lookup n cache of
                  Just ctor      -> return $ Just ctor
                  Nothing        -> goStore
 
+        -- Look for a data constructor of the desired name in the interface store.
         goStore
          = do   r     <- liftIO $ Store.resolveDataCtor
                                 (oracleStore oracle) (oracleImportedModules oracle) n
@@ -209,6 +216,7 @@ resolveDataCtor oracle n
                  Left err       -> throw $ checkOfResolveError n err
                  Right ctor     -> goUpdate ctor
 
+        -- Update the oracle cache with a found data constructor.
         goUpdate ctor
          = do   liftIO  $ modifyIORef' (oracleCacheDataCtorsByDaCon oracle)
                         $ \ctors -> Map.insert n ctor ctors
@@ -244,12 +252,15 @@ resolveValueName
 
 resolveValueName oracle n
  = goCache
- where  goCache
+ where
+        -- Check the oracle cache for a value of the desired name.
+        goCache
          = do   cache   <- liftIO $ readIORef (oracleCacheValuesByName oracle)
                 case Map.lookup n cache of
                  Just iv        -> return $ Just iv
                  Nothing        -> goStore
 
+        -- Look for a value of the desired name in the interface store.
         goStore
          = do   r       <- liftIO $ Store.resolveValueName
                                 (oracleStore oracle) (oracleImportedModules oracle) n
@@ -259,6 +270,7 @@ resolveValueName oracle n
                  Left err       -> throw $ checkOfResolveError n err
                  Right iv       -> goUpdate iv
 
+        -- Update the oracle cache with the type of a found value.
         goUpdate iv
          = do   liftIO  $ modifyIORef' (oracleCacheValuesByName oracle)
                         $ \ivs -> Map.insert n iv ivs
