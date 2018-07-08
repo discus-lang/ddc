@@ -1,5 +1,14 @@
 
--- | Name resolution.
+-- | Name resolution via the type checker context.
+--
+--   The general process is
+--     1) First try to lookup a name from the type checker context of
+--        the module currently being checked.
+--     2) Look in the oracle cache for things imported from other modules
+--        that we've used before.
+--     3) Get the oracle to ask the interface store to see if the thing
+--        is visibly imported from another module, perhaps transitively.
+--
 module DDC.Core.Check.Context.Resolve
         ( TyConThing(..)
         , resolveTyConThing
@@ -21,8 +30,7 @@ import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map.Strict        as Map
 
 
-
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Resolve the name of a data type, type synonym, for foreign type.
 --
 --   These are all named after a type constructor, but they have different
@@ -83,7 +91,7 @@ lookupTyConThing ctx n
  = return Nothing
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Lookup the definition of a type synonym from its name.
 --
 --   If we can't find it then `Nothing`.
@@ -109,8 +117,11 @@ lookupTypeSyn ctx n
  | otherwise    = return Nothing
 
 
--------------------------------------------------------------------------------
--- | Lookup the definition of a data type from its constructor name.
+---------------------------------------------------------------------------------------------------
+-- | Lookup the definition of a data type.
+--
+--   If we can't find it then `Nothing`.
+--
 lookupDataType
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (DataType n))
@@ -133,9 +144,11 @@ lookupDataType ctx n
  | otherwise    = return Nothing
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Lookup the definition of a data constructor.
+--
 --   If we can't find it then `Nothing`.
+--
 lookupDataCtor
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (DataCtor n))
@@ -155,9 +168,11 @@ lookupDataCtor ctx n
  | otherwise    = return Nothing
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Lookup the type of a value.
+--
 --   If we can't find then `Nothing`.
+--
 lookupTypeOfValueName
         :: (Ord n, Show n)
         => Context n -> n -> CheckM a n (Maybe (Type n))

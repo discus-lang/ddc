@@ -1,4 +1,5 @@
 
+-- | Name resolution via the interface store.
 module DDC.Core.Interface.Resolve
         ( TyConThing (..)
         , Error(..)
@@ -27,6 +28,8 @@ data TyConThing n
         | TyConThingSyn     n (Kind n) (Type n)
         deriving Show
 
+
+-- | Produce the kind of a `TyConThing`.
 kindOfTyConThing :: TyConThing n -> Kind n
 kindOfTyConThing thing
  = case thing of
@@ -45,12 +48,13 @@ data Error n
 
         -- | The index maps in the interface store are broken.
         --   They said the store contained some value but it didn't.
+        --   TODO: ditch this.
         | ErrorInternal           String
         deriving Show
 
 
 ---------------------------------------------------------------------------------------------------
--- | Resolve the name of a type constructor or type synonym.
+-- | Resolve the name of a type constructor, type synonym or foreign type.
 resolveTyConThing
         :: (Ord n, Show n)
         => Store n         -- ^ Interface store.
@@ -83,13 +87,14 @@ resolveTyConThing store mnsImported n
                 let things      = concat [ dataDefs, typeSyns, foreignDefs ]
 
                 case things of
-                 -- There actually weren't any things with the given name.
+                 -- There weren't any things with the given name.
                  []             -> return $ Left $ ErrorNotFound n
 
                  -- We found multiple distinct things with the same name.
                  ts@(_ : _ : _) -> return $ Left $ ErrorMultipleTyConThing ts
 
                  -- We found a single thing with the desired name.
+                 -- This is the happy case.
                  [thing]        -> return $ Right thing
 
         ---------------------------------------------------
@@ -104,6 +109,7 @@ resolveTyConThing store mnsImported n
                         $ Set.toList mns
 
         -- Eliminate duplicate data type decls from the list.
+        -- The same decl may have been imported then re-exported via multiple modules.
         squashDataTypes dts
          = case dts of
                 []        -> []
@@ -129,6 +135,7 @@ resolveTyConThing store mnsImported n
         -- TODO: we should tag these with the original definition module,
         --       to ensure multiple of the same type and name are not defined
         --       in separate modules.
+        -- The same decl may have been imported then re-exported via multiple modules.
         squashForeignTypes ivs
          = case ivs of
                 []        -> []
@@ -149,6 +156,7 @@ resolveTyConThing store mnsImported n
                         $ Set.toList mns
 
         -- Eliminate duplicate synonym decls from the given list.
+        -- The same decl may have been imported then re-exported via multiple modules.
         -- TODO: we should tag these with the original definition module,
         --       to ensure multiple of the same type and name are not defined
         --       in separate modules.
@@ -226,18 +234,27 @@ resolveValueName store mnsImported n
          = do   mnsWithValue    <- readIORef $ storeValueNames store
                 let mnsAvail    = fromMaybe Set.empty $ Map.lookup n mnsWithValue
                 let mnsVisible  = Set.intersection mnsAvail mnsImported
-                case Set.toList mnsVisible of
+                ivs             <- goGetImportValues mnsVisible
+                case ivs of
                  []             -> return $ Left $ ErrorNotFound n
                  (_ : _ : _)    -> return $ Left $ ErrorMultipleModules n mnsVisible
-                 [mn]           -> goGetImportValue mn
+                 [iv]           -> return $ Right iv
 
 
-        goGetImportValue mn
-         = do   valuesByName    <- readIORef $ storeValuesByName store
-                case Map.lookup mn valuesByName of
-                 Nothing        -> return $ Left $ ErrorInternal "broken store index"
-                 Just importValues
-                  -> case Map.lookup n importValues of
-                        Nothing          -> return $ Left $ ErrorNotFound n
-                        Just importValue -> return $ Right $ importValue
+        goGetImportValues mns
+         = do   valuesByName
+                 <- readIORef $ storeValuesByName store
+
+                return  $ squashImportValues
+                        $ mapMaybe (\mn -> Map.lookup mn valuesByName >>= Map.lookup n)
+                        $ Set.toList mns
+
+        squashImportValues ivs
+         = case ivs of
+                []        -> []
+                iv : ivs' -> iv : filter (not . isSameImportValue iv) ivs'
+
+        isSameImportValue iv1 iv2
+         =  (importValueModuleName iv1 == importValueModuleName iv2)
+         && (importValueModuleVar  iv1 == importValueModuleVar  iv2)
 

@@ -99,16 +99,15 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                  $  Oracle.importModules oracle $ moduleImportModules mm
 
         -- Build the top level kind environment from the module.
-        -- We currently only do kind checking rather than kind inference,
-        --   so we can build the top level environment from the annotations
-        --   that are already on each of the top-level declarations.
-        let envT = moduleEnvT (configPrimKinds config) mm
-
         -- We can reuse the same context when checking top level type declarations
         -- because we don't need to allocate any metavariables. However, we do
         -- need the contained oracle as the declarations may mention names of
         -- other things in external modules.
-        let ctx0 = (contextOfEnvT envT)
+        let ctx0 = (contextOfEnvX
+                        (moduleEnvX (configPrimKinds config)
+                                    (configPrimTypes config)
+                                    (configPrimDataDefs config)
+                                    mm))
                  { contextOracle = mOracle }
 
         -- Check sorts of imported types --------------------------------------
@@ -176,17 +175,14 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 ([], dataDefsLocal')    -> return dataDefsLocal'
 
         -- Check types of imported capabilities -------------------------------
-        ctrace  $ vcat
-                [ text "* Checking Kinds of Imported Capabilities."]
+        ctrace  $ text "* Checking Kinds of Imported Capabilities."
 
         ntsImportCap'
                 <- checkImportCaps  config ctx0 mode
                 $  moduleImportCaps mm
 
         -- Check types of imported values ------------------------------------
-        ctrace  $ vcat
-                [ text "* Checking Types of Imported Values."
-                , mempty ]
+        ctrace  $ text "* Checking Types of Imported Values."
 
         let envX
                 = moduleEnvX (configPrimKinds config)
@@ -213,14 +209,17 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 , contextEnvX   = envX }
 
         -- Check the sigs of exported types ---------------
+        ctrace  $ text "* Checking Kinds of Exported Types"
         esrcsType'  <- checkExportTypes   config ctx0
                     $  moduleExportTypes  mm
 
         -- Check the sigs of exported values --------------
+        ctrace  $ text "* Checking Types of Exported Values"
         esrcsValue' <- checkExportValues  config ctx0
                     $  moduleExportValues mm
 
         -- Check the body of the module -------------------
+        ctrace  $ text "* Checking Module Body"
         (x', _, _effs, ctx)
          <- checkExpM   (makeTable config)
                         ctx_top mode DemandNone (moduleBody mm)
@@ -362,11 +361,15 @@ checkKindsOfTypeDefs config ctx nkts
                 -- The Source -> Core transform fills in the kind with a hole, but we should
                 -- allow the result kind to be specified in the source language to be consistent
                 -- with value bindings.
+                --
+                -- The fact that we rely on kind reconstruction here also means that type
+                -- decls that mention each other must appear in the module in use-def order,
+                -- otherwise the checker will complain about the ? (hole) kind.
+
                 return (n, (k', t'))
 
    in do
         -- ISSUE #373: Check that type equations are not recursive.
         nkts' <- mapM check nkts
         return nkts'
-
 
