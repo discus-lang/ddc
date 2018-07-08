@@ -303,7 +303,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         mm_closed
          <- case contextOracle ctx of
                 Nothing     -> return mm_updated
-                Just oracle -> closeModuleWithOracle oracle mm_updated
+                Just oracle -> closeModuleWithOracle (configPrimKinds config) oracle mm_updated
 
         return mm_closed
 
