@@ -32,7 +32,10 @@ closeModuleWithOracle kenv oracle mm
  = do
         dataTypesByTyCon   <- liftIO $ readIORef (Oracle.oracleCacheDataTypesByTyCon oracle)
         typeSynsByTyCon    <- liftIO $ readIORef (Oracle.oracleCacheTypeSynsByTyCon  oracle)
+
+        -- TODO: add this
         _dataCtorsByDaCon  <- liftIO $ readIORef (Oracle.oracleCacheDataCtorsByDaCon oracle)
+
         valuesByName       <- liftIO $ readIORef (Oracle.oracleCacheValuesByName     oracle)
         foreignTypesByName <- liftIO $ readIORef (Oracle.oracleCacheForeignTypesByTyCon oracle)
 
