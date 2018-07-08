@@ -50,6 +50,7 @@ module DDC.Type.Exp.Simple.Compounds
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
+        , takeTFunImplicits
         , arityOfType
         , dataArityOfType
 
@@ -519,6 +520,17 @@ takeTFunAllArgResult tt
          -> let (tsMore, tResult) = takeTFunAllArgResult t2
             in  (t1 : tsMore, tResult)
 
+        _ -> ([], tt)
+
+
+-- | If this is the type of a function with implicit parameters
+--   then split off the parameters, else Nothing
+takeTFunImplicits :: Type n -> ([Type n], Type n)
+takeTFunImplicits tt
+ = case tt of
+        TApp (TApp (TCon (TyConSpec TcConFunImplicit)) t1) t2
+          -> let (tsMore, tResult) = takeTFunImplicits t2
+             in  (t1 : tsMore, tResult)
         _ -> ([], tt)
 
 

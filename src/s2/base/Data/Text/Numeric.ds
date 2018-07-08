@@ -12,6 +12,8 @@ export
         showFloat32;
         showFloat64;
 }
+import Class.Numeric
+import Class.Ord
 import Data.Numeric.Int
 import Data.Numeric.Word8
 import Data.Numeric.Float32

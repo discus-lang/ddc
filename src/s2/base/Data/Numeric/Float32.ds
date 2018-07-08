@@ -5,6 +5,8 @@ export
         add_Float32; sub_Float32; mul_Float32; div_Float32; rem_Float32;
 }
 import Class.Numeric
+import Class.Eq
+import Class.Ord
 where
 
 

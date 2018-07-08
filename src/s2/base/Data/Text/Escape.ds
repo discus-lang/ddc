@@ -6,7 +6,11 @@ export
         escapeTextDisciple;
 }
 import Data.Text.Numeric
-
+import Data.Text.Operator
+import Data.Numeric
+import Data.Function
+import Class.Numeric
+import Class.Ord
 
 -- | Capabilities to allocate and read top-level text vectors.
 --   TODO: we shouldn't need to re-import these.

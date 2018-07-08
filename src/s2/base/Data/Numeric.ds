@@ -10,4 +10,3 @@ import Data.Numeric.Word32
 import Data.Numeric.Word64
 import Data.Numeric.Float32
 import Data.Numeric.Float64
-

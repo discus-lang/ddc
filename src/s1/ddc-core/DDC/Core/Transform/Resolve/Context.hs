@@ -10,16 +10,19 @@ module DDC.Core.Transform.Resolve.Context
 where
 import DDC.Core.Transform.Resolve.Base
 import DDC.Type.Transform.Instantiate
+import DDC.Type.Transform.SubstituteT
+import DDC.Type.Transform.Unify
 import DDC.Core.Fragment                (Profile (..))
 import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
 import Control.Monad.IO.Class
 import Data.IORef
-import qualified DDC.Type.Sum   as Sum
-import qualified Data.Map       as Map
 
 
 -- | Context of resolve process.
+--   TODO: cache resolutions and re-use them.
+--         there are often many, eg (Eq Word32) in the same module and we don't
+--         want to repeat the resolution process each time.
 data Context n
         = Context
         { -- | Current type environment.
@@ -121,7 +124,6 @@ contextResolve !a !ctx !tWant
 
         searchStack (g : gs)
          = do   result <- searchGroup g
-
                 case result of
                  Nothing -> searchStack gs
                  Just x  -> return x
@@ -241,112 +243,9 @@ matchScheme envt tWanted tBind
                 $  map (\i -> Prelude.lookup i cs)
                 $ [0.. nArgs - 1]
 
-          -> let tsParamTerm' = map (substExists cs) tsParamTerm
+          -> let tsParamTerm' = map (substituteExistsT cs) tsParamTerm
              in  Just (tsArgInst, tsParamTerm')
 
          _ -> Nothing
 
-
--- | Half-assed unification of left and right types, also known as "matching".
---   Where we're permitted to create constraints for the right type only.
-unifyExistsRight
-        :: Ord n
-        => EnvT n
-        -> Type n -> Type n
-        -> Maybe [(Int, Type n)]
-
-unifyExistsRight envt tL_ tR_
- = let
-        tL      = case tL_ of
-                   TCon (TyConBound (UName n1) _)
-                     -> case Map.lookup n1 (envtEquations envt) of
-                         Nothing  -> tL_
-                         Just tL' -> tL'
-                   _ ->  tL_
-
-        tR      = case tR_ of
-                   TCon (TyConBound (UName n2) _)
-                     -> case Map.lookup n2 (envtEquations envt) of
-                         Nothing   -> tR_
-                         Just tR'  -> tR'
-                   _ ->  tR_
-
-   in case (tL, tR) of
-
-        (t1, TCon (TyConExists i2 _k2))
-          -> Just [(i2, t1)]
-
-        (TCon (TyConBound u1 _k1), TCon (TyConBound u2 _k2))
-         | u1 == u2     -> Just []
-         | otherwise    -> Nothing
-
-
-        (TCon tc1, TCon tc2)
-         | tc1 == tc2   -> Just []
-         | otherwise    -> Nothing
-
-
-        (TVar u1,  TVar u2)
-         | u1 == u2     -> Just []
-         | otherwise    -> Nothing
-
-        (TAbs{}, TAbs{})
-         -> Nothing
-
-        (TApp t11 t12, TApp t21 t22)
-         |  Just cs1 <- unifyExistsRight envt t11 t21
-         ,  Just cs2 <- unifyExistsRight envt t12 t22
-         -> Just (cs1 ++ cs2)
-
-        (TForall{}, TForall{})
-         -> Nothing
-
-        (TSum {}, TSum{})
-         | equivT envt tL tR    -> Just []
-         | otherwise            -> Nothing
-
-        _ -> Nothing
-
-
-substExists
-        :: Ord n
-        => [(Int, Type n)]
-        -> Type n
-        -> Type n
-
-substExists cs tt
- = case tt of
-        TCon (TyConExists i _)
-         -> case Prelude.lookup i cs of
-                Just t  -> t
-                Nothing -> tt
-
-        TCon{}  -> tt
-        TVar{}  -> tt
-
-        TAbs b t
-         -> TAbs b $ substExists cs t
-
-        TApp t1 t2
-         -> TApp (substExists cs t1) (substExists cs t2)
-
-        TForall b t
-         -> TForall b (substExists cs t)
-
-        TSum ts
-         -> TSum
-         $  Sum.fromList (Sum.kindOfSum ts)
-         $  map (substExists cs)
-         $  Sum.toList ts
-
-
--- | If this is the type of a function with implicit parameters
---   then split off the parameters, else Nothing
-takeTFunImplicits :: Type n -> ([Type n], Type n)
-takeTFunImplicits tt
- = case tt of
-        TApp (TApp (TCon (TyConSpec TcConFunImplicit)) t1) t2
-          -> let (tsMore, tResult) = takeTFunImplicits t2
-             in  (t1 : tsMore, tResult)
-        _ -> ([], tt)
 

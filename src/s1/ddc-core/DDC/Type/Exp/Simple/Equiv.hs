@@ -195,6 +195,8 @@ crushEffect env tt
 
         TCon{}          -> tt
 
+        -- If the effect type is supported by one of the global capabilities
+        -- then we can remove it at this point.
         TApp{}
          |  or [equivT env tt t | (_, t) <- Map.toList $ EnvT.envtCapabilities env]
          -> tSum kEffect []

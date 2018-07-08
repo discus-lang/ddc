@@ -133,6 +133,7 @@ module DDC.Type.Exp.Simple
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
+        , takeTFunImplicits
         , arityOfType
         , dataArityOfType
 

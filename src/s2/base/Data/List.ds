@@ -32,6 +32,7 @@ import Data.Numeric.Bool
 import Data.Tuple
 import Data.Maybe
 import Data.Function
+import Class.Numeric
 import Class.Category
 import Class.Functor
 import Class.Monad
