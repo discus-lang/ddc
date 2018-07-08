@@ -104,12 +104,19 @@ checkModuleM config mStore mm@ModuleCore{} !mode
         --   that are already on each of the top-level declarations.
         let envT = moduleEnvT (configPrimKinds config) mm
 
+        -- We can reuse the same context when checking top level type declarations
+        -- because we don't need to allocate any metavariables. However, we do
+        -- need the contained oracle as the declarations may mention names of
+        -- other things in external modules.
+        let ctx0 = (contextOfEnvT envT)
+                 { contextOracle = mOracle }
+
         -- Check sorts of imported types --------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Sorts of Imported Types" ]
 
         nitsImportType'
-                <- checkImportTypes  config envT mode
+                <- checkImportTypes  config ctx0 mode
                 $  moduleImportTypes mm
 
         -- Check imported data types ------------------------------------------
@@ -117,7 +124,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Sorts of Imported Data Types." ]
 
         _nksImportDataDef'
-                <- checkSortsOfDataTypes config mode
+                <- checkSortsOfDataTypes config ctx0 mode
                 $  map snd $ moduleImportDataDefs  mm
 
         -- Check local data types ---------------------------------------------
@@ -125,7 +132,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Sorts of Local Data Types." ]
 
         _nksLocalDataDef'
-                <- checkSortsOfDataTypes config mode
+                <- checkSortsOfDataTypes config ctx0 mode
                 $  map snd $ moduleLocalDataDefs   mm
 
         -- Check kinds of imported type equations -----------------------------
@@ -133,7 +140,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Imported Type Equations."]
 
         nktsImportTypeDef'
-                <- checkKindsOfTypeDefs config envT
+                <- checkKindsOfTypeDefs config ctx0
                 $  moduleImportTypeDefs mm
 
         -- Check kinds of local type equations --------------------------------
@@ -141,7 +148,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Local Type Equations."]
 
         nktsLocalTypeDef'
-                <- checkKindsOfTypeDefs config envT
+                <- checkKindsOfTypeDefs config ctx0
                 $  moduleLocalTypeDefs  mm
 
         -- Check imported data type defs --------------------------------------
@@ -149,8 +156,10 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Imported Data Types."]
 
         let dataDefsImported = map snd $ moduleImportDataDefs mm
+
+        -- TODO: data defs checker needs the oracle.
         dataDefsImported'
-         <- case checkDataDefs config envT dataDefsImported of
+         <- case checkDataDefs config (contextEnvT ctx0) dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
 
@@ -159,8 +168,10 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Local Data Types."]
 
         let dataDefsLocal    = map snd $ moduleLocalDataDefs mm
+
+        -- TODO: data defs checker needs the oracle.
         dataDefsLocal'
-         <- case checkDataDefs config envT dataDefsLocal of
+         <- case checkDataDefs config (contextEnvT ctx0) dataDefsLocal of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsLocal')    -> return dataDefsLocal'
 
@@ -169,7 +180,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Imported Capabilities."]
 
         ntsImportCap'
-                <- checkImportCaps  config envT mode
+                <- checkImportCaps  config ctx0 mode
                 $  moduleImportCaps mm
 
         -- Check types of imported values ------------------------------------
@@ -190,7 +201,7 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 , moduleLocalDataDefs   = [ (dataDefTypeName def, def) | def <- dataDefsLocal' ] }
 
         ntsImportValue'
-                <- checkImportValues  config envX mode
+                <- checkImportValues  config ctx0 mode
                 $  moduleImportValues mm
 
         -----------------------------------------------------------------------
@@ -202,11 +213,11 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 , contextEnvX   = envX }
 
         -- Check the sigs of exported types ---------------
-        esrcsType'  <- checkExportTypes   config envT
+        esrcsType'  <- checkExportTypes   config ctx0
                     $  moduleExportTypes  mm
 
         -- Check the sigs of exported values --------------
-        esrcsValue' <- checkExportValues  config envX
+        esrcsValue' <- checkExportValues  config ctx0
                     $  moduleExportValues mm
 
         -- Check the body of the module -------------------
@@ -304,11 +315,12 @@ checkModuleM config mStore mm@ModuleCore{} !mode
 checkSortsOfDataTypes
         :: (Ord n, Show n, Pretty n)
         => Config n
+        -> Context n
         -> Mode n
         -> [DataDef n]
         -> CheckM a n [(n, Kind n)]
 
-checkSortsOfDataTypes config mode defs
+checkSortsOfDataTypes config ctx mode defs
  = let
         -- Checker mode to use.
         modeCheckDataTypes
@@ -321,7 +333,7 @@ checkSortsOfDataTypes config mode defs
          = do   let k   = kindOfDataDef def
                 (k', _, _)
                   <- mapErr (ErrorCtxData (dataDefTypeName def))
-                   $ checkTypeM config emptyContext UniverseKind k modeCheckDataTypes
+                   $ checkTypeM config ctx UniverseKind k modeCheckDataTypes
                 return (dataDefTypeName def, k')
 
    in do
@@ -335,14 +347,12 @@ checkSortsOfDataTypes config mode defs
 checkKindsOfTypeDefs
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvT n
+        -> Context n
         -> [(n, (Kind n, Type n))]
         -> CheckM a n [(n, (Kind n, Type n))]
 
-checkKindsOfTypeDefs config env nkts
+checkKindsOfTypeDefs config ctx nkts
  = let
-        ctx     = contextOfEnvT env
-
         -- Check a single type equation.
         check (n, (_k, t))
          = do   (t', k', _)

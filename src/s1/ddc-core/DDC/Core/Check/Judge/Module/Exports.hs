@@ -3,7 +3,6 @@ module DDC.Core.Check.Judge.Module.Exports where
 import DDC.Core.Check.Judge.Type.Base           (checkTypeM)
 import DDC.Core.Check.Base
 import DDC.Core.Module
-import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Control.CheckIO                      (throw)
 
 
@@ -12,14 +11,12 @@ import DDC.Control.CheckIO                      (throw)
 checkExportTypes
         :: (Show n, Pretty n, Ord n)
         => Config  n
-        -> EnvT  n
+        -> Context n
         -> [(n, ExportType n (Type n))]
         -> CheckM a n [(n, ExportType n (Type n))]
 
-checkExportTypes config env nesrcs
+checkExportTypes config ctx nesrcs
  = let
-        ctx     = contextOfEnvT env
-
         check (n, esrc)
          | Just k          <- takeKindOfExportType esrc
          = do   (k', _, _) <- checkTypeM config ctx UniverseKind k Recon
@@ -44,14 +41,12 @@ checkExportTypes config env nesrcs
 checkExportValues
         :: (Show n, Pretty n, Ord n)
         => Config n
-        -> EnvX   n
+        -> Context n
         -> [(n, ExportValue n (Type n))]
         -> CheckM a n [(n, ExportValue n (Type n))]
 
-checkExportValues config envX nesrcs
+checkExportValues config ctx nesrcs
  = let
-        ctx     = contextOfEnvX envX
-
         check (n, esrc)
          | Just t          <- takeTypeOfExportValue esrc
          = do   (t', _, _) <- checkTypeM config ctx UniverseSpec t Recon

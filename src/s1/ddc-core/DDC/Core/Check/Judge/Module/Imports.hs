@@ -4,7 +4,6 @@ import DDC.Core.Check.Judge.Type.Base           (checkTypeM)
 import DDC.Core.Check.Base
 import DDC.Core.Interface.Store
 import DDC.Core.Module
-import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Control.CheckIO                      (throw)
 import qualified Data.Map.Strict                as Map
 
@@ -14,15 +13,13 @@ import qualified Data.Map.Strict                as Map
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvT   n
-        -> Mode   n
+        -> Context n
+        -> Mode n
         -> [(n, ImportType n (Type n))]
         -> CheckM a n [(n, ImportType n (Type n))]
 
-checkImportTypes config env mode nisrcs
+checkImportTypes config ctx mode nisrcs
  = let
-        ctx     = contextOfEnvT env
-
         -- Checker mode to use.
         modeCheckImportTypes
          = case mode of
@@ -53,10 +50,10 @@ checkImportTypes config env mode nisrcs
         -- The same import definition can appear multiple times provided
         -- each instance has the same name and kind.
         compat (ImportTypeAbstract k1) (ImportTypeAbstract k2)
-                = equivT env k1 k2
+                = equivT (contextEnvT ctx) k1 k2
 
         compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2)
-                = equivT env k1 k2
+                = equivT (contextEnvT ctx) k1 k2
 
         compat _ _ = False
 
@@ -74,15 +71,13 @@ checkImportTypes config env mode nisrcs
 checkImportCaps
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvT n
+        -> Context n
         -> Mode n
         -> [(n, ImportCap n (Type n))]
         -> CheckM a n [(n, ImportCap n (Type n))]
 
-checkImportCaps config env mode nisrcs
+checkImportCaps config ctx mode nisrcs
  = let
-        ctx     = contextOfEnvT env
-
         -- Checker mode to use.
         modeCheckImportCaps
          = case mode of
@@ -140,14 +135,13 @@ checkImportCaps config env mode nisrcs
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvX n
+        -> Context n
         -> Mode n
         -> [(n, ImportValue n (Type n))]
         -> CheckM a n [(n, ImportValue n (Type n))]
 
-checkImportValues config env mode nisrcs
+checkImportValues config ctx mode nisrcs
  = let
-        ctx = contextOfEnvX env
 
         -- Checker mode to use.
         modeCheckImportTypes
