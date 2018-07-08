@@ -17,12 +17,9 @@ import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Control.CheckIO                      (runCheck, throw, mapErr)
 
-import qualified DDC.Type.Env                   as Env
-import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Check.Context.Oracle  as Oracle
 import qualified DDC.Core.Check.Post            as Post
-import qualified Data.Map.Strict                as Map
 import qualified System.IO.Unsafe               as S
 
 
@@ -101,79 +98,51 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                  -> fmap Just $ liftIO
                  $  Oracle.importModules oracle $ moduleImportModules mm
 
-        -- Build the primitive environment.
-        let envT_prim
-                = EnvT.empty
-                { EnvT.envtPrimFun
-                        = \n -> Env.lookupName n (configPrimKinds config) }
+        -- Build the top level kind environment from the module.
+        -- We currently only do kind checking rather than kind inference,
+        --   so we can build the top level environment from the annotations
+        --   that are already on each of the top-level declarations.
+        let envT = moduleEnvT (configPrimKinds config) mm
 
         -- Check sorts of imported types --------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Sorts of Imported Types" ]
 
-        --   These have explicit kind annotations on the type parameters,
-        --   which we can sort check directly.
         nitsImportType'
-                <- checkImportTypes  config envT_prim mode
+                <- checkImportTypes  config envT mode
                 $  moduleImportTypes mm
 
-        let nksImportType'
-                = [(n, kindOfImportType i) | (n, i) <- nitsImportType']
-
-        let envT_import
-                = EnvT.empty
-                { EnvT.envtForeignTypes
-                        = Map.fromList $ nitsImportType' }
-
-        -- Check sorts of imported data types ---------------------------------
+        -- Check imported data types ------------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Sorts of Imported Data Types." ]
 
-        --   These have explicit kind annotations on the type parameters,
-        --   which we can sort check directly.
-        nksImportDataDef'
+        _nksImportDataDef'
                 <- checkSortsOfDataTypes config mode
                 $  map snd $ moduleImportDataDefs  mm
 
+        -- Check local data types ---------------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Sorts of Local Data Types." ]
 
-        nksLocalDataDef'
+        _nksLocalDataDef'
                 <- checkSortsOfDataTypes config mode
                 $  map snd $ moduleLocalDataDefs   mm
 
-        let envT_dataDefs
-                = EnvT.unions
-                [ envT_prim
-                , envT_import
-                , EnvT.fromListNT nksImportType'
-                , EnvT.fromListNT nksImportDataDef'
-                , EnvT.fromListNT nksLocalDataDef' ]
-
         -- Check kinds of imported type equations -----------------------------
-        --   The right of each type equation can mention both imported abstract
-        --   types and data type definitions, so we need to include them in
-        --   the kind environment as well.
         ctrace  $ vcat
                 [ text "* Checking Kinds of Imported Type Equations."]
 
-        -- Imported type equations may mention each other.
         nktsImportTypeDef'
-                <- checkKindsOfTypeDefs
-                        config
-                        envT_dataDefs
-                          { EnvT.envtEquations
-                          = Map.map snd $ Map.fromList $ moduleImportTypeDefs mm }
+                <- checkKindsOfTypeDefs config envT
                 $  moduleImportTypeDefs mm
 
-        let envT_importedTypeDefs
-                = EnvT.unions
-                [ envT_dataDefs
-                , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsImportTypeDef']
-                , EnvT.empty
-                        { EnvT.envtEquations
-                        = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef']}]
+        -- Check kinds of local type equations --------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Local Type Equations."]
 
+        nktsLocalTypeDef'
+                <- checkKindsOfTypeDefs config envT
+                $  moduleLocalTypeDefs  mm
 
         -- Check imported data type defs --------------------------------------
         ctrace  $ vcat
@@ -181,45 +150,9 @@ checkModuleM config mStore mm@ModuleCore{} !mode
 
         let dataDefsImported = map snd $ moduleImportDataDefs mm
         dataDefsImported'
-         <- case checkDataDefs config envT_importedTypeDefs dataDefsImported of
+         <- case checkDataDefs config envT dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
-
-        -- TODO: this is dodgy.
-        -- The data defs / synonyms / foreign type should be able to be recursive.
-        let envT_importedDataDefs
-                = EnvT.unions
-                [ envT_importedTypeDefs
-                , EnvT.fromListNT [ (dataDefTypeName def, kindOfDataDef def)
-                                  | def <- dataDefsImported' ] ]
-
-        -- Check kinds of local type equations --------------------------------
-        --   The right of each type equation can mention
-        --   imported abstract types, imported and local data type definitions.
-        ctrace  $ vcat
-                [ text "* Checking Kinds of Local Type Equations."]
-
-        -- Kinds of type constructors in scope in the
-        -- locally defined type equations.
-        nktsLocalTypeDef'
-                <- checkKindsOfTypeDefs
-                        config
-                        envT_importedDataDefs
-                         { EnvT.envtEquations
-                         = Map.map snd $ Map.fromList $ moduleLocalTypeDefs mm }
-                $  moduleLocalTypeDefs  mm
-
-        let envT_localTypeDefs
-                = EnvT.unions
-                [ envT_importedDataDefs
-                , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']
-                , EnvT.empty
-                        { EnvT.envtEquations
-                        = Map.unions
-                                [ Map.fromList [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef']
-                                , Map.fromList [ (n, t) | (n, (_, t)) <- nktsImportTypeDef' ]]
-                        }
-                ]
 
         -- Check the local data defs ------------------------------------------
         ctrace  $ vcat
@@ -227,71 +160,54 @@ checkModuleM config mStore mm@ModuleCore{} !mode
 
         let dataDefsLocal    = map snd $ moduleLocalDataDefs mm
         dataDefsLocal'
-         <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
+         <- case checkDataDefs config envT dataDefsLocal of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsLocal')    -> return dataDefsLocal'
-
-        let dataDefs_top
-                = unionDataDefs (configPrimDataDefs config)
-                $ unionDataDefs (fromListDataDefs dataDefsImported')
-                                (fromListDataDefs dataDefsLocal')
 
         -- Check types of imported capabilities -------------------------------
         ctrace  $ vcat
                 [ text "* Checking Kinds of Imported Capabilities."]
 
         ntsImportCap'
-                <- checkImportCaps  config envT_localTypeDefs mode
+                <- checkImportCaps  config envT mode
                 $  moduleImportCaps mm
-
-        let envT_importCaps
-                = EnvT.unions
-                [ envT_localTypeDefs
-                , EnvT.empty
-                        { EnvT.envtCapabilities
-                           = Map.fromList
-                           $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }]
-
-        let envX_importCaps
-                = EnvX.empty
-                { EnvX.envxEnvT         = envT_importCaps
-                , EnvX.envxDataDefs     = dataDefs_top }
 
         -- Check types of imported values ------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Types of Imported Values."
                 , mempty ]
 
---        ctrace  $ string $ show (Map.keys $ EnvT.envtEquations envT_importCaps)
-        ctrace  $ string $ show nktsImportTypeDef'
+        let envX
+                = moduleEnvX (configPrimKinds config)
+                             (configPrimTypes config)
+                             (configPrimDataDefs config)
+                $ mm
+                { moduleImportTypes     = nitsImportType'
+                , moduleImportTypeDefs  = nktsImportTypeDef'
+                , moduleImportDataDefs  = [ (dataDefTypeName def, def) | def <- dataDefsImported']
+                , moduleImportCaps      = ntsImportCap'
+                , moduleLocalTypeDefs   = nktsLocalTypeDef'
+                , moduleLocalDataDefs   = [ (dataDefTypeName def, def) | def <- dataDefsLocal' ] }
 
         ntsImportValue'
-                <- checkImportValues  config envX_importCaps mode
+                <- checkImportValues  config envX mode
                 $  moduleImportValues mm
-
-        let envX_importValues
-                = (EnvX.fromListNT [(n, typeOfImportValue i) | (n, i) <- ntsImportValue' ])
-                {  EnvX.envxEnvT     = envT_importCaps
-                ,  EnvX.envxDataDefs = dataDefs_top
-                ,  EnvX.envxPrimFun  = \n -> Env.envPrimFun (configPrimTypes config) n }
 
         -----------------------------------------------------------------------
         -- Build the top-level config, defs and environments.
         --  These contain names that are visible to bindings in the module.
-        let envT_top    = envT_importCaps
-        let envX_top    = envX_importValues
-        let ctx_top     = emptyContext
-                        { contextOracle = mOracle
-                        , contextEnvX   = envX_top }
+        let ctx_top
+                = emptyContext
+                { contextOracle = mOracle
+                , contextEnvX   = envX }
 
         -- Check the sigs of exported types ---------------
-        esrcsType'  <- checkExportTypes   config envT_top
+        esrcsType'  <- checkExportTypes   config envT
                     $  moduleExportTypes  mm
 
         -- Check the sigs of exported values --------------
-        esrcsValue' <- checkExportValues  config envX_top
+        esrcsValue' <- checkExportValues  config envX
                     $  moduleExportValues mm
-
 
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
@@ -321,17 +237,18 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 { moduleExportTypes     = esrcsType'
                 , moduleImportTypes     = nitsImportType'
                 , moduleImportTypeDefs  = nktsImportTypeDef'
+                , moduleImportDataDefs  = [ (dataDefTypeName def, def) | def <- dataDefsImported']
                 , moduleImportCaps      = ntsImportCap'
                 , moduleImportValues    = ntsImportValue'
                 , moduleLocalTypeDefs   = nktsLocalTypeDef'
+                , moduleLocalDataDefs   = [ (dataDefTypeName def, def) | def <- dataDefsLocal' ]
                 , moduleBody            = xx_annot }
-
 
         -- Check that each exported signature matches the type of its binding.
         -- This returns an environment containing all the bindings defined
         -- in the module.
         envX_binds
-         <- checkModuleBinds envX_top
+         <- checkModuleBinds envX
                 (moduleExportTypes  mm_inferred)
                 (moduleExportValues mm_inferred)
                 xx_annot
@@ -422,18 +339,20 @@ checkKindsOfTypeDefs
         -> [(n, (Kind n, Type n))]
         -> CheckM a n [(n, (Kind n, Type n))]
 
-checkKindsOfTypeDefs _config env nkts
+checkKindsOfTypeDefs config env nkts
  = let
-        -- TODO: we're not checking type synonyms at all.
-        _ctx     = contextOfEnvT env
+        ctx     = contextOfEnvT env
 
         -- Check a single type equation.
-        check (n, (k, t))
-         = do   -- (t', k', _)
-                -- <- checkTypeM config ctx UniverseSpec t Recon
+        check (n, (_k, t))
+         = do   (t', k', _)
+                 <- checkTypeM config ctx UniverseSpec t Recon
 
                 -- ISSUE #374: Check specified kinds of type equations against inferred kinds.
-                return (n, (k, t))
+                -- The Source -> Core transform fills in the kind with a hole, but we should
+                -- allow the result kind to be specified in the source language to be consistent
+                -- with value bindings.
+                return (n, (k', t'))
 
    in do
         -- ISSUE #373: Check that type equations are not recursive.
