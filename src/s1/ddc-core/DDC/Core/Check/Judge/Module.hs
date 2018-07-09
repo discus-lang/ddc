@@ -265,30 +265,38 @@ checkModuleM config mOracle0 mm@ModuleCore{} !mode
         --   Header modules don't need to contain the complete set of bindings,
         --   but all other modules do.
         when (not $ moduleIsHeader mm_inferred)
-                $ mapM_ (checkBindDefined envX_binds)
+                $ mapM_ (checkBindDefined envX_binds mOracle)
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.
-        let updateExportValue e
+        let updateExportValue (ExportValueLocalNoType n)
                 -- Exported thing was foreign imported from Sea land.
-                | ExportValueLocalNoType n  <- e
-                , Just (ImportValueSea mn _ nExternal t) <- lookup n ntsImportValue'
-                = ExportValueSea mn n nExternal t
+                | Just (ImportValueSea mn _ nExternal t) <- lookup n ntsImportValue'
+                = return $ ExportValueSea mn n nExternal t
 
                 -- Exported thing was imported from another module.
-                | ExportValueLocalNoType n <- e
-                , Just (ImportValueModule mn _ t ma)  <- lookup n ntsImportValue'
-                = ExportValueLocal mn n t ma
+                | Just (ImportValueModule mn _ t ma)  <- lookup n ntsImportValue'
+                = return $ ExportValueLocal mn n t ma
 
                 -- Exported thing was defined in this module.
-                | ExportValueLocalNoType n  <- e
-                , Just t  <- EnvX.lookupX (UName n) envX_binds
-                = ExportValueLocal (moduleName mm) n t Nothing
+                | Just t  <- EnvX.lookupX (UName n) envX_binds
+                = return $ ExportValueLocal (moduleName mm) n t Nothing
 
-                | otherwise = e
+                -- Exported thing was imported via a module import.
+                | Just oracle <- mOracle
+                = Oracle.resolveValueName oracle n
+                >>= \case
+                        Just iv -> return $ exportOfImportValue iv
+                        Nothing -> throw $ ErrorExportUndefined n
 
-        let esrcsValue_updated
-                = [ (n, updateExportValue e) | (n, e) <- esrcsValue' ]
+                | otherwise
+                = throw $ ErrorExportUndefined n
+
+            updateExportValue e = return e
+
+        let (nsExport, evsExport) = unzip esrcsValue'
+        evsExport'      <- mapM updateExportValue evsExport
+        let esrcsValue_updated = zip nsExport evsExport'
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm_updated
@@ -301,13 +309,12 @@ checkModuleM config mOracle0 mm@ModuleCore{} !mode
          <- case contextOracle ctx of
                 Nothing     -> return mm_updated
                 Just oracle
-                 -> liftIO
-                 $ closeModuleWithOracle (configPrimKinds config) oracle mm_updated
+                 -> liftIO $ closeModuleWithOracle (configPrimKinds config) oracle mm_updated
 
         return mm_closed
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check kinds of data type definitions,
 --   returning a map of data type constructor constructor name to its kind.
 checkSortsOfDataTypes

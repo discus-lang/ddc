@@ -1,6 +1,6 @@
 
 module Data.Text
-export {eq_char; eq_text}
+export {textLit; eq_char; eq_text}
 import Data.Text.Base
 import Data.Text.List
 import Data.Text.Operator

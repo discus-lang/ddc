@@ -177,10 +177,8 @@ takeExportValue c es
                         [ takeModuleName mn, xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
                         , xNat aT, xNat aX, xNat aB]
 
-        C.ExportValueLocalNoType n
-         -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc"
-                        [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+        C.ExportValueLocalNoType _
+         -> error "ddc-core.takeExportValue: not exporting ValueLocalNoType"
 
         -- TODO: split type into own decl so we can import/export via the same data.
         C.ExportValueSea mn n x t

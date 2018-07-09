@@ -49,12 +49,48 @@ closeModuleWithOracle
 
 closeModuleWithOracle kenv oracle mm
  = do   itsOracle       <- importThingsOfOracleCache oracle
-        let itsModule   =  importThingsOfModule mm
 
-        its'    <- closeImportThings kenv (Oracle.oracleStore oracle)
+        -- TODO: we're auto re-exporting all the decls in imported modules
+        -- until we have proper module exports in the source syntax.
+        let store = Oracle.oracleStore oracle
+        let mns   = moduleImportModules mm
+        dataTypesByTyCon    <- readIORef $ Store.storeDataTypesByTyCon store
+        foreignTypesByTyCon <- readIORef $ Store.storeForeignTypesByTyCon store
+        typeSynsByTyCon     <- readIORef $ Store.storeTypeSynsByTyCon store
+        capsByName          <- readIORef $ Store.storeCapsByName store
+
+        let dsReDataTypes    = Map.unions $ mapMaybe (\mn -> Map.lookup mn dataTypesByTyCon) mns
+        let dsReForeignTypes = Map.unions $ mapMaybe (\mn -> Map.lookup mn foreignTypesByTyCon) mns
+        let dsReTypeSyns     = Map.unions $ mapMaybe (\mn -> Map.lookup mn typeSynsByTyCon) mns
+        let dsReCaps         = Map.unions $ mapMaybe (\mn -> Map.lookup mn capsByName) mns
+
+        let mm_reexport
+                = mm
+                { moduleImportDataDefs
+                        = moduleImportDataDefs mm
+                        ++ (Map.toList $ Map.map dataDefOfDataType dsReDataTypes)
+
+                , moduleImportTypes
+                        = moduleImportTypes mm ++ Map.toList dsReForeignTypes
+
+                , moduleImportTypeDefs
+                        = moduleImportTypeDefs mm ++ Map.toList dsReTypeSyns
+
+                , moduleImportCaps
+                        = moduleImportCaps mm ++ Map.toList dsReCaps
+                }
+
+        let itsModule   =  importThingsOfModule mm_reexport
+
+        -- Names of types defined in the current module.
+        let nsModule    = Set.unions
+                        [ Set.fromList $ map fst $ moduleLocalDataDefs mm
+                        , Set.fromList $ map fst $ moduleLocalTypeDefs mm ]
+
+        its'    <- closeImportThings kenv (Oracle.oracleStore oracle) nsModule
                 $  Map.union itsOracle itsModule
 
-        return  $ wrapModuleWithImportThings its' mm
+        return  $ wrapModuleWithImportThings its' mm_reexport
                 { moduleImportModules = [] }
 
 
@@ -63,10 +99,11 @@ closeImportThings
         :: (Ord n, Show n)
         => KindEnv n
         -> Store n
+        -> Set n                        -- ^ Names of types defined in current module.
         -> Map n (ImportThing n)
         -> IO (Map n (ImportThing n))
 
-closeImportThings kenv store mpThings
+closeImportThings kenv store nsLocal mpThings
  = go   (Set.fromList $ Map.keys mpThings)
         Map.empty mpThings
  where
@@ -98,8 +135,13 @@ closeImportThings kenv store mpThings
 
         -- Chase down imports for the given name.
         chase n
-         -- We don't need imporst for primitive things.
+         -- We don't need imports for primitive things.
          | Just _ <- Env.lookupName n kenv
+         = return Nothing
+
+         -- Import mentions a type defined in the current module,
+         -- which can happen for foreign imports for abstract boxed objects.
+         | Set.member n nsLocal
          = return Nothing
 
          | otherwise

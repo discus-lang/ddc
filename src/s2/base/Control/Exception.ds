@@ -16,6 +16,7 @@ export foreign c value
 import System.Runtime
 import Data.Numeric.Int
 import Data.Text
+import Data.Either
 
 
 import foreign c value

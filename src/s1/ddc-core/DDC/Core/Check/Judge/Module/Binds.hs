@@ -4,9 +4,10 @@ import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                        (EnvX)
+import DDC.Core.Check.Context.Oracle            (Oracle)
 import DDC.Control.CheckIO                      (throw)
 import qualified DDC.Core.Env.EnvX              as EnvX
-
+import qualified DDC.Core.Check.Context.Oracle  as Oracle
 
 ---------------------------------------------------------------------------------------------------
 -- | Check that the exported signatures match the types of their bindings.
@@ -63,13 +64,22 @@ checkModuleBind env !_ksExports !tsExports !b
 ---------------------------------------------------------------------------------------------------
 -- | Check that an exported top-level value is actually defined by the module.
 checkBindDefined
-        :: Ord n
+        :: (Show n, Ord n)
         => EnvX n               -- ^ Environment containing binds defined by the module.
+        -> Maybe (Oracle n)     -- ^ Import oracle.
         -> n                    -- ^ Name of an exported binding.
         -> CheckM a n ()
 
-checkBindDefined envx n
- = case EnvX.lookupX (UName n) envx of
-        Just _  -> return ()
-        _       -> throw $ ErrorExportUndefined n
+checkBindDefined envx mOracle n
+ | Just _       <- EnvX.lookupX (UName n) envx
+ = return ()
+
+ | Just oracle  <- mOracle
+ = do   mt      <- Oracle.resolveValueName oracle n
+        case mt of
+         Just _  -> return ()
+         Nothing -> throw $ ErrorExportUndefined n
+
+ | otherwise
+ = throw $ ErrorExportUndefined n
 

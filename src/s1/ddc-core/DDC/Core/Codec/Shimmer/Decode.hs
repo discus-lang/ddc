@@ -247,7 +247,7 @@ takeDeclExVal c mpT dd
                         , C.exportValueSeaNameExternal  = txNameExternal
                         , C.exportValueSeaType          = fromType c ssType })
 
-        takeExVal _ = failDecode "takeExVal"
+        takeExVal _ = failDecode $ "takeExVal" ++ show dd
 
 
 -- DeclImMod --------------------------------------------------------------------------------------

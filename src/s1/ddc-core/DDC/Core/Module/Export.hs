@@ -6,8 +6,10 @@ module DDC.Core.Module.Export
 
         , ExportValue  (..)
         , takeTypeOfExportValue
-        , mapTypeOfExportValue)
+        , mapTypeOfExportValue
+        , exportOfImportValue)
 where
+import DDC.Core.Module.Import
 import DDC.Core.Module.Name
 import Control.DeepSeq
 import Data.Text                (Text)
@@ -54,6 +56,8 @@ mapKindOfExportType f esrc
 
 -------------------------------------------------------------------------------
 -- | Describe a value exported from a module.
+--   TODO: this is basically the same as an ImportValue.
+--   refactor so the import/export difference is just a flag.
 data ExportValue n t
         -- | A named defined in this module, without a type attached.
         --   We use this version for source language where we infer the type of
@@ -120,3 +124,10 @@ mapTypeOfExportValue f esrc
         ExportValueLocal mn n t a       -> ExportValueLocal mn n (f t) a
         ExportValueSea   mn n x t       -> ExportValueSea   mn n x (f t)
 
+
+-- | Produce the export form of an import value.
+exportOfImportValue :: ImportValue n t -> ExportValue n t
+exportOfImportValue iv
+ = case iv of
+        ImportValueModule mn v t ma     -> ExportValueLocal mn v t ma
+        ImportValueSea mn i e t         -> ExportValueSea   mn i e t

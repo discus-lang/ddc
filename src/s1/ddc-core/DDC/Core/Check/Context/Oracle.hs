@@ -224,6 +224,11 @@ resolveDataCtor oracle n
                 dataTypesByTyCon
                  <- liftIO $ readIORef $ Store.storeDataTypesByTyCon (oracleStore oracle)
 
+                -- *** this doesn't work because the original defining mod
+                -- of the data constructor might not be loaded.
+                -- the data type could well have been re-exported by another module,
+                -- so we can't find that type by looking up the defining module of the ctor.
+                -- we should instead store the data type definitions next to the ctors.
                 let mDataType
                      =   Map.lookup (dataCtorModuleName ctor) dataTypesByTyCon
                      >>= Map.lookup (dataCtorTypeName ctor)
@@ -234,7 +239,9 @@ resolveDataCtor oracle n
                                 [ "resolveDataCtor: store is broken"
                                 , "  cannot find: "
                                         ++ show ( dataCtorModuleName ctor
-                                                , dataCtorTypeName ctor) ]
+                                                , dataCtorTypeName ctor
+                                                , dataCtorName ctor
+                                                , Map.keys dataTypesByTyCon) ]
 
                         Just dt -> return dt
 

@@ -34,6 +34,7 @@ module DDC.Core.Module
         , ExportValue  (..)
         , takeTypeOfExportValue
         , mapTypeOfExportValue
+        , exportOfImportValue
 
          -- * Import Definitions
          -- ** Import Things
