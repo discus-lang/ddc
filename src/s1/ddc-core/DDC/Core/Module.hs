@@ -36,6 +36,12 @@ module DDC.Core.Module
         , mapTypeOfExportValue
 
          -- * Import Definitions
+         -- ** Import Things
+        , ImportThing   (..)
+        , nameOfImportThing
+        , importThingsOfModule
+        , wrapModuleWithImportThings
+
          -- ** Import Types
         , ImportType    (..)
         , kindOfImportType
@@ -176,6 +182,67 @@ moduleTypeEnv mm
         $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
 
 
+---------------------------------------------------------------------------------------------------
+-- | Slurp a map of import things from a module.
+importThingsOfModule :: Ord n => Module a n -> Map n (ImportThing n)
+importThingsOfModule mm
+ = Map.unions
+        [ Map.fromList  [ (n, ImportThingDataType n dt)
+                        | (n, dt)       <- Map.toList $ dataDefsTypes
+                                        $  fromListDataDefs $ map snd $ moduleImportDataDefs mm ]
+
+        , Map.fromList  [ (n, ImportThingSyn n k t)
+                        | (n, (k, t))   <- moduleImportTypeDefs mm ]
+
+        , Map.fromList  [ (n, ImportThingType n it)
+                        | (n, it)       <- moduleImportTypes mm ]
+
+        , Map.fromList  [ (n, ImportThingCap n ic)
+                        | (n, ic)       <- moduleImportCaps mm ]
+
+        , Map.fromList  [ (n, ImportThingValue n iv)
+                        | (n, iv)       <- moduleImportValues mm ]
+        ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Add import things to the import declarations of a module.
+wrapModuleWithImportThings
+        :: Ord n
+        => Map n (ImportThing n)
+        -> Module a n
+        -> Module a n
+
+wrapModuleWithImportThings mp mm
+ = mm
+ { moduleImportTypeDefs
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportTypeDefs mm))
+                (Map.fromList [(n, (k, t)) | ImportThingSyn n k t <- Map.elems mp ])
+
+ , moduleImportDataDefs
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportDataDefs mm))
+                (Map.fromList [(n, dataDefOfDataType dt)
+                                           | ImportThingDataType n dt <- Map.elems mp])
+ , moduleImportTypes
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportTypes mm))
+                (Map.fromList [(n, it)     | ImportThingType n it  <- Map.elems mp ])
+
+ , moduleImportCaps
+         = Map.toList $ Map.union
+                (Map.fromList (moduleImportCaps mm))
+                (Map.fromList [(n, ic)     | ImportThingCap n ic   <- Map.elems mp])
+
+ , moduleImportValues
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportValues mm))
+                (Map.fromList [(n, iv)     | ImportThingValue n iv <- Map.elems mp])
+ }
+
+
+---------------------------------------------------------------------------------------------------
 -- | Extract the top-level `EnvT` environment from a module.
 --
 --   This includes kinds for abstract types, data types, and type equations,

@@ -10,6 +10,7 @@ import DDC.Core.Exp
 import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv)
 import DDC.Core.Check.Context.Oracle            (Oracle)
+import DDC.Core.Interface.Base                  (Store)
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import Data.Maybe
@@ -33,124 +34,6 @@ import Data.IORef
 --  Do a single close step after both checking and elaboration.
 --  Don't close after checking then re-close after elaboration.
 
----------------------------------------------------------------------------------------------------
--- | Things that can be imported into a module.
---   TODO: shift this to  Core.Module.Import
-data ImportThing n
-        = ImportThingDataType n (DataType n)
-        | ImportThingDataCtor n (DataCtor n)
-        | ImportThingSyn      n (Kind n) (Type n)
-        | ImportThingType     n (ImportType  n (Kind n))
-        | ImportThingCap      n (ImportCap   n (Type n))
-        | ImportThingValue    n (ImportValue n (Type n))
-        deriving Show
-
-
--- | Take the name of an `ImportThing`.
-nameOfImportThing :: ImportThing n -> n
-nameOfImportThing it
- = case it of
-        ImportThingDataType n _   -> n
-        ImportThingDataCtor n _   -> n
-        ImportThingSyn      n _ _ -> n
-        ImportThingType     n _   -> n
-        ImportThingCap      n _   -> n
-        ImportThingValue    n _   -> n
-
-
--- | Convert a `TyConThing` to an `ImportThing`
-importOfTyConThing :: TyConThing n -> Maybe (ImportThing n)
-importOfTyConThing tt
- = case tt of
-        TyConThingPrim    _ _     -> Nothing
-        TyConThingData    n dt    -> Just $ ImportThingDataType n dt
-        TyConThingForeign n it    -> Just $ ImportThingType     n it
-        TyConThingSyn     n k t   -> Just $ ImportThingSyn      n k t
-
-
----------------------------------------------------------------------------------------------------
--- | Slurp a map of import things from the oracle cache.
---
---   The map can be keyed by plain names instead of namespace qualified names
---   because we only store vars of caps/values and cons of types, which
---   don't conflict.
---
-importThingsOfOracleCache :: Ord n => Oracle n -> IO (Map n (ImportThing n))
-importThingsOfOracleCache oracle
- = do
-        dataTypesByTyCon   <- readIORef (Oracle.oracleCacheDataTypesByTyCon oracle)
-        typeSynsByTyCon    <- readIORef (Oracle.oracleCacheTypeSynsByTyCon oracle)
-        foreignTypesByName <- readIORef (Oracle.oracleCacheForeignTypesByTyCon oracle)
-        capsByName         <- readIORef (Oracle.oracleCacheCapsByName oracle)
-        valuesByName       <- readIORef (Oracle.oracleCacheValuesByName oracle)
-
-        return  $ Map.unions
-                [ Map.mapWithKey ImportThingDataType dataTypesByTyCon
-                , Map.mapWithKey (\n (k, t) -> ImportThingSyn n k t) typeSynsByTyCon
-                , Map.mapWithKey ImportThingType     foreignTypesByName
-                , Map.mapWithKey ImportThingCap      capsByName
-                , Map.mapWithKey ImportThingValue    valuesByName ]
-
-
----------------------------------------------------------------------------------------------------
--- | Slurp a map of import things from a module.
-importThingsOfModule :: Ord n => Module a n -> Map n (ImportThing n)
-importThingsOfModule mm
- = Map.unions
-        [ Map.fromList  [ (n, ImportThingDataType n dt)
-                        | (n, dt)       <- Map.toList $ dataDefsTypes
-                                        $  fromListDataDefs $ map snd $ moduleImportDataDefs mm ]
-
-        , Map.fromList  [ (n, ImportThingSyn n k t)
-                        | (n, (k, t))   <- moduleImportTypeDefs mm ]
-
-        , Map.fromList  [ (n, ImportThingType n it)
-                        | (n, it)       <- moduleImportTypes mm ]
-
-        , Map.fromList  [ (n, ImportThingCap n ic)
-                        | (n, ic)       <- moduleImportCaps mm ]
-
-        , Map.fromList  [ (n, ImportThingValue n iv)
-                        | (n, iv)       <- moduleImportValues mm ]
-        ]
-
-
----------------------------------------------------------------------------------------------------
--- | Add import things to the import declarations of a module.
-wrapModuleWithImportThings
-        :: Ord n
-        => Map n (ImportThing n)
-        -> Module (AnTEC a n) n
-        -> Module (AnTEC a n) n
-
-wrapModuleWithImportThings mp mm
- = mm
- { moduleImportTypeDefs
-        = Map.toList $ Map.union
-                (Map.fromList (moduleImportTypeDefs mm))
-                (Map.fromList [(n, (k, t)) | ImportThingSyn n k t <- Map.elems mp ])
-
- , moduleImportDataDefs
-        = Map.toList $ Map.union
-                (Map.fromList (moduleImportDataDefs mm))
-                (Map.fromList [(n, dataDefOfDataType dt)
-                                           | ImportThingDataType n dt <- Map.elems mp])
- , moduleImportTypes
-        = Map.toList $ Map.union
-                (Map.fromList (moduleImportTypes mm))
-                (Map.fromList [(n, it)     | ImportThingType n it  <- Map.elems mp ])
-
- , moduleImportCaps
-         = Map.toList $ Map.union
-                (Map.fromList (moduleImportCaps mm))
-                (Map.fromList [(n, ic)     | ImportThingCap n ic   <- Map.elems mp])
-
- , moduleImportValues
-        = Map.toList $ Map.union
-                (Map.fromList (moduleImportValues mm))
-                (Map.fromList [(n, iv)     | ImportThingValue n iv <- Map.elems mp])
- }
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Use the cache in the given interface oracle to add import declarations
@@ -164,8 +47,7 @@ closeModuleWithOracle
         -> IO (Module (AnTEC a n) n)
 
 closeModuleWithOracle kenv oracle mm
- = do
-        itsOracle       <- importThingsOfOracleCache oracle
+ = do   itsOracle       <- importThingsOfOracleCache oracle
         let itsModule   =  importThingsOfModule mm
 
         its'    <- closeImportThings kenv (Oracle.oracleStore oracle)
@@ -179,14 +61,13 @@ closeModuleWithOracle kenv oracle mm
 closeImportThings
         :: (Ord n, Show n)
         => KindEnv n
-        -> Store.Store n
+        -> Store n
         -> Map n (ImportThing n)
         -> IO (Map n (ImportThing n))
 
 closeImportThings kenv store mpThings
  = go   (Set.fromList $ Map.keys mpThings)
-        Map.empty
-        mpThings
+        Map.empty mpThings
  where
         go nsHave mpDone mpToCheck
          = do   -- Names of types needed by the to-check things.
@@ -242,6 +123,39 @@ closeImportThings kenv store mpThings
                 Right tyConThing -> return $ importOfTyConThing tyConThing
 
 
+---------------------------------------------------------------------------------------------------
+-- | Convert a `TyConThing` to an `ImportThing`
+importOfTyConThing :: TyConThing n -> Maybe (ImportThing n)
+importOfTyConThing tt
+ = case tt of
+        TyConThingPrim    _ _     -> Nothing
+        TyConThingData    n dt    -> Just $ ImportThingDataType n dt
+        TyConThingForeign n it    -> Just $ ImportThingType     n it
+        TyConThingSyn     n k t   -> Just $ ImportThingSyn      n k t
+
+
+---------------------------------------------------------------------------------------------------
+-- | Slurp a map of import things from the oracle cache.
+--
+--   The map can be keyed by plain names instead of namespace qualified names
+--   because we only store vars of caps/values and cons of types, which
+--   don't conflict.
+--
+importThingsOfOracleCache :: Ord n => Oracle n -> IO (Map n (ImportThing n))
+importThingsOfOracleCache oracle
+ = do   dataTypesByTyCon   <- readIORef (Oracle.oracleCacheDataTypesByTyCon oracle)
+        typeSynsByTyCon    <- readIORef (Oracle.oracleCacheTypeSynsByTyCon oracle)
+        foreignTypesByName <- readIORef (Oracle.oracleCacheForeignTypesByTyCon oracle)
+        capsByName         <- readIORef (Oracle.oracleCacheCapsByName oracle)
+        valuesByName       <- readIORef (Oracle.oracleCacheValuesByName oracle)
+
+        return  $ Map.unions
+                [ Map.mapWithKey ImportThingDataType dataTypesByTyCon
+                , Map.mapWithKey (\n (k, t) -> ImportThingSyn n k t) typeSynsByTyCon
+                , Map.mapWithKey ImportThingType     foreignTypesByName
+                , Map.mapWithKey ImportThingCap      capsByName
+                , Map.mapWithKey ImportThingValue    valuesByName ]
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Compute the support set of an import thing.
@@ -271,5 +185,4 @@ supportOfType kenv tt
  = let  (_, bs) = FreeT.freeVarConT kenv tt
         ns      = [ n | UName n <- Set.toList bs ]
    in   Set.fromList ns
-
 

@@ -1,7 +1,11 @@
 
 module DDC.Core.Module.Import
-        ( -- * Imported types
-          ImportType    (..)
+        ( -- * Imported things
+          ImportThing (..)
+        , nameOfImportThing
+
+          -- * Imported types
+        , ImportType (..)
         , kindOfImportType
         , mapKindOfImportType
 
@@ -16,8 +20,35 @@ module DDC.Core.Module.Import
         , mapTypeOfImportValue)
 where
 import DDC.Core.Module.Name
+import DDC.Type.DataDef
+import DDC.Type.Exp
 import Control.DeepSeq
 import Data.Text        (Text)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Things that can be imported into a module.
+--   This wraps the other declarations, and is used in several core transforms.
+data ImportThing n
+        = ImportThingDataType n (DataType n)
+        | ImportThingDataCtor n (DataCtor n)
+        | ImportThingSyn      n (Kind n) (Type n)
+        | ImportThingType     n (ImportType  n (Kind n))
+        | ImportThingCap      n (ImportCap   n (Type n))
+        | ImportThingValue    n (ImportValue n (Type n))
+        deriving Show
+
+
+-- | Take the name of an `ImportThing`.
+nameOfImportThing :: ImportThing n -> n
+nameOfImportThing it
+ = case it of
+        ImportThingDataType n _   -> n
+        ImportThingDataCtor n _   -> n
+        ImportThingSyn      n _ _ -> n
+        ImportThingType     n _   -> n
+        ImportThingCap      n _   -> n
+        ImportThingValue    n _   -> n
 
 
 -- ImportType -------------------------------------------------------------------------------------
