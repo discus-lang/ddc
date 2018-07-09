@@ -49,7 +49,7 @@ coreLoad
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
         => String               -- ^ Name of compiler stage.
         -> C.Fragment n err     -- ^ Language fragment to check.
-        -> Maybe (C.Store n)    -- ^ Interface store to allow imports from other modules.
+        -> Maybe (C.Oracle n)   -- ^ Interface store to allow imports from other modules.
         -> C.Mode n             -- ^ Checker mode.
         -> String               -- ^ Name of source file.
         -> Int                  -- ^ Line of source file.
@@ -57,7 +57,7 @@ coreLoad
         -> ConfigCoreLoad       -- ^ Sinked config.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad !_stage !fragment !mStore !mode !srcName !srcLine !str !config
+coreLoad !_stage !fragment !mOracle !mode !srcName !srcLine !str !config
  = do
         -- Parse the module.
         mm_core
@@ -70,7 +70,7 @@ coreLoad !_stage !fragment !mStore !mode !srcName !srcLine !str !config
 
         -- Type check the module.
         mm_checked
-         <- coreCheck "CoreLoad" fragment mStore mode
+         <- coreCheck "CoreLoad" fragment mOracle mode
                 (configSinkTrace   config)
                 (configSinkChecked config)
                 mm_core
@@ -120,7 +120,7 @@ coreCheck
            , Ord n, Show n, Pretty n)
         => String               -- ^ Name of compiler stage.
         -> C.Fragment n err     -- ^ Language fragment to check.
-        -> Maybe (C.Store n)    -- ^ Interface store to allow imports from other modules.
+        -> Maybe (C.Oracle n)   -- ^ Import oracle to allow imports from other modules.
         -> C.Mode n             -- ^ Checker mode.
         -> B.Sink               -- ^ Sink for checker trace.
         -> B.Sink               -- ^ Sink for checked core code.

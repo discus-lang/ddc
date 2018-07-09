@@ -43,6 +43,7 @@ import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Expose              as CExpose
+import qualified DDC.Core.Check.Close                   as CClose
 
 -- import qualified Data.List                              as List
 
@@ -131,10 +132,12 @@ sourceLoad srcName srcLine str store config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
                             (configSinkNamified config)
 
+        oracle <- liftIO $ C.newOracleOfStore store
+
         mm_checked
          <- BC.coreCheck
                 "SourceLoadText"
-                fragment (Just store)
+                fragment (Just oracle)
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
@@ -149,13 +152,22 @@ sourceLoad srcName srcLine str store config
 --                     $ List.sort
 --                     $ map (\(n, iv) -> show n ++ " : " ++ (renderIndent $ ppr $ C.typeOfImportValue iv)) ntsTop
 
-                res     <- liftIO
-                        $ CResolve.resolveModule
-                                (C.fragmentProfile BE.fragment)
-                                ntsTop ntsSyn mm_checked
-                case res of
-                 Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
-                 Right mm' -> return mm'
+                emm_resolved
+                 <- liftIO $ CResolve.resolveModule
+                        (C.fragmentProfile BE.fragment)
+                        ntsTop ntsSyn mm_checked
+
+                mm_resolved
+                 <- case emm_resolved of
+                        Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
+                        Right mm' -> return mm'
+
+                -- TODO: we only need to close this once after elaboration,
+                -- not after both checking and elaboration.
+                mm_closed
+                 <- liftIO $ CClose.closeModuleWithOracle kenv oracle mm_resolved
+
+                return mm_closed
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_elaborated)
                             (configSinkElaborated config)

@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Module
         ( checkModuleIO, reconModule
         , checkModuleM)
 where
+import DDC.Core.Check.Context.Oracle
 import DDC.Core.Check.Judge.Module.Binds
 import DDC.Core.Check.Judge.Module.Exports
 import DDC.Core.Check.Judge.Module.Imports
@@ -34,16 +35,16 @@ import qualified System.IO.Unsafe               as S
 checkModuleIO
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n         -- ^ Type checker configuration defines what features to support.
-        -> Maybe (Store n)  -- ^ Interface store if we want to allow imports from other modules.
+        -> Maybe (Oracle n) -- ^ Checker oracle if we want to allow imports from other modules.
         -> Module a n       -- ^ Module to check.
         -> Mode n           -- ^ Type checker mode.
         -> IO ( Either (Error a n) (Module (AnTEC a n) n)
               , CheckTrace )
 
-checkModuleIO config mStore xx mode
+checkModuleIO config mOracle xx mode
  = do   ((tr, _, _), result)
          <- runCheck (mempty, 0, 0)
-         $  checkModuleM config mStore xx mode
+         $  checkModuleM config mOracle xx mode
 
         return (result, tr)
 
@@ -69,13 +70,13 @@ reconModule config xx
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
-        => Config n         -- ^ Type checker configuration defines what features to support.
-        -> Maybe (Store n)  -- ^ Interface store if we want to allow imports from other modules.
-        -> Module a n       -- ^ Module check.
-        -> Mode n           -- ^ Type checker mode.
+        => Config n          -- ^ Type checker configuration defines what features to support.
+        -> Maybe (Oracle n)  -- ^ Checker oracle if we want to allow imports from other modules.
+        -> Module a n        -- ^ Module check.
+        -> Mode n            -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM config mStore mm@ModuleCore{} !mode
+checkModuleM config mOracle0 mm@ModuleCore{} !mode
  = do
         -- Initialize the Environemnt -----------------------------------------
         ctrace  $ vcat
@@ -84,16 +85,12 @@ checkModuleM config mStore mm@ModuleCore{} !mode
                 , indent 4 $ vcat $ map ppr $ moduleImportModules mm
                 , mempty ]
 
-        -- Wrap the store into a new interface oracle.
-        mOracle_init
-         <- case mStore of
-                Nothing    -> return $ Nothing
-                Just store -> fmap Just $ liftIO $ Oracle.newOracleOfStore store
-
         -- Tell the oracle to bring bindings from the imported modules into scope.
         mOracle
-         <- case mOracle_init of
-                Nothing     -> return mOracle_init
+         <- case mOracle0 of
+                Nothing
+                 -> return mOracle0
+
                 Just oracle
                  -> fmap Just $ liftIO
                  $  Oracle.importModules oracle $ moduleImportModules mm

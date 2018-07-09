@@ -1,4 +1,5 @@
 
+-- TODO: make this its own tranform under Core.Transform
 module DDC.Core.Check.Close
         ( closeModuleWithOracle
         , closeImportThings)
