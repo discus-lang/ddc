@@ -230,7 +230,12 @@ resolveDataCtor oracle n
 
                 dataType
                  <- case mDataType of
-                        Nothing -> error "resolveDataCtor: store is broken"
+                        Nothing -> error $ unlines
+                                [ "resolveDataCtor: store is broken"
+                                , "  cannot find: "
+                                        ++ show ( dataCtorModuleName ctor
+                                                , dataCtorTypeName ctor) ]
+
                         Just dt -> return dt
 
                 -- TODO: we currently need to add data types to the cache so they

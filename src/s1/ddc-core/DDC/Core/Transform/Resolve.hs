@@ -18,12 +18,13 @@ resolveModule
         :: (Ord n, Pretty n, Show n)
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
+        -> [(n, Type n)]                  -- ^ Top-level type synonyms from imported modules.
         -> Module a n                     -- ^ Module to resolve elaborations in.
         -> IO (Either (Error a n) (Module a n))
 
-resolveModule profile ntsTop mm
+resolveModule profile ntsTop ntsSyn mm
  = runExceptT
- $ resolveModuleM profile ntsTop mm
+ $ resolveModuleM profile ntsTop ntsSyn mm
 
 
 -- | Resolve elaborations in a module.
@@ -31,15 +32,16 @@ resolveModuleM
         :: (Ord n, Pretty n, Show n)
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
+        -> [(n, Type n)]                  -- ^ Top-level type synonyms from imported modules.
         -> Module a n                     -- ^ Module to resolve elaborations in.
         -> S a n (Module a n)
 
-resolveModuleM profile ntsTop mm
+resolveModuleM profile ntsTop ntsSyn mm
  = do
         -- Build the initial context,
         --   which also gathers up the set of top-level declarations
         --   available in other modules.
-        ctx     <- makeContextOfModule profile ntsTop mm
+        ctx     <- makeContextOfModule profile ntsTop ntsSyn mm
 
         -- Decend into the expression.
         xBody'  <- resolveExp ctx (moduleBody mm)

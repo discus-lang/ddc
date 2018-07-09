@@ -35,6 +35,7 @@ import qualified DDC.Source.Discus.Lexer                as SLexer
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
+-- import qualified DDC.Core.Check.Close                   as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
@@ -43,6 +44,7 @@ import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Expose              as CExpose
 
+-- import qualified Data.List                              as List
 
 ---------------------------------------------------------------------------------------------------
 data ConfigLoadSourceTetra
@@ -141,9 +143,16 @@ sourceLoad srcName srcLine str store config
         -- Resolve elaborations in module.
         mm_elaborated
          <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
-                res     <- liftIO $ CResolve.resolveModule
+                ntsSyn  <- liftIO $ B.typeSynsOfStore store
+
+--              liftIO $ putStrLn $ unlines
+--                     $ List.sort
+--                     $ map (\(n, iv) -> show n ++ " : " ++ (renderIndent $ ppr $ C.typeOfImportValue iv)) ntsTop
+
+                res     <- liftIO
+                        $ CResolve.resolveModule
                                 (C.fragmentProfile BE.fragment)
-                                ntsTop mm_checked
+                                ntsTop ntsSyn mm_checked
                 case res of
                  Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
                  Right mm' -> return mm'

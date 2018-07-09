@@ -10,13 +10,21 @@ export {
         textSource_matchChar;
         textSource_toText
 }
-
-import Data.Numeric.Word8
+import Data.Numeric.Word32
 import Data.Text.Base
 import Data.Text.Char
 import Data.Text.List
+import Data.Tuple
 import Data.List
 import Data.Ref
+
+
+-- | Capabilities to allocate and read top-level text vectors.
+--   TODO: these aren't getting re-exported via the module system.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
 where
 
 

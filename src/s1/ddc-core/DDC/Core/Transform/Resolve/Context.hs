@@ -17,7 +17,7 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
 import Control.Monad.IO.Class
 import Data.IORef
-
+import qualified Data.Map.Strict        as Map
 
 -- | Context of resolve process.
 --   TODO: cache resolutions and re-use them.
@@ -48,17 +48,22 @@ makeContextOfModule
         :: Ord n
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
-        -> Module a n                      -- ^ Module that we're doing resolution in.
+        -> [(n, Type n)]                  -- ^ Top-level synonyms from imported modules.
+        -> Module a n                     -- ^ Module that we're doing resolution in.
         -> S a n (Context n)
 
-makeContextOfModule !profile !ntsTop !mm
+makeContextOfModule !profile !ntsTop !ntsSyn !mm
  = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _)
                                     <- moduleImportValues mm ]
 
         refTopUsed      <- liftIO $ newIORef []
+        let envt        = moduleEnvT (profilePrimKinds profile) mm
 
         return $ Context
-         { contextEnvT           = moduleEnvT (profilePrimKinds profile) mm
+         { contextEnvT
+                = envt { envtEquations  = Map.union (envtEquations envt)
+                                        $ Map.fromList ntsSyn }
+
          , contextTop            = ntsTop
          , contextTopUsed        = refTopUsed
          , contextBinds          = [ntsImport] }

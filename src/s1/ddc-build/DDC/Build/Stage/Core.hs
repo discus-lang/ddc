@@ -188,21 +188,22 @@ coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 -- | Resolve elaborations in a core module.
 coreResolve
         :: (Ord n, Show n, Pretty n)
-        => String                       -- ^ Name of compiler stage.
-        -> C.Fragment n arr             -- ^ Language fragment to use.
-        -> IO [(n, C.ImportValue n (C.Type n))]
-                                        -- ^ Top level env from other modules.
+        => String                               -- ^ Name of compiler stage.
+        -> C.Fragment n arr                     -- ^ Language fragment to use.
+        -> IO [(n, C.ImportValue n (C.Type n))] -- ^ Top level env from other modules.
+        -> IO [(n, C.Type n)]                   -- ^ Top-level syns from other moduels.
         -> C.Module a n
         -> ExceptT [B.Error] IO (C.Module a n)
 
-coreResolve !stage !fragment !makeNtsTop !mm
+coreResolve !stage !fragment !makeNtsTop !makeNtsSyn !mm
  = {-# SCC "coreResolve" #-}
    do
         ntsTop  <- liftIO $ makeNtsTop
+        ntsSyn  <- liftIO $ makeNtsSyn
 
         res     <- liftIO $ CResolve.resolveModule
                         (C.fragmentProfile fragment)
-                        ntsTop mm
+                        ntsTop ntsSyn mm
 
         case res of
          Left  err  -> throwE [B.ErrorLint stage "PipeCoreResolve" err]

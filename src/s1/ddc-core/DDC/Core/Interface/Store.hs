@@ -10,6 +10,7 @@ module DDC.Core.Interface.Store
         , addInterface
         , ensureInterface
         , importValuesOfStore
+        , typeSynsOfStore
 
         , DataDef       (..)
         , ImportValue   (..)
@@ -374,11 +375,13 @@ importValuesOfInterface ii
 importValuesOfStore :: (Ord n, Show n) => Store n -> IO [(n, ImportValue n (Type n))]
 importValuesOfStore store
  = do   mnns       <- readIORef $ storeValuesByName store
-        let mns    =  concatMap Map.toList $ Map.elems mnns
-
-        -- FIXME: debugging.
---        putStrLn $ unlines $ map show mns
-
+        let mns    =  Map.toList $ Map.unions $ Map.elems mnns
         return mns
 
+
+typeSynsOfStore :: (Ord n, Show n) => Store n -> IO [(n, Type n)]
+typeSynsOfStore store
+ = do   mnns       <- readIORef $ storeTypeSynsByTyCon store
+        let mns    =  Map.toList $ Map.map snd $ Map.unions $ Map.elems mnns
+        return mns
 
