@@ -142,6 +142,10 @@ cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
  -- Build
  | JobBuildFilePath filePath <- jNext
  = do
+        liftIO  $ putStr $ unlines
+                [ ""
+                , "* Building " ++ show filePath ]
+
         -- Check if the requested file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -161,10 +165,10 @@ cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
         let missing     = filter (\m -> not $ elem m modsNamesHave)
                         $ modNamesNeeded
 
---         liftIO  $ putStr $ unlines
---                 [ "Modules Needed  = " ++ show modNamesNeeded
---                 , "Modules Have    = " ++ show modsNamesHave
---                 , "Modules Missing = " ++ show missing ]
+        liftIO  $ putStr $ unlines
+                [ "  - Modules Needed  = " ++ show modNamesNeeded
+                , "  - Modules Have    = " ++ show modsNamesHave
+                , "  - Modules Missing = " ++ show missing ]
 
         case missing of
          -- We've already got all the interfaces needed by the
