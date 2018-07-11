@@ -4,31 +4,32 @@ import DDC.Driver.Build.Query
 import DDC.Driver.Build.State
 import DDC.Driver.Interface.Source
 import DDC.Driver.Config
-import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Interface                     as Interface
-import qualified Data.Set                               as Set
 
-import qualified DDC.Driver.Stage.Tetra                 as Stage.Discus
-import qualified DDC.Driver.Stage.Salt                  as Stage.Salt
-
-import qualified DDC.Core.Salt                          as Salt
-import qualified DDC.Core.Discus                        as Discus
-import qualified DDC.Version                            as Version
-import qualified DDC.Core.Transform.Reannotate          as C.Reannotate
-import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
-import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
-import qualified Data.Time.Clock                        as Time
--- import Control.Monad
-
-import qualified DDC.Core.Salt.Runtime                  as A
 import Control.DeepSeq
 
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Interface                     as C
+import qualified DDC.Core.Transform.Reannotate          as C.Reannotate
+import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
+
+import qualified DDC.Driver.Stage.Tetra                 as G.Discus
+import qualified DDC.Driver.Stage.Salt                  as G.Salt
+
+import qualified DDC.Core.Discus                        as D
+import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
+
+import qualified DDC.Core.Salt                          as S
+
+import qualified DDC.Version                            as V
+import qualified DDC.Core.Salt.Runtime                  as A
+
+import qualified Data.Time.Clock                        as S
 import qualified System.FilePath                        as S
 import qualified Data.Text                              as T
--- import qualified System.Directory                    as S
+import qualified Data.Set                               as Set
 
 
-
+---------------------------------------------------------------------------------------------------
 -- | Try to run a job, returning True if it made progress.
 runJob :: State -> Job -> S Bool
 runJob state job
@@ -40,6 +41,7 @@ runJob state job
           -> runBuildModuleOfPath state fPath
 
 
+---------------------------------------------------------------------------------------------------
 -- | Load a module interface into the store.
 runBuildModuleOfName :: State -> C.ModuleName -> S Bool
 runBuildModuleOfName state nModule
@@ -52,7 +54,7 @@ runBuildModuleOfName state nModule
                 -- See if the interface is already in the store,
                 -- or try to load it from a file.
                 bInterfaceInStore
-                 <- liftIO $ Interface.ensureInterface (stateStore state) nModule
+                 <- liftIO $ C.ensureInterface (stateStore state) nModule
                 if bInterfaceInStore
                  then do
                         -- Remember we already have it.
@@ -71,14 +73,18 @@ runBuildModuleOfName state nModule
 runBuildModuleOfPath :: State -> FilePath -> S Bool
 runBuildModuleOfPath state filePath
  = do   -- TODO: if we already know the deps then check those first.
-        (_nModule, nsImport)
+        (nModule, nsImport)
          <- queryTasteModuleAtPath state filePath
 
         bHaveDeps
          <- queryHaveInterfaces state nsImport
 
         if bHaveDeps
-         then   buildModuleOfPath state filePath
+         then do
+                buildModuleOfPath state filePath
+                addFactHaveInterface state nModule
+                return True
+
          else do
                 -- TODO: only add modules we know are not in the interface store.
                 addJobs state
@@ -96,6 +102,7 @@ buildModuleOfPath state filePath
         liftIO $ putStrLn $ "* Compiling " ++ filePath
 
         buildDiscusSourceModuleOfPath state filePath
+
         return True
 
 
@@ -106,13 +113,12 @@ buildDiscusSourceModuleOfPath state filePath
  = do
         sSource   <- liftIO $ readFile filePath
 
-
         -- TODO: just checking the source take a fraction of the time
         -- of building the .o file. Add job timings.
         mmDiscus
          <- withExceptT ErrorBuild
          $  fmap (C.Reannotate.reannotate (const ()))
-         $  Stage.Discus.sourceLoadText
+         $  G.Discus.sourceLoadText
                 (stateConfig state)
                 (stateStore state)
                 (SourceFile filePath)
@@ -128,9 +134,36 @@ buildDiscusSourceModuleOfPath state filePath
         buildDiscusSourceModule state filePath mmDiscus
 
 
+storeInterfaceOfModule state mm pathDI
+ = do
+        -- Get current time stamp for interface file.
+        timeDI  <- liftIO $ S.getCurrentTime
+
+        -- Write out the interface file.
+        let int = C.Interface
+                { interfaceVersion      = V.version
+                , interfaceFilePath     = pathDI
+                , interfaceTimeStamp    = timeDI
+                , interfaceModuleName   = C.moduleName mm
+                , interfaceModule       = C.Reannotate.reannotate (const ()) mm }
+
+        let cEncode
+                = C.Encode.Config
+                { C.Encode.configTakeRef        = D.Encode.takeName
+                , C.Encode.configTakeVarName    = D.Encode.takeVarName
+                , C.Encode.configTakeConName    = D.Encode.takeConName }
+
+        liftIO  $ C.Encode.storeInterface cEncode pathDI int
+
+        -- Add the new interface to the store.
+        liftIO $ C.addInterface (stateStore state) int
+
+        return ()
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Build a Discus source module from the AST representation.
-buildDiscusSourceModule :: State -> FilePath -> C.Module () Discus.Name -> S ()
+buildDiscusSourceModule :: State -> FilePath -> C.Module () D.Name -> S ()
 buildDiscusSourceModule state filePath mmDiscus
  = do
         let config
@@ -147,7 +180,7 @@ buildDiscusSourceModule state filePath mmDiscus
 
         mmSalt
          <- withExceptT ErrorBuild
-         $  Stage.Discus.discusToSalt
+         $  G.Discus.discusToSalt
                 config_driver (SourceFile filePath)
                 [] -- mnsTrans
                 mmDiscus
@@ -156,13 +189,18 @@ buildDiscusSourceModule state filePath mmDiscus
 
 
 ---------------------------------------------------------------------------------------------------
--- | Build a Salt module from the AST representation.
-buildDiscusSaltModule :: State -> FilePath -> C.Module () Salt.Name -> S ()
+-- | Build a Salt module that has been lowered from Discus code.
+buildDiscusSaltModule :: State -> FilePath -> C.Module () S.Name -> S ()
 buildDiscusSaltModule state filePath mmSalt
  = do
         -- Link the file into an executable if this is the Main module.
         let bBuildExe
                 = S.takeBaseName filePath == "Main"
+
+        mfsLink
+         <- if not bBuildExe
+                then return Nothing
+                else fmap Just $ getLinkObjectsOfModule state (C.moduleName mmSalt)
 
         -- Add GC slot stack if we're not compiling a Core Salt file.
         let bSlotify
@@ -170,10 +208,10 @@ buildDiscusSaltModule state filePath mmSalt
 
         -- TODO: this uses up 80% of the compilation time.
         withExceptT ErrorBuild
-         $ Stage.Salt.saltCompileViaLlvm
+         $ G.Salt.saltCompileViaLlvm
                 (stateConfig state)
                 (SourceFile filePath)
-                Nothing -- [] -- otherObjs
+                mfsLink
                 bSlotify
                 bBuildExe
                 mmSalt
@@ -181,31 +219,20 @@ buildDiscusSaltModule state filePath mmSalt
         return ()
 
 
----------------------------------------------------------------------------------------------------
-storeInterfaceOfModule state mm pathDI
+-- | Get the list of transitive object files we need to link an executable with.
+getLinkObjectsOfModule :: State -> ModuleName -> S [FilePath]
+getLinkObjectsOfModule state mn
  = do
-        -- Get current time stamp for interface file.
-        timeDI  <- liftIO $ Time.getCurrentTime
+        -- Get the set of modules transitively imported by this one.
+        -- FIXME: this will currently load all the transitive interface files.
+        mns     <- liftIO $ C.fetchTransitiveImports (stateStore state) mn
 
-        -- Write out the interface file.
-        let int = Interface.Interface
-                { interfaceVersion      = Version.version
-                , interfaceFilePath     = pathDI
-                , interfaceTimeStamp    = timeDI
-                , interfaceModuleName   = C.moduleName mm
-                , interfaceModule       = C.Reannotate.reannotate (const ()) mm }
+        -- Find all the original source files for those modules.
+        fsDS    <- mapM (queryLocateModule state)
+                $  Set.toList $ Set.delete (C.ModuleName ["Main"]) mns
 
-        let cEncode
-                = C.Encode.Config
-                { C.Encode.configTakeRef        = D.Encode.takeName
-                , C.Encode.configTakeVarName    = D.Encode.takeVarName
-                , C.Encode.configTakeConName    = D.Encode.takeConName }
+        -- Produce the corresponding .o files, that need to be next to the source files.
+        let fsO =  map (flip S.replaceExtension ".o") fsDS
 
-        liftIO  $ C.Encode.storeInterface cEncode pathDI int
-
-        -- Add the new interface to the store.
-        liftIO $ Interface.addInterface (stateStore state) int
-
-        return ()
-
+        return fsO
 

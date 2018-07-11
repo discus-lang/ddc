@@ -34,7 +34,7 @@ buildWithState state
 
                 mJob    <- takeJob state
                 case mJob of
-                 Nothing  -> error "done"
+                 Nothing  -> return ()
                  Just job -> goRun job
 
         goRun job

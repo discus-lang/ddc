@@ -91,7 +91,7 @@ data Store n
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
-        , storeInterfaces           :: IORef [Interface n]
+        , storeInterfaces           :: IORef (Map ModuleName (Interface n))
 
           -- Fetch functions --------------------
           -- | Load a complete module interface from the file system.

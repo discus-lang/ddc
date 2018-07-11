@@ -1,13 +1,14 @@
 
 module DDC.Core.Interface
-        ( Interface     (..)
-        , Store         (..)
+        ( Store
+        , Interface     (..)
         , Meta          (..)
         , Error         (..)
 
         , new
         , addInterface
         , ensureInterface
+        , fetchTransitiveImports
         , getMeta
         , getModuleNames
         , getInterfaces

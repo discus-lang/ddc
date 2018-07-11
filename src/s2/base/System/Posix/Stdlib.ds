@@ -8,6 +8,7 @@ import Data.Numeric.Nat
 import Data.Numeric.Int
 import Data.Numeric.Bool
 import Data.Text
+import Data.Text.List
 import Data.List
 
 

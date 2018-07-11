@@ -7,8 +7,9 @@ module DDC.Core.Interface.Store
         , getInterfaces
 
         , new
-        , addInterface
-        , ensureInterface
+        , addInterface,   lookupInterface
+        , fetchInterface, ensureInterface
+        , fetchTransitiveImports
         , importValuesOfStore
         , typeSynsOfStore
 
@@ -25,6 +26,7 @@ import DDC.Data.Pretty
 import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
+import Data.Set                         (Set)
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 
@@ -63,7 +65,7 @@ new
         refValuesByName                 <- newIORef Map.empty
 
         -- Complete Interfaces
-        refInterfaces                   <- newIORef []
+        refInterfaces                   <- newIORef Map.empty
 
         return
          $ Store
@@ -111,10 +113,45 @@ getModuleNames store
 getInterfaces :: Store n -> IO [Interface n]
 getInterfaces store
  = do   ints    <- readIORef (storeInterfaces store)
-        return ints
+        return $ Map.elems ints
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Lookup a module interface from the store.
+lookupInterface :: Store n -> ModuleName -> IO (Maybe (Interface n))
+lookupInterface store nModule
+ = do   ints    <- readIORef (storeInterfaces store)
+        return  $ Map.lookup nModule ints
+
+
+-- | Fetch an interface from the store, or load it if we don't already have it.
+fetchInterface
+        :: (Ord n, Show n)
+        => Store n -> ModuleName
+        -> IO (Maybe (Interface n))
+
+fetchInterface store nModule
+ | Just load    <- storeLoadInterface store
+ = let
+        goCheck
+         = do   iis     <- readIORef $ storeInterfaces store
+                case Map.lookup nModule iis of
+                 Just ii -> return (Just ii)
+                 Nothing -> goLoad
+
+        goLoad
+         = do   result  <- load nModule
+                case result of
+                 Nothing  -> return Nothing
+                 Just ii
+                  -> do addInterface store ii
+                        return (Just ii)
+   in   goCheck
+
+ | otherwise
+ = return Nothing
+
+
 -- | Try to find and load the interface file for the given module into the store,
 --   or do nothing if we already have it.
 
@@ -123,9 +160,9 @@ getInterfaces store
 --   If there is no load function defined then `error`.
 --
 --   FIXME: we need to check that the interface file is fresh relative
---          to any existing source files and dependent modules. When statting the dep
---          modules also make sure to avoid restatting the same module over and over.
---          The top level compile driver used to do this job.
+--   to any existing source files and dependent modules. When statting the dep
+--   modules also make sure to avoid restatting the same module over and over.
+--   The top level compile driver used to do this job.
 --
 ensureInterface
         :: (Ord n, Show n)
@@ -154,6 +191,44 @@ ensureInterface store nModule
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Extract the set of of transitively imported modules from the interface store.
+--   Doing this will force load of needed interface files.
+--
+--   FIXME: we particularly want to avoid loading the complete interface
+--          files just to get the list of .o files we need to link with.
+--
+--   Store the list of transitive imports directly in each module,
+--   so we don't need to load the complete graph of imports.
+--
+fetchTransitiveImports
+        :: (Ord n, Show n)
+        => Store n -> ModuleName -> IO (Set ModuleName)
+
+fetchTransitiveImports store mn
+ = loop Set.empty (Set.singleton mn)
+ where
+        loop mnsHave mnsNext
+         | mnNext : _       <- Set.toList mnsNext
+         = if Set.member mnNext mnsHave
+            then loop mnsHave (Set.delete mnNext mnsNext)
+            else do
+                Just ii <- fetchInterface store mnNext
+
+                let mnsMoar
+                        = Set.fromList $ moduleImportModules $ interfaceModule ii
+
+                let mnsNext'
+                        = Set.difference
+                                (Set.union mnsNext mnsMoar)
+                                (Set.insert mnNext mnsHave)
+
+                loop (Set.insert mnNext mnsHave) mnsNext'
+
+         | otherwise
+         = return mnsHave
+
+
+---------------------------------------------------------------------------------------------------
 -- | Add information from a pre-loaded interface to the store.
 addInterface
         :: (Ord n, Show n)
@@ -170,7 +245,7 @@ addInterface store ii
 
         -- Add whole interface to store.
         modifyIORef' (storeInterfaces store) $ \iis
-         -> iis ++ [ii]
+         -> Map.insert nModule ii iis
 
         -- Add data type definitions.
         let dataTypesByTyCon = dataTypesByTyConOfInterface ii
@@ -272,7 +347,7 @@ metaOfInterface ii
 
 
 -- Caps -------------------------------------------------------------------------------------------
-{-
+{- FIXME: load the caps.
 importCapsOfInterface
         :: Ord n => Interface
         -> Map ModuleName (Map n (ImportCap n (Type n)))

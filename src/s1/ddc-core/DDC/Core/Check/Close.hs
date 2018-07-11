@@ -91,7 +91,6 @@ closeModuleWithOracle kenv oracle mm
                 $  Map.union itsOracle itsModule
 
         return  $ wrapModuleWithImportThings its' mm_reexport
-                { moduleImportModules = [] }
 
 
 ---------------------------------------------------------------------------------------------------
