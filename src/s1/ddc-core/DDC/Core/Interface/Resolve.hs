@@ -176,7 +176,7 @@ resolveDataCtor
         => Store n         -- ^ Interface store.
         -> Set ModuleName  -- ^ Modules whose exports we will search for the ctor.
         -> n               -- ^ Name of desired ctor.
-        -> IO (Either (Error n) (DataCtor n))
+        -> IO (Either (Error n) (DataCtor n, DataType n))
 
 resolveDataCtor store mnsImported n
  = goModules
@@ -207,7 +207,7 @@ resolveDataCtor store mnsImported n
                 []        -> []
                 ct : cts' -> ct : filter (not . isSameDataCtor ct) cts'
 
-        isSameDataCtor ct1 ct2
+        isSameDataCtor (ct1, _dt1) (ct2, _dt2)
          =  (dataCtorModuleName ct1 == dataCtorModuleName ct2)
          && (dataCtorName ct1       == dataCtorName ct2)
 

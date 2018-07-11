@@ -61,7 +61,7 @@ data Oracle n
         , oracleCacheTypeSynsByTyCon            :: IORef (Map n (Kind n, Type n))
 
           -- | Data ctors previously loaded via the oracle.
-        , oracleCacheDataCtorsByDaCon           :: IORef (Map n (DataCtor n))
+        , oracleCacheDataCtorsByDaCon           :: IORef (Map n (DataCtor n, DataType n))
 
           -- | Capabilities previously loaded via the oracle.
         , oracleCacheCapsByName                 :: IORef (Map n (ImportCap n (Type n)))
@@ -201,10 +201,12 @@ resolveDataCtor oracle n
  where
         -- Check the oracle cache for a data constructor of the desired name.
         goCache
-         = do   cache <- liftIO $ readIORef (oracleCacheDataCtorsByDaCon oracle)
-                case Map.lookup n cache of
-                 Just ctor      -> return $ Just ctor
-                 Nothing        -> goStore
+         = do   dctorTypes
+                 <- liftIO $ readIORef (oracleCacheDataCtorsByDaCon oracle)
+
+                case Map.lookup n dctorTypes of
+                 Just (dctor, _dtype) -> return $ Just dctor
+                 Nothing              -> goStore
 
         -- Look for a data constructor of the desired name in the interface store.
         goStore
@@ -212,47 +214,20 @@ resolveDataCtor oracle n
                                 (oracleStore oracle) (oracleImportedModules oracle) n
                 case r of
                  Left Store.ErrorNotFound{}
-                                -> return Nothing
-                 Left err       -> throw $ checkOfResolveError n err
-                 Right ctor     -> goUpdate ctor
+                                       -> return Nothing
+                 Left err              -> throw $ checkOfResolveError n err
+                 Right (dctor, dtype)  -> goUpdate dctor dtype
 
         -- Update the oracle cache with a found data constructor.
-        goUpdate ctor
-         = do   liftIO  $ modifyIORef' (oracleCacheDataCtorsByDaCon oracle)
-                        $ \ctors -> Map.insert n ctor ctors
+        goUpdate dctor dtype
+         = do
+                liftIO  $ modifyIORef' (oracleCacheDataCtorsByDaCon oracle)
+                        $ \dctortypes -> Map.insert n (dctor, dtype) dctortypes
 
-                dataTypesByTyCon
-                 <- liftIO $ readIORef $ Store.storeDataTypesByTyCon (oracleStore oracle)
-
-                -- *** this doesn't work because the original defining mod
-                -- of the data constructor might not be loaded.
-                -- the data type could well have been re-exported by another module,
-                -- so we can't find that type by looking up the defining module of the ctor.
-                -- we should instead store the data type definitions next to the ctors.
-                let mDataType
-                     =   Map.lookup (dataCtorModuleName ctor) dataTypesByTyCon
-                     >>= Map.lookup (dataCtorTypeName ctor)
-
-                dataType
-                 <- case mDataType of
-                        Nothing -> error $ unlines
-                                [ "resolveDataCtor: store is broken"
-                                , "  cannot find: "
-                                        ++ show ( dataCtorModuleName ctor
-                                                , dataCtorTypeName ctor
-                                                , dataCtorName ctor
-                                                , Map.keys dataTypesByTyCon) ]
-
-                        Just dt -> return dt
-
-                -- TODO: we currently need to add data types to the cache so they
-                --       end up being picked up by the 'close' transform, but
-                --       we might not want the type to be automatically imported into
-                --       the top level namespace if the ctor is used.
                 liftIO  $ modifyIORef' (oracleCacheDataTypesByTyCon oracle)
-                        $ \dts -> Map.insert (dataTypeName dataType) dataType dts
+                        $ \dtypes -> Map.insert (dataCtorTypeName dctor) dtype dtypes
 
-                return  $ Just ctor
+                return  $ Just dctor
 
 
 ---------------------------------------------------------------------------------------------------

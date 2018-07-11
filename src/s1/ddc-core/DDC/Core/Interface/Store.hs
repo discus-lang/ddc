@@ -307,15 +307,21 @@ typeSynsByTyConOfInterface ii
 
 
 -- | Extract a map of all data ctor definitions by data constructor from a module interface.
-dataCtorsByDaConOfInterface :: Ord n => Interface n -> Map n (DataCtor n)
+dataCtorsByDaConOfInterface :: Ord n => Interface n -> Map n (DataCtor n, DataType n)
 dataCtorsByDaConOfInterface ii
- = dataDefsCtors
-        $ fromListDataDefs $ Map.elems
-        $ Map.union
-                (Map.fromList [ (dataDefTypeName def, def)
-                      | def <- map snd $ moduleImportDataDefs $ interfaceModule ii])
-                (Map.fromList [ (dataDefTypeName def, def)
-                      | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
+ = Map.fromList $ map make $ Map.elems dctors
+ where  make dctor
+         = let Just dtype = Map.lookup (dataCtorTypeName dctor) dtypes
+           in  (dataCtorName dctor, (dctor, dtype))
+
+        dtypes  = dataDefsTypes ddefs
+        dctors  = dataDefsCtors ddefs
+        ddefs   = fromListDataDefs
+                $ Map.elems $ Map.union
+                        (Map.fromList [ (dataDefTypeName def, def)
+                              | def <- map snd $ moduleImportDataDefs $ interfaceModule ii])
+                        (Map.fromList [ (dataDefTypeName def, def)
+                              | def <- map snd $ moduleLocalDataDefs  $ interfaceModule ii])
 
 
 -- Values -----------------------------------------------------------------------------------------
