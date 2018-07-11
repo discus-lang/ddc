@@ -6,6 +6,7 @@ import DDC.Data.Pretty
 import DDC.Data.SourcePos
 import qualified DDC.Core.Salt          as Salt
 import qualified DDC.Core.Load          as CL
+import qualified DDC.Data.Pretty        as P
 import Control.DeepSeq
 
 
@@ -35,6 +36,10 @@ data Error
         -- | Error when transforming core program.
         | forall err. Pretty err => ErrorCoreTransform !err
 
+
+instance Show Error where
+ show err
+  = P.renderIndent $ P.ppr err
 
 
 instance Pretty Error where

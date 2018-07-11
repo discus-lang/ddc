@@ -6,14 +6,16 @@ module DDC.Driver.Command.Compile
         , getModificationTimeIfExists)
 where
 import DDC.Driver.Stage
-import qualified DDC.Driver.Stage.Tetra         as DE
-import qualified DDC.Driver.Stage.Salt          as DA
+import qualified DDC.Driver.Stage.Tetra                 as DE
+import qualified DDC.Driver.Stage.Salt                  as DA
+
+import qualified DDC.Driver.Build                       as Build
 
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Core.Interface.Base
-import qualified DDC.Data.Pretty                as P
+import qualified DDC.Data.Pretty                        as P
 
 import System.FilePath
 import System.Directory
@@ -41,11 +43,11 @@ import qualified DDC.Version                            as Version
 import qualified Data.List                              as List
 import qualified Data.Text                              as T
 
-import qualified DDC.Core.Transform.Reannotate                  as CReannotate
+import qualified DDC.Core.Transform.Reannotate          as CReannotate
 
-import DDC.Core.Interface.Store                                 (Store)
+import DDC.Core.Interface.Store                         (Store)
 -- import qualified DDC.Core.Codec.Shimmer.Encode          as IntShimmer
-import qualified DDC.Core.Interface.Store                       as Store
+import qualified DDC.Core.Interface.Store               as Store
 
 
 ---------------------------------------------------------------------------------------------------
@@ -74,9 +76,9 @@ cmdCompileRecursive
         -> [FilePath]           -- ^ Paths of files to compile.
         -> ExceptT String IO ()
 
-cmdCompileRecursive config bBuildExe store fsPath
+cmdCompileRecursive config _bBuildExe store fsPath
  -- Recursively build a source program and link with some extra objects.
- | all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
+ -- | all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
  = do
         -- Check that all the files exists before we try to compile any.
         -- We particuarly want to check the .o files are there before
@@ -88,16 +90,25 @@ cmdCompileRecursive config bBuildExe store fsPath
 
         -- Split file list into souce files and extra objects.
         let fsDS  = filter (\f -> takeExtension f == ".ds") fsPath
-        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
+--        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
 
         -- Start recursive build.
-        cmdCompileRecursiveDS
-                config bBuildExe fsO store
-                (map JobBuildFilePath fsDS)
-                []
+        withExceptT show
+         $ do   state   <- Build.newStateOfStore config store
+                Build.addJobs state [Build.JobBuildModuleOfPath fPath | fPath <- fsDS ]
+                Build.buildWithState state
 
- | otherwise
- = do   mapM_ (cmdCompile config bBuildExe [] store) fsPath
+        return ()
+
+--        Build.
+
+--        cmdCompileRecursiveDS
+--                config bBuildExe fsO store
+--                (map JobBuildFilePath fsDS)
+--                []
+
+--  | otherwise
+--  = do   mapM_ (cmdCompile config bBuildExe [] store) fsPath
 
 
 ---------------------------------------------------------------------------------------------------
@@ -202,8 +213,6 @@ cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
                         (List.nub $ jsDep ++ jsMore ++ [jNext])
                         (JobBuildFilePath filePath : jsBlocked)
 
-
----------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------
 -- | Compile a source module into a @.o@ file.
@@ -431,10 +440,8 @@ getModificationTimeIfExists path
 dropBody :: [C.Located (C.Token n)] -> [C.Located (C.Token n)]
 dropBody toks = go toks
  where  go []           = []
-
         go (C.Located _ (C.KA (C.KKeyword C.EWhere)) : _)
                         = []
-
         go (t : moar)   = t : go moar
 
 
