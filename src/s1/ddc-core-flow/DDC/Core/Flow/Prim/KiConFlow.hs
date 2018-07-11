@@ -6,7 +6,6 @@ module DDC.Core.Flow.Prim.KiConFlow
 where
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Flow.Exp.Simple.Exp
-import DDC.Type.Exp.Simple.Compounds
 import DDC.Data.Pretty
 import Control.DeepSeq
 
@@ -32,6 +31,5 @@ readKiConFlow str
 
 
 -- Compounds ------------------------------------------------------------------
-kRate   = TCon (TyConBound (UName (NameKiConFlow KiConFlowRate)) sProp)
-
-kProc   = TCon (TyConBound (UName (NameKiConFlow KiConFlowProc)) sProp)
+kRate   = TCon (TyConBound (NameKiConFlow KiConFlowRate))
+kProc   = TCon (TyConBound (NameKiConFlow KiConFlowProc))

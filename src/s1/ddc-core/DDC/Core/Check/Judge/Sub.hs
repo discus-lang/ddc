@@ -44,7 +44,7 @@ makeSub config a ctx0 x0 xL tL tR err
   -- Sub_SynL
   --   Expand type synonym on the left.
   goSynL
-    |  TCon (TyConBound (UName n) _) <- tL
+    |  TCon (TyConBound n) <- tL
     =  lookupTypeSyn ctx0 n
     >>= \case
         Nothing  -> goSynR
@@ -65,7 +65,7 @@ makeSub config a ctx0 x0 xL tL tR err
   goSynR
     -- Sub_SynR
     --   Expand type synonym on the right.
-    |  TCon (TyConBound (UName n) _) <- tR
+    |  TCon (TyConBound n) <- tR
     =  lookupTypeSyn ctx0 n
     >>= \case
         Nothing -> goSub

@@ -412,13 +412,7 @@ tSink   tA      = tApps (tConTyConMachine TyConSink)    [tA]
 tProcess :: Type Name
 tProcess = tConTyConMachine TyConProcess
 
-
 tConTyConMachine :: TyConMachine -> Type Name
 tConTyConMachine tcm
- = let  k       = kindTyConMachine tcm
-        u       = UName (NameTyConMachine tcm)
-        tc      = TyConBound u k
-   in   TCon tc
-
-
+ = TCon (TyConBound (NameTyConMachine tcm))
 

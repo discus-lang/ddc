@@ -177,18 +177,12 @@ convertName nn
 convertTyCon :: TyCon F.Name -> ConvertM (TyCon T.Name)
 convertTyCon tc
  = case tc of
-   TyConSort s
-    -> return $ TyConSort s
-   TyConKind k
-    -> return $ TyConKind k
-   TyConWitness w
-    -> return $ TyConWitness w
-   TyConSpec s
-    -> return $ TyConSpec s
-   TyConBound b k
-    -> TyConBound <$> convertBound b <*> convertType k
-   TyConExists i k
-    -> TyConExists    i              <$> convertType k
+   TyConSort s     -> return $ TyConSort s
+   TyConKind k     -> return $ TyConKind k
+   TyConWitness w  -> return $ TyConWitness w
+   TyConSpec s     -> return $ TyConSpec s
+   TyConBound n    -> TyConBound    <$> convertName n
+   TyConExists i k -> TyConExists i <$> convertType k
 
 
 -- | When replacing @Forall b t@ with @t@, if @b@ is a de bruijn

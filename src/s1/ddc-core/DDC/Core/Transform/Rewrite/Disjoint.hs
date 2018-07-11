@@ -147,9 +147,9 @@ areDistinct env t1 t2
 
         | otherwise
         = False
-        where   takeBound (TVar u)                = Just u
-                takeBound (TCon (TyConBound u _)) = Just u
-                takeBound _                       = Nothing
+        where   takeBound (TVar u)              = Just u
+                takeBound (TCon (TyConBound n)) = Just (UName n)
+                takeBound _                     = Nothing
 
 
 -- | Check whether two regions are distinct.

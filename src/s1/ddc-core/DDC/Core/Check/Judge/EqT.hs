@@ -22,7 +22,7 @@ makeEqT config ctx0 tL tR err
   -- EqT_SynL
   --   Expand type synonym on the left.
   goSynL
-    | TCon (TyConBound (UName n) _) <- tL
+    | TCon (TyConBound n) <- tL
     = lookupTypeSyn ctx0 n
     >>= \case
         Nothing -> goSynR
@@ -42,7 +42,7 @@ makeEqT config ctx0 tL tR err
   -- EqT_SynR
   --   Expand type synonym on the right.
   goSynR
-    | TCon (TyConBound (UName n) _) <- tR
+    | TCon (TyConBound n) <- tR
     = lookupTypeSyn ctx0 n
     >>= \case
         Nothing -> goEqT
@@ -207,8 +207,8 @@ makeEqT config ctx0 tL tR err
     = do
         ctrace  $ vcat
                 [ text "EqT_Fail"
-                , text "  tL: " % ppr tL
-                , text "  tR: " % ppr tR
+                , text "  tL: " % (string $ show tL)
+                , text "  tR: " % (string $ show tR)
                 , indent 2 $ ppr ctx0
                 , empty ]
 

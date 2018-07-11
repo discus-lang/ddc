@@ -37,7 +37,6 @@ module DDC.Type.Exp.Simple.Compounds
         , tApps,         takeTApps
         , takeTyConApps
         , takeNameTyConApps
-        , takeDataTyConApps
         , takePrimeRegion
 
           -- * Functions
@@ -264,23 +263,9 @@ takeNameTyConApps :: Type n -> Maybe (n, [Type n])
 takeNameTyConApps tt
  = case takeTApps tt of
         TCon tc : args
-         |  TyConBound (UName n) _ <- tc
-         -> Just (n, args)
+          |  TyConBound n  <- tc
+          -> Just (n, args)
         _ -> Nothing
-
-
--- | Flatten a sequence of type applications, returning the type constructor
---   and arguments, if there is one. Only accept data type constructors.
-takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
-takeDataTyConApps tt
- = case takeTApps tt of
-        TCon tc : args
-         | TyConBound (UName{}) k       <- tc
-         , TCon (TyConKind KiConData)   <- takeResultKind k
-          -> Just (tc, args)
-        _ -> Nothing
-
-
 
 
 -- | Take the prime region variable of a data type.
@@ -684,11 +669,11 @@ twCon1 tc t     = (TCon $ TyConWitness tc) `tApp` t
 -- | Wrap a witness type constructor applied to two arguments.
 twCon2 tc ts    = tApps (TCon $ TyConWitness tc) ts
 
--- | Build a nullary type constructor of the given kind.
-tConData0 :: n -> Kind n -> Type n
-tConData0 n k   = TCon (TyConBound (UName n) k)
+-- | Build a nullary type constructor.
+tConData0 :: n -> Type n
+tConData0 n     = TCon (TyConBound n)
 
 -- | Build a type constructor application of one argumnet.
-tConData1 :: n -> Kind n -> Type n -> Type n
-tConData1 n k t1 = TApp (TCon (TyConBound (UName n) k)) t1
+tConData1 :: n -> Type n -> Type n
+tConData1 n t1  = TApp (TCon (TyConBound n)) t1
 

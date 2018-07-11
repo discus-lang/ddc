@@ -65,10 +65,10 @@ isBoxedRepType tt
                 Just (TyConSpec  (TcConRecord _ns), _)  -> True
                 Just (TyConSpec  TcConSusp,         _)  -> True
 
-                Just (TyConBound (UName (NameTyConDiscus TyConDiscusU)) _, _)
+                Just (TyConBound (NameTyConDiscus TyConDiscusU), _)
                   -> False
 
-                Just (TyConBound (UName _) _,       _)
+                Just (TyConBound _, _)
                   -> True
 
                 _ -> False)

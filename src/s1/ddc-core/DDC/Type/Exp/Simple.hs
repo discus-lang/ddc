@@ -46,7 +46,6 @@ module DDC.Type.Exp.Simple
         , isWitnessKind
 
           -- ** Data Types
-        , isAlgDataType
         , isWitnessType
         , isConstWitType
         , isMutableWitType
@@ -121,7 +120,6 @@ module DDC.Type.Exp.Simple
         , tApps,         takeTApps
         , takeTyConApps
         , takeNameTyConApps
-        , takeDataTyConApps
         , takePrimeRegion
 
           -- ** Functions

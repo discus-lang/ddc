@@ -19,12 +19,12 @@ unifyExistsRight
 unifyExistsRight envt tL tR
 
  -- Look through synonyms on the left.
- | TCon (TyConBound (UName n1) _) <- tL
+ | TCon (TyConBound n1) <- tL
  , Just tL' <- Map.lookup n1 (envtEquations envt)
  = unifyExistsRight envt tL' tR
 
  -- Look through synonyms on the right.
- | TCon (TyConBound (UName n2) _) <- tR
+ | TCon (TyConBound n2) <- tR
  , Just tR' <- Map.lookup n2 (envtEquations envt)
  = unifyExistsRight envt tL tR'
 
@@ -34,15 +34,13 @@ unifyExistsRight envt tL tR
         (t1, TCon (TyConExists i2 _k2))
           -> Just [(i2, t1)]
 
-        (TCon (TyConBound u1 _k1), TCon (TyConBound u2 _k2))
-         | u1 == u2     -> Just []
+        (TCon (TyConBound n1), TCon (TyConBound n2))
+         | n1 == n2     -> Just []
          | otherwise    -> Nothing
-
 
         (TCon tc1, TCon tc2)
          | tc1 == tc2   -> Just []
          | otherwise    -> Nothing
-
 
         (TVar u1,  TVar u2)
          | u1 == u2     -> Just []

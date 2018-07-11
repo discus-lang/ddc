@@ -196,16 +196,9 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          = return (tt, kindOfTcCon tcc)
 
          -- Fragment specific, or user defined constructors.
-         | TyConBound u _k      <- tc
-         = case u of
-            UName n
-             -> do (_thing, kThing) <- resolveTyConThing ctx0 n
-                   return (TCon (TyConBound u kThing), kThing)
-
-            -- Type constructors are always defined at top-level and not
-            -- by anonymous debruijn binding.
-            UIx{} -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
-
+         | TyConBound n         <- tc
+         = do   (_thing, kThing) <- resolveTyConThing ctx0 n
+                return (TCon (TyConBound n), kThing)
 
          -- Existentials can be either in the Spec or Kind universe,
          -- and their kinds/sorts are directly attached.

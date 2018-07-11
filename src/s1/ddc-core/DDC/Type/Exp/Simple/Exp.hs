@@ -144,7 +144,7 @@ data TyConHash
 -- | Wraps a variable or constructor that can be added the `typeSumElems` array.
 data TypeSumVarCon n
         = TypeSumVar !(Bound n)
-        | TypeSumCon !(Bound n) !(Kind n)
+        | TypeSumCon !n
         deriving Show
 
 
@@ -168,7 +168,7 @@ data TyCon n
         | TyConSpec     !TcCon
 
         -- | User defined type constructor.
-        | TyConBound    !(Bound n) !(Kind n)
+        | TyConBound    !n
 
         -- | An existentially quantified name, with its kind.
         --   Used during type checking, but not accepted in source programs.

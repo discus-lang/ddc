@@ -61,7 +61,7 @@ instance NFData n => NFData (TypeSumVarCon n) where
  rnf ts
   = case ts of
         TypeSumVar u            -> rnf u
-        TypeSumCon u k          -> rnf u `seq` rnf k
+        TypeSumCon n            -> rnf n
 
 
 instance NFData n => NFData (TyCon n) where
@@ -71,6 +71,6 @@ instance NFData n => NFData (TyCon n) where
         TyConKind    _          -> ()
         TyConWitness _          -> ()
         TyConSpec    _          -> ()
-        TyConBound   con k      -> rnf con `seq` rnf k
+        TyConBound   con        -> rnf con
         TyConExists  n   k      -> rnf n   `seq` rnf k
 

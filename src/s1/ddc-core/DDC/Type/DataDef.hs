@@ -86,9 +86,7 @@ kindOfDataDef def
 dataTypeOfDataDef :: DataDef n -> Type n
 dataTypeOfDataDef def
  = let  usParam = takeSubstBoundsOfBinds $ dataDefParams def
-        ksParam = map typeOfBind $ dataDefParams def
-        tc      = TyConBound (UName (dataDefTypeName def))
-                             (kFuns ksParam kData)
+        tc      = TyConBound (dataDefTypeName def)
    in   tApps (TCon tc) (map TVar usParam)
 
 
@@ -123,10 +121,7 @@ makeDataDefAlg modName nData bsParam Nothing
 
 makeDataDefAlg modName nData bsParam (Just ntsField)
  = let  usParam = takeSubstBoundsOfBinds bsParam
-        ksParam = map typeOfBind bsParam
-        tc      = TyConBound (UName nData)
-                             (kFuns ksParam kData)
-
+        tc      = TyConBound nData
         tResult = tApps (TCon tc) (map TVar usParam)
 
         ctors   = [ DataCtor modName n tag tsField tResult nData bsParam

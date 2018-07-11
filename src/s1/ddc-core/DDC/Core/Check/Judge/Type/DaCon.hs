@@ -40,7 +40,7 @@ checkDaConM _config ctx _xx _a dc
     DaConPrim nCtor
      | Just tPrim       <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
      , tResult          <- snd $ takeTFunArgResult $ eraseTForalls tPrim
-     , Just (TyConBound (UName nType) _)
+     , Just (TyConBound nType)
                         <- fmap fst $ takeTyConApps tResult
      , Just dataType    <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
      -> case dataTypeMode dataType of

@@ -61,10 +61,10 @@ checkCase !table !ctx0 mode demand
                         , ts)
 
               -- User defined or imported data types.
-              | TyConBound u@(UName nTyCon) _ <- tc
+              | TyConBound nTyCon <- tc
               -> lookupDataType ctx2 nTyCon
               >>= \case Nothing
-                         -> throw $ ErrorType $ ErrorTypeUndefined u
+                         -> throw $ ErrorType $ ErrorTypeUndefined (UName nTyCon)
 
                         Just dataType
                          | k <- kindOfDataType dataType

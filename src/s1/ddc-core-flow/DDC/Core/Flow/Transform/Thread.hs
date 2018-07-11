@@ -34,8 +34,7 @@ threadConfig
 -- | Wrap the result type of a stateful computation with the state type.
 wrapResultType :: Type Name -> Type Name
 wrapResultType tt
- | Just (TyConBound u _, tsArgs)        <- takeTyConApps tt
- , UName n                              <- u
+ | Just (TyConBound n, tsArgs)          <- takeTyConApps tt
  , NameTyConFlow (TyConFlowTuple _)     <- n
  = tTupleN (tWorld : tsArgs)
 

@@ -20,7 +20,6 @@ module DDC.Type.Exp.Simple.Predicates
         , isWitnessKind
 
           -- * Data Types
-        , isAlgDataType
         , isWitnessType
         , isConstWitType
         , isMutableWitType
@@ -75,7 +74,7 @@ isBot tt
         | TSum ss       <- tt
         , []            <- T.toList ss
         = True
-        
+
         | otherwise     = False
 
 
@@ -136,30 +135,13 @@ isWitnessKind tt
 
 
 -- Data Types -----------------------------------------------------------------
--- | Check whether this type is that of algebraic data.
---
---   It needs to have an explicit data constructor out the front,
---   and not a type variable. The constructor must not be the function
---   constructor, and must return a value of kind '*'.
----
---   The function constructor (->) also has this result kind,
---   but it is in `TyConComp`, so is easy to ignore.
-isAlgDataType :: Eq n => Type n -> Bool
-isAlgDataType tt
-        | Just (tc, _)   <- takeTyConApps tt
-        , TyConBound _ k <- tc
-        = takeResultKind k == kData
-
-        | otherwise
-        = False
-
 -- | Check whether type is a witness constructor
 isWitnessType :: Eq n => Type n -> Bool
 isWitnessType tt
  = case takeTyConApps tt of
         Just (TyConWitness _, _) -> True
         _                        -> False
-        
+
 
 -- | Check whether this is the type of a @Const@ witness.
 isConstWitType :: Eq n => Type n -> Bool
@@ -183,7 +165,7 @@ isDistinctWitType tt
  = case takeTyConApps tt of
         Just (TyConWitness (TwConDistinct _), _) -> True
         _                                        -> False
-        
+
 
 -- | Check if this is the TyFun or KiFun constructor.
 isFunishTCon :: Type n -> Bool

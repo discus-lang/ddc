@@ -266,8 +266,5 @@ tResize  tP tJ tK = (tConTyConFlow TyConFlowResize) `tApps` [tP, tJ, tK]
 -- Utils ----------------------------------------------------------------------
 tConTyConFlow :: TyConFlow -> Type Name
 tConTyConFlow tcf
- = let  k       = kindTyConFlow tcf
-        u       = UName (NameTyConFlow tcf)
-        tc      = TyConBound u k
-   in   TCon tc
+ = TCon (TyConBound (NameTyConFlow tcf))
 

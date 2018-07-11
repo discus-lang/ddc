@@ -128,7 +128,8 @@ universeFromType1 kenv tt
         TCon (TyConSpec TcConSusp)        -> Just UniverseData
         TCon (TyConSpec _)                -> Nothing
 
-        TCon (TyConBound  _ k)     -> universeFromType2 k
+        -- TODO: this is rotted. Does anything still use the 'universe' fns?
+        TCon (TyConBound  _)       -> Nothing -- universeFromType2 k
         TCon (TyConExists _ k)     -> universeFromType2 k
 
         TAbs b t2                  -> universeFromType1 (Env.extend b kenv) t2
@@ -155,7 +156,10 @@ universeOfType kenv tt
         TCon (TyConKind _)      -> Just UniverseKind
         TCon (TyConWitness _)   -> Just UniverseSpec
         TCon (TyConSpec _)      -> Just UniverseSpec
-        TCon (TyConBound  _ k)  -> universeFromType1 kenv k
+
+        -- TODO: this is rotted. Does anything use the universe functions?
+        TCon (TyConBound  _)    -> Nothing -- universeFromType1 kenv k
+
         TCon (TyConExists _ k)  -> universeFromType1 kenv k
 
         TAbs b t2               -> universeOfType (Env.extend b kenv) t2

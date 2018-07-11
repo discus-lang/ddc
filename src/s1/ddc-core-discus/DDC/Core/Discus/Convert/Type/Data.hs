@@ -195,7 +195,7 @@ convertDataAppT ctx tt
         -- Foreign boxed data types -----------------------
         --   If these have a primary region then we use that,
         --   otherwise they are represnted in generic boxed form.
-        | Just (TyConBound (UName n) _, args) <- takeTyConApps tt
+        | Just (TyConBound n, args) <- takeTyConApps tt
         , Set.member n (contextForeignBoxedTypeCtors ctx)
         = case args of
                 tR : _
@@ -211,7 +211,7 @@ convertDataAppT ctx tt
         -- User defined TyCons ----------------------------
         -- A user-defined data type with a primary region.
         --   These are converted to generic boxed objects in the same region.
-        | Just (TyConBound (UName n) _, tR : _args) <- takeTyConApps tt
+        | Just (TyConBound n, tR : _args) <- takeTyConApps tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         , TVar u       <- tR
         , Just k       <- Env.lookup u (contextKindEnv ctx)
@@ -221,12 +221,12 @@ convertDataAppT ctx tt
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
-        | Just (TyConBound (UName n) _, _) <- takeTyConApps tt
+        | Just (TyConBound n, _) <- takeTyConApps tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
 
         -- ISSUE #377: Look through type equations during Discus to Salt transform.
-        | Just (TyConBound (UName n) _, []) <- takeTyConApps tt
+        | Just (TyConBound n, []) <- takeTyConApps tt
         , Just t' <- Map.lookup n (contextTypeEqns ctx)
         = convertDataAppT ctx t'
 

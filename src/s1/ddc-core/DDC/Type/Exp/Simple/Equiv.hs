@@ -8,7 +8,6 @@ module DDC.Type.Exp.Simple.Equiv
         , crushSomeT
         , crushEffect)
 where
-import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Bind
@@ -36,6 +35,7 @@ equivT  :: Ord n
 
 equivT env t1 t2
         = equivWithBindsT env [] [] t1 t2
+
 
 -- | Like `equivT` but take the initial stacks of type binders.
 equivWithBindsT
@@ -70,11 +70,11 @@ equivWithBindsT env stack1 stack2 t1 t2
          -> False
 
         -- Lookup type equations.
-        (TCon (TyConBound (UName n) _), _)
+        (TCon (TyConBound n), _)
          | Just t1'' <- Map.lookup n (EnvT.envtEquations env)
          -> equivWithBindsT env stack1 stack2 t1'' t2'
 
-        (_, TCon (TyConBound (UName n) _))
+        (_, TCon (TyConBound n))
          | Just t2'' <- Map.lookup n (EnvT.envtEquations env)
          -> equivWithBindsT env stack1 stack2 t1' t2''
 
@@ -134,8 +134,8 @@ unpackSumT tt                    = tt
 equivTyCon :: Eq n => TyCon n -> TyCon n -> Bool
 equivTyCon tc1 tc2
  = case (tc1, tc2) of
-        (TyConBound u1 _, TyConBound u2 _) -> u1  == u2
-        _                                  -> tc1 == tc2
+        (TyConBound u1, TyConBound u2) -> u1  == u2
+        _                              -> tc1 == tc2
 
 
 ---------------------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ equivTyCon tc1 tc2
 crushHeadT :: Ord n => EnvT n -> Type n -> Type n
 crushHeadT env tt
  = case tt of
-        TCon (TyConBound (UName n) _)
+        TCon (TyConBound n)
          -> case Map.lookup n (EnvT.envtEquations env) of
                 Nothing  -> tt
                 Just tt' -> crushHeadT env tt'
@@ -210,56 +210,57 @@ crushEffect env tt
          -> case takeTyConApps t of
 
              -- Type has a head region.
-             Just (TyConBound _ k, (tR : _))
-              |  (k1 : _, _) <- takeKFuns k
-              ,  isRegionKind k1
-              -> tRead tR
+--             Just (TyConBound _ k, (tR : _))
+--              |  (k1 : _, _) <- takeKFuns k
+--              ,  isRegionKind k1
+--              -> tRead tR
 
              -- Type has no head region.
              -- This happens with  case () of { ... }
              Just (TyConSpec  TcConUnit, [])
               -> tBot kEffect
 
-             Just (TyConBound _ _,       _)
+             Just (TyConBound _,       _)
               -> tBot kEffect
 
              _ -> tt
 
          -- Deep Read.
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt
-         -> case takeTyConApps t of
-             Just (TyConBound _ k, ts)
-              | (ks, _)  <- takeKFuns k
-              , length ks == length ts
-              , Just effs       <- sequence $ zipWith makeDeepRead ks ts
-              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
-
-             _ -> tt
+--         | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt
+--         -> case takeTyConApps t of
+--
+--             Just (TyConBound _ k, ts)
+--              | (ks, _)  <- takeKFuns k
+--              , length ks == length ts
+--              , Just effs       <- sequence $ zipWith makeDeepRead ks ts
+--              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
+--
+--             _ -> tt
 
          -- Deep Write
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConSpec TcConDeepWrite, [t]) <- takeTyConApps tt
-         -> case takeTyConApps t of
-             Just (TyConBound _ k, ts)
-              | (ks, _)  <- takeKFuns k
-              , length ks == length ts
-              , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
-              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
-
-             _ -> tt
+--         | Just (TyConSpec TcConDeepWrite, [t]) <- takeTyConApps tt
+--         -> case takeTyConApps t of
+--             Just (TyConBound _ k, ts)
+--              | (ks, _)  <- takeKFuns k
+--              , length ks == length ts
+--              , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
+--              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
+--
+--             _ -> tt
 
          -- Deep Alloc
          -- See Note: Crushing with higher kinded type vars.
-         | Just (TyConSpec TcConDeepAlloc, [t]) <- takeTyConApps tt
-         -> case takeTyConApps t of
-             Just (TyConBound _ k, ts)
-              | (ks, _)  <- takeKFuns k
-              , length ks == length ts
-              , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
-              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
-
-             _ -> tt
+--         | Just (TyConSpec TcConDeepAlloc, [t]) <- takeTyConApps tt
+--         -> case takeTyConApps t of
+--             Just (TyConBound _ k, ts)
+--              | (ks, _)  <- takeKFuns k
+--              , length ks == length ts
+--              , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
+--              -> crushEffect env $ TSum $ Sum.fromList kEffect effs
+--
+--             _ -> tt
 
          | otherwise
          -> TApp (crushEffect env t1) (crushEffect env t2)
@@ -273,6 +274,8 @@ crushEffect env tt
           $ map (crushEffect env)
           $ Sum.toList ts
 
+
+{- TODO: this old deep effect code has long rotted. ditch it.
 
 -- | If this type has first order kind then wrap with the
 --   appropriate read effect.
@@ -305,7 +308,7 @@ makeDeepAlloc k t
         | isClosureKind k       = Just $ tBot kEffect
         | isEffectKind  k       = Just $ tBot kEffect
         | otherwise             = Nothing
-
+-}
 
 
 {- [Note: Crushing with higher kinded type vars]

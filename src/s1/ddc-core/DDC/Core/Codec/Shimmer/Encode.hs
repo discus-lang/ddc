@@ -460,9 +460,9 @@ takeType c tt
    in   xAps "tf" (map takeFunParam tcsParam ++ [takeType c tResult])
 
  -- Flatten out applications of data type constructor.
- | Just (tc, tsArg)    <- C.takeTyConApps tt
- , C.TyConBound u _ <- tc
- = xAps "tu" (takeBound c u : map (takeType c) tsArg)
+ | Just (tc, tsArg) <- C.takeTyConApps tt
+ , C.TyConBound n   <- tc
+ = xAps "tu" (takeBound c (C.UName n) : map (takeType c) tsArg)
 
  -- Some other type.
  | otherwise
@@ -523,7 +523,9 @@ takeTyCon c tc
         C.TyConKind    cn       -> takeKiCon cn
         C.TyConWitness cn       -> takeTwCon cn
         C.TyConSpec    cn       -> takeTcCon cn
-        C.TyConBound   u _k     -> xApp (xSym "tcb") [takeBound c u]
+
+        -- TODO: elim intermediate Bound
+        C.TyConBound   n        -> xApp (xSym "tcb") [takeBound c (C.UName n)]
         C.TyConExists  i k      -> xApp (xSym "tcy") [xNat i, takeType c k]
 
 

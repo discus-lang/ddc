@@ -434,9 +434,11 @@ fromType c ss
             in  tf
 
         -- Applications of a data type constructor.
+        -- TODO: elim intermediate Bound
         XAps "tu" (ssBound : ssArgs)
-         -> C.tApps (C.TCon $ C.TyConBound (fromBound c ssBound) (C.tBot C.sComp))
-                    (map (fromType c) ssArgs)
+         -> let C.UName n       = fromBound c ssBound
+            in  C.tApps (C.TCon $ C.TyConBound n)
+                        (map (fromType c) ssArgs)
 
         -- Abstraction.
         XAps "tb" [ssBind, ssBody]
@@ -535,8 +537,8 @@ takeTyCon c ss
 
         -- TyConBound
         XApp (XSym "tcb") [ssBound]
-         | Just u       <- takeBound c ssBound
-         -> Just $ C.TyConBound u (C.tBot C.sComp)
+         | Just (C.UName n) <- takeBound c ssBound
+         -> Just $ C.TyConBound n
 
         -- TyConExists
         XApp (XSym "tcy") [XNat n, ssType]

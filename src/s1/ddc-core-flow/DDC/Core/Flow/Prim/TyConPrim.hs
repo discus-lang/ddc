@@ -34,35 +34,29 @@ kindPrimTyCon tc
 
 -- Compounds ------------------------------------------------------------------
 -- | Primitive `Void#` type.
-tVoid   = TCon (TyConBound (UName (NamePrimTyCon PrimTyConVoid)) kData)
-
+tVoid   = TCon (TyConBound (NamePrimTyCon PrimTyConVoid))
 
 -- | Primitive `Bool#` type.
 tBool :: Type Name
-tBool   = TCon (TyConBound (UName (NamePrimTyCon PrimTyConBool)) kData)
-
+tBool   = TCon (TyConBound (NamePrimTyCon PrimTyConBool))
 
 -- | Primitive Nat# type.
 tNat ::  Type Name
-tNat    = TCon (TyConBound (UName (NamePrimTyCon PrimTyConNat)) kData)
-
+tNat    = TCon (TyConBound (NamePrimTyCon PrimTyConNat))
 
 -- | Primitive `Int#` type.
 tInt ::  Type Name
-tInt    = TCon (TyConBound (UName (NamePrimTyCon PrimTyConInt)) kData)
-
+tInt    = TCon (TyConBound (NamePrimTyCon PrimTyConInt))
 
 -- | Primitive `FloatN#` type of the given width.
 tFloat :: Int -> Type Name
 tFloat bits
-        = TCon (TyConBound (UName (NamePrimTyCon (PrimTyConFloat bits))) kData)
-
+        = TCon (TyConBound (NamePrimTyCon (PrimTyConFloat bits)))
 
 -- | Primitive `WordN#` type of the given width.
 tWord :: Int -> Type Name
 tWord bits
-        = TCon (TyConBound (UName (NamePrimTyCon (PrimTyConWord bits))) kData)
-
+        = TCon (TyConBound (NamePrimTyCon (PrimTyConWord bits)))
 
 -- | Primitive @VecN# a@.
 tVec  :: Int -> Type Name -> Type Name
@@ -72,7 +66,4 @@ tVec n tA = TApp (tConPrimTyCon (PrimTyConVec n)) tA
 -- Utils ----------------------------------------------------------------------
 tConPrimTyCon :: PrimTyCon -> Type Name
 tConPrimTyCon tcp
- = let  k       = kindPrimTyCon tcp
-        u       = UName (NamePrimTyCon tcp)
-        tc      = TyConBound u k
-   in   TCon tc
+ = TCon (TyConBound (NamePrimTyCon tcp))
