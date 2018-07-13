@@ -7,7 +7,6 @@ import DDC.Core.Module.Import
 import DDC.Core.Module
 import DDC.Type.Exp
 import Data.IORef
-import Data.Maybe
 import Data.Set                         (Set)
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
@@ -28,13 +27,6 @@ getModuleNames store
         return  $ Map.keys metas
 
 
--- | Get the fully loaded interfaces.
-getInterfaces :: Store n -> IO [Interface n]
-getInterfaces store
- = do   ints    <- readIORef (storeInterfaces store)
-        return $ Map.elems ints
-
-
 ---------------------------------------------------------------------------------------------------
 -- | Lookup a module interface from the store.
 lookupInterface :: Store n -> ModuleName -> IO (Maybe (Interface n))
@@ -44,6 +36,9 @@ lookupInterface store nModule
 
 
 -- | Fetch an interface from the store, or load it if we don't already have it.
+--
+--   TODO: fix API to not duplicate code for ensureInterface.
+--
 fetchInterface
         :: (Ord n, Show n)
         => Store n -> ModuleName
@@ -146,41 +141,6 @@ fetchTransitiveImports store mn
          | otherwise
          = return mnsHave
 
-
-
-
----------------------------------------------------------------------------------------------------
--- | See if a super is defined in any of the given modules, and if so
---   return the module name and super type.
-findImportValue
-        :: Ord n
-        => Store n
-        -> n            -- ^ Name of desired super.
-        -> [ModuleName] -- ^ Names of modules to search.
-        -> IO [ImportValue n (Type n)]
-
-findImportValue store n modNames
- = do   mivs  <- readIORef (storeValuesByName store)
-        return $ mapMaybe
-                (\modName -> do
-                        ivs <- Map.lookup modName mivs
-                        Map.lookup n ivs)
-                modNames
-
-
--- | Build nested maps from a list of triples.
---   Any values with duplicate 'a' and 'b' keys get overwritten by later ones.
-{-
-nestMaps :: (Ord a, Ord b) => [(a, b, c)] -> Map a (Map b c)
-nestMaps xs
- = List.foldl' insert Map.empty xs
- where  insert mpABC (a, b, c)
-         = Map.alter (\entry
-                -> case entry of
-                        Nothing   -> Just (Map.singleton b c)
-                        Just mpBC -> Just (Map.insert b c mpBC))
-                a mpABC
--}
 
 -- Caps -------------------------------------------------------------------------------------------
 {- FIXME: load the caps.

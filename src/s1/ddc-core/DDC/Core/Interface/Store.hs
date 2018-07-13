@@ -1,9 +1,10 @@
 
 module DDC.Core.Interface.Store
         ( -- * Types
-          Store     (..)
-        , Meta      (..)
-        , Interface (..)
+          Store      (..)
+        , Meta       (..)
+        , Interface  (..)
+        , TyConThing (..)
         , Error (..)
 
         -- * Construction
@@ -12,17 +13,14 @@ module DDC.Core.Interface.Store
         -- * Fetching Data
         , getMeta
         , getModuleNames
-        , getInterfaces
         , lookupInterface
         , ensureInterface
         , fetchInterface
         , fetchTransitiveImports
-        , findImportValue       -- TODO: convert fetch fn.
         , importValuesOfStore   -- TODO: ditch this
         , typeSynsOfStore       -- TODO: ditch this
 
         -- * Name Resolution
-        , TyConThing (..)
         , kindOfTyConThing
         , resolveTyConThing
         , resolveDataCtor

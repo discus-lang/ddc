@@ -48,12 +48,11 @@ data Error n
 
 
 ---------------------------------------------------------------------------------------------------
--- | Resolve the name of a type constructor, type synonym or foreign type.
+-- | Resolve the name of a type constructor, type synonym or foreign type,
+--   searching the give set of modules.
 resolveTyConThing
         :: (Ord n, Show n)
-        => Store n         -- ^ Interface store.
-        -> Set ModuleName  -- ^ Modules whose exports we will search for the type thing.
-        -> n               -- ^ Name of desired type thing.
+        => Store n -> Set ModuleName -> n
         -> IO (Either (Error n) (TyConThing n))
 
 resolveTyConThing store mnsImported n
@@ -164,12 +163,11 @@ resolveTyConThing store mnsImported n
 
 
 ---------------------------------------------------------------------------------------------------
--- | Resolve the name of a data constructor.
+-- | Resolve the name of a data constructor,
+--   searching the given set of modules.
 resolveDataCtor
         :: (Ord n, Show n)
-        => Store n         -- ^ Interface store.
-        -> Set ModuleName  -- ^ Modules whose exports we will search for the ctor.
-        -> n               -- ^ Name of desired ctor.
+        => Store n -> Set ModuleName -> n
         -> IO (Either (Error n) (DataCtor n, DataType n))
 
 resolveDataCtor store mnsImported n
@@ -207,15 +205,15 @@ resolveDataCtor store mnsImported n
 
 
 ---------------------------------------------------------------------------------------------------
--- | Resolve the name of a value binding.
+-- | Resolve the name of a value binding,
+--   searching the given set of modules.
 --
 --   This returns the `ImportValue` that could be added to a module
 --   to import the value into scope.
+--
 resolveValueName
         :: (Ord n, Show n)
-        => Store n          -- ^ Interface store.
-        -> Set ModuleName   -- ^ Modules whose exports we will search for the name.
-        -> n                -- ^ Name of desired value.
+        => Store n -> Set ModuleName -> n
         -> IO (Either (Error n) (ImportValue n (Type n)))
 
 resolveValueName store mnsImported n
