@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Core.Codec.Text.Parser.Base
         ( Parser

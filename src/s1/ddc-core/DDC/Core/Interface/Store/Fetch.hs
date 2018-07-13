@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Core.Interface.Store.Fetch where
 import DDC.Core.Interface.Store.Base

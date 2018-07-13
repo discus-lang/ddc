@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Parser for type expressions.
 module DDC.Core.Codec.Text.Parser.Type

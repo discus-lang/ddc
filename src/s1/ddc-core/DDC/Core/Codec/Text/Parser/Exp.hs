@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Core language parser.
 module DDC.Core.Codec.Text.Parser.Exp

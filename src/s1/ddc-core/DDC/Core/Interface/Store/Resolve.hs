@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Name resolution via the interface store.
 module DDC.Core.Interface.Store.Resolve where

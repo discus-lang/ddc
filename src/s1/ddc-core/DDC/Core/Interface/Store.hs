@@ -1,8 +1,10 @@
 
 module DDC.Core.Interface.Store
-        ( Store     (..)
+        ( -- * Types
+          Store     (..)
         , Meta      (..)
         , Interface (..)
+        , Error (..)
 
         -- * Construction
         , new, addInterface
@@ -22,7 +24,6 @@ module DDC.Core.Interface.Store
         -- * Name Resolution
         , TyConThing (..)
         , kindOfTyConThing
-        , Error (..)
         , resolveTyConThing
         , resolveDataCtor
         , resolveValueName)

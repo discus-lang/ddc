@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Build.Platform.Determine
         ( determineHostPlatform

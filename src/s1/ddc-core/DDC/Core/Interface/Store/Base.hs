@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Core.Interface.Store.Base where
 import DDC.Core.Module

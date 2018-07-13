@@ -1,3 +1,5 @@
+{-# OPTIONS_HADDOCK hide #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 module DDC.Build.Platform.Error where
 import DDC.Data.Pretty

@@ -78,7 +78,7 @@ cmdCompileRecursive
 
 cmdCompileRecursive config _bBuildExe store fsPath
  -- Recursively build a source program and link with some extra objects.
- -- | all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
+ --  all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
  = do
         -- Check that all the files exists before we try to compile any.
         -- We particuarly want to check the .o files are there before

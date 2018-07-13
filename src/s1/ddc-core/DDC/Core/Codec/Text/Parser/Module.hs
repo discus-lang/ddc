@@ -1,4 +1,5 @@
-{-# OPTIONS -fno-warn-unused-binds #-}
+{-# OPTIONS_HADDOCK hide #-}
+
 module DDC.Core.Codec.Text.Parser.Module
         (pModule)
 where
