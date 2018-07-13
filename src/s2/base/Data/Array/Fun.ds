@@ -1,8 +1,8 @@
 
 module Data.Array.Fun
 export array_from; array_map; array_map2
-import Data.Array.Fun
 import Data.Array.Base
+import Class.Ord
 where
 
 

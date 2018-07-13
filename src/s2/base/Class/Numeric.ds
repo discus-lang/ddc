@@ -2,7 +2,7 @@
 -- Defines numeric type classes and the names used by the Source Tetra
 -- desugarer to implement infix operators.
 module Class.Numeric
-export 
+export
 {       add; sub; mul; div; rem;
         divMod
 }

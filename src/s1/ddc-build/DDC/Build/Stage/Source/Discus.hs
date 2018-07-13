@@ -48,6 +48,9 @@ import qualified DDC.Core.Check.Close                   as CClose
 -- import qualified Data.List                              as List
 
 ---------------------------------------------------------------------------------------------------
+-- TODO: Waving this structure is a waste of time as we never use different names.
+--       We should instead use an enumeration to list the things we want,
+--       and base the file name on the constructor name.
 data ConfigLoadSourceTetra
         = ConfigLoadSourceTetra
         { configSinkTokens       :: B.Sink      -- ^ Sink for source tokens.
@@ -148,9 +151,10 @@ sourceLoad srcName srcLine str store config
          <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
                 ntsSyn  <- liftIO $ B.typeSynsOfStore store
 
---              liftIO $ putStrLn $ unlines
---                     $ List.sort
---                     $ map (\(n, iv) -> show n ++ " : " ++ (renderIndent $ ppr $ C.typeOfImportValue iv)) ntsTop
+                -- FIXME: giving the elaborator everything in the store means
+                -- it doesn't respect visiblity / module imports,
+                -- so single file compilation willl fail when recursive build would not.
+                -- Eg currently for Data.Text.Escape doesn't have enough imports.
 
                 emm_resolved
                  <- liftIO $ CResolve.resolveModule

@@ -1,6 +1,6 @@
 
 module Data.Numeric.Nat
-export  
+export
 {       eq_Nat;  ord_Nat;
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
         bits_Nat;
@@ -25,7 +25,7 @@ eq_Nat:  Eq Nat
 
 
 -- | Ord dictionary for Nat.
-ord_Nat:  Ord Nat        
+ord_Nat:  Ord Nat
  = Ord  compare'
  where  compare' n1 n2
          | gt# [Nat#] n1 n2     = GT
@@ -39,24 +39,24 @@ add_Nat: Add Nat
 
 
 -- | Sub dictionary for Nat.
-sub_Nat: Sub Nat 
+sub_Nat: Sub Nat
  = Sub (\x y -> if gt# [Nat#] y x
                  then 0
                  else sub# [Nat#] x y)
 
 
 -- | Mul dictionary for Nat.
-mul_Nat: Mul Nat 
+mul_Nat: Mul Nat
  = Mul (\x y -> mul# [Nat#] x y)
 
 
 -- | Div dictionary for Nat.
-div_Nat: Div Nat 
+div_Nat: Div Nat
  = Div (\x y -> div# [Nat#] x y)
 
 
 -- | Rem dictionary for Nat.
-rem_Nat: Rem Nat 
+rem_Nat: Rem Nat
  = Rem (\x y -> rem# [Nat#] x y)
 
 
@@ -71,4 +71,4 @@ bits_Nat: Bits Nat
 
 iterate (f: a -> a) (x: a) (n: Nat): a
  | n == 0       = x
- | otherwise    = iterate f (f x) (n - 1) 
+ | otherwise    = iterate f (f x) (n - 1)

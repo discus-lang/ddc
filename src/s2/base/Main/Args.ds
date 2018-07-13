@@ -8,10 +8,13 @@ export {
 import Data.List
 import Data.Map
 import Data.Either
+import Data.Text
 import Data.Tuple
+import Data.Map.Base
 import System.Posix.Stdlib
 import System.Env
 import System.IO.Console
+import Class.Show
 where
 
 

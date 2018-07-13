@@ -38,10 +38,7 @@ buildWithState state
                  Just job -> goRun job
 
         goRun job
-         = do   -- liftIO  $ do
-                --         putStrLn "* Run"
-                --         putStrLn $ show job
-
+         = do   -- liftIO $ putStrLn $ "* Run " ++ show job
                 bCompleted <- runJob state job
                 if bCompleted
                  then goNext

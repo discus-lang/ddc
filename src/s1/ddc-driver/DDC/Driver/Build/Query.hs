@@ -14,14 +14,14 @@ import qualified Data.Set                       as Set
 
 
 ---------------------------------------------------------------------------------------------------
--- | Check if we already have an interface loaded into the store.
+-- | Check whether we already have an interface loaded into the store.
 queryHaveInterface :: State -> ModuleName -> S Bool
 queryHaveInterface state nModule
  = do   nsModule  <- liftIO $ readIORef $ stateFactHaveInterface state
         return  $ Set.member nModule nsModule
 
 
--- | Check if we already have the set of interfaces loaded into the store.
+-- | Check whether we already have the set of interfaces loaded into the store.
 queryHaveInterfaces :: State -> Set ModuleName -> S Bool
 queryHaveInterfaces state nsModuleWanted
  = do   nsModuleHave  <- liftIO $ readIORef $ stateFactHaveInterface state
@@ -29,7 +29,7 @@ queryHaveInterfaces state nsModuleWanted
 
 
 ---------------------------------------------------------------------------------------------------
--- | Determine the path of a module.
+-- | Determine the file path of a module.
 queryLocateModule :: State -> ModuleName -> S FilePath
 queryLocateModule state nModule
  = do   pathOfModule    <- liftIO $ readIORef $ stateFactPathOfModule state
@@ -41,7 +41,7 @@ queryLocateModule state nModule
                 return path
 
 
--- | Given a driver config, locate the module with the given name.
+-- | Determine the file path of a module, given the driver config.
 locateModuleFromConfig :: Config -> ModuleName -> S FilePath
 locateModuleFromConfig config mname
  = do   -- Automatically look for modules in the base library.
@@ -53,7 +53,6 @@ locateModuleFromConfig config mname
          >>= \case
                 Left  _err -> error "locateModuleFromConfig: cannot find"
                 Right path -> return path
-
 
 
 ---------------------------------------------------------------------------------------------------

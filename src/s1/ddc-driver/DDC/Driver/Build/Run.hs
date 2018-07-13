@@ -45,21 +45,29 @@ runJob state job
 -- | Load a module interface into the store.
 runBuildModuleOfName :: State -> C.ModuleName -> S Bool
 runBuildModuleOfName state nModule
- = do
-        -- See if our build state knows we already have the interface.
-        bHave   <- queryHaveInterface state nModule
-        if bHave
-         then return True
-         else do
-                -- See if the interface is already in the store,
+ = goHave
+ where
+        goHave
+         = do   -- See if our build state knows we already have the interface.
+                bHave   <- queryHaveInterface state nModule
+                if bHave
+                 then   -- TODO: need to check transitive freshness
+                        return True
+
+                 else   goEnsure
+
+        goEnsure
+         = do   -- See if the interface is already in the store,
                 -- or try to load it from a file.
                 bInterfaceInStore
                  <- liftIO $ C.ensureInterface (stateStore state) nModule
+
                 if bInterfaceInStore
                  then do
                         -- Remember we already have it.
                         addFactHaveInterface state nModule
                         return True
+
                  else do
                         -- Try to find the source file for the module,
                         -- and add a new job to build the source.
@@ -72,48 +80,59 @@ runBuildModuleOfName state nModule
 -- | Build a module from a file path.
 runBuildModuleOfPath :: State -> FilePath -> S Bool
 runBuildModuleOfPath state filePath
- = do   -- TODO: if we already know the deps then check those first.
-        (nModule, nsImport)
-         <- queryTasteModuleAtPath state filePath
+ = goCheckInterface
+ where
+        -- Check if we already have the interface of the target module,
+        -- or can load it from a file.
+        goCheckInterface
+         = do   -- TODO: if we already know the deps then check those first.
+                (nModule, nsImport)
+                 <- queryTasteModuleAtPath state filePath
 
-        bHaveDeps
-         <- queryHaveInterfaces state nsImport
+                bInterfaceInStore
+                 <- liftIO $ C.ensureInterface (stateStore state) nModule
 
-        if bHaveDeps
-         then do
-                buildModuleOfPath state filePath
-                addFactHaveInterface state nModule
-                return True
+                if bInterfaceInStore
+                 then do
+                        addFactHaveInterface state nModule
+                        return True
 
-         else do
-                -- TODO: only add modules we know are not in the interface store.
-                addJobs state
-                 $ map JobBuildModuleOfName
-                 $ Set.toList nsImport
+                 else   goCheckDeps nModule nsImport
 
-                return False
+        -- Check if we already have the interfaces of dependent modules,
+        -- or can load them from files.
+        goCheckDeps nModule nsImport
+         = do   bHaveDeps <- queryHaveInterfaces state nsImport
+                if bHaveDeps
+                 then   buildModuleOfPath state filePath nModule
+
+                 else do
+                        -- TODO: only add modules we know are not in the interface store.
+                        fsPath  <- mapM (queryLocateModule state)
+                               $  Set.toList nsImport
+
+                        addJobs state $ map JobBuildModuleOfPath fsPath
+                        return False
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build a source module, deciding what do do based on the file extension.
-buildModuleOfPath :: State -> FilePath -> S Bool
-buildModuleOfPath state filePath
+buildModuleOfPath :: State -> FilePath -> ModuleName -> S Bool
+buildModuleOfPath state filePath nModule
  = do
         liftIO $ putStrLn $ "* Compiling " ++ filePath
-
-        buildDiscusSourceModuleOfPath state filePath
-
+        buildDiscusSourceModuleOfPath state filePath nModule
         return True
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build a Discus source module from a file path.
-buildDiscusSourceModuleOfPath :: State -> FilePath -> S ()
-buildDiscusSourceModuleOfPath state filePath
+buildDiscusSourceModuleOfPath :: State -> FilePath -> ModuleName -> S ()
+buildDiscusSourceModuleOfPath state filePath nModule
  = do
         sSource   <- liftIO $ readFile filePath
 
-        -- TODO: just checking the source take a fraction of the time
+        -- TODO: just checking the source takes a fraction of the time
         -- of building the .o file. Add job timings.
         mmDiscus
          <- withExceptT ErrorBuild
@@ -129,6 +148,7 @@ buildDiscusSourceModuleOfPath state filePath
         -- Store the interface file for later.
         let pathDI = S.replaceExtension filePath "di"
         storeInterfaceOfModule state mmDiscus pathDI
+        addFactHaveInterface state nModule
 
         -- Continue compilation.
         buildDiscusSourceModule state filePath mmDiscus
@@ -166,16 +186,13 @@ storeInterfaceOfModule state mm pathDI
 buildDiscusSourceModule :: State -> FilePath -> C.Module () D.Name -> S ()
 buildDiscusSourceModule state filePath mmDiscus
  = do
-        let config
-                = stateConfig state
-
         let config_runtime
-                = (configRuntime config)
+                = (configRuntime $ stateConfig state)
                 { A.configHookHandleTopLevel
                         = Just (T.pack "Console", T.pack "ddcHookHandleTopLevel") }
 
         let config_driver
-                = config
+                = (stateConfig state)
                 { configRuntime = config_runtime }
 
         mmSalt
@@ -184,6 +201,8 @@ buildDiscusSourceModule state filePath mmDiscus
                 config_driver (SourceFile filePath)
                 [] -- mnsTrans
                 mmDiscus
+
+        mmSalt `deepseq` return ()
 
         buildDiscusSaltModule state filePath mmSalt
 
@@ -197,6 +216,8 @@ buildDiscusSaltModule state filePath mmSalt
         let bBuildExe
                 = S.takeBaseName filePath == "Main"
 
+        -- When building an executable,
+        -- get the list of extra .o files we need to link with.
         mfsLink
          <- if not bBuildExe
                 then return Nothing
@@ -206,14 +227,13 @@ buildDiscusSaltModule state filePath mmSalt
         let bSlotify
                 = not $ S.takeExtension filePath == ".dcs"
 
-        -- TODO: this uses up 80% of the compilation time.
+        -- FIXME: this uses up 80% of the compilation time.
+        -- What's going wrong? How much is the LLVM compiler?
         withExceptT ErrorBuild
          $ G.Salt.saltCompileViaLlvm
                 (stateConfig state)
                 (SourceFile filePath)
-                mfsLink
-                bSlotify
-                bBuildExe
+                mfsLink bSlotify bBuildExe
                 mmSalt
 
         return ()
