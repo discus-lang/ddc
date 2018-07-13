@@ -1,7 +1,8 @@
 
-module DDC.Core.Interface.Error where
-import DDC.Data.Pretty
+module DDC.Core.Interface.Store.Error where
+-- import DDC.Data.Pretty
 
+{-
 
 -- | Problems that can arise when loading an interface file.
 data Error
@@ -59,3 +60,4 @@ instance Pretty Error where
          , indent 2 $ string err ]
 
 
+-}

@@ -8,7 +8,7 @@ import DDC.Driver.Config
 import Control.DeepSeq
 
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Interface                     as C
+import qualified DDC.Core.Interface.Store               as C
 import qualified DDC.Core.Transform.Reannotate          as C.Reannotate
 import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
 

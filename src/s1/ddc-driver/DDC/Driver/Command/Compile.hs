@@ -14,7 +14,7 @@ import qualified DDC.Driver.Build                       as Build
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Core.Interface.Base
+import DDC.Core.Interface.Store
 import qualified DDC.Data.Pretty                        as P
 
 import System.FilePath

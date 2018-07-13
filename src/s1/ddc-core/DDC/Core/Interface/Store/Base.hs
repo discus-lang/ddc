@@ -1,12 +1,9 @@
 
-module DDC.Core.Interface.Base
-        ( Store         (..)
-        , Meta          (..)
-        , Interface     (..))
-where
+module DDC.Core.Interface.Store.Base where
 import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp
+import DDC.Data.Pretty
 import Data.Time.Clock
 import Data.IORef
 import Data.Map         (Map)
@@ -110,6 +107,22 @@ data Meta
         , metaFilePath          :: FilePath
         , metaTimeStamp         :: UTCTime }
         deriving Show
+
+
+instance Pretty Meta where
+        ppr (Meta path stamp name)
+         = hsep [ padL 60 $ string (show path)
+                , padL 30 $ string (show stamp)
+                , string (show name)]
+
+
+-- | Extract metadata from an interface.
+metaOfInterface   :: Interface n -> Meta
+metaOfInterface ii
+        = Meta
+        { metaFilePath   = interfaceFilePath   ii
+        , metaTimeStamp  = interfaceTimeStamp  ii
+        , metaModuleName = interfaceModuleName ii }
 
 
 ---------------------------------------------------------------------------------------------------

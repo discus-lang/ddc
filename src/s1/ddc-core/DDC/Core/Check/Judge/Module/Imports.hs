@@ -2,7 +2,6 @@
 module DDC.Core.Check.Judge.Module.Imports where
 import DDC.Core.Check.Judge.Type.Base           (checkTypeM)
 import DDC.Core.Check.Base
-import DDC.Core.Interface.Store
 import DDC.Core.Module
 import DDC.Control.CheckIO                      (throw)
 import qualified Data.Map.Strict                as Map

@@ -3,9 +3,9 @@ module DDC.Build.Interface.Load
         ( ErrorLoad(..)
         , loadInterface)
 where
-import DDC.Core.Interface
 import DDC.Data.Pretty
 import System.Directory
+import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
 import qualified SMR.Core.Exp                   as SMR
 import qualified SMR.Prim.Name                  as SMR
@@ -42,7 +42,7 @@ loadInterface
         :: (Show n, Ord n)
         => (SMR.Exp Text SMR.Prim -> Maybe n)   -- ^ Function to load a name.
         -> FilePath                             -- ^ Path to load file from.
-        -> IO (Either ErrorLoad (Interface n))
+        -> IO (Either ErrorLoad (Store.Interface n))
 
 loadInterface takeRef filePath
  = do

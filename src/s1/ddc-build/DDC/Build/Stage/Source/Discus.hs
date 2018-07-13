@@ -39,11 +39,11 @@ import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
-import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Expose              as CExpose
 import qualified DDC.Core.Check.Close                   as CClose
+import qualified DDC.Core.Interface.Store               as C
 
 -- import qualified Data.List                              as List
 
@@ -78,7 +78,7 @@ sourceLoad
         :: String                       -- ^ Name of source file.
         -> Int                          -- ^ Line number in source file.
         -> String                       -- ^ Text of source file.
-        -> B.Store CE.Name              -- ^ Interface store.
+        -> C.Store CE.Name              -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC Parser.SourcePos CE.Name) CE.Name)
@@ -148,8 +148,8 @@ sourceLoad srcName srcLine str store config
 
         -- Resolve elaborations in module.
         mm_elaborated
-         <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
-                ntsSyn  <- liftIO $ B.typeSynsOfStore store
+         <- do  ntsTop  <- liftIO $ C.importValuesOfStore store
+                ntsSyn  <- liftIO $ C.typeSynsOfStore store
 
                 -- FIXME: giving the elaborator everything in the store means
                 -- it doesn't respect visiblity / module imports,
@@ -275,7 +275,7 @@ sourceDesugar
 ---------------------------------------------------------------------------------------------------
 -- | Lower desugared source tetra code to core tetra.
 sourceLower
-        :: B.Store CE.Name      -- ^ Interface store.
+        :: C.Store CE.Name      -- ^ Interface store.
         -> B.Sink               -- ^ Sink after conversion to core.
         -> B.Sink               -- ^ Sink after resolving.
         -> B.Sink               -- ^ Sink after spreading.

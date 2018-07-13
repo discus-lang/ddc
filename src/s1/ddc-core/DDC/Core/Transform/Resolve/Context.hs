@@ -12,12 +12,13 @@ import DDC.Core.Transform.Resolve.Base
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Unify
-import DDC.Core.Fragment                (Profile (..))
+import DDC.Core.Fragment                        (Profile (..))
 import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
 import Control.Monad.IO.Class
 import Data.IORef
-import qualified Data.Map.Strict        as Map
+import qualified Data.Map.Strict                as Map
+
 
 -- | Context of resolve process.
 --   TODO: cache resolutions and re-use them.

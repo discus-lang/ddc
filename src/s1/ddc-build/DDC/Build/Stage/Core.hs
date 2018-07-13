@@ -21,7 +21,6 @@ import qualified DDC.Data.SourcePos             as SP
 import qualified DDC.Build.Pipeline.Sink        as B
 import qualified DDC.Build.Pipeline.Error       as B
 
-import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C

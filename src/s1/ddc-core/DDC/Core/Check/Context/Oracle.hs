@@ -20,7 +20,6 @@ import Data.Map                                 (Map)
 import Data.IORef
 import Control.Monad
 import qualified DDC.Core.Interface.Store       as Store
-import qualified DDC.Core.Interface.Resolve     as Store
 import qualified Data.Set                       as Set
 import qualified Data.Map.Strict                as Map
 
@@ -235,7 +234,7 @@ resolveDataCtor oracle n
 --   caching the result in the oracle if we find it.
 resolveValueName
         :: (Ord n, Show n)
-        => Oracle n -> n -> CheckM a n (Maybe (Store.ImportValue n (Type n)))
+        => Oracle n -> n -> CheckM a n (Maybe (ImportValue n (Type n)))
 
 resolveValueName oracle n
  = goCache

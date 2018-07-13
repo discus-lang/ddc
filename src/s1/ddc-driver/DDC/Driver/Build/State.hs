@@ -24,7 +24,7 @@ import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Discus                as Discus
-import qualified DDC.Core.Interface             as Interface
+import qualified DDC.Core.Interface.Store       as C
 import qualified Data.Map.Strict                as Map
 import qualified Data.Set                       as Set
 
@@ -59,7 +59,7 @@ data State
           stateConfig            :: Driver.Config
 
           -- The interface store.
-        , stateStore             :: Interface.Store Discus.Name
+        , stateStore             :: C.Store Discus.Name
 
           -- Jobs we still need to do.
         , stateJobs              :: IORef (Set Job, [Job])
@@ -86,7 +86,7 @@ type S a = ExceptT Error IO a
 -- | Construct a builder state from a driver config and interface store.
 newStateOfStore
         :: Driver.Config
-        -> Interface.Store Discus.Name
+        -> C.Store Discus.Name
         -> S State
 
 newStateOfStore config store

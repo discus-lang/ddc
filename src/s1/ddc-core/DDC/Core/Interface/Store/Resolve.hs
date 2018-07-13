@@ -1,14 +1,7 @@
 
 -- | Name resolution via the interface store.
-module DDC.Core.Interface.Resolve
-        ( TyConThing (..)
-        , Error(..)
-        , kindOfTyConThing
-        , resolveTyConThing
-        , resolveDataCtor
-        , resolveValueName)
-where
-import DDC.Core.Interface.Store
+module DDC.Core.Interface.Store.Resolve where
+import DDC.Core.Interface.Store.Base
 import DDC.Core.Module
 import DDC.Type.DataDef
 import DDC.Type.Exp

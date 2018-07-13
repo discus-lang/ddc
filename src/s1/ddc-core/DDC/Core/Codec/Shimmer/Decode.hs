@@ -5,7 +5,7 @@ module DDC.Core.Codec.Shimmer.Decode
         , takeModuleDecls
         , takeTyCon)
 where
-import qualified DDC.Core.Interface.Base        as C
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Exp.Simple.Compounds  as C
