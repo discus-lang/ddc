@@ -1,50 +1,18 @@
 module DDC.Driver.Command.Compile
-        ( cmdCompileRecursive
-        , cmdCompileRecursiveDS
-        , cmdCompile
-        , getModificationTimeIfExists)
+        ( cmdCompileRecursive)
 where
 import DDC.Driver.Stage
-import Data.Maybe
-import qualified DDC.Driver.Stage.Tetra                 as DE
-import qualified DDC.Driver.Stage.Salt                  as DA
-
 import qualified DDC.Driver.Build                       as Build
-
-import DDC.Driver.Config
-import DDC.Driver.Interface.Source
-import DDC.Build.Pipeline
-import DDC.Core.Interface.Store
-import qualified DDC.Data.Pretty                        as P
 
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import Data.Time.Clock
-import qualified DDC.Build.Interface.Locate             as Locate
-import qualified DDC.Build.Builder                      as Builder
-import qualified DDC.Source.Discus.Module               as SE
-import qualified DDC.Source.Discus.Lexer                as SE
-import qualified DDC.Source.Discus.Parser               as SE
-import qualified DDC.Core.Codec.Text.Lexer              as C
 
-import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
-import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
-
-import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Discus                        as D
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Control.Parser                     as BP
-import qualified DDC.Version                            as Version
-import qualified Data.List                              as List
-import qualified Data.Text                              as T
-
-import qualified DDC.Core.Transform.Reannotate          as CReannotate
-
 import DDC.Core.Interface.Store                         (Store)
-import qualified DDC.Core.Interface.Store               as Store
 
 
 ---------------------------------------------------------------------------------------------------
@@ -97,120 +65,8 @@ cmdCompileRecursive config _bBuildExe store fsPath
 
         return ()
 
---        Build.
 
---        cmdCompileRecursiveDS
---                config bBuildExe fsO store
---                (map JobBuildFilePath fsDS)
---                []
-
---  | otherwise
---  = do   mapM_ (cmdCompile config bBuildExe [] store) fsPath
-
-
----------------------------------------------------------------------------------------------------
--- | Recursively compile @.ds@ source modules into @.o@ files,
---   or load existing interfaces if we have them and the @.o@ file is
---   still fresh.
---
---   * Interface files that are loaded or generated during compilation
---     are added to the interface store.
---
-cmdCompileRecursiveDS
-        :: Config       -- ^ Build driver config.
-        -> Bool         -- ^ Build an executable.
-        -> [FilePath]   -- ^ Extra object files to link with.
-        -> Store D.Name -- ^ Inferface store.
-        -> [Job]        -- ^ Jobs we still need to perform.
-        -> [Job]        -- ^ Jobs that we have already attempted in the context.
-        -> ExceptT String IO ()
-
-cmdCompileRecursiveDS _config _bBuildExe _fsO _store [] _jsBlocked
- = return ()
-
-cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
-
- -- Load a named Discus module, either from an existing interface,
- -- or try to locate and build the source file.
- | JobLoadDiscusModule nModule <- jNext
- = do   -- Try to load an existing interface file.
-        -- This will return True if we find an interface file,
-        --  *and* it is fresh relative to the associated source file.
-        bFoundFresh <- liftIO $ fmap isJust $ Store.fetchInterface store nModule
-        if bFoundFresh
-         then   cmdCompileRecursiveDS config bBuildExe fsO store
-                        jsMore jsBlocked
-         else do
-                -- We can't load the interface, so try to build the module
-                -- from source instead.
-                path <- locateModuleFromConfig config nModule
-                cmdCompileRecursiveDS config bBuildExe fsO store
-                        (JobBuildFilePath path : jsMore) jsBlocked
-
- -- Build
- | JobBuildFilePath filePath <- jNext
- = do
-        liftIO  $ putStr $ unlines
-                [ ""
-                , "* Building " ++ show filePath ]
-
-        -- Check if the requested file exists.
-        exists  <- liftIO $ doesFileExist filePath
-        when (not exists)
-         $ throwE $ "No such file " ++ show filePath
-
-        -- Read in the source file.
-        src             <- liftIO $ readFile filePath
-
-        -- Parse just the header of the module to determine what
-        -- other modules it imports.
-        modNamesNeeded  <- tasteNeeded filePath src
-
-        -- Names of all the modules that we currently have interfaces for.
-        modsNamesHave   <- liftIO $ Store.getModuleNames store
-
-        -- Names of modules that we are missing interfaces for.
-        let missing     = filter (\m -> not $ elem m modsNamesHave)
-                        $ modNamesNeeded
-
-        liftIO  $ putStr $ unlines
-                [ "  - Modules Needed  = " ++ show modNamesNeeded
-                , "  - Modules Have    = " ++ show modsNamesHave
-                , "  - Modules Missing = " ++ show missing ]
-
-        case missing of
-         -- We've already got all the interfaces needed by the
-         -- current module.
-         [] -> do
-                -- Compile the current module.
-                cmdCompile config bBuildExe fsO store filePath
-
-                -- Perform the other jobs that are still queued.
-                cmdCompileRecursiveDS config bBuildExe fsO store jsMore []
-
-         -- We still need to load or compile dependent modules.
-         ms -> do
-                -- Determine filepaths for all dependent modules.
-                let jsDep = map JobLoadDiscusModule ms
-
-                -- Check that we're not on a recursive loop,
-                -- trying to compile a module that's importing itself.
-{-              FIXME: fix the recursive check, note multiple reps
-                       of job moduleName vs filePath
-
-                let fsRec = List.intersect fsMore fsBlocked
-                when (not $ null fsRec)
-                 $ throwE $ unlines
-                 $  [ "Cannot build recursive module" ]
-                 ++ [ "    " ++ show fsRec ]
--}
-                -- Shift the current module to the end of the queue,
-                -- compiling the dependent modules first.
-                cmdCompileRecursiveDS config bBuildExe fsO store
-                        (List.nub $ jsDep ++ jsMore ++ [jNext])
-                        (JobBuildFilePath filePath : jsBlocked)
-
-
+{-
 ---------------------------------------------------------------------------------------------------
 -- | Compile a source module into a @.o@ file.
 --
@@ -356,13 +212,14 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 liftIO $ Store.addInterface store int
 
                 return ()
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- Taste the header of the module to see what other modules it depends on.
 --  Only Source modules can import other modules.
 --  For core modules, all the required information is listed explicitly
 --  in the module itself.
+{-
 tasteNeeded
         :: FilePath             -- ^ Path of module.
         -> String               -- ^ Module source.
@@ -397,9 +254,10 @@ tasteNeeded filePath src
 
  | otherwise
  = return []
-
+-}
 
 ---------------------------------------------------------------------------------------------------
+{-
 -- | Given a driver config, locate the module with the given name.
 locateModuleFromConfig
         :: Config
@@ -440,7 +298,7 @@ dropBody toks = go toks
         go (C.Located _ (C.KA (C.KKeyword C.EWhere)) : _)
                         = []
         go (t : moar)   = t : go moar
-
+-}
 
 -------------------------------------------------------------------------------
 -- | Look for an interface file in the given directory.

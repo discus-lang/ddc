@@ -142,7 +142,7 @@ buildExecutable config store mMain msOther0
                                 Left err -> throwE $ P.renderIndent $ P.ppr err
                                 Right ii -> return ii
 
-                _       <- cmdCompile config True [] store path
+                _       <- cmdCompileRecursive config True store [path]
                 return ()
 
         go (m : more)
@@ -166,5 +166,5 @@ buildModule config store name
                         Left err -> throwE $ P.renderIndent $ P.ppr err
                         Right ii -> return ii
 
-        _       <- cmdCompile config False [] store path
+        _       <- cmdCompileRecursive config False store [path]
         return ()
