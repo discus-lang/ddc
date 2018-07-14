@@ -85,14 +85,21 @@ checkModuleM config mOracle0 mm@ModuleCore{} !mode
                 , mempty ]
 
         -- Tell the oracle to bring bindings from the imported modules into scope.
+        -- The interfaces either need to already be in the store or loadable
+        -- from the file system else error.
+        -- TODO: convert missing interface problems to proper errors.
         mOracle
          <- case mOracle0 of
                 Nothing
                  -> return mOracle0
 
                 Just oracle
-                 -> fmap Just $ liftIO
-                 $  Oracle.importModules oracle $ moduleImportModules mm
+                 -> (liftIO $ Oracle.importModules oracle $ moduleImportModules mm)
+                 >>= \case
+                        Left mnsMissing
+                         -> error $ "checkModuleM: cannot find interfaces for " ++ show mnsMissing
+                        Right oracle'
+                         -> return $ Just oracle'
 
         -- Build the top level kind environment from the module.
         -- We can reuse the same context when checking top level type declarations

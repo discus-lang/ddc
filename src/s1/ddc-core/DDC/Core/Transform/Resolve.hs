@@ -37,8 +37,14 @@ resolveModuleM
 resolveModuleM profile oracle mm
  = do
         -- Make the imported modules visible to the resolver.
-        oracle' <- liftIO $ Oracle.importModules oracle
-                $  moduleImportModules mm
+        -- TODO: promote missing interface file error to proper exception.
+        oracle'
+         <-  (liftIO $ Oracle.importModules oracle $  moduleImportModules mm)
+         >>= \case
+                Left mnsMissing
+                 -> error $ "Cannot find interfaces for "  ++ show mnsMissing
+                Right oracle'
+                 -> return oracle'
 
         -- Build the initial context.
         ctx     <- makeContextOfModule profile oracle' mm
@@ -57,8 +63,7 @@ resolveModuleM profile oracle mm
                 { moduleBody            = xBody'
                 , moduleImportValues
                         =  (moduleImportValues mm)
-                        ++ [ (n, iv) | ((_, n), iv) <- Map.toList ivs ]
-                }
+                        ++ [ (n, iv) | ((_, n), iv) <- Map.toList ivs ] }
 
 
 -------------------------------------------------------------------------------

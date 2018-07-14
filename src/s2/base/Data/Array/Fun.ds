@@ -2,6 +2,7 @@
 module Data.Array.Fun
 export array_from; array_map; array_map2
 import Data.Array.Base
+import Data.Numeric.Nat
 import Class.Ord
 where
 

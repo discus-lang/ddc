@@ -6,6 +6,7 @@ import DDC.Driver.Interface.Source
 import DDC.Driver.Config
 
 import Control.DeepSeq
+import Data.Maybe
 
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Interface.Store               as C
@@ -67,7 +68,7 @@ runBuildModuleOfName state nModule
          = do   -- See if the interface is already in the store,
                 -- or try to load it from a file.
                 bInterfaceInStore
-                 <- liftIO $ C.ensureInterface (stateStore state) nModule
+                 <- liftIO $ fmap isJust $ C.fetchInterface (stateStore state) nModule
 
                 if bInterfaceInStore
                  then do
@@ -97,7 +98,7 @@ runBuildModuleOfPath state filePath
                  <- queryTasteModuleAtPath state filePath
 
                 bInterfaceInStore
-                 <- liftIO $ C.ensureInterface (stateStore state) nModule
+                 <- liftIO $ fmap isJust $ C.fetchInterface (stateStore state) nModule
 
                 if (bInterfaceInStore && (not $ nModule == C.ModuleName ["Main"]))
                  then do

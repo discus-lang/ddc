@@ -33,37 +33,6 @@ lookupInterface store nModule
         return  $ Map.lookup nModule ints
 
 
--- | Fetch an interface from the store, or load it if we don't already have it.
---
---   TODO: fix API to not duplicate code for ensureInterface.
---
-fetchInterface
-        :: (Ord n, Show n)
-        => Store n -> ModuleName
-        -> IO (Maybe (Interface n))
-
-fetchInterface store nModule
- | Just load    <- storeLoadInterface store
- = let
-        goCheck
-         = do   iis     <- readIORef $ storeInterfaces store
-                case Map.lookup nModule iis of
-                 Just ii -> return (Just ii)
-                 Nothing -> goLoad
-
-        goLoad
-         = do   result  <- load nModule
-                case result of
-                 Nothing  -> return Nothing
-                 Just ii
-                  -> do addInterface store ii
-                        return (Just ii)
-   in   goCheck
-
- | otherwise
- = return Nothing
-
-
 -- | Try to find and load the interface file for the given module into the store,
 --   or do nothing if we already have it.
 
@@ -76,30 +45,33 @@ fetchInterface store nModule
 --   modules also make sure to avoid restatting the same module over and over.
 --   The top level compile driver used to do this job.
 --
-ensureInterface
+fetchInterface
         :: (Ord n, Show n)
-        => Store n -> ModuleName -> IO Bool
+        => Store n -> ModuleName
+        -> IO (Maybe (Interface n))
 
-ensureInterface store nModule
- | Just load   <- storeLoadInterface store
+fetchInterface store nModule
+ | Just load    <- storeLoadInterface store
  = let
-        goCheckMeta
-         = do   meta <- readIORef $ storeMeta store
-                case Map.lookup nModule meta of
-                 Just _  -> return True
+        -- Check if we've already got it in the store.
+        goCheck
+         = do   iis     <- readIORef $ storeInterfaces store
+                case Map.lookup nModule iis of
+                 Just ii -> return (Just ii)
                  Nothing -> goLoad
 
+        -- Try to load it from the file system.
         goLoad
-         = do   result <- load nModule
+         = do   result  <- load nModule
                 case result of
-                 Nothing -> return False
+                 Nothing  -> return Nothing
                  Just ii
                   -> do addInterface store ii
-                        return True
-   in   goCheckMeta
+                        return (Just ii)
+   in   goCheck
 
  | otherwise
- = return False
+ = return Nothing
 
 
 ---------------------------------------------------------------------------------------------------

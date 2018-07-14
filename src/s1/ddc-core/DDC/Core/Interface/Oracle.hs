@@ -16,7 +16,6 @@ import DDC.Type.Exp
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import Data.IORef
-import Control.Monad
 import qualified DDC.Core.Interface.Store       as Store
 import qualified Data.Set                       as Set
 import qualified Data.Map.Strict                as Map
@@ -94,23 +93,25 @@ newOracleOfStore store
 
 ---------------------------------------------------------------------------------------------------
 -- | Import bindings for some modules into the current scope.
---
---   FIXME: force load these if they're not already there.
-importModules :: (Ord n, Show n) => Oracle n -> [ModuleName] -> IO (Oracle n)
+importModules
+        :: (Ord n, Show n)
+        => Oracle n -> [ModuleName] -> IO (Either [ModuleName] (Oracle n))
+
 importModules oracle mns
  = do
-        -- Check that the store already contains the interface files we need.
-        -- This should have been guaranteed by the compilation driver.
-        bs <- mapM (Store.ensureInterface (oracleStore oracle)) mns
+        let fetch mn
+                = Store.fetchInterface (oracleStore oracle) mn
+                >>= \case
+                        Nothing -> return $ Left mn
+                        Just ii -> return $ Right ii
 
-        -- FIXME: convert hard errors to internal errors.
-        when (not $ and bs)
-         $ error "ddc-core.Oracle.importModules: store did not load the interfaces we wanted"
-
-        return $ oracle {
-                oracleImportedModules
-                 = Set.union (Set.fromList mns)
-                 $ oracleImportedModules oracle }
+        rs <- mapM fetch mns
+        let mnsMissing = [ mn | Left mn <- rs ]
+        case sequence rs of
+         Left _     -> return $ Left mnsMissing
+         Right _iis -> return $ Right $ oracle
+                     { oracleImportedModules = Set.union (Set.fromList mns)
+                                             $ oracleImportedModules oracle }
 
 
 ---------------------------------------------------------------------------------------------------

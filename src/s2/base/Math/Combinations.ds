@@ -4,6 +4,7 @@ export  { factorial
         ; choose; chooseMany }
 import Data.Numeric.Nat
 import Data.List
+import Class.Numeric
 where
 
 
@@ -21,7 +22,7 @@ factorial (n: Nat): Nat
 ---
 --   Note that the textbook definition of this is,
 --     div (factorial n) ( factorial (n - 1) * factorial r )
---   but we factor out the (factorial (n - 1)) term beforehand to 
+--   but we factor out the (factorial (n - 1)) term beforehand to
 --   make it easier to compute.
 --
 choose (n r: Nat): Nat

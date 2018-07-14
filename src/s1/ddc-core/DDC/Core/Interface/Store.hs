@@ -14,7 +14,6 @@ module DDC.Core.Interface.Store
         , getMeta
         , getModuleNames
         , lookupInterface
-        , ensureInterface
         , fetchInterface
         , fetchTransitiveImports
 

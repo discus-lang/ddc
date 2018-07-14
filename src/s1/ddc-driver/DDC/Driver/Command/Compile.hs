@@ -1,11 +1,11 @@
 module DDC.Driver.Command.Compile
         ( cmdCompileRecursive
         , cmdCompileRecursiveDS
---        , cmdLoadOrCompile
         , cmdCompile
         , getModificationTimeIfExists)
 where
 import DDC.Driver.Stage
+import Data.Maybe
 import qualified DDC.Driver.Stage.Tetra                 as DE
 import qualified DDC.Driver.Stage.Salt                  as DA
 
@@ -28,12 +28,10 @@ import qualified DDC.Build.Builder                      as Builder
 import qualified DDC.Source.Discus.Module               as SE
 import qualified DDC.Source.Discus.Lexer                as SE
 import qualified DDC.Source.Discus.Parser               as SE
--- import qualified DDC.Core.Codec.Text.Pretty             as P
 import qualified DDC.Core.Codec.Text.Lexer              as C
 
 import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
 import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
--- import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as D.Decode
 
 import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Discus                        as D
@@ -46,7 +44,6 @@ import qualified Data.Text                              as T
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
 
 import DDC.Core.Interface.Store                         (Store)
--- import qualified DDC.Core.Codec.Shimmer.Encode          as IntShimmer
 import qualified DDC.Core.Interface.Store               as Store
 
 
@@ -139,7 +136,7 @@ cmdCompileRecursiveDS config bBuildExe fsO store (jNext : jsMore) jsBlocked
  = do   -- Try to load an existing interface file.
         -- This will return True if we find an interface file,
         --  *and* it is fresh relative to the associated source file.
-        bFoundFresh <- liftIO $ Store.ensureInterface store nModule
+        bFoundFresh <- liftIO $ fmap isJust $ Store.fetchInterface store nModule
         if bFoundFresh
          then   cmdCompileRecursiveDS config bBuildExe fsO store
                         jsMore jsBlocked
