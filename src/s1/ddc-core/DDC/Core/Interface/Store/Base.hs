@@ -47,6 +47,10 @@ data Store n
           -- | Map of value names to modules that define one of that name.
         , storeValueNames           :: IORef (Map n (Set ModuleName))
 
+          -- | Map of type constructor names to modules that define a value that
+          --   produces a type of that constructor.
+        , storeValueTyCons          :: IORef (Map n (Set ModuleName))
+
           -- Module Exports --------------------
           -- | Map of type names that a module exports.
         , storeExportTypesOfModule  :: IORef (Map ModuleName (Set n))

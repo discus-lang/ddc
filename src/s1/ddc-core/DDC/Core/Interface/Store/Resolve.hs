@@ -212,15 +212,15 @@ resolveDataCtor store mnsImported n
 --   to import the value into scope.
 --
 resolveValueName
-        :: (Ord n, Show n)
+        :: Ord n
         => Store n -> Set ModuleName -> n
         -> IO (Either (Error n) (ImportValue n (Type n)))
 
 resolveValueName store mnsImported n
  = goModules
  where
-        -- Use the store index to determine which modules visibly expose a
-        -- data ctor with the desired name. If multiple modules do then
+        -- Use the store index to determine which modules visibly expose
+        -- a data ctor with the desired name. If multiple modules do then
         -- the reference is ambiguous, and we produce an error.
         goModules
          = do   mnsWithValue    <- readIORef $ storeValueNames store
@@ -238,7 +238,50 @@ resolveValueName store mnsImported n
                  <- readIORef $ storeValuesByName store
 
                 return  $ squashImportValues
-                        $ mapMaybe (\mn -> Map.lookup mn valuesByName >>= Map.lookup n)
+                        $ mapMaybe (\mn ->  Map.lookup mn valuesByName
+                                        >>= Map.lookup n)
+                        $ Set.toList mns
+
+        squashImportValues ivs
+         = case ivs of
+                []        -> []
+                iv : ivs' -> iv : filter (not . isSameImportValue iv) ivs'
+
+        isSameImportValue iv1 iv2
+         =  (importValueModuleName iv1 == importValueModuleName iv2)
+         && (importValueModuleVar  iv1 == importValueModuleVar  iv2)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Resolve the list of values that produce a result with a type which
+--   is build by a partiular constructor. This is used when resolving
+--   elaborations, when we need to find functions that can produce a
+--   value of the required type.
+--
+resolveValueByResultTyCon
+        :: Ord n
+        => Store n -> Set ModuleName -> n
+        -> IO [ImportValue n (Type n)]
+
+resolveValueByResultTyCon store mnsImported nTyCon
+ = goModules
+ where
+        -- Use the store index to determine which modules visibly expose
+        -- a value that builds a result of the required type.
+        goModules
+         = do   mnsWithTyCon    <- readIORef $ storeValueTyCons store
+                let mnsAvail    = fromMaybe Set.empty $ Map.lookup nTyCon mnsWithTyCon
+                let mnsVisible  = Set.intersection mnsAvail mnsImported
+                ivs             <- goGetImportValues mnsVisible
+                return ivs
+
+        goGetImportValues mns
+         = do   valuesByResultTyCon
+                 <- readIORef $ storeValuesByResultTyCon store
+
+                return  $ squashImportValues $ concat
+                        $ mapMaybe (\mn ->  Map.lookup mn valuesByResultTyCon
+                                        >>= Map.lookup nTyCon)
                         $ Set.toList mns
 
         squashImportValues ivs

@@ -24,7 +24,8 @@ module DDC.Core.Interface.Store
         , kindOfTyConThing
         , resolveTyConThing
         , resolveDataCtor
-        , resolveValueName)
+        , resolveValueName
+        , resolveValueByResultTyCon)
 where
 import DDC.Core.Interface.Store.Base
 import DDC.Core.Interface.Store.Construct

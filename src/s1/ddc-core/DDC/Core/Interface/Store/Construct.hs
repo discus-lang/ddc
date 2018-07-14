@@ -26,6 +26,7 @@ new
         refDataCtorNames                <- newIORef Map.empty
         refCapNames                     <- newIORef Map.empty
         refValueNames                   <- newIORef Map.empty
+        refValueTyCons                  <- newIORef Map.empty
 
         -- Module Exports
         refExportTypesOfModule          <- newIORef Map.empty
@@ -52,6 +53,7 @@ new
          , storeDataCtorNames           = refDataCtorNames
          , storeCapNames                = refCapNames
          , storeValueNames              = refValueNames
+         , storeValueTyCons             = refValueTyCons
 
          -- Module Exports
          , storeExportTypesOfModule     = refExportTypesOfModule
@@ -140,6 +142,13 @@ addInterface store ii
                 [ names
                 , Map.fromList  [ (n, Set.singleton nModule)
                                 | n <- Map.keys importValues ] ]
+
+        -- Update value result tycons index.
+        modifyIORef' (storeValueTyCons store) $ \names
+         -> Map.unionsWith Set.union
+                [ names
+                , Map.fromList  [ (n, Set.singleton nModule)
+                                | n <- Map.keys importValuesTC ]]
 
         return ()
 
