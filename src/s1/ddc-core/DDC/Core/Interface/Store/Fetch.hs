@@ -3,9 +3,7 @@
 module DDC.Core.Interface.Store.Fetch where
 import DDC.Core.Interface.Store.Base
 import DDC.Core.Interface.Store.Construct
-import DDC.Core.Module.Import
 import DDC.Core.Module
-import DDC.Type.Exp
 import Data.IORef
 import Data.Set                         (Set)
 import qualified Data.Map.Strict        as Map
@@ -150,26 +148,4 @@ importCapsOfInterface
 = let
         importOfExport
 -}
-
-
-
----------------------------------------------------------------------------------------------------
--- | Get a list of types of all top-level supers in all modules in the store.
---
---   TODO: multiple conflicting names get smashed together,
---   this is used by the elaborate pass which needs to be redone to use
---   the store directly.
---
-importValuesOfStore :: (Ord n, Show n) => Store n -> IO [(n, ImportValue n (Type n))]
-importValuesOfStore store
- = do   mnns       <- readIORef $ storeValuesByName store
-        let mns    =  Map.toList $ Map.unions $ Map.elems mnns
-        return mns
-
-
-typeSynsOfStore :: (Ord n, Show n) => Store n -> IO [(n, Type n)]
-typeSynsOfStore store
- = do   mnns       <- readIORef $ storeTypeSynsByTyCon store
-        let mns    =  Map.toList $ Map.map snd $ Map.unions $ Map.elems mnns
-        return mns
 

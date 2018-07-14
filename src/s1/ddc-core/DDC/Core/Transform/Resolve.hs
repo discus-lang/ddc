@@ -4,68 +4,48 @@ module DDC.Core.Transform.Resolve
         ( resolveModule
         , Error (..))
 where
+import DDC.Core.Transform.Resolve.Context
+import DDC.Core.Transform.Resolve.Build
+import DDC.Core.Transform.Resolve.Base
 import DDC.Core.Interface.Oracle                (Oracle)
 import qualified DDC.Core.Interface.Oracle      as Oracle
-import DDC.Core.Transform.Resolve.Context
-import DDC.Core.Transform.Resolve.Base
 import DDC.Core.Fragment                        (Profile (..))
 import DDC.Core.Codec.Text.Pretty               hiding ((<$>))
 import Control.Monad.IO.Class
-import Data.IORef
-import qualified Data.Map                       as Map
 
 
 -- | Resolve elaborations in a module.
 resolveModule
         :: (Ord n, Pretty n, Show n)
-        => Profile n                      -- ^ Language profile.
-        -> Oracle n                       -- ^ Interface oracle.
-        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
-        -> [(n, Type n)]                  -- ^ Top-level type synonyms from imported modules.
-        -> Module a n                     -- ^ Module to resolve elaborations in.
+        => Profile n -> Oracle n -> Module a n
         -> IO (Either (Error a n) (Module a n))
 
-resolveModule profile oracle ntsTop ntsSyn mm
- = runExceptT $ resolveModuleM profile oracle ntsTop ntsSyn mm
+resolveModule profile oracle mm
+ = runExceptT $ resolveModuleM profile oracle mm
 
 
 -- | Resolve elaborations in a module.
 resolveModuleM
         :: (Ord n, Pretty n, Show n)
-        => Profile n                      -- ^ Language profile.
-        -> Oracle n                       -- ^ Interface oracle
-        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
-        -> [(n, Type n)]                  -- ^ Top-level type synonyms from imported modules.
-        -> Module a n                     -- ^ Module to resolve elaborations in.
+        => Profile n -> Oracle n -> Module a n
         -> S a n (Module a n)
 
-resolveModuleM profile oracle ntsTop ntsSyn mm
+resolveModuleM profile oracle mm
  = do
         -- Make the imported modules visible to the resolver.
         oracle' <- liftIO $ Oracle.importModules oracle
                 $  moduleImportModules mm
 
-        -- Build the initial context,
-        --   which also gathers up the set of top-level declarations
-        --   available in other modules.
-        ctx     <- makeContextOfModule profile oracle' ntsTop ntsSyn mm
+        -- Build the initial context.
+        ctx     <- makeContextOfModule profile oracle' mm
 
         -- Decend into the expression.
+        --  We push local bindings onto the context as we go,
+        --  and resolve elaborations using all bindings currently in scope.
         xBody'  <- resolveExp ctx (moduleBody mm)
 
-        -- Read back the list of bindings that we've used from other modules.
-        --   The module that we've processed may not have import declarations
-        --   for all of these bindings, so we add and de-duplicate them here.
-        topUsed <- liftIO $ readIORef (contextTopUsed ctx)
-        let importValues'
-                = Map.toList
-                $ Map.union (Map.fromList (moduleImportValues mm))
-                            (Map.fromList topUsed)
-
         -- Return the resolved module.
-        return  $ mm
-                { moduleBody            = xBody'
-                , moduleImportValues    = importValues' }
+        return  $ mm { moduleBody = xBody' }
 
 
 -- | Resolve elaborations in an expression.

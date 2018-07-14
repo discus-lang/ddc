@@ -147,9 +147,7 @@ sourceLoad srcName srcLine str store config
 
         -- Resolve elaborations in module.
         mm_elaborated
-         <- do  ntsTop  <- liftIO $ C.importValuesOfStore store
-                ntsSyn  <- liftIO $ C.typeSynsOfStore store
-
+         <- do
                 -- FIXME: giving the elaborator everything in the store means
                 -- it doesn't respect visiblity / module imports,
                 -- so single file compilation willl fail when recursive build would not.
@@ -158,7 +156,7 @@ sourceLoad srcName srcLine str store config
                 emm_resolved
                  <- liftIO $ CResolve.resolveModule
                         (C.fragmentProfile BE.fragment) oracle
-                        ntsTop ntsSyn mm_checked
+                        mm_checked
 
                 mm_resolved
                  <- case emm_resolved of

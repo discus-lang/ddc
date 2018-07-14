@@ -24,7 +24,6 @@ import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Codec.Text.Parser     as C
 import qualified DDC.Core.Codec.Text.Lexer      as C
 import qualified DDC.Core.Simplifier            as C
@@ -187,23 +186,18 @@ coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 -- | Resolve elaborations in a core module.
 coreResolve
         :: (Ord n, Show n, Pretty n)
-        => String                               -- ^ Name of compiler stage.
-        -> C.Fragment n arr                     -- ^ Language fragment to use.
-        -> C.Oracle n                           -- ^ Interface oracle.
-        -> IO [(n, C.ImportValue n (C.Type n))] -- ^ Top level env from other modules.
-        -> IO [(n, C.Type n)]                   -- ^ Top-level syns from other moduels.
+        => String                       -- ^ Name of compiler stage.
+        -> C.Fragment n arr             -- ^ Language fragment to use.
+        -> C.Oracle n                   -- ^ Interface oracle.
         -> C.Module a n
         -> ExceptT [B.Error] IO (C.Module a n)
 
-coreResolve !stage !fragment !oracle !makeNtsTop !makeNtsSyn !mm
+coreResolve !stage !fragment !oracle !mm
  = {-# SCC "coreResolve" #-}
    do
-        ntsTop  <- liftIO $ makeNtsTop
-        ntsSyn  <- liftIO $ makeNtsSyn
-
         res     <- liftIO $ CResolve.resolveModule
                         (C.fragmentProfile fragment) oracle
-                        ntsTop ntsSyn mm
+                        mm
 
         case res of
          Left  err  -> throwE [B.ErrorLint stage "PipeCoreResolve" err]

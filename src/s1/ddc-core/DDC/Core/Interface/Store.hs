@@ -17,8 +17,6 @@ module DDC.Core.Interface.Store
         , ensureInterface
         , fetchInterface
         , fetchTransitiveImports
-        , importValuesOfStore   -- TODO: ditch this
-        , typeSynsOfStore       -- TODO: ditch this
 
         -- * Name Resolution
         , kindOfTyConThing
