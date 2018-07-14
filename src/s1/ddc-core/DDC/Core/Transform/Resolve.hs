@@ -5,6 +5,7 @@ module DDC.Core.Transform.Resolve
         , Error (..))
 where
 import DDC.Core.Interface.Oracle                (Oracle)
+import qualified DDC.Core.Interface.Oracle      as Oracle
 import DDC.Core.Transform.Resolve.Context
 import DDC.Core.Transform.Resolve.Base
 import DDC.Core.Fragment                        (Profile (..))
@@ -40,10 +41,14 @@ resolveModuleM
 
 resolveModuleM profile oracle ntsTop ntsSyn mm
  = do
+        -- Make the imported modules visible to the resolver.
+        oracle' <- liftIO $ Oracle.importModules oracle
+                $  moduleImportModules mm
+
         -- Build the initial context,
         --   which also gathers up the set of top-level declarations
         --   available in other modules.
-        ctx     <- makeContextOfModule profile oracle ntsTop ntsSyn mm
+        ctx     <- makeContextOfModule profile oracle' ntsTop ntsSyn mm
 
         -- Decend into the expression.
         xBody'  <- resolveExp ctx (moduleBody mm)
@@ -76,32 +81,27 @@ resolveExp !ctx xx
          -> contextResolve a ctx tWant
 
         -- Boilerplate traversal.
-        XPrim{}         -> return xx
-        XCon{}          -> return xx
-        XVar{}          -> return xx
+        XPrim{} -> return xx
+        XCon{}  -> return xx
+        XVar{}  -> return xx
 
         XAbs  a p x
-         -> XAbs  a p
-                <$> resolveExp (contextPushParam p ctx) x
+         -> XAbs  a p <$> resolveExp (contextPushParam p ctx) x
 
         XApp  a x1 a2
-         -> XApp  a
-                <$> resolveExp ctx x1
-                <*> resolveArg ctx a2
+         -> XApp  a   <$> resolveExp ctx x1
+                      <*> resolveArg ctx a2
 
         XLet  a lts x
-         -> XLet  a
-                <$> resolveLts ctx lts
-                <*> resolveExp (contextPushLets lts ctx) x
+         -> XLet  a   <$> resolveLts ctx lts
+                      <*> resolveExp (contextPushLets lts ctx) x
 
         XCase a x alts
-         -> XCase a
-                <$> resolveExp ctx x
-                <*> mapM (resolveAlt ctx) alts
+         -> XCase a   <$> resolveExp ctx x
+                      <*> mapM (resolveAlt ctx) alts
 
         XCast a c x
-         -> XCast a c
-                <$> resolveExp ctx x
+         -> XCast a c <$> resolveExp ctx x
 
 
 -- | Resolve elaborations in an argument.
