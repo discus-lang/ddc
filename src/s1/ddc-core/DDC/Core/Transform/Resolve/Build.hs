@@ -7,145 +7,137 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Unify
 import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
--- import qualified Data.Map.Strict                as Map
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Interface.Oracle      as Oracle
+import qualified DDC.Core.Interface.Store       as Store
 
 
-
--- | Try to build a term of the given type,
---   out of the terms available in the context.
-contextResolve
+-------------------------------------------------------------------------------
+-- | Try to build a term of the given type, out of the terms available
+--   in the context. If in doing so we use values in imported modules
+--   then also return their import specifications. These can then be
+--   added as imports to the enclosing module.
+--
+--   TODO: Fail if multiple bindings would match.
+        --
+buildFromContext
         :: (Ord n, Pretty n, Show n)
-        => a
-        -> Context n
-        -> Type n
-        -> S a n (Exp a n)
+        => a -> Context n -> Type n
+        -> IO (Maybe (Exp a n, [ImportValue n (Type n)]))
 
-contextResolve !a !ctx !tWant
- = searchStack (contextBinds ctx)
+buildFromContext !a !ctx !tWant
+ = searchBinds (contextBinds ctx)
  where
-        -- Search the module-local binding stack first.
-        --  If that doesn't work then search the top-level namespace.
-        searchStack []
-         = searchImports [] -- (contextTop ctx)
+        ---------------------------------------------------
+        -- Search the groups of local bindings stack first.
+        -- If that doesn't work then search the top-level namespace.
+        searchBinds []
+         = searchImports
 
-        searchStack (g : gs)
-         = do   result <- searchGroup g
-                case result of
-                 Nothing -> searchStack gs
-                 Just x  -> return x
+        searchBinds (g : gs)
+         = searchGroup g
+         >>= \case
+                Nothing -> searchBinds gs
+                Just x  -> return $ Just x
 
-
+        ---------------------------------------------------
+        -- Search a single binding group.
         searchGroup []
          = return Nothing
 
         searchGroup ((nBind, tBind) : nts)
-         = do   let match = matchBind a (contextEnvT ctx) tWant nBind tBind
-                case match of
-                 Nothing
-                  -> searchGroup nts
+         = case buildFromBind a (contextEnvT ctx) tWant nBind tBind of
+                Nothing            -> searchGroup nts
+                Just (xFun, tsArg) -> buildArgs [] xFun tsArg
 
-                 Just (xx', tsArg)
-                  -> do
-                        xsArg   <- mapM (contextResolve a ctx) tsArg
-                        return  $ Just
-                                $ xApps a xx'
-                                $ map (RImplicit . RTerm) xsArg
-
-
+        ---------------------------------------------------
         -- Search the top-level imported things.
-        searchImports []
-         = throwE $ ErrorCannotResolve tWant
+        searchImports
+         | Just nTyCon <- resultTyConNameOfType tWant
+         =   searchImportValues
+         =<< Store.resolveValueByResultTyCon
+                (Oracle.oracleStore $ contextOracle ctx)
+                (Oracle.oracleImportedModules $ contextOracle ctx)
+                nTyCon
 
-        searchImports ((nBind, i) : nisMore)
-         = do
-                let tBind
-                        = case i of
-                           ImportValueModule{} -> importValueModuleType i
-                           ImportValueSea{}    -> importValueSeaType    i
+         | otherwise
+         = return Nothing
 
-                let match = matchBind a (contextEnvT ctx) tWant nBind tBind
-                case match of
-                 Nothing
-                  -> searchImports nisMore
+        ---------------------------------------------------
+        searchImportValues []
+         = return Nothing
 
-                 Just (xx', tsArg)
-                  -> do xsArg   <- mapM (contextResolve a ctx) tsArg
-                        return  $ xApps a xx'
-                                $ map (RImplicit . RTerm) xsArg
+        searchImportValues (iv : ivsRest)
+         = case buildFromBind a
+                  (contextEnvT ctx) tWant
+                  (C.importValueModuleVar iv)
+                  (C.typeOfImportValue iv)
+            of  Nothing            -> searchImportValues ivsRest
+                Just (xFun, tsArg) -> buildArgs [iv] xFun tsArg
+
+        ---------------------------------------------------
+        buildArgs ivs xFun tsArg
+         =  ( fmap (fmap unzip . sequence)
+            $ mapM (buildFromContext a ctx) tsArg)
+         >>= \case
+                Nothing -> return Nothing
+                Just (xsArg, ivss)
+                 -> return $ Just
+                        ( xApps a xFun $ map (RImplicit . RTerm) xsArg
+                        , ivs ++ concat ivss)
 
 
-matchBind
+-------------------------------------------------------------------------------
+-- | Try to build a value of the wanted type by instantiating the given
+--   binding. If this succeeds then we might still need to resolve values
+--   for its implicit parameters.
+buildFromBind
         :: Ord n
         => a
-        -> EnvT n               -- ^ Type environment.
-        -> Type n               -- ^ Wanted type.
-        -> n                    -- ^ Name of binding in environment.
-        -> Type n               -- ^ Type of binding.
+        -> EnvT n       -- ^ Type environment.
+        -> Type n       -- ^ Wanted type.
+        -> n            -- ^ Name of binding in environment.
+        -> Type n       -- ^ Type of binding.
         -> Maybe (Exp a n, [Type n])
 
-matchBind a envt tWant' nBind  tBind'
- = do
-        let match = matchScheme envt tWant' tBind'
-        case match of
-         Nothing
-          ->    Nothing
+buildFromBind a envt tWant nBind tBind
+ -- The type of this binding is exactly what we wanted
+ | equivT envt tWant tBind
+ = Just (XVar a (UName nBind), [])
 
-         Just (tsInst, tsArg)
-          ->    Just    ( xApps a (XVar a (UName nBind)) $ map RType tsInst
-                        , tsArg)
-
-
--- | Match a wanted type against an available scheme.
-matchScheme
-        :: Ord n
-        => EnvT n               -- ^ Type environment.
-        -> Type n               -- ^ Wanted type.
-        -> Type n               -- ^ Available scheme.
-        -> Maybe ( [Type n]     --   Type  arguments to instantiate scheme.
-                 , [Type n])    --   Types of more implicit term arguments.
-
-matchScheme envt tWanted tBind
- -- The type of this binding is exactly what we want.
- | equivT envt tWanted tBind
- = Just ([], [])
-
- -- Check if the binding
+ -- See if we can instantiate to produce a value of the wanted type.
  | otherwise
- = let
-        -- Split off any type parameters.
+ = let  -- Split off any type parameters.
         (bsParamType, _tBody)
          = case takeTForalls tBind of
                 Just (bs, t)    -> (bs, t)
                 Nothing         -> ([], tBind)
 
         -- Instantiate the type with new existentials.
-        nArgs   = length bsParamType
         tsArgExists
-                = [ TCon (TyConExists i k)
-                  | i <- [0..]
-                  | k <- map typeOfBind bsParamType]
+         = [ TCon (TyConExists i k)
+           | i <- [0..]
+           | k <- map typeOfBind bsParamType]
 
         Just tBind_inst
-                = instantiateTs tBind tsArgExists
+         = instantiateTs tBind tsArgExists
 
         -- Split of any implicit value parameters.
+        -- We might be able to build expressions for these separately.
         (tsParamTerm, tResult)
-                = takeTFunImplicits tBind_inst
+         = takeTFunImplicits tBind_inst
 
-        result  = unifyExistsRight envt tWanted tResult
+        -- Try to unify the wanted type with the instantiated result
+        -- type of the current binding.
+   in case unifyExistsRight envt tWant tResult of
+        -- Unification succeeded with the given constraints.
+        Just cs
+         | Just tsArgInst
+                 <- sequence $ map (\i -> Prelude.lookup i cs)
+                 $  [0 .. (length bsParamType) - 1]
+         -> Just ( xApps a (XVar a (UName nBind)) $ map RType tsArgInst
+                 , map (substituteExistsT cs) tsParamTerm)
 
-        -- Try to unify the wanted type with the result we
-        -- would get if we applied the function.
-   in   case result of
-         Just cs
-          |  Just tsArgInst
-                <- sequence
-                $  map (\i -> Prelude.lookup i cs)
-                $ [0.. nArgs - 1]
-
-          -> let tsParamTerm' = map (substituteExistsT cs) tsParamTerm
-             in  Just (tsArgInst, tsParamTerm')
-
-         _ -> Nothing
-
+        -- We couldn't instantiate the result type to the wanted one.
+        _ -> Nothing
 

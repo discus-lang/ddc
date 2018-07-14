@@ -1,8 +1,53 @@
 
 module Data.Numeric
+export
+{       -- Bool
+        not; and; or; xor; when; unless;
+
+        -- Nat
+        eq_Nat;  ord_Nat;
+        add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
+        bits_Nat;
+        iterate;
+
+        -- Int
+        eq_Int;  ord_Int;
+        add_Int; sub_Int; mul_Int; div_Int; rem_Int;
+
+        -- Addr
+        eq_Addr; ord_Addr;
+
+        -- Word8
+        eq_Word8;   ord_Word8;
+        add_Word8;  sub_Word8;  mul_Word8;  div_Word8;  rem_Word8;
+        bits_Word8;
+
+        -- Word16
+        eq_Word16;  ord_Word16;
+        add_Word16; sub_Word16; mul_Word16; div_Word16; rem_Word16;
+        bits_Word16;
+
+        -- Word32
+        eq_Word32;  ord_Word32;
+        add_Word32; sub_Word32; mul_Word32; div_Word32; rem_Word32;
+        bits_Word32;
+
+        -- Word64
+        eq_Word64;  ord_Word64;
+        add_Word64; sub_Word64; mul_Word64; div_Word64; rem_Word64;
+        bits_Word64;
+
+        -- Float32
+        eq_Float32;  ord_Float32;
+        add_Float32; sub_Float32; mul_Float32; div_Float32; rem_Float32;
+
+        -- Float64
+        eq_Float64;  ord_Float64;
+        add_Float64; sub_Float64; mul_Float64; div_Float64; rem_Float64;
+}
 import Data.Numeric.Bool
-import Data.Numeric.Int
 import Data.Numeric.Nat
+import Data.Numeric.Int
 import Data.Numeric.Addr
 import Data.Numeric.Word8
 import Data.Numeric.Word16

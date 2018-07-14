@@ -1,10 +1,15 @@
 
 module DDC.Core.Transform.Resolve.Context where
 import DDC.Core.Transform.Resolve.Base
-import DDC.Core.Fragment                        (Profile (..))
-import DDC.Core.Interface.Oracle                (Oracle)
+import DDC.Core.Fragment                (Profile (..))
+import DDC.Core.Interface.Oracle        (Oracle)
+import Data.IORef
+import Data.Map                         (Map)
+import qualified Data.Map               as Map
+import Control.Monad.IO.Class
 
 
+-------------------------------------------------------------------------------
 -- | Context of resolve process.
 --   TODO: cache resolutions and re-use them.
 --         there are often many, eg (Eq Word32) in the same module and we don't
@@ -12,23 +17,32 @@ import DDC.Core.Interface.Oracle                (Oracle)
 data Context n
         = Context
         { -- | Interface oracle to access bindings from imported modules.
-          contextOracle  :: Oracle n
+          contextOracle         :: Oracle n
 
           -- | Context that holds type synonyms from the current module.
-        , contextEnvT    :: EnvT n
+        , contextEnvT           :: EnvT n
 
           -- | Stack of binding groups in the environment,
           --   Each of of the inner groups are from bindings at the same level.
-        , contextBinds   :: [ [(n, Type n)] ] }
+        , contextBinds          :: [ [(n, Type n)] ]
+
+          -- | Map of imported values that we've used in elaborated expressions.
+        , contextImports        :: IORef (Map (ModuleName, n) (ImportValue n (Type n))) }
 
 
+-------------------------------------------------------------------------------
 -- | Create the initial context from the given module.
-makeContextOfModule :: Ord n => Profile n -> Oracle n -> Module a n -> S a n (Context n)
+makeContextOfModule
+        :: Ord n
+        => Profile n -> Oracle n
+        -> Module a n -> S a n (Context n)
 makeContextOfModule !profile !oracle !mm
- = return $ Context
+ = do   refImports      <- liftIO $ newIORef Map.empty
+        return $ Context
           { contextOracle  = oracle
           , contextEnvT    = moduleEnvT (profilePrimKinds profile) mm
-          , contextBinds   = [] }
+          , contextBinds   = []
+          , contextImports = refImports }
 
 
 -- | Push some bindings onto the context.
@@ -70,5 +84,4 @@ contextPushPat !ww !ctx
  = case ww of
         PDefault        -> ctx
         PData _ bs      -> contextPushBinds bs ctx
-
 
