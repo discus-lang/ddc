@@ -5,6 +5,7 @@ import Lambda.Source.Token
 import Lambda.Exp.Base
 import Control.Parsec
 import Class.Show
+import Data.Numeric
 import Data.Tuple
 import Data.Text
 where
@@ -41,16 +42,16 @@ lexToken (xx: List Char)
 lexKName (xx: List Char)
         : Maybe (Tup2 Token (List Char))
  = go Nil xx
- where  
-        go acc Nil              
+ where
+        go acc Nil
          = do   name    = textOfCharList (reverse acc)
                 Just $ T2 (KName name) Nil
 
-        go acc (Cons x xs)   
+        go acc (Cons x xs)
          | isLower x
          = go (Cons x acc) xs
 
-         | otherwise            
+         | otherwise
          = do   name    = textOfCharList (reverse acc)
                 Just $ T2 (KName name) (Cons x xs)
 

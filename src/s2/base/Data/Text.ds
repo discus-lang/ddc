@@ -5,8 +5,12 @@ export  textLit; paste; pastes; parens
         textOfChar; textOfWord8; textOfVector
         eq_char; eq_text
 
+        -- from Data.Text.Char
+        isDigit; isUpper; isLower; isSpace
+
 import Data.Text.Base
 import Data.Text.List
+import Data.Text.Char
 import Data.Text.Operator
 import Data.Text.Show
 import Data.Text.Parse

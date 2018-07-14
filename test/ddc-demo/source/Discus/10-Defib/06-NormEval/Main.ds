@@ -3,13 +3,14 @@
 -- Based on the first part of:
 --
 -- Normalization and Partial Evaluation
--- Peter Dybjer and Andrzej Filinski, 
+-- Peter Dybjer and Andrzej Filinski,
 -- Applied Semantics, 2002.
 --
 
 module Main
-import Data.Numeric.Nat
 import System.IO.Console
+import Data.Numeric
+import Data.Text
 where
 
 
@@ -43,7 +44,7 @@ data Sem where
 
 -- | Reify a semantic value back into syntax.
 --
---   Semantic functions are paired with the syntactic version, 
+--   Semantic functions are paired with the syntactic version,
 --   so we can return that directly.
 --
 --   For natural numbers we produce the unary syntactic version from
@@ -51,7 +52,7 @@ data Sem where
 --
 reify : Sem -> Syn
 reify (MFun syn _ )     = syn
-reify (MNat n)  
+reify (MNat n)
  = reifyNat n
  where  reifyNat 0      = SZero
         reifyNat n      = SApp SSucc (reifyNat (n - 1))
@@ -95,12 +96,12 @@ eval : Syn -> Sem
 eval SS
  = MFun SS
  $ \f -> let sf = SApp SS (reify f)
-         in  MFun sf 
+         in  MFun sf
              $ \g -> let sfg = SApp sf (reify g)
-                     in  MFun sfg  
+                     in  MFun sfg
                          $ \x -> appsem (appsem f x) (appsem g x)
 eval SK
- = MFun SK 
+ = MFun SK
  $ \x -> let kx = SApp SK (reify x)
          in  MFun kx (\_ -> x)
 
@@ -113,8 +114,8 @@ eval SZero
 eval SSucc
  = MFun SSucc succsem
 
-eval SRec 
- = MFun SRec 
+eval SRec
+ = MFun SRec
  $ \z -> let recz = SApp SRec (reify z)
          in  MFun recz
              $ \s -> let reczs = SApp recz (reify s)

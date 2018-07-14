@@ -1,8 +1,22 @@
 
 module Data.Numeric
 export
-{       -- Bool
+{       -- Class Numeric
+        add; sub; mul; div; rem; divMod;
+
+        -- Class Bits
+        shl; shr; band; bor; bxor;
+
+        -- Class Eq
+        eq; neq;
+
+        -- Class Ord
+        compare; lt; le; gt; ge;
+        min; max;
+
+        -- Bool
         not; and; or; xor; when; unless;
+        eq_Bool; ord_Bool;
 
         -- Nat
         eq_Nat;  ord_Nat;
@@ -45,6 +59,11 @@ export
         eq_Float64;  ord_Float64;
         add_Float64; sub_Float64; mul_Float64; div_Float64; rem_Float64;
 }
+import Class.Numeric
+import Class.Bits
+import Class.Ord
+import Class.Eq
+
 import Data.Numeric.Bool
 import Data.Numeric.Nat
 import Data.Numeric.Int
@@ -55,3 +74,4 @@ import Data.Numeric.Word32
 import Data.Numeric.Word64
 import Data.Numeric.Float32
 import Data.Numeric.Float64
+

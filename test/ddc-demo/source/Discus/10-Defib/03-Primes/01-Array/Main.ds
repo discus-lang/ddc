@@ -1,8 +1,9 @@
 
 module Main
-import Data.Array
-import Class.Show
 import System.IO.Console
+import Data.Array.Store
+import Data.Numeric
+import Class.Show
 where
 
 
