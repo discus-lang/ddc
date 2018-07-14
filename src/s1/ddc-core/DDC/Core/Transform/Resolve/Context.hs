@@ -15,6 +15,7 @@ import DDC.Type.Transform.Unify
 import DDC.Core.Fragment                        (Profile (..))
 import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
+import DDC.Core.Interface.Oracle                (Oracle)
 import Control.Monad.IO.Class
 import Data.IORef
 import qualified Data.Map.Strict                as Map
@@ -26,34 +27,38 @@ import qualified Data.Map.Strict                as Map
 --         want to repeat the resolution process each time.
 data Context n
         = Context
-        { -- | Current type environment.
-          contextEnvT           :: EnvT n
+        { -- | Interface oracle to access bindings from imported modules.
+          contextOracle  :: Oracle n
+
+          -- | Current type environment.
+        , contextEnvT    :: EnvT n
 
           -- | Available top-level context.
           --   These are supers that are available in other modules,
           --   that might not already be referenced in the one that we're resolving.
           --
           -- ISSUE #434: Store resolve dictionary by outermost tycon.
-        , contextTop            :: [ (n, ImportValue n (Type n)) ]
+        , contextTop     :: [ (n, ImportValue n (Type n)) ]
 
           -- | Extra top-level context that we've used during resolution.
-        , contextTopUsed        :: IORef [(n, ImportValue n (Type n))]
+        , contextTopUsed :: IORef [(n, ImportValue n (Type n))]
 
           -- | Stack of binding groups in the environment,
           --   Each of of the inner groups are from bindings at the same level.
-        , contextBinds          :: [ [(n, Type n)] ] }
+        , contextBinds   :: [ [(n, Type n)] ] }
 
 
 -- | Create the initial context from the given module.
 makeContextOfModule
         :: Ord n
         => Profile n                      -- ^ Language profile.
+        -> Oracle n                       -- ^ Interface oracle.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
         -> [(n, Type n)]                  -- ^ Top-level synonyms from imported modules.
         -> Module a n                     -- ^ Module that we're doing resolution in.
         -> S a n (Context n)
 
-makeContextOfModule !profile !ntsTop !ntsSyn !mm
+makeContextOfModule !profile !oracle !ntsTop !ntsSyn !mm
  = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _)
                                     <- moduleImportValues mm ]
 
@@ -61,13 +66,15 @@ makeContextOfModule !profile !ntsTop !ntsSyn !mm
         let envt        = moduleEnvT (profilePrimKinds profile) mm
 
         return $ Context
-         { contextEnvT
-                = envt { envtEquations  = Map.union (envtEquations envt)
-                                        $ Map.fromList ntsSyn }
+         { contextOracle  = oracle
 
-         , contextTop            = ntsTop
-         , contextTopUsed        = refTopUsed
-         , contextBinds          = [ntsImport] }
+         , contextEnvT
+            = envt { envtEquations = Map.union (envtEquations envt)
+                                   $ Map.fromList ntsSyn }
+
+         , contextTop     = ntsTop
+         , contextTopUsed = refTopUsed
+         , contextBinds   = [ntsImport] }
 
 
 -- | Push some bindings onto the context.

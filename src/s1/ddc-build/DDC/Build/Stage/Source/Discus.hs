@@ -35,7 +35,6 @@ import qualified DDC.Source.Discus.Lexer                as SLexer
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
--- import qualified DDC.Core.Check.Close                   as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
@@ -158,7 +157,7 @@ sourceLoad srcName srcLine str store config
 
                 emm_resolved
                  <- liftIO $ CResolve.resolveModule
-                        (C.fragmentProfile BE.fragment)
+                        (C.fragmentProfile BE.fragment) oracle
                         ntsTop ntsSyn mm_checked
 
                 mm_resolved

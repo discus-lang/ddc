@@ -94,7 +94,8 @@ newOracleOfStore store
 
 ---------------------------------------------------------------------------------------------------
 -- | Import bindings for some modules into the current scope.
---   The store already needs to have the
+--
+--   FIXME: force load these if they're not already there.
 importModules :: (Ord n, Show n) => Oracle n -> [ModuleName] -> IO (Oracle n)
 importModules oracle mns
  = do

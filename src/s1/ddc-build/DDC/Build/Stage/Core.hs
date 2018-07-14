@@ -189,19 +189,20 @@ coreResolve
         :: (Ord n, Show n, Pretty n)
         => String                               -- ^ Name of compiler stage.
         -> C.Fragment n arr                     -- ^ Language fragment to use.
+        -> C.Oracle n                           -- ^ Interface oracle.
         -> IO [(n, C.ImportValue n (C.Type n))] -- ^ Top level env from other modules.
         -> IO [(n, C.Type n)]                   -- ^ Top-level syns from other moduels.
         -> C.Module a n
         -> ExceptT [B.Error] IO (C.Module a n)
 
-coreResolve !stage !fragment !makeNtsTop !makeNtsSyn !mm
+coreResolve !stage !fragment !oracle !makeNtsTop !makeNtsSyn !mm
  = {-# SCC "coreResolve" #-}
    do
         ntsTop  <- liftIO $ makeNtsTop
         ntsSyn  <- liftIO $ makeNtsSyn
 
         res     <- liftIO $ CResolve.resolveModule
-                        (C.fragmentProfile fragment)
+                        (C.fragmentProfile fragment) oracle
                         ntsTop ntsSyn mm
 
         case res of

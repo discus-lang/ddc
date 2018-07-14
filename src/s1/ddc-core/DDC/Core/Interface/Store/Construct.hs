@@ -4,6 +4,7 @@ module DDC.Core.Interface.Store.Construct where
 import DDC.Core.Interface.Store.Base
 import DDC.Core.Module.Import
 import DDC.Core.Module
+import qualified DDC.Core.Exp.Annot     as C
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import Data.IORef
@@ -11,7 +12,6 @@ import Data.Maybe
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
-
 
 
 ---------------------------------------------------------------------------------------------------
@@ -38,6 +38,7 @@ new
         refDataCtorsByDaCon             <- newIORef Map.empty
         refCapsByName                   <- newIORef Map.empty
         refValuesByName                 <- newIORef Map.empty
+        refValuesByResultTyCon          <- newIORef Map.empty
 
         -- Complete Interfaces
         refInterfaces                   <- newIORef Map.empty
@@ -63,6 +64,7 @@ new
          , storeDataCtorsByDaCon        = refDataCtorsByDaCon
          , storeCapsByName              = refCapsByName
          , storeValuesByName            = refValuesByName
+         , storeValuesByResultTyCon     = refValuesByResultTyCon
          , storeInterfaces              = refInterfaces
 
          -- Fetch Functions
@@ -112,6 +114,10 @@ addInterface store ii
         let importValues = importValuesOfInterface ii
         modifyIORef' (storeValuesByName store) $ \ivs
          -> Map.insert nModule importValues ivs
+
+        let importValuesTC = slurpImportValuesByResultTyCon importValues
+        modifyIORef' (storeValuesByResultTyCon store) $ \ivs
+         -> Map.insert nModule importValuesTC ivs
 
         -- Update type ctor index.
         modifyIORef' (storeTypeCtorNames store) $ \names
@@ -227,3 +233,38 @@ importValuesOfInterface ii
                         $ map snd $ moduleExportValues $ interfaceModule ii)
          (Map.fromList  $ mapMaybe importOfImport
                         $ map snd $ moduleImportValues $ interfaceModule ii)
+
+
+-- | Extract a map of ImportValues by the tycon of the result value,
+--   from the map produced by the above.
+--
+--   This map is used when resolving elaborations. The resolve process needs
+--   to find all the ways that it can build a value of a particular result type.
+slurpImportValuesByResultTyCon
+        :: Ord n
+        => Map n (ImportValue n (Type n))
+        -> Map n [ImportValue n (Type n)]
+
+slurpImportValuesByResultTyCon mp
+ = Map.unionsWith (++)
+ [ Map.singleton n [iv]
+        |  Just (n, iv)
+        <- map slurpResolvable $ Map.elems mp ]
+ where
+        slurpResolvable iv
+         = let  -- Get the full type of the value.
+                tImport   = typeOfImportValue iv
+
+                -- Split off the quantifiers to get just the body.
+                tBody     = case C.takeTForalls tImport of
+                                Nothing         -> tImport
+                                Just (_bs, t)   -> t
+
+                -- Split off the implicit parameters that can be resolved
+                -- by the elaborator.
+                tExplicit = snd $ C.takeTFunImplicits tBody
+
+           in   case C.takeTyConApps tExplicit of
+                 Just (TyConBound n, _) -> Just (n, iv)
+                 _                      -> Nothing
+

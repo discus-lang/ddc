@@ -85,6 +85,10 @@ data Store n
           --   not have imported it itself.
         , storeValuesByName         :: IORef (Map ModuleName (Map n (ImportValue n (Type n))))
 
+          -- | Map of type constructor names to functions that produce a value of that type.
+          --   This is used when resolving elaborations.
+        , storeValuesByResultTyCon  :: IORef (Map ModuleName (Map n [ImportValue n (Type n)]))
+
           -- Complete Interfaces ----------------
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
