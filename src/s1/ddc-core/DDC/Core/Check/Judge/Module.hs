@@ -3,7 +3,6 @@ module DDC.Core.Check.Judge.Module
         ( checkModuleIO, reconModule
         , checkModuleM)
 where
-import DDC.Core.Check.Context.Oracle
 import DDC.Core.Check.Judge.Module.Binds
 import DDC.Core.Check.Judge.Module.Exports
 import DDC.Core.Check.Judge.Module.Imports
@@ -12,14 +11,14 @@ import DDC.Core.Check.Judge.DataDefs
 import DDC.Core.Check.Close
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
+import DDC.Core.Interface.Oracle
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Control.CheckIO                      (runCheck, throw, mapErr)
 
 import qualified DDC.Core.Env.EnvX              as EnvX
--- import qualified DDC.Core.Interface.Store       as Store
-import qualified DDC.Core.Check.Context.Oracle  as Oracle
+import qualified DDC.Core.Interface.Oracle      as Oracle
 import qualified DDC.Core.Check.Post            as Post
 import qualified System.IO.Unsafe               as S
 
@@ -284,10 +283,11 @@ checkModuleM config mOracle0 mm@ModuleCore{} !mode
 
                 -- Exported thing was imported via a module import.
                 | Just oracle <- mOracle
-                = Oracle.resolveValueName oracle n
+                = liftIO (Oracle.resolveValueName oracle n)
                 >>= \case
-                        Just iv -> return $ exportOfImportValue iv
-                        Nothing -> throw $ ErrorExportUndefined n
+                        Left err        -> throw  $ checkOfResolveError n err
+                        Right (Just iv) -> return $ exportOfImportValue iv
+                        Right Nothing   -> throw  $ ErrorExportUndefined n
 
                 | otherwise
                 = throw $ ErrorExportUndefined n

@@ -19,15 +19,15 @@ module DDC.Core.Check.Context.Resolve
 where
 import DDC.Core.Check.State
 import DDC.Core.Check.Context.Base
-import DDC.Core.Check.Context.Oracle    (TyConThing(..))
 import DDC.Core.Check.Error
+import DDC.Core.Interface.Oracle                (TyConThing(..))
 import DDC.Type.Exp
 import DDC.Type.DataDef
-import qualified DDC.Core.Check.Context.Oracle  as Oracle
-import qualified DDC.Core.Module        as C
-import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified Data.Map.Strict        as Map
+import qualified DDC.Core.Interface.Oracle      as Oracle
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Core.Env.EnvX              as EnvX
+import qualified Data.Map.Strict                as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -81,10 +81,11 @@ lookupTyConThing ctx n
 
  -- Look for a data type, synonym or foreign type in an imported module.
  | Just oracle  <- contextOracle ctx
- = Oracle.resolveTyConThing oracle n
+ = (liftIO $ Oracle.resolveTyConThing oracle n)
  >>= \case
-        Nothing    -> return Nothing
-        Just thing -> return $ Just (thing, Oracle.kindOfTyConThing thing)
+        Left err           -> throw $ checkOfResolveError n err
+        Right Nothing      -> return Nothing
+        Right (Just thing) -> return $ Just (thing, Oracle.kindOfTyConThing thing)
 
  -- It's just not there.
  | otherwise
@@ -107,11 +108,13 @@ lookupTypeSyn ctx n
 
  -- Look for synonym in imported modules.
  | Just oracle <- contextOracle ctx
- = Oracle.resolveTyConThing oracle n
+ = (liftIO $ Oracle.resolveTyConThing oracle n)
  >>= \case
-        Just (TyConThingSyn _ _ t) -> return $ Just t
-        Just _  -> return Nothing
-        Nothing -> return Nothing
+        Left err        -> throw $ checkOfResolveError n err
+        Right (Just (TyConThingSyn _ _ t))
+                        -> return $ Just t
+        Right (Just _)  -> return Nothing
+        Right Nothing   -> return Nothing
 
  -- It's just not there.
  | otherwise    = return Nothing
@@ -134,11 +137,13 @@ lookupDataType ctx n
 
  -- Look for data type definition in an imported module.
  | Just oracle <- contextOracle ctx
- = Oracle.resolveTyConThing oracle n
+ = (liftIO $ Oracle.resolveTyConThing oracle n)
  >>= \case
-        Nothing   -> return Nothing
-        Just (TyConThingData _ dataType) -> return $ Just dataType
-        Just _    -> return Nothing
+        Left err        -> throw $ checkOfResolveError n err
+        Right Nothing   -> return Nothing
+        Right (Just (TyConThingData _ dataType))
+                        -> return $ Just dataType
+        Right (Just _)  -> return Nothing
 
  -- It's just not there.
  | otherwise    = return Nothing
@@ -162,7 +167,10 @@ lookupDataCtor ctx n
 
  -- Look for data ctor in imported modules.
  | Just oracle <- contextOracle ctx
- = Oracle.resolveDataCtor oracle n
+ = (liftIO $ Oracle.resolveDataCtor oracle n)
+ >>= \case
+        Left err        -> throw $ checkOfResolveError n err
+        Right mc        -> return mc
 
  -- It's just not there.
  | otherwise    = return Nothing
@@ -189,10 +197,11 @@ lookupTypeOfValueName ctx n
 
  -- Look for value in imported modules.
  | Just oracle  <- contextOracle ctx
- = Oracle.resolveValueName oracle n
+ = (liftIO $ Oracle.resolveValueName oracle n)
  >>= \case
-        Just ivs  -> return $ Just $ C.typeOfImportValue ivs
-        Nothing   -> return Nothing
+        Left err         -> throw  $ checkOfResolveError n err
+        Right (Just ivs) -> return $ Just $ C.typeOfImportValue ivs
+        Right Nothing    -> return Nothing
 
  -- Its just not there.
  | otherwise    = return Nothing

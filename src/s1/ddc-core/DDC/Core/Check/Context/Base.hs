@@ -46,7 +46,7 @@ module DDC.Core.Check.Context.Base
         , lowerTypes)
 where
 import DDC.Core.Check.Context.Elem
-import DDC.Core.Check.Context.Oracle
+import DDC.Core.Interface.Oracle
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT

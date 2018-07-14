@@ -53,7 +53,7 @@ import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Context.Base
-import DDC.Core.Check.Context.Oracle
+import DDC.Core.Interface.Oracle
 import DDC.Core.Check.Base
 import qualified System.IO.Unsafe       as S
 

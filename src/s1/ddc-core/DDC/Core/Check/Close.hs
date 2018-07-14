@@ -9,14 +9,14 @@ import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Exp
 import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv)
-import DDC.Core.Check.Context.Oracle            (Oracle)
+import DDC.Core.Interface.Oracle                (Oracle)
 import DDC.Core.Interface.Store                 (Store, TyConThing(..))
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import Data.Maybe
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Interface.Store       as Store
-import qualified DDC.Core.Check.Context.Oracle  as Oracle
+import qualified DDC.Core.Interface.Oracle      as Oracle
 import qualified DDC.Core.Collect.FreeT         as FreeT
 import qualified Data.Map.Strict                as Map
 import qualified Data.Set                       as Set

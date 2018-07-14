@@ -4,10 +4,10 @@ import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                        (EnvX)
-import DDC.Core.Check.Context.Oracle            (Oracle)
+import DDC.Core.Interface.Oracle                (Oracle)
 import DDC.Control.CheckIO                      (throw)
 import qualified DDC.Core.Env.EnvX              as EnvX
-import qualified DDC.Core.Check.Context.Oracle  as Oracle
+import qualified DDC.Core.Interface.Oracle      as Oracle
 
 ---------------------------------------------------------------------------------------------------
 -- | Check that the exported signatures match the types of their bindings.
@@ -75,10 +75,11 @@ checkBindDefined envx mOracle n
  = return ()
 
  | Just oracle  <- mOracle
- = do   mt      <- Oracle.resolveValueName oracle n
+ = do   mt      <- liftIO $ Oracle.resolveValueName oracle n
         case mt of
-         Just _  -> return ()
-         Nothing -> throw $ ErrorExportUndefined n
+         Left err       -> throw $ checkOfResolveError n err
+         Right (Just _) -> return ()
+         Right Nothing  -> throw $ ErrorExportUndefined n
 
  | otherwise
  = throw $ ErrorExportUndefined n

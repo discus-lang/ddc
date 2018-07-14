@@ -1,5 +1,5 @@
 
-module DDC.Core.Check.Context.Oracle
+module DDC.Core.Interface.Oracle
         ( Oracle (..)
         , Store.TyConThing (..)
         , Store.kindOfTyConThing
@@ -9,10 +9,10 @@ module DDC.Core.Check.Context.Oracle
         , resolveDataCtor
         , resolveValueName)
 where
-import DDC.Type.DataDef
-import DDC.Core.Module
-import DDC.Type.Exp
 import DDC.Core.Interface.Store                 (Store)
+import DDC.Core.Module
+import DDC.Type.DataDef
+import DDC.Type.Exp
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import Data.IORef
@@ -43,28 +43,28 @@ import qualified Data.Map.Strict                as Map
 data Oracle n
         = Oracle
         { -- | Store remembers data loaded from module interfaces.
-          oracleStore                           :: Store n
+          oracleStore                    :: Store n
 
           -- | These modules have been imported into the current scope.
-        , oracleImportedModules                 :: Set ModuleName
+        , oracleImportedModules          :: Set ModuleName
 
           -- | Data types previously loaded via the oracle.
-        , oracleCacheDataTypesByTyCon           :: IORef (Map n (DataType n))
+        , oracleCacheDataTypesByTyCon    :: IORef (Map n (DataType n))
 
           -- | Foreign types previously loaded via the oracle.
-        , oracleCacheForeignTypesByTyCon        :: IORef (Map n (ImportType n (Kind n)))
+        , oracleCacheForeignTypesByTyCon :: IORef (Map n (ImportType n (Kind n)))
 
           -- | Type synonyms previously loaded via the oracle.
-        , oracleCacheTypeSynsByTyCon            :: IORef (Map n (Kind n, Type n))
+        , oracleCacheTypeSynsByTyCon     :: IORef (Map n (Kind n, Type n))
 
           -- | Data ctors previously loaded via the oracle.
-        , oracleCacheDataCtorsByDaCon           :: IORef (Map n (DataCtor n, DataType n))
+        , oracleCacheDataCtorsByDaCon    :: IORef (Map n (DataCtor n, DataType n))
 
           -- | Capabilities previously loaded via the oracle.
-        , oracleCacheCapsByName                 :: IORef (Map n (ImportCap n (Type n)))
+        , oracleCacheCapsByName          :: IORef (Map n (ImportCap n (Type n)))
 
           -- | Values previously loaded via the oracle.
-        , oracleCacheValuesByName               :: IORef (Map n (ImportValue n (Type n)))
+        , oracleCacheValuesByName        :: IORef (Map n (ImportValue n (Type n)))
         }
 
 
@@ -232,15 +232,15 @@ resolveValueName oracle n
  where
         -- Check the oracle cache for a value of the desired name.
         goCache
-         = do   cache   <- readIORef (oracleCacheValuesByName oracle)
+         = do   cache <- readIORef (oracleCacheValuesByName oracle)
                 case Map.lookup n cache of
                  Just iv        -> return $ Right (Just iv)
                  Nothing        -> goStore
 
         -- Look for a value of the desired name in the interface store.
         goStore
-         = do   r       <- Store.resolveValueName
-                                (oracleStore oracle) (oracleImportedModules oracle) n
+         = do   r <- Store.resolveValueName
+                        (oracleStore oracle) (oracleImportedModules oracle) n
                 case r of
                  Left Store.ErrorNotFound{}
                                 -> return $ Right Nothing
@@ -250,6 +250,6 @@ resolveValueName oracle n
         -- Update the oracle cache with the type of a found value.
         goUpdate iv
          = do   modifyIORef' (oracleCacheValuesByName oracle)
-                        $ \ivs -> Map.insert n iv ivs
+                 $ \ivs -> Map.insert n iv ivs
                 return  $ Right (Just iv)
 
