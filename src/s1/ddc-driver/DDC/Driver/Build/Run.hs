@@ -48,6 +48,13 @@ runBuildModuleOfName state nModule
  = goHave
  where
         goHave
+         -- Always rebuild and relink the main module.
+         | nModule == C.ModuleName ["Main"]
+         = do   filePath <- queryLocateModule state nModule
+                addJob state $ JobBuildModuleOfPath filePath
+                return True
+
+         | otherwise
          = do   -- See if our build state knows we already have the interface.
                 bHave   <- queryHaveInterface state nModule
                 if bHave
@@ -92,7 +99,7 @@ runBuildModuleOfPath state filePath
                 bInterfaceInStore
                  <- liftIO $ C.ensureInterface (stateStore state) nModule
 
-                if bInterfaceInStore
+                if (bInterfaceInStore && (not $ nModule == C.ModuleName ["Main"]))
                  then do
                         addFactHaveInterface state nModule
                         return True
