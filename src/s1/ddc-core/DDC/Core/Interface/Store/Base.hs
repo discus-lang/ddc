@@ -22,6 +22,9 @@ import Data.Set         (Set)
 --   We keep the underling file system abstract by parameterising the store
 --   over functions to load the concrete interface file data.
 --
+--   TODO: There will be much repeated information in the runtime rep of
+--   this data structure. We should do more to eliminate the redundancy.
+--
 data Store n
         = Store
         { -- Meta data ------------------------
@@ -50,6 +53,10 @@ data Store n
           -- | Map of type constructor names to modules that define a value that
           --   produces a type of that constructor.
         , storeValueTyCons          :: IORef (Map n (Set ModuleName))
+
+          -- Module Deps -----------------------
+          -- | Map of module names to others that they transitively depend on.
+        , storeModuleTransitiveDeps :: IORef (Map ModuleName (Set ModuleName))
 
           -- Module Exports --------------------
           -- | Map of type names that a module exports.

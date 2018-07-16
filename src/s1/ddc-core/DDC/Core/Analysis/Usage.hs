@@ -91,6 +91,7 @@ usageModule
         (ModuleCore
                 { moduleName            = name
                 , moduleIsHeader        = isHeader
+                , moduleTransitiveDeps  = transitiveDeps
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportModules   = importMods
@@ -106,6 +107,7 @@ usageModule
  =       ModuleCore
                 { moduleName            = name
                 , moduleIsHeader        = isHeader
+                , moduleTransitiveDeps  = transitiveDeps
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportModules   = importMods

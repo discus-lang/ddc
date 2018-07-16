@@ -160,6 +160,7 @@ convertM pp runConfig defs kenv tenv mm
                 = ModuleCore
                 { moduleName            = moduleName mm
                 , moduleIsHeader        = moduleIsHeader mm
+                , moduleTransitiveDeps  = Set.empty
 
                   -- None of the types imported by Discus modules are relevant
                   -- to the Salt language.

@@ -20,11 +20,12 @@ import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
 import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 import Data.Text                                (Text)
 import DDC.Data.Pretty
 
-import qualified Foreign.Marshal.Alloc                  as Foreign
-import qualified System.IO                              as System
+import qualified Foreign.Marshal.Alloc          as Foreign
+import qualified System.IO                      as System
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -63,7 +64,8 @@ storeInterface config pathDst ii
 --
 takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
 takeModuleDecls c mm@C.ModuleCore{}
- =  [ dName,   dExTyp,  dExTrm
+ =  [ dName,   dDeps
+    , dExTyp,  dExTrm
     , dImMod,  dImTyp,  dImDat, dImSyn, dImCap, dImTrm
     , dLcDat,  dLcSyn ]
  ++ concat
@@ -73,6 +75,11 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Module Name.
         dName
          = S.DeclSet "m-name" $ takeModuleName $ C.moduleName mm
+
+        -- Transitive dependencies on other modules.
+        dDeps
+         = S.DeclSet "m-deps"
+         $ xList $ map takeModuleName $ Set.toList $ C.moduleTransitiveDeps mm
 
         -- Exported Types.
         dExTyp

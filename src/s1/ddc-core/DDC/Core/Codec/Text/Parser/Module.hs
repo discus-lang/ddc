@@ -17,6 +17,7 @@ import DDC.Core.Exp.Annot
 import DDC.Data.Pretty
 import Data.Char
 import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 import qualified Data.Text              as T
 import qualified DDC.Control.Parser     as P
 
@@ -75,6 +76,7 @@ pModule c
         return  $ ModuleCore
                 { moduleName            = modName
                 , moduleIsHeader        = isHeader
+                , moduleTransitiveDeps  = Set.empty
                 , moduleExportTypes     = []
                 , moduleExportValues    = [(n, s)       | ExportValue n s        <- exportSpecs]
                 , moduleImportModules   = [mn           | ImportModule mn        <- importSpecs]

@@ -69,6 +69,7 @@ convertM mm
                 = ModuleCore
                 { moduleName            = moduleName mm
                 , moduleIsHeader        = moduleIsHeader mm
+                , moduleTransitiveDeps  = S.empty
 
                 , moduleExportTypes     = tsExportT'
                 , moduleExportValues    = tsExportV'

@@ -23,16 +23,8 @@ import qualified Data.Set                       as Set
 import Data.IORef
 
 
--- TODO: refactor this into two steps
---   1) wrap the cached things around the module.
---   2) close the new set of module decls.
---
---  Then we can use the second part to close elaborated modules that now
---  refer to extra bindings
---
---  Do a single close step after both checking and elaboration.
---  Don't close after checking then re-close after elaboration.
-
+-- TODO: Do a single close step after both checking and elaboration.
+--       Don't close after checking then re-close after elaboration.
 
 ---------------------------------------------------------------------------------------------------
 -- | Use the cache in the given interface oracle to add import declarations
@@ -78,26 +70,46 @@ closeModuleWithOracle kenv oracle mm
                         = moduleImportCaps mm ++ Map.toList dsReCaps
                 }
 
-        let itsModule   =  importThingsOfModule mm_reexport
+        let itsModule
+                = importThingsOfModule mm_reexport
 
         -- Names of types defined in the current module.
-        let nsModule    = Set.unions
-                        [ Set.fromList $ map fst $ moduleLocalDataDefs mm
-                        , Set.fromList $ map fst $ moduleLocalTypeDefs mm ]
+        let nsTypes
+                = Set.unions
+                [ Set.fromList $ map fst $ moduleLocalDataDefs mm
+                , Set.fromList $ map fst $ moduleLocalTypeDefs mm ]
 
-        its'    <- closeImportThings kenv (Oracle.oracleStore oracle) nsModule
+        -- Close the module by adding required imports.
+        its'    <- closeImportThings kenv (Oracle.oracleStore oracle) nsTypes
                 $  Map.union itsOracle itsModule
 
-        return  $ wrapModuleWithImportThings its' mm_reexport
+        let mm_closed
+                = wrapModuleWithImportThings its' mm_reexport
+
+        -- Update the set of transitive dependencies by taking the union
+        -- of all dependencies of modules that this one uses.
+        let mns_import
+                = Set.fromList
+                $ map moduleNameOfImportValue
+                $ map snd $ moduleImportValues mm_closed
+
+        mpDeps  <- readIORef (Store.storeModuleTransitiveDeps $ Oracle.oracleStore oracle)
+        let mns_dep
+                = Set.unions
+                $ mns_import
+                : (map (fromMaybe Set.empty . flip Map.lookup mpDeps) $ Set.toList mns_import)
+
+        return  $ mm_closed
+                { moduleTransitiveDeps = mns_dep }
 
 
 ---------------------------------------------------------------------------------------------------
 closeImportThings
         :: (Ord n, Show n)
-        => KindEnv n
-        -> Store n
-        -> Set n                        -- ^ Names of types defined in current module.
-        -> Map n (ImportThing n)
+        => KindEnv n             -- ^ Kind environment containing primitive types.
+        -> Store n               -- ^ Interface store.
+        -> Set n                 -- ^ Names of types defined in current module.
+        -> Map n (ImportThing n) -- ^ Map of import things to close.
         -> IO (Map n (ImportThing n))
 
 closeImportThings kenv store nsLocal mpThings

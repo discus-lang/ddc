@@ -19,7 +19,7 @@ class Reannotate c where
 
 instance Reannotate Module where
  reannotateM f
-     (ModuleCore name isHeader
+     (ModuleCore name deps isHeader
         exportKinds   exportTypes
         importMods    importKinds   importCaps   importTypes  importDataDefs importTypeDefs
         dataDefsLocal typeDefsLocal
@@ -27,7 +27,7 @@ instance Reannotate Module where
 
   =  reannotateM f body >>= \body'
   -> return
-   $ ModuleCore name isHeader
+   $ ModuleCore name deps isHeader
         exportKinds  exportTypes
         importMods   importKinds  importCaps   importTypes  importDataDefs importTypeDefs
         dataDefsLocal typeDefsLocal

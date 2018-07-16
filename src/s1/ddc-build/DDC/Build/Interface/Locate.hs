@@ -13,6 +13,7 @@ import Data.Maybe
 import qualified Data.Set               as Set
 import qualified System.Directory       as S
 
+
 -------------------------------------------------------------------------------
 -- | Things that can go wrong when locating an a file.
 data ErrorLocate

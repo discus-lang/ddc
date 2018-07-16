@@ -53,8 +53,9 @@ module DDC.Core.Module
         , typeOfImportCap
         , mapTypeOfImportCap
 
-         -- ** Import Types
+         -- ** Import Values
         , ImportValue   (..)
+        , moduleNameOfImportValue
         , typeOfImportValue
         , mapTypeOfImportValue)
 where
@@ -88,6 +89,12 @@ data Module a n
           --   Module headers contain type definitions, as well as imports and exports,
           --   but no function definitions. Module headers are used in interface files.
         , moduleIsHeader        :: !Bool
+
+          -- | Lists of modules that this one transitively depends on.
+          --   This is used by the build system to determine what other modules
+          --   we need to link against when producing an executable. We also use
+          --   it do decide if the current one needs to be recompiled.
+        , moduleTransitiveDeps  :: !(Set ModuleName)
 
           -- Exports ------------------
           -- | Kinds of exported types.

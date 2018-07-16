@@ -28,6 +28,9 @@ new
         refValueNames                   <- newIORef Map.empty
         refValueTyCons                  <- newIORef Map.empty
 
+        -- Module Deps
+        refModuleTransitiveDeps         <- newIORef Map.empty
+
         -- Module Exports
         refExportTypesOfModule          <- newIORef Map.empty
         refExportValuesOfModule         <- newIORef Map.empty
@@ -55,6 +58,9 @@ new
          , storeValueNames              = refValueNames
          , storeValueTyCons             = refValueTyCons
 
+         -- Module Deps
+         , storeModuleTransitiveDeps    = refModuleTransitiveDeps
+
          -- Module Exports
          , storeExportTypesOfModule     = refExportTypesOfModule
          , storeExportValuesOfModule    = refExportValuesOfModule
@@ -80,7 +86,8 @@ addInterface
         => Store n -> Interface n -> IO ()
 
 addInterface store ii
- = do   let nModule  = interfaceModuleName ii
+ = do   let nModule     = interfaceModuleName ii
+        let mm          = interfaceModule ii
 
         -- Add interface metadata.
         modifyIORef' (storeMeta store) $ \meta
@@ -91,6 +98,10 @@ addInterface store ii
         -- Add whole interface to store.
         modifyIORef' (storeInterfaces store) $ \iis
          -> Map.insert nModule ii iis
+
+        -- Add module transitive deps
+        modifyIORef' (storeModuleTransitiveDeps store) $ \deps
+         -> Map.insert nModule (moduleTransitiveDeps mm) deps
 
         -- Add data type definitions.
         let dataTypesByTyCon = dataTypesByTyConOfInterface ii

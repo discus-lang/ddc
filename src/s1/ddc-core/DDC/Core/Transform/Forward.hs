@@ -148,6 +148,7 @@ instance Forward Module where
  forwardWith profile config bindings
         (ModuleCore
                 { moduleName            = name
+                , moduleTransitiveDeps  = deps
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
@@ -164,6 +165,7 @@ instance Forward Module where
   = do  body' <- forwardWith profile config bindings body
         return ModuleCore
                 { moduleName            = name
+                , moduleTransitiveDeps  = deps
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues

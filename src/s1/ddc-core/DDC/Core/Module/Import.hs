@@ -16,6 +16,7 @@ module DDC.Core.Module.Import
 
           -- * Imported values
         , ImportValue   (..)
+        , moduleNameOfImportValue
         , typeOfImportValue
         , mapTypeOfImportValue)
 where
@@ -178,6 +179,14 @@ instance (NFData n, NFData t) => NFData (ImportValue n t) where
 
         ImportValueSea mn ni nx t
          -> rnf mn `seq` rnf ni `seq` rnf nx `seq` rnf t
+
+
+-- | Take the source module name of an imported value.
+moduleNameOfImportValue :: ImportValue n t -> ModuleName
+moduleNameOfImportValue iv
+ = case iv of
+        ImportValueModule{}     -> importValueModuleName iv
+        ImportValueSea{}        -> importValueSeaModuleName iv
 
 
 -- | Take the type of an imported thing.

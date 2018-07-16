@@ -22,9 +22,11 @@ import Data.IORef
 import Data.Maybe
 import Data.Text                                (Text)
 import Data.Map                                 (Map)
+import Data.Set                                 (Set)
 import qualified Data.Text                      as T
 import qualified System.IO.Unsafe               as System
 import qualified Data.Map.Strict                as Map
+import qualified Data.Set                       as Set
 import qualified Data.ByteString                as BS
 import Prelude hiding (read)
 
@@ -84,6 +86,7 @@ takeModuleDecls c decls
    in   Just $ C.ModuleCore
          { C.moduleName            = mn
          , C.moduleIsHeader        = False
+         , C.moduleTransitiveDeps  = Set.unions $ map (takeDeclDeps c) $ colDeps  col
          , C.moduleExportTypes     = concatMap (takeDeclExTyp c)     $ colExTyp col
          , C.moduleExportValues    = concatMap (takeDeclExVal c mpT) $ colExVal col
          , C.moduleImportModules   = concatMap (takeDeclImMod c)     $ colImMod col
@@ -112,7 +115,7 @@ collectModuleDecls decls
         let read = readIORef
         let rev  = reverse
 
-        refName  <- new;
+        refName  <- new; refDeps  <- new;
         refExTyp <- new; refExVal <- new;
         refImMod <- new; refImTyp <- new; refImDat <- new;
         refImSyn <- new; refImCap <- new; refImVal <- new
@@ -121,6 +124,7 @@ collectModuleDecls decls
 
         let eat (d@(S.DeclSet tx _ss) : ds)
              | T.isPrefixOf "m-name"   tx = do { modifyIORef' refName  (d :); eat ds }
+             | T.isPrefixOf "m-deps"   tx = do { modifyIORef' refDeps  (d :); eat ds }
              | T.isPrefixOf "m-ex-typ" tx = do { modifyIORef' refExTyp (d :); eat ds }
              | T.isPrefixOf "m-ex-val" tx = do { modifyIORef' refExVal (d :); eat ds }
              | T.isPrefixOf "m-im-mod" tx = do { modifyIORef' refImMod (d :); eat ds }
@@ -145,6 +149,7 @@ collectModuleDecls decls
         eat decls
 
         dsName  <- read refName
+        dsDeps  <- read refDeps
         dsExTyp <- read refExTyp; dsExVal <- read refExVal
         dsImMod <- read refImMod; dsImTyp <- read refImTyp; dsImDat <- read refImDat
         dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImVal <- read refImVal
@@ -153,7 +158,7 @@ collectModuleDecls decls
         dsX     <- read refX
 
         return  $ Collect
-                { colName  = rev dsName
+                { colName  = rev dsName,  colDeps  = rev dsDeps
                 , colExTyp = rev dsExTyp, colExVal = rev dsExVal
                 , colImMod = rev dsImMod, colImTyp = rev dsImTyp, colImDat = rev dsImDat
                 , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImVal = rev dsImVal
@@ -163,7 +168,7 @@ collectModuleDecls decls
 
 data Collect
         = Collect
-        { colName  :: [SDecl]
+        { colName  :: [SDecl], colDeps  :: [SDecl]
         , colExTyp :: [SDecl], colExVal :: [SDecl]
         , colImMod :: [SDecl], colImTyp :: [SDecl], colImDat :: [SDecl]
         , colImSyn :: [SDecl], colImCap :: [SDecl], colImVal :: [SDecl]
@@ -179,6 +184,15 @@ fromModuleName ss
           |  Just txs     <- sequence $ map takeXTxt ssParts
           -> C.ModuleName $ map T.unpack txs
         _ -> failDecode "takeModuleName"
+
+
+-- DeclExTyp --------------------------------------------------------------------------------------
+takeDeclDeps  :: Config n -> SDecl -> Set C.ModuleName
+takeDeclDeps _ dd
+ = case dd of
+        S.DeclSet "m-deps" ssListNames
+          -> Set.fromList $ map fromModuleName $ fromList ssListNames
+        _ -> failDecode "takeDeclDeps"
 
 
 -- DeclExTyp --------------------------------------------------------------------------------------

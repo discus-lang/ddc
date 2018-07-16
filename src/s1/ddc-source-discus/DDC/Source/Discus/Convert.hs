@@ -21,6 +21,7 @@ import qualified DDC.Core.Discus.Prim           as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Type.DataDef               as C
 import qualified Data.Text                      as Text
+import qualified Data.Set                       as Set
 import Data.Maybe
 
 import DDC.Core.Module
@@ -123,6 +124,7 @@ coreOfSourceModuleM a mm
         return
          $ C.ModuleCore
          { C.moduleName           = S.moduleName mm
+         , C.moduleTransitiveDeps = Set.empty
          , C.moduleIsHeader       = False
          , C.moduleExportTypes    = exportTypes'
          , C.moduleExportValues   = exportValues_main
