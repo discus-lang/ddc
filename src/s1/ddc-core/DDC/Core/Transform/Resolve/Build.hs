@@ -19,7 +19,7 @@ import qualified DDC.Core.Interface.Store       as Store
 --   added as imports to the enclosing module.
 --
 --   TODO: Fail if multiple bindings would match.
-        --
+--
 buildFromContext
         :: (Ord n, Pretty n, Show n)
         => a -> Context n -> Type n

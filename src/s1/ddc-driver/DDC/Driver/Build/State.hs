@@ -17,11 +17,12 @@ module DDC.Driver.Build.State
         , module Control.Monad.Trans.Except
         , module Control.Monad.IO.Class)
 where
-import qualified DDC.Build.Pipeline.Error       as B
 import DDC.Core.Module                          (ModuleName)
 import Data.IORef
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
+import qualified DDC.Build.Interface.Locate     as B
+import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Discus                as Discus
 import qualified DDC.Core.Interface.Store       as C
@@ -47,6 +48,7 @@ data Job
 ---------------------------------------------------------------------------------------------------
 data Error
         = ErrorMissingFile FilePath
+        | ErrorLocate       B.ErrorLocate
         | ErrorBuild       [B.Error]
         deriving Show
 

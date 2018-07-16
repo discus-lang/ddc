@@ -12,8 +12,7 @@ export
         vec3_cross;
         vec3_normalize;
 }
-import Data.Numeric.Float64
-import Class.Numeric
+import Data.Numeric
 import Class.Show
 where
 

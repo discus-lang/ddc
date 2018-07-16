@@ -12,22 +12,25 @@ import Control.Monad.IO.Class
 -------------------------------------------------------------------------------
 -- | Context of resolve process.
 --   TODO: cache resolutions and re-use them.
---         there are often many, eg (Eq Word32) in the same module and we don't
---         want to repeat the resolution process each time.
+--   there are often many, eg (Eq Word32) in the same module and we
+--   don't want to repeat the resolution process each time.
+--
 data Context n
         = Context
         { -- | Interface oracle to access bindings from imported modules.
-          contextOracle         :: Oracle n
+          contextOracle   :: Oracle n
 
           -- | Context that holds type synonyms from the current module.
-        , contextEnvT           :: EnvT n
+        , contextEnvT     :: EnvT n
 
           -- | Stack of binding groups in the environment,
           --   Each of of the inner groups are from bindings at the same level.
-        , contextBinds          :: [ [(n, Type n)] ]
+        , contextBinds    :: [ [(n, Type n)] ]
 
-          -- | Map of imported values that we've used in elaborated expressions.
-        , contextImports        :: IORef (Map (ModuleName, n) (ImportValue n (Type n))) }
+          -- | Imported values that we've used in elaborated expressions.
+        , contextImports  :: IORef (Map (ModuleName, n)
+                                        (ImportValue n (Type n)))
+        }
 
 
 -------------------------------------------------------------------------------

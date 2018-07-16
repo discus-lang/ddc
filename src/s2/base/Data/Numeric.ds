@@ -58,6 +58,17 @@ export
         -- Float64
         eq_Float64;  ord_Float64;
         add_Float64; sub_Float64; mul_Float64; div_Float64; rem_Float64;
+
+        float64_fabs;
+        float64_sin;    float64_asin;
+        float64_cos;    float64_acos;
+        float64_tan;    float64_atan;
+
+        float64_trunc;  float64_round;  float64_floor;
+        float64_fmod;
+        float64_pow;
+        float64_sqrt;
+        float64_log;
 }
 import Class.Numeric
 import Class.Bits

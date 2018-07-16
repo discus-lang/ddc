@@ -57,6 +57,8 @@ cmdCompileRecursive config _bBuildExe store fsPath
         let fsDS  = filter (\f -> takeExtension f == ".ds") fsPath
 --        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
 
+        -- TODO: detect other files given to us that we don't know what to do with.
+
         -- Start recursive build.
         withExceptT show
          $ do   state   <- Build.newStateOfStore config store

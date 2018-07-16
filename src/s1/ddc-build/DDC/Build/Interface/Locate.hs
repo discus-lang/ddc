@@ -10,8 +10,8 @@ import Control.Monad
 import Control.Monad.IO.Class
 import System.FilePath
 import Data.Maybe
+import qualified Data.Set               as Set
 import qualified System.Directory       as S
-
 
 -------------------------------------------------------------------------------
 -- | Things that can go wrong when locating an a file.
@@ -62,11 +62,11 @@ locateModuleFromPaths
 
 locateModuleFromPaths pathsBase nModule nThing ext
  = do
-        mPaths  <- liftIO
-                $  liftM catMaybes
+        files   <- liftIO
+                $  liftM (Set.toList . Set.fromList . catMaybes)
                 $  mapM  (\d -> locateModuleFromPath d nModule ext) pathsBase
 
-        case mPaths of
+        case files of
          []     -> return $ Left
                 $  ErrorLocateNotFound nModule pathsBase nThing ext
 

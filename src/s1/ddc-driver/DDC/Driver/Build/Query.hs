@@ -51,7 +51,7 @@ locateModuleFromConfig config mname
 
         (liftIO $ Build.locateModuleFromPaths baseDirs mname "source" ".ds")
          >>= \case
-                Left  _err -> error "locateModuleFromConfig: cannot find"
+                Left  err  -> throwE $ ErrorLocate err
                 Right path -> return path
 
 
