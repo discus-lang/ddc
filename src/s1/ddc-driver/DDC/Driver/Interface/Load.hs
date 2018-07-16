@@ -1,5 +1,5 @@
 
-module DDC.Core.Interface.Load
+module DDC.Driver.Interface.Load
         ( ErrorLoad(..)
         , loadInterface)
 where

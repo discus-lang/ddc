@@ -24,18 +24,11 @@ import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
-
-import qualified DDC.Core.Interface.Load                as Build
-import qualified DDC.Core.Interface.Locate              as Build
-import qualified DDC.Build.Builder                      as Build
-
-import qualified DDC.Core.Flow                          as Flow
-import qualified DDC.Core.Discus                        as Discus
-import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as Discus
-
 import DDC.Driver.Interface.Source
+
 import DDC.Build.Builder
 import DDC.Data.Pretty
+
 import System.Environment
 import System.FilePath
 import System.IO
@@ -45,12 +38,21 @@ import Control.Monad
 import Control.Monad.Trans.Except
 import qualified System.FilePath                        as System
 import qualified System.Directory                       as System
+
+import qualified DDC.Build.Builder                      as Build
+
 import qualified DDC.Driver.Stage                       as Driver
 import qualified DDC.Driver.Config                      as Driver
+import qualified DDC.Driver.Interface.Load              as Driver
+import qualified DDC.Driver.Interface.Locate            as Driver
+
+import qualified DDC.Core.Flow                          as Flow
+import qualified DDC.Core.Discus                        as Discus
+import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as Discus
 import qualified DDC.Core.Salt.Runtime                  as Runtime
 import qualified DDC.Core.Simplifier.Recipe             as Simplifier
-import qualified DDC.Version                            as Version
 import qualified DDC.Core.Interface.Store               as Store
+import qualified DDC.Version                            as Version
 
 
 ---------------------------------------------------------------------------------------------------
@@ -309,15 +311,15 @@ newDiscusStore config
          ++ [Build.buildBaseSrcDir (Driver.configBuilder config) </> "base"]
 
         goLocate nModule
-         = Build.locateModuleFromPaths basePaths nModule "interface" ".di"
+         = Driver.locateModuleFromPaths basePaths nModule "interface" ".di"
          >>= \case
-                Left Build.ErrorLocateNotFound{}
+                Left Driver.ErrorLocateNotFound{}
                            -> return Nothing
                 Left err   -> failStore err
                 Right path -> goLoad path
 
         goLoad path
-         = Build.loadInterface Discus.takeName path
+         = Driver.loadInterface Discus.takeName path
          >>= \case
                 Left err   -> failStore err
                 Right ii   -> return $ Just ii

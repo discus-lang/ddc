@@ -15,7 +15,7 @@ import DDCI.Core.Mode                   as Mode
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
 import DDC.Driver.Command.Trans
-import DDC.Driver.Command.Compile
+-- import DDC.Driver.Command.Compile
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.Flow.Prep
@@ -30,7 +30,7 @@ import DDC.Driver.Command.Machine.Prep
 import DDC.Driver.Command.Machine.Slurp
 import DDC.Type.Universe
 
-import qualified DDC.Core.Interface.Store       as Store
+-- import qualified DDC.Core.Interface.Store       as Store
 
 import qualified DDC.Core.Flow                  as Flow
 import qualified Data.Set                       as Set
@@ -63,8 +63,8 @@ data Command
         | CommandTransInteract  -- ^ Interactively transform an expression.
 
         -- Make and compile
-        | CommandCompile        -- ^ Compile a file.
-        | CommandMake           -- ^ Compile and link and executable.
+--        | CommandCompile        -- ^ Compile a file.
+--        | CommandMake           -- ^ Compile and link and executable.
 
         -- Conversion to machine code
         | CommandToSalt         -- ^ Convert a module to Disciple Salt.
@@ -150,8 +150,8 @@ commands
         , (":machine-fused",     CommandMachineOutputFused)
 
         -- Make and Compile
-        , (":compile",          CommandCompile)
-        , (":make",             CommandMake)
+--        , (":compile",          CommandCompile)
+--        , (":make",             CommandMake)
 
         -- Inliner control
         , (":with-salt",        CommandWithSalt)
@@ -347,17 +347,17 @@ handleCmd1 state cmd source line
 
 
         -- Make and Compile ---------------------
-        CommandCompile
-         -> do  config  <- getDriverConfigOfState state
-                store   <- Store.new
-                runError $ cmdCompile config False [] store line
-                return state
-
-        CommandMake
-         -> do  config  <- getDriverConfigOfState state
-                store   <- Store.new
-                runError $ cmdCompile config True [] store line
-                return state
+--        CommandCompile
+--         -> do  config  <- getDriverConfigOfState state
+--                store   <- Store.new
+--                runError $ cmdCompile config False [] store line
+--                return state
+--
+--        CommandMake
+--         -> do  config  <- getDriverConfigOfState state
+--                store   <- Store.new
+--                runError $ cmdCompile config True [] store line
+--                return state
 
 
         -- Inliner Control ----------------------

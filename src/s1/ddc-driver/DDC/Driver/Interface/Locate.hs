@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module DDC.Core.Interface.Locate
+module DDC.Driver.Interface.Locate
         ( locateModuleFromPaths
         , ErrorLocate (..))
 where

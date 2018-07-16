@@ -6,19 +6,18 @@ import DDC.Driver.Config
 import DDC.Driver.Command.Compile
 import DDC.Data.Pretty
 import DDC.Core.Interface.Store         (Store)
-import Control.Monad.Trans.Except
-import Control.Monad.IO.Class
-import qualified System.FilePath        as FilePath
-import qualified DDC.Build.Spec.Parser  as Spec
-import qualified DDC.Build.Builder      as Builder
-import qualified Data.List              as List
-import qualified DDC.Core.Discus        as D
-
-import DDC.Core.Interface.Locate
 import DDC.Build.Spec
 import Control.Monad
-import qualified DDC.Data.Pretty        as P
-import qualified DDC.Core.Module        as C
+import Control.Monad.Trans.Except
+import Control.Monad.IO.Class
+import qualified System.FilePath                as FilePath
+import qualified DDC.Build.Spec.Parser          as Spec
+import qualified DDC.Build.Builder              as Builder
+import qualified Data.List                      as List
+import qualified DDC.Core.Discus                as D
+import qualified DDC.Driver.Interface.Locate    as Driver
+import qualified DDC.Data.Pretty                as P
+import qualified DDC.Core.Module                as C
 
 
 ---------------------------------------------------------------------------------------------------
@@ -137,10 +136,11 @@ buildExecutable config store mMain msOther0
         go []
          = do   let dirs = configModuleBaseDirectories config
 
-                path    <- liftIO (locateModuleFromPaths dirs mMain "source" "ds")
-                        >>= \case
-                                Left err -> throwE $ P.renderIndent $ P.ppr err
-                                Right ii -> return ii
+                path
+                 <- liftIO (Driver.locateModuleFromPaths dirs mMain "source" "ds")
+                 >>= \case
+                        Left err -> throwE $ P.renderIndent $ P.ppr err
+                        Right ii -> return ii
 
                 _       <- cmdCompileRecursive config True store [path]
                 return ()
@@ -161,10 +161,11 @@ buildModule
 buildModule config store name
  = do   let dirs = configModuleBaseDirectories config
 
-        path    <- liftIO (locateModuleFromPaths dirs name "source" "ds")
-                >>= \case
-                        Left err -> throwE $ P.renderIndent $ P.ppr err
-                        Right ii -> return ii
+        path
+         <- liftIO (Driver.locateModuleFromPaths dirs name "source" "ds")
+         >>= \case
+                Left err -> throwE $ P.renderIndent $ P.ppr err
+                Right ii -> return ii
 
         _       <- cmdCompileRecursive config False store [path]
         return ()

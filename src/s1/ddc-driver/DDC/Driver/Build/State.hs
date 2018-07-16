@@ -23,8 +23,8 @@ import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Driver.Config              as Driver
+import qualified DDC.Driver.Interface.Locate    as Driver
 import qualified DDC.Core.Discus                as Discus
-import qualified DDC.Core.Interface.Locate      as C
 import qualified DDC.Core.Interface.Store       as C
 import qualified Data.Map.Strict                as Map
 import qualified Data.Set                       as Set
@@ -48,7 +48,7 @@ data Job
 ---------------------------------------------------------------------------------------------------
 data Error
         = ErrorMissingFile FilePath
-        | ErrorLocate      C.ErrorLocate
+        | ErrorLocate      Driver.ErrorLocate
         | ErrorBuild       [B.Error]
         deriving Show
 
