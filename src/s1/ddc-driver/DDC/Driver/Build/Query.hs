@@ -7,8 +7,8 @@ import Data.IORef
 import System.FilePath
 import DDC.Core.Module                          (ModuleName)
 import Data.Set                                 (Set)
+import qualified DDC.Core.Interface.Locate      as C
 import qualified DDC.Build.Builder              as Build
-import qualified DDC.Build.Interface.Locate     as Build
 import qualified Data.Map.Strict                as Map
 import qualified Data.Set                       as Set
 
@@ -49,7 +49,7 @@ locateModuleFromConfig config mname
                 =  configModuleBaseDirectories config
                 ++ [Build.buildBaseSrcDir (configBuilder config) </> "base"]
 
-        (liftIO $ Build.locateModuleFromPaths baseDirs mname "source" ".ds")
+        (liftIO $ C.locateModuleFromPaths baseDirs mname "source" ".ds")
          >>= \case
                 Left  err  -> throwE $ ErrorLocate err
                 Right path -> return path

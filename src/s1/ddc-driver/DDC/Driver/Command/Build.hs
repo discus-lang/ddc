@@ -14,7 +14,7 @@ import qualified DDC.Build.Builder      as Builder
 import qualified Data.List              as List
 import qualified DDC.Core.Discus        as D
 
-import DDC.Build.Interface.Locate
+import DDC.Core.Interface.Locate
 import DDC.Build.Spec
 import Control.Monad
 import qualified DDC.Data.Pretty        as P

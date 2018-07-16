@@ -308,9 +308,9 @@ dropBody toks = go toks
 --   or whether we need to rebuild it (False).
 --
 --  It's safe to reload the module from an inteface file if:
---   1. There is an existing interface which is fresher than the source.
---   2. There is an existing object    which is fresher than the source.
---   3. There is an existing interface which is fresher than the
+--   1. There is an existing interface which is newer than the source.
+--   2. There is an existing object    which is newer than the source.
+--   3. There is an existing interface which is newer than the
 --      interfaces of all dependencies.
 --
 --  Additionally, we force rebuild for the top level module, because

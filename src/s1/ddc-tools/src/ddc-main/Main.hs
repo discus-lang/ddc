@@ -25,8 +25,8 @@ import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
 
-import qualified DDC.Build.Interface.Locate             as Build
-import qualified DDC.Build.Interface.Load               as Build
+import qualified DDC.Core.Interface.Load                as Build
+import qualified DDC.Core.Interface.Locate              as Build
 import qualified DDC.Build.Builder                      as Build
 
 import qualified DDC.Core.Flow                          as Flow

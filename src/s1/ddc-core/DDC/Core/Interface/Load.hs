@@ -1,5 +1,5 @@
 
-module DDC.Build.Interface.Load
+module DDC.Core.Interface.Load
         ( ErrorLoad(..)
         , loadInterface)
 where
