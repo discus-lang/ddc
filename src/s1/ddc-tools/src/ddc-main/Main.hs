@@ -44,6 +44,7 @@ import qualified DDC.Build.Builder                      as Build
 import qualified DDC.Driver.Stage                       as Driver
 import qualified DDC.Driver.Config                      as Driver
 import qualified DDC.Driver.Interface.Load              as Driver
+import qualified DDC.Driver.Interface.Status            as Driver
 import qualified DDC.Driver.Interface.Locate            as Driver
 
 import qualified DDC.Core.Flow                          as Flow
@@ -76,7 +77,8 @@ main
 ---------------------------------------------------------------------------------------------------
 run :: Config -> IO ()
 run config
- = case configMode config of
+ = do status <- Driver.newStatus
+      case configMode config of
         -- We didn't get any arguments on the command line.
         ModeNone
          ->     putStr hello
@@ -102,7 +104,7 @@ run config
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 result  <- runExceptT $ cmdCheckFromFile dconfig store filePath
 
                 case result of
@@ -116,7 +118,7 @@ run config
         -- Parse, type check and transform a module.
         ModeLoad filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdLoadFromFile dconfig store
                                 (configTrans config) (configWith config)
                                 filePath
@@ -125,7 +127,7 @@ run config
         ModeCompile filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdCompileRecursive dconfig False store [filePath]
 
         -- Compile a module into an executable.
@@ -133,14 +135,14 @@ run config
         ModeMake fsPath@(filePath1 : _)
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath1)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdCompileRecursive dconfig True store fsPath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdBuild dconfig store filePath
 
         ModeLSP
@@ -149,13 +151,13 @@ run config
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdToSaltFromFile dconfig store filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- newDiscusStore dconfig
+                store   <- newDiscusStore dconfig status
                 runError $ cmdToLlvmFromFile dconfig store filePath
 
         -- Flow specific ------------------------------------------------------
@@ -301,8 +303,8 @@ getDriverConfig config mFilePath
 
 ---------------------------------------------------------------------------------------------------
 -- | Create a new interface store that knows how to load Discus interface files.
-newDiscusStore :: Driver.Config -> IO (Store.Store Discus.Name)
-newDiscusStore config
+newDiscusStore :: Driver.Config -> Driver.Status -> IO (Store.Store Discus.Name)
+newDiscusStore config status
  = do   store   <- Store.new
         return  $ store { Store.storeLoadInterface = Just goLocate }
  where
@@ -311,7 +313,8 @@ newDiscusStore config
          ++ [Build.buildBaseSrcDir (Driver.configBuilder config) </> "base"]
 
         goLocate nModule
-         = Driver.locateModuleFromPaths basePaths nModule "interface" ".di"
+         = Driver.locateModuleFromPaths
+                status basePaths nModule "interface" ".di"
          >>= \case
                 Left Driver.ErrorLocateNotFound{}
                            -> return Nothing

@@ -2,17 +2,17 @@ module DDC.Driver.Command.Compile
         ( cmdCompileRecursive)
 where
 import DDC.Driver.Stage
-import qualified DDC.Driver.Build                       as Build
+import qualified DDC.Driver.Build               as Build
 
 import System.FilePath
-import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 
-import qualified DDC.Core.Discus                        as D
-import qualified DDC.Core.Module                        as C
-import DDC.Core.Interface.Store                         (Store)
+import DDC.Core.Interface.Store                 (Store)
+import qualified DDC.Driver.Interface.Status    as Status
+import qualified DDC.Core.Discus                as D
+import qualified DDC.Core.Module                as C
 
 
 ---------------------------------------------------------------------------------------------------
@@ -45,11 +45,14 @@ cmdCompileRecursive config _bBuildExe store fsPath
  -- Recursively build a source program and link with some extra objects.
  --  all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
  = do
+        -- Create a new file system status cache.
+        status <- liftIO $ Status.newStatus
+
         -- Check that all the files exists before we try to compile any.
         -- We particuarly want to check the .o files are there before
         -- we start compiling any .ds files.
         forM_ fsPath $ \fPath
-         -> do  exists <- liftIO $ doesFileExist fPath
+         -> do  exists <- liftIO $ Status.cachedDoesFileExist status fPath
                 when (not exists)
                  $ throwE $ "No such file " ++ show fPath
 
@@ -61,7 +64,8 @@ cmdCompileRecursive config _bBuildExe store fsPath
 
         -- Start recursive build.
         withExceptT show
-         $ do   state   <- Build.newStateOfStore config store
+         $ do
+                state   <- Build.newStateOfStore config status store
                 Build.addJobs state [Build.JobBuildModuleOfPath fPath | fPath <- fsDS ]
                 Build.buildWithState state
 

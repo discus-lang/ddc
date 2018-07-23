@@ -7,6 +7,7 @@ import Data.IORef
 import System.FilePath
 import DDC.Core.Module                          (ModuleName)
 import Data.Set                                 (Set)
+import DDC.Driver.Interface.Status              (Status)
 import qualified DDC.Driver.Interface.Locate    as Driver
 import qualified DDC.Build.Builder              as Build
 import qualified Data.Map.Strict                as Map
@@ -36,20 +37,22 @@ queryLocateModule state nModule
         case Map.lookup nModule pathOfModule of
          Just path      -> return path
          Nothing
-          -> do path <- locateModuleFromConfig (stateConfig state) nModule
+          -> do path <- locateModuleFromConfig
+                                (stateConfig state) (stateStatus state)
+                                nModule
                 addFactPathOfModule state nModule path
                 return path
 
 
 -- | Determine the file path of a module, given the driver config.
-locateModuleFromConfig :: Config -> ModuleName -> S FilePath
-locateModuleFromConfig config mname
+locateModuleFromConfig :: Config -> Status -> ModuleName -> S FilePath
+locateModuleFromConfig config status mname
  = do   -- Automatically look for modules in the base library.
         let baseDirs
                 =  configModuleBaseDirectories config
                 ++ [Build.buildBaseSrcDir (configBuilder config) </> "base"]
 
-        (liftIO $ Driver.locateModuleFromPaths baseDirs mname "source" ".ds")
+        (liftIO $ Driver.locateModuleFromPaths status baseDirs mname "source" ".ds")
          >>= \case
                 Left  err  -> throwE $ ErrorLocate err
                 Right path -> return path

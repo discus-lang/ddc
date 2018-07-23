@@ -10,8 +10,9 @@ import Control.Monad
 import Control.Monad.IO.Class
 import System.FilePath
 import Data.Maybe
-import qualified Data.Set               as Set
-import qualified System.Directory       as S
+import DDC.Driver.Interface.Status              (Status)
+import qualified DDC.Driver.Interface.Status    as Status
+import qualified Data.Set                       as Set
 
 
 -------------------------------------------------------------------------------
@@ -55,17 +56,18 @@ instance Pretty ErrorLocate where
 --   paths. If the module cannot be found, or is found from multiple paths
 --   then throw an error in the monad.
 locateModuleFromPaths
-        :: [FilePath]   -- ^ Base paths.
+        :: Status       -- ^ File status cache.
+        -> [FilePath]   -- ^ Base paths.
         -> ModuleName   -- ^ Module name.
         -> String       -- ^ Thing name.
         -> String       -- ^ Source file extension
         -> IO (Either ErrorLocate FilePath)
 
-locateModuleFromPaths pathsBase nModule nThing ext
+locateModuleFromPaths status pathsBase nModule nThing ext
  = do
         files   <- liftIO
                 $  liftM (Set.toList . Set.fromList . catMaybes)
-                $  mapM  (\d -> locateModuleFromPath d nModule ext) pathsBase
+                $  mapM  (\d -> locateModuleFromPath status d nModule ext) pathsBase
 
         case files of
          []     -> return $ Left
@@ -80,18 +82,19 @@ locateModuleFromPaths pathsBase nModule nThing ext
 -- | Locate a source file for a module, starting from the given base path.
 --   If the file cannot be found then `Nothing`.
 locateModuleFromPath
-        :: FilePath     -- ^ Base path.
+        :: Status       -- ^ File status cache.
+        -> FilePath     -- ^ Base path.
         -> ModuleName   -- ^ Module name.
         -> String       -- ^ Source file extension.
         -> IO (Maybe FilePath)
 
-locateModuleFromPath pathBase (ModuleName parts) ext
+locateModuleFromPath status pathBase (ModuleName parts) ext
  = let  go []           = ext
         go [p]          = p <.> ext
         go (p : ps)     = p </> go ps
    in do
         let pathFile    = pathBase </> go parts
-        exists          <- S.doesFileExist pathFile
+        exists <- Status.cachedDoesFileExist status pathFile
         if exists
          then return $ Just pathFile
          else return Nothing

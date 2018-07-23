@@ -21,6 +21,7 @@ import DDC.Core.Module                          (ModuleName)
 import Data.IORef
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
+import DDC.Driver.Interface.Status              (Status)
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Driver.Interface.Locate    as Driver
@@ -57,25 +58,29 @@ data Error
 -- | Builder state.
 data State
         = State
-        { -- Driver config.
+        { -- | Driver config.
           stateConfig            :: Driver.Config
 
-          -- The interface store.
+          -- | Interface store holds information read from interface files.
         , stateStore             :: C.Store Discus.Name
 
-          -- Jobs we still need to do.
+          -- | File system status cache helps us avoid performing duplicate OS
+          --   requests for file modification times.
+        , stateStatus            :: Status
+
+          -- | Jobs we still need to do.
         , stateJobs              :: IORef (Set Job, [Job])
 
-          -- Map of module names to paths of source files.
+          -- | Map of module names to paths of source files.
         , stateFactPathOfModule  :: IORef (Map ModuleName FilePath)
 
-          -- Map of paths to module names.
+          -- | Map of paths to module names.
         , stateFactModuleOfPath  :: IORef (Map FilePath ModuleName)
 
-          -- Map of module names to the other modules they directly import.
+          -- | Map of module names to the other modules they directly import.
         , stateFactModuleImports :: IORef (Map ModuleName (Set ModuleName))
 
-          -- Set of module names for which we have interfaces in the interface store.
+          -- | Set of module names for which we have interfaces in the interface store.
         , stateFactHaveInterface :: IORef (Set ModuleName)
         }
 
@@ -87,11 +92,12 @@ type S a = ExceptT Error IO a
 ---------------------------------------------------------------------------------------------------
 -- | Construct a builder state from a driver config and interface store.
 newStateOfStore
-        :: Driver.Config
-        -> C.Store Discus.Name
+        :: Driver.Config        -- ^ Driver config.
+        -> Status               -- ^ File system status cache.
+        -> C.Store Discus.Name  -- ^ Interface store.
         -> S State
 
-newStateOfStore config store
+newStateOfStore config status store
  = liftIO
  $ do   refJobs                 <- newIORef (Set.empty, [])
         refFactPathOfModule     <- newIORef Map.empty
@@ -101,6 +107,7 @@ newStateOfStore config store
         return  $ State
                 { stateConfig            = config
                 , stateStore             = store
+                , stateStatus            = status
                 , stateJobs              = refJobs
                 , stateFactPathOfModule  = refFactPathOfModule
                 , stateFactModuleOfPath  = refFactModuleOfPath

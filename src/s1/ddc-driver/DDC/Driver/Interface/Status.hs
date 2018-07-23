@@ -12,6 +12,7 @@ import qualified Data.Time.Clock        as System
 import qualified Data.Map.Strict        as Map
 
 
+-------------------------------------------------------------------------------
 -- | Cache of file system status.
 --
 --   During a single run of the compiler we assume that the files do not change
@@ -29,6 +30,7 @@ data Status
         , statusModificationTime :: IORef (Map FilePath System.UTCTime) }
 
 
+-------------------------------------------------------------------------------
 -- | Construct a new empty status cache.
 newStatus :: IO Status
 newStatus
@@ -40,7 +42,8 @@ newStatus
 
 
 -- | Check if a file exists or not.
-cachedDoesFileExist :: Status -> FilePath -> IO Bool
+cachedDoesFileExist
+        :: Status -> FilePath -> IO Bool
 cachedDoesFileExist status filePath
  = do   exists <- readIORef (statusFileExists status)
         case Map.lookup filePath exists of
@@ -53,7 +56,8 @@ cachedDoesFileExist status filePath
 
 
 -- | Check if a file exists, and if it does get its modification time.
-cachedModificationTimeIfExists :: Status -> FilePath -> IO (Maybe System.UTCTime)
+cachedModificationTimeIfExists
+        :: Status -> FilePath -> IO (Maybe System.UTCTime)
 cachedModificationTimeIfExists status filePath
  = do   bExists <- cachedDoesFileExist status filePath
         if not bExists
