@@ -73,7 +73,7 @@ ddcAllocInit (heapSize : Nat#) : Unit
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         -- Create the compact region table
-        maxRegionTableSize = div# heapSize 17#
+        maxRegionTableSize = div# heapSize 8#
         pTableBase = malloc maxRegionTableSize
         write# (globali# [Addr#] "ddcCRTableBase"#) 0# pTableBase
         write# (globali# [Addr#] "ddcCRTableTop"#) 0# pTableBase

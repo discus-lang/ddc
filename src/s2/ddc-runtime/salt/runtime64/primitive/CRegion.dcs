@@ -3,7 +3,8 @@
 module Runtime.Prim.CRegion
 
 export foreign c value
- ddcPrimCompactRegionAlloc    : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ ddcPrimCompactRegionAlloc    : Nat# -> Nat#
+ ddcPrimCompactRegionStore    : [r1 : Region]. Nat# -> Ptr# r1 Obj -> Unit
  ddcPrimCompactRegionMarkDead : [r1    : Region]. Ptr# r1 Obj -> Unit
 
 import foreign c value
@@ -16,32 +17,60 @@ import foreign c value
 
 with letrec
 
--- header
---      | ptrStart | size |  live  | r | r | r | r| r| r|
--- bits |64        |64    |1       | 1 | 1 | 1 | 1| 1| 1|
--- byte |8         |8     |1
--- | create a compact region. write header into the region table
-ddcPrimCompactRegionAlloc [r1 r2: Region] (pVal: Ptr# r1 Obj) : Ptr# r2 Obj
- = do   size = ddcObjectSize pVal
-        pBase = malloc size
-        
-        -- copy data
-        rowAddr = takePtr# pVal
-        copy# pBase rowAddr size
-        
-        -- create table entry
-        tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
-        tableTop = read# [Addr#] (global# [Addr#] "ddcCRTableTop"#) 0#
+-- return a region handle
+ddcPrimCompactRegionAlloc (initSize : Nat#) : Nat#
+ = do   
+        -- create CR and header
+        rawBase = malloc initSize
+        -- HEADER SIZE
+        ddcCompactRegionConstructHeader 
+                          rawBase 
+                          (plusAddr# rawBase 17#)  -- top
+                          (plusAddr# rawBase initSize) -- max
+                          0b10000000w8# -- flags
 
-        case gt# (plusAddr# tableTop 17#) tableMax of
+
+        -- insert into the table
+        tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
+        tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+        freeAddr = ddcCompactRegionFindFreeRegionTableSlot tableBase tableMax
+        handle = sub# freeAddr tableBase --TODO: ask Ben how to convert addr to int
+        write# freeAddr 0# rawBase 
+        (truncate# [Nat#] handle)
+
+-- return -1 when table is full
+-- otherwise return the address of the slot
+ddcCompactRegionFindFreeRegionTableSlot (acc : Addr#) (max : Addr#) : Addr#
+ = do 
+      case gt# acc max of
+        True# -> fail# ---TODO extends the CR table
+        False# -> do
+                      slotVal = read# [Addr#] acc 0#
+                      case eq# slotVal (truncate# [Addr#] 0#) of
+                        True# -> acc
+                        False# -> ddcCompactRegionFindFreeRegionTableSlot (plusAddr# acc 8#) max
+
+
+ddcPrimCompactRegionStore [r1 : Region] (handle : Nat#) (pVal : Ptr# r1 Obj) :  Unit
+ = do
+        -- handle validation
+        handleValid = ddcCompactRegionHandleValidation handle
+        case handleValid of
+          False# 
+            -> do fail# --i nvalid handle
           True#
-            -> do makePtr# pBase -- TODO: DON'T LEAK ME!
-          False#
-            -> do write# [Addr#] tableTop 0# pBase
-                  write# [Nat#] tableTop 8# size
-                  write# [Word8#] tableTop 16# 0b10000000w8#
-                  write# (global# [Addr#] "ddcCRTableTop"#) 0# (plusAddr# tableTop 17#)
-                  makePtr# pBase
+            -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+                  regionRawBase = read# [Addr#] tableBase (mul# 8# handle)
+                  isDead = ddcCompactRegionIsAlive regionRawBase
+                  case isDead of
+                    True#  -> fail# --TODO: raise exception?
+                    False# -> do  regionMax = read# [Addr#] regionRawBase 8#
+                                  regionTop = read# [Addr#] regionRawBase 0#
+                                  regionRawBaseNew = ddcCompactRegionResizeStore regionRawBase regionMax regionTop pVal
+                                  write# tableBase (mul# 8# handle) regionRawBaseNew
+                                  ()
+
+
 
 ddcPrimCompactRegionMarkDead [r1: Region] (pVal: Ptr# r1 Obj) : Unit
  = do    rowAddr = takePtr# pVal
@@ -49,6 +78,80 @@ ddcPrimCompactRegionMarkDead [r1: Region] (pVal: Ptr# r1 Obj) : Unit
             (read# [Addr#] (global# [Addr#] "ddcCRTableTop"#) 0#) 
             (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
             rowAddr
+
+
+ddcCompactRegionResizeStore [r1 : Region] 
+                              (rawBase : Addr#)
+                              (top  : Addr#)
+                              (max  : Addr#)
+                              (pVal : Ptr# r1 Obj )
+                              : Addr#
+  = do  freeSize = sub# max top
+        case lt# (ddcObjectSize pVal) (truncate# [Nat#] freeSize) of
+          False# 
+            -> do newSize = mul# (truncate# [Nat#] (sub# max rawBase)) 2# --TODO: a better strategy
+                  rawBaseNew = malloc newSize
+
+                  -- copy old data and old header
+                  usedSize = truncate# [Nat#] (sub# top rawBase)
+                  copy# rawBaseNew rawBase usedSize
+                  -- update header
+                  topNew = plusAddr# rawBaseNew usedSize
+                  maxNew = plusAddr# rawBaseNew newSize
+                  write# rawBaseNew 0# topNew
+                  write# rawBaseNew 8# maxNew
+                  -- trick, find another solution to this if possible.
+                  ddcCompactRegionResizeStore rawBaseNew topNew maxNew pVal
+          True#
+            -> do ddcCompactRegionUnsafeDirectStore rawBase pVal
+                  rawBase
+
+ddcCompactRegionUnsafeDirectStore [r1 : Region]
+                                    (rawBase : Addr#)
+                                    (pVal    : Ptr# r1 Obj)
+                                    : Unit
+  = do 
+      rawObjAddr = takePtr# pVal
+      top = read# rawBase 0#
+      copy# top rawObjAddr (ddcObjectSize pVal)
+      ()
+
+-- macro to write a header
+ddcCompactRegionConstructHeader 
+                  (rawBase : Addr#) 
+                  (top : Addr#) 
+                  (max : Addr#) 
+                  (flags : Word8#) 
+                  : Void#
+  = do  write# rawBase 0# top
+        write# rawBase 8# max
+        write# rawBase 16# flags
+
+-- TODO ask Ben how to define a constant
+ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
+  = do 
+      -- HEADER SIZE
+      plusAddr# rawBase 17#
+
+
+-- return true if the compact region is live
+-- otherwise false
+ddcCompactRegionIsAlive (regionBase : Addr#) : Bool#
+ = do
+        flag8  = truncate# [Word8#] (read# [Addr#] regionBase 0#)
+        case band# flag8 0b10000000w8# of
+          0b10000000w8# -> True#
+          _             -> False#
+
+-- return true if handle is valid
+-- otherwise, false   
+ddcCompactRegionHandleValidation (handle : Nat#) : Bool#
+ = do
+        tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+        tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
+        tableSize = truncate# [Nat#] (sub# tableMax tableBase)
+        lt# handle tableSize
+
 
 iteratingOverRegionList (base : Addr#) (max : Addr#) (target : Addr#) : Unit
  = do    
