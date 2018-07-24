@@ -32,6 +32,9 @@ with letrec
 --
 --   The names for primitive types need to match the ones in the
 --   DDC.Core.Discus.Convert.Data module of the compiler implementation.
+
+--   The indices need to match the ones used in
+--   System.Runtime.Reflect of the base library.
 --
 ddcInfoInitStatic (_: Unit): Unit
  = do

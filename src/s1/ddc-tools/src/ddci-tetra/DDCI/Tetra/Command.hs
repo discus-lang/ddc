@@ -13,11 +13,11 @@ import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
 import DDC.Driver.Interface.Source
-import DDC.Driver.Command.ToSalt       
+import DDC.Driver.Command.ToSalt
 import Control.Monad.Trans.Except
 import Data.List
 import System.IO
-import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Core.Interface.Store      as Store
 
 
 -- | Commands accepted by ddci-tetra.
@@ -38,12 +38,12 @@ data Command
 commands :: [(String, Command)]
 commands
  =      [ (":help",     CommandHelp)
-        , (":?",        CommandHelp) 
+        , (":?",        CommandHelp)
         , (":set",      CommandSet)
-        , (":parse",    CommandParse) 
+        , (":parse",    CommandParse)
         , (":desugar",  CommandDesugar)
-        , (":infer",    CommandInfer) 
-        , (":to-core",  CommandToCore) 
+        , (":infer",    CommandInfer)
+        , (":to-core",  CommandToCore)
         , (":to-salt",  CommandToSalt) ]
 
 
@@ -53,8 +53,8 @@ readCommand ss
         | null $ words ss
         = Just (CommandBlank,   ss)
 
-        | (cmd, rest) : _ 
-                <- [ (cmd, drop (length str) ss) 
+        | (cmd, rest) : _
+                <- [ (cmd, drop (length str) ss)
                         | (str, cmd)      <- commands
                         , isPrefixOf str ss ]
         = Just (cmd, rest)

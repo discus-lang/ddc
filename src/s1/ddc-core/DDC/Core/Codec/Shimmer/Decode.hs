@@ -1,19 +1,25 @@
 
 module DDC.Core.Codec.Shimmer.Decode
         ( Config (..)
+        , decodeInterface
         , takeModuleDecls
         , takeTyCon)
 where
+import qualified DDC.Core.Transform.SpreadX     as SpreadX
+import qualified DDC.Core.Interface.Base        as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Exp.Simple.Compounds  as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
+import qualified DDC.Type.Env                   as C
 import qualified DDC.Type.Sum                   as Sum
 
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
+import qualified SMR.Core.Codec                 as S
 
+import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Text                                (Text)
@@ -21,6 +27,7 @@ import Data.Map                                 (Map)
 import qualified Data.Text                      as T
 import qualified System.IO.Unsafe               as System
 import qualified Data.Map.Strict                as Map
+import qualified Data.ByteString                as BS
 import Prelude hiding (read)
 
 
@@ -38,6 +45,34 @@ fromRef c ss
  = case configTakeRef c ss of
     Just r  -> r
     Nothing -> error "fromRef failed"
+
+
+-- Interface --------------------------------------------------------------------------------------
+decodeInterface
+        :: (Show n, Ord n)
+        => Config n
+        -> C.Env n
+        -> C.Env n
+        -> FilePath             -- ^ Path of interace file, for error messages.
+        -> UTCTime              -- ^ Timestamp of interface file.
+        -> BS.ByteString        -- ^ Interface file contents.
+        -> Maybe (C.Interface n)
+
+decodeInterface config kenv tenv filePath timeStamp bs
+ | Just mm <- takeModuleDecls config
+           $  S.unpackFileDecls bs
+ = let
+        mm_spread = SpreadX.spreadX kenv tenv mm
+
+   in   Just $ C.Interface
+        { C.interfaceFilePath   = filePath
+        , C.interfaceTimeStamp  = timeStamp
+        , C.interfaceVersion    = "version"
+        , C.interfaceModuleName = C.moduleName mm_spread
+        , C.interfaceModule     = mm_spread }
+
+ | otherwise
+ = Nothing
 
 
 -- Module -----------------------------------------------------------------------------------------

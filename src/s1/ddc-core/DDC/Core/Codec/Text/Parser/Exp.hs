@@ -212,7 +212,7 @@ pExpAtomSP c
 
         -- Named algebraic constructors.
  , do   (con, sp) <- pConSP
-        return  (XCon sp (DaConBound con), sp)
+        return  (XCon sp (DaConBound (DaConBoundName Nothing Nothing con)), sp)
 
         -- Literals.
         --   The attached type is set to Bottom for now, which needs
@@ -271,7 +271,7 @@ pPat c
         -- CON BIND BIND ...
  , do   nCon    <- pCon
         bs      <- fmap concat $ P.many (pTermBinds c)
-        return  $ PData (DaConBound nCon) bs]
+        return  $ PData (DaConBound (DaConBoundName Nothing Nothing nCon)) bs]
 
 
 -- Type Binds in patterns can have no kind annotations

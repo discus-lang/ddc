@@ -187,7 +187,7 @@ convertSuperBody ctx ectx blocks label instrs xx
           ,  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
-          ,  Just (A.NamePrimLit A.PrimLitVoid) <- A.takeNameOfDaCon dc
+          ,  Just (A.NamePrimLit A.PrimLitVoid) <- A.takeNameOfDaConPrim dc
           -> return  $   blocks
                      |>  Block label
                                (instrs |> (annotNil $ IReturn Nothing))

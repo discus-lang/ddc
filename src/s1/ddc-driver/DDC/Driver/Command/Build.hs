@@ -6,17 +6,18 @@ import DDC.Driver.Config
 import DDC.Driver.Build.Main
 import DDC.Driver.Command.Compile
 import DDC.Data.Pretty
-import DDC.Build.Interface.Store        (Store)
+import DDC.Core.Interface.Store         (Store)
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified System.FilePath        as FilePath
 import qualified DDC.Build.Spec.Parser  as Spec
 import qualified DDC.Build.Builder      as Builder
 import qualified Data.List              as List
+import qualified DDC.Core.Discus        as D
 
 
 -- Perform a build following a build specification.
-cmdBuild :: Config -> Store -> FilePath -> ExceptT String IO ()
+cmdBuild :: Config -> Store D.Name -> FilePath -> ExceptT String IO ()
 cmdBuild config store filePath
 
  -- Build from a build spec file

@@ -20,7 +20,9 @@ module DDC.Core.Exp.Generic.Compounds
 
         -- * Data Constructors
         , dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
+        , takeBaseCtorNameOfDaCon
         , takeTypeOfDaCon)
 where
 import DDC.Core.Exp.Generic.Exp

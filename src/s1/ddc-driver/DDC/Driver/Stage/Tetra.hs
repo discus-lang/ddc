@@ -11,7 +11,7 @@ import qualified DDC.Driver.Dump                as D
 import qualified DDC.Driver.Config              as D
 import qualified DDC.Driver.Interface.Source    as D
 
-import qualified DDC.Build.Interface.Store      as B
+import qualified DDC.Core.Interface.Store       as B
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Build.Stage.Core           as B
@@ -32,7 +32,7 @@ import qualified DDC.Data.SourcePos             as SP
 -- | Load and type-check a source Discus module.
 sourceLoadText
         :: D.Config             -- ^ Driver config.
-        -> B.Store              -- ^ Interface store.
+        -> B.Store CE.Name      -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO
@@ -68,7 +68,7 @@ sourceLoadText config store source str
 -- | Load and type-check a Core Discus module.
 discusLoadText
         :: D.Config             -- ^ Driver config.
-        -> B.Store              -- ^ Interface store.
+        -> B.Store CE.Name      -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO

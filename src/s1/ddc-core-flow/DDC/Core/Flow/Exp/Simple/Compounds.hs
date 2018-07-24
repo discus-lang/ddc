@@ -32,7 +32,7 @@ module DDC.Core.Flow.Exp.Simple.Compounds
         , bindsOfPat
 
           -- * Alternatives
-        , takeCtorNameOfAlt
+        , takeDaConOfAlt
 
           -- * Witnesses
         , wApp
@@ -46,7 +46,8 @@ module DDC.Core.Flow.Exp.Simple.Compounds
 
           -- * Data Constructors
         , xUnit, C.dcUnit
-        , C.takeNameOfDaCon
+        , C.takeNameOfDaConPrim
+        , C.takeNameOfDaConBound
         , C.takeTypeOfDaCon)
 where
 import DDC.Core.Flow.Exp.Simple.Exp
@@ -217,10 +218,10 @@ valwitBindsOfLets ll
 
 -- Alternatives ---------------------------------------------------------------
 -- | Take the constructor name of an alternative, if there is one.
-takeCtorNameOfAlt :: Alt a n -> Maybe n
-takeCtorNameOfAlt aa
+takeDaConOfAlt :: Alt a n -> Maybe (DaCon n (Type n))
+takeDaConOfAlt aa
  = case aa of
-        AAlt (PData dc _) _     -> C.takeNameOfDaCon dc
+        AAlt (PData dc _) _     -> Just dc
         _                       -> Nothing
 
 

@@ -131,10 +131,12 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreCheck" #-}
    do
         let profile  = C.fragmentProfile fragment
+        let config   = C.configOfProfile profile
 
         -- Type check the module with the generic core type checker.
         mm_checked
-         <- case C.checkModule (C.configOfProfile profile) mm mode of
+         <- liftIO (C.checkModuleIO config mm mode) >>= \r
+         -> case r of
                 (Left err,  C.CheckTrace doc)
                  -> do  liftIO $  B.pipeSink (renderIndent doc) sinkTrace
                         throwE $ [B.ErrorLint stage "PipeCoreCheck/Check" err]

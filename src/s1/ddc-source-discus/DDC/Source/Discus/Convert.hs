@@ -545,5 +545,8 @@ toCoreDC dc
         S.DaConPrim  n t
          -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t
 
-        S.DaConBound n
-         -> C.DaConBound <$> (pure $ toCoreDaConBound n)
+        S.DaConBound (C.DaConBoundName _ _ n)
+         -> C.DaConBound <$> (C.DaConBoundName
+                <$> pure Nothing
+                <*> pure Nothing
+                <*> (pure $ toCoreDaConBound n))

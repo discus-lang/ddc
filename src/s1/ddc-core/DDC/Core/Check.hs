@@ -13,7 +13,8 @@ module DDC.Core.Check
         , CheckTrace (..)
 
           -- * Checking Modules
-        , checkModule
+        , checkModuleIO
+        , reconModule
 
           -- * Checking Types
         , checkType,    checkTypeM
@@ -24,7 +25,7 @@ module DDC.Core.Check
           -- * Checking Expressions
         , Mode   (..)
         , Demand (..)
-        , checkExp,     typeOfExp
+        , checkExpIO,   reconOfExp,     typeOfExp
 
           -- * Checking Witnesses
         , checkWitness, typeOfWitness
@@ -51,6 +52,7 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Context.Base
 import DDC.Core.Check.Base
+import qualified System.IO.Unsafe       as S
 
 
 -- | Check a type in the given universe with the given environment
@@ -61,7 +63,8 @@ checkType  :: (Ord n, Show n, Pretty n)
            -> Either (Error a n) (Type n, Type n)
 
 checkType config uni tt
- = evalCheck (mempty, 0, 0)
+ = S.unsafePerformIO
+ $ evalCheck (mempty, 0, 0)
  $ do   let ctx   = contextOfPrimEnvs
                         (configPrimKinds config)
                         (configPrimTypes config)
@@ -77,7 +80,8 @@ checkSpec  :: (Ord n, Show n, Pretty n)
            -> Either (Error a n) (Type n, Kind n)
 
 checkSpec config tt
- = evalCheck (mempty, 0, 0)
+ = S.unsafePerformIO
+ $ evalCheck (mempty, 0, 0)
  $ do   let ctx   = contextOfPrimEnvs
                         (configPrimKinds config)
                         (configPrimTypes config)
@@ -94,7 +98,8 @@ kindOfSpec
         -> Either (Error a n) (Kind n)
 
 kindOfSpec config tt
- = evalCheck (mempty, 0, 0)
+ = S.unsafePerformIO
+ $ evalCheck (mempty, 0, 0)
  $ do   (_, k, _) <- checkTypeM config emptyContext UniverseSpec tt Recon
         return k
 
@@ -106,7 +111,8 @@ sortOfKind
         -> Either (Error a n) (Sort n)
 
 sortOfKind config tt
- = evalCheck (mempty, 0, 0)
+ = S.unsafePerformIO
+ $ evalCheck (mempty, 0, 0)
  $ do   (_, s, _) <- checkTypeM config emptyContext UniverseKind tt Recon
         return s
 

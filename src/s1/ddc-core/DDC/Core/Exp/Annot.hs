@@ -29,6 +29,7 @@ module DDC.Core.Exp.Annot
 
           -- ** Data Constructors
         , DaCon         (..)
+        , DaConBoundName (..)
 
           -- ** Witness Constructors
         , WiCon         (..)
@@ -120,7 +121,7 @@ module DDC.Core.Exp.Annot
 
           -- ** Alternatives
         , patOfAlt
-        , takeCtorNameOfAlt
+        , takeDaConOfAlt
 
           -- ** Patterns
         , bindsOfPat
@@ -137,7 +138,9 @@ module DDC.Core.Exp.Annot
 
           -- ** Data Constructors
         , xUnit, dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
+        , takeBaseCtorNameOfDaCon
         , takeTypeOfDaCon
 
           -- ** Bound Variables

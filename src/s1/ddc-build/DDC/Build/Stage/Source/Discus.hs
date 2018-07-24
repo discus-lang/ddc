@@ -18,7 +18,7 @@ import qualified DDC.Control.Parser                     as Parser
 
 import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
-import qualified DDC.Build.Interface.Store              as B
+import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Build.Language.Discus              as BE
 import qualified DDC.Build.Stage.Core                   as BC
 import qualified DDC.Build.Transform.Import             as BImport
@@ -75,7 +75,7 @@ sourceLoad
         :: String                       -- ^ Name of source file.
         -> Int                          -- ^ Line number in source file.
         -> String                       -- ^ Text of source file.
-        -> B.Store                      -- ^ Interface store.
+        -> B.Store CE.Name              -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC Parser.SourcePos CE.Name) CE.Name)
@@ -252,7 +252,7 @@ sourceDesugar
 ---------------------------------------------------------------------------------------------------
 -- | Lower desugared source tetra code to core tetra.
 sourceLower
-        :: B.Store              -- ^ Interface store.
+        :: B.Store CE.Name      -- ^ Interface store.
         -> B.Sink               -- ^ Sink after conversion to core.
         -> B.Sink               -- ^ Sink after resolving.
         -> B.Sink               -- ^ Sink after spreading.

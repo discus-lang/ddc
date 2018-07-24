@@ -129,8 +129,7 @@ pruneX profile env xx
 --
 transformTypeUsage profile env trans xx
  = let  config  = configOfProfile profile
-        rr      = checkExp config env Recon DemandNone xx
-   in case fst rr of
+   in case reconOfExp config env xx of
         Right (xx1, _, _)
          -> let xx2        = usageX xx1
                 (x', info) = runWriter (trans xx2)

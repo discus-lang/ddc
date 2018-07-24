@@ -43,10 +43,11 @@ import Control.Monad.IO.Class
 import Control.Monad
 import System.FilePath
 import System.Directory
-import DDC.Build.Interface.Store        (Store)
-import qualified DDC.Control.Parser     as BP
-import qualified DDC.Core.Check         as C
-import qualified DDC.Core.Env.EnvT      as EnvT
+import DDC.Core.Interface.Store                 (Store)
+import qualified DDC.Control.Parser             as BP
+import qualified DDC.Core.Discus                as D
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Driver.Stage.Tetra         as DE
 
 
@@ -60,7 +61,7 @@ import qualified DDC.Driver.Stage.Tetra         as DE
 --
 cmdCheckFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -84,7 +85,7 @@ cmdCheckFromFile config store filePath
 -- | Check a Disciple Source Tetra module from a file.
 cmdCheckSourceTetraFromFile
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store.
+        -> Store D.Name         -- ^ Interface store.
         -> FilePath             -- ^ Module file path.
         -> ExceptT String IO ()
 
@@ -109,7 +110,7 @@ cmdCheckSourceTetraFromFile config store filePath
 --   Any errors are thrown in the `ExceptT` monad.
 cmdCheckSourceTetraFromString
         :: Config               -- ^ Driver config.
-        -> Store                -- ^ Interface store
+        -> Store D.Name         -- ^ Interface store
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
         -> ExceptT String IO ()
@@ -161,7 +162,8 @@ cmdCheckCoreFromString
 
 cmdCheckCoreFromString fragment source str mode
  = do
-        let mModule = loadModuleFromString fragment
+        mModule <- liftIO
+                $  loadModuleFromString fragment
                         (nameOfSource source) (lineStartOfSource source)
                         mode str
 
@@ -301,8 +303,9 @@ cmdParseCheckExp
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExpFromTokens fragment' modules
-                        (nameOfSource source) mode toks of
+         = loadExpFromTokens fragment' modules
+                        (nameOfSource source) mode toks >>= \r
+         -> case r of
               (Left err, mct)
                -> do    outDocLn $ ppr err
 

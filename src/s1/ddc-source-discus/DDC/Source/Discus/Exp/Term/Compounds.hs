@@ -56,7 +56,8 @@ module DDC.Source.Discus.Exp.Term.Compounds
 
           -- ** Data Constructors
         , dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
         , takeTypeOfDaCon
 
           -- ** Patterns
@@ -80,14 +81,14 @@ import Data.Text        (Text)
 
 import DDC.Core.Exp.Annot
         ( dcUnit
-        , takeNameOfDaCon
+        , takeNameOfDaConPrim
+        , takeNameOfDaConBound
         , takeTypeOfDaCon
 
         , bindsOfPat
 
         , wApp
         , wApps
---        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps)
 

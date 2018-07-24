@@ -139,7 +139,8 @@ checkDaConType config ctx a dc
          DaConPrim{}
           -> return $ daConType dc
 
-         DaConBound n
+         -- FIXME: use the module and type names.
+         DaConBound (DaConBoundName _ _ n)
           -- Types of algebraic data ctors should be in the defs table.
           |  Just ctor <- Map.lookup n (dataDefsCtors $ contextDataDefs ctx)
           -> return $ typeOfDataCtor ctor

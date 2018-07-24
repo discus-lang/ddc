@@ -43,6 +43,7 @@ module DDC.Core.Exp.Annot.Exp
 
           -- * Data Constructors
         , DaCon         (..)
+        , DaConBoundName (..)
 
           -- * Witness Constructors
         , WiCon         (..))
