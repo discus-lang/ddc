@@ -15,8 +15,8 @@ import foreign c value
         ddcPrimShowInt          : [r: Region]. Int# -> Ptr# r Obj
         ddcPrimStdoutPutVector  : [r: Region]. Ptr# r Obj -> Void#
         ddcPrimStdoutPutTextLit : TextLit#   -> Void#
-        ddcPrimCompactRegionAlloc    : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
-        ddcPrimCompactRegionMarkDead : [r1    : Region]. Ptr# r1 Obj -> Unit
+        ddcPrimCompactRegionAlloc    : Nat# -> Nat#
+        ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
 
 with letrec
 
@@ -106,10 +106,12 @@ main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 4096#
 
         original = boxWord32 [r1] 10w32#
-        crRegion = ddcPrimCompactRegionAlloc [r1] [r1] original
-
+        
+        handle = ddcPrimCompactRegionAlloc 1024#
+        objInRegion = ddcPrimCompactRegionStore [r1] [r1] handle original
+       
         -- Apply the factorial function.
-        x2      = fac crRegion
+        x2      = fac objInRegion
         
         -- Print out the result.
         x2u     = unboxWord32 x2
@@ -117,7 +119,7 @@ main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcPrimStdoutPutVector str
         ddcPrimStdoutPutTextLit "\n"#
 
-        ddcPrimCompactRegionMarkDead original
+        --leak the memory for now TODO: fix this
 
         -- Return success.
         0i#
