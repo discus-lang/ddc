@@ -51,6 +51,7 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionFile"#)    0# (promote# 0#)
         write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionNetwork"#) 0# (promote# 0#)
 
+
         ()
 
 
@@ -71,6 +72,13 @@ ddcAllocInit (heapSize : Nat#) : Unit
         write# (globali# [Addr#] "ddcHeapBackMax"#)  0#
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
+        -- Create the compact region table
+        maxRegionTableSize = div# heapSize 17#
+        pTableBase = malloc maxRegionTableSize
+        write# (globali# [Addr#] "ddcCRTableBase"#) 0# pTableBase
+        write# (globali# [Addr#] "ddcCRTableTop"#) 0# pTableBase
+        write# (globali# [Addr#] "ddcCRTableMax"#) 0# 
+               (plusAddr# pTableBase (sub# maxRegionTableSize 1#))
         ()
 
 

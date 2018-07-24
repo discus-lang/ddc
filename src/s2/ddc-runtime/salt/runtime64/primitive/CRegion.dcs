@@ -1,0 +1,72 @@
+
+-- | References to boxed values.
+module Runtime.Prim.CRegion
+
+export foreign c value
+ ddcPrimCompactRegionAlloc    : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ ddcPrimCompactRegionMarkDead : [r1    : Region]. Ptr# r1 Obj -> Unit
+
+import foreign c value
+ malloc           : Nat#  -> Addr#
+ free             : Addr# -> Void#
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Word32# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedGetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcObjectSize    : [r1    : Region]. Ptr# r1 Obj  -> Nat#
+
+with letrec
+
+-- header
+--      | ptrStart | size |  live  | r | r | r | r| r| r|
+-- bits |64        |64    |1       | 1 | 1 | 1 | 1| 1| 1|
+-- byte |8         |8     |1
+-- | create a compact region. write header into the region table
+ddcPrimCompactRegionAlloc [r1 r2: Region] (pVal: Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   size = ddcObjectSize pVal
+        pBase = malloc size
+        
+        -- copy data
+        rowAddr = takePtr# pVal
+        copy# pBase rowAddr size
+        
+        -- create table entry
+        tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
+        tableTop = read# [Addr#] (global# [Addr#] "ddcCRTableTop"#) 0#
+
+        case gt# (plusAddr# tableTop 17#) tableMax of
+          True#
+            -> do makePtr# pBase -- TODO: DON'T LEAK ME!
+          False#
+            -> do write# [Addr#] tableTop 0# pBase
+                  write# [Nat#] tableTop 8# size
+                  write# [Word8#] tableTop 16# 0b10000000w8#
+                  write# (global# [Addr#] "ddcCRTableTop"#) 0# (plusAddr# tableTop 17#)
+                  makePtr# pBase
+
+ddcPrimCompactRegionMarkDead [r1: Region] (pVal: Ptr# r1 Obj) : Unit
+ = do    rowAddr = takePtr# pVal
+         iteratingOverRegionList 
+            (read# [Addr#] (global# [Addr#] "ddcCRTableTop"#) 0#) 
+            (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
+            rowAddr
+
+iteratingOverRegionList (base : Addr#) (max : Addr#) (target : Addr#) : Unit
+ = do    
+        case ge# base max of 
+          True#
+            -> ()
+          False#
+            -> do 
+                  offset = read# [Nat#] base 8# 
+                  case gt# target base  of
+                    True#
+                      -> do
+                            case le# target (plusAddr# base offset) of
+                              True#
+                                -> do
+                                      write# [Word8#] base 16# (bor# 0b10000000w8# (read# [Word8#] base 16#))
+                                      ()
+                              False#
+                                -> iteratingOverRegionList (plusAddr# base 17#) max target
+                    False#
+                      -> do iteratingOverRegionList (plusAddr# base 17#) max target

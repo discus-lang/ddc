@@ -30,6 +30,7 @@ baseSaltFiles builder
         , runtime ++ bits </> "primitive" </> "Numeric.dcs"
         , runtime ++ bits </> "primitive" </> "Reflect.dcs"
         , runtime ++ bits </> "primitive" </> "Ref.dcs"
+        , runtime ++ bits </> "primitive" </> "CRegion.dcs"
         , runtime ++ bits </> "primitive" </> "Text.dcs"
         , runtime ++ bits </> "primitive" </> "Vector.dcs"
         , runtime ++ bits </> "Apply.dcs"
