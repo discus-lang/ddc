@@ -1,11 +1,9 @@
-
--- | References to boxed values.
 module Runtime.Prim.CRegion
 
 export foreign c value
  ddcPrimCompactRegionAlloc    : Nat# -> Nat#
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
---  ddcPrimCompactRegionMarkDead : [r1    : Region]. Ptr# r1 Obj -> Unit
+ ddcPrimCompactRegionMarkDead : Nat# -> Void#
 
 import foreign c value
  malloc           : Nat#  -> Addr#
@@ -66,23 +64,24 @@ ddcPrimCompactRegionStore [r1 r2: Region] (handle : Nat#) (pVal : Ptr# r1 Obj) :
           True#
             -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
                   regionRawBase = read# [Addr#] tableBase (mul# 8# handle)
-                  isDead = ddcCompactRegionIsAlive regionRawBase
+                  isDead = ddcCompactRegionIsLive regionRawBase
                   case isDead of
-                    True#  -> fail# --TODO: raise exception?
+                    True#  -> fail# 
                     False# -> do  regionMax = read# [Addr#] regionRawBase 8#
                                   regionTop = read# [Addr#] regionRawBase 0#
                                   makePtr# (ddcCompactRegionResizeStore handle regionRawBase regionMax regionTop pVal)
 
-
-
-
--- ddcPrimCompactRegionMarkDead [r1: Region] (pVal: Ptr# r1 Obj) : Unit
---  = do    rowAddr = takePtr# pVal
---          iteratingOverRegionList 
---             (read# [Addr#] (global# [Addr#] "ddcCRTableTop"#) 0#) 
---             (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
---             rowAddr
-
+-- set the flag to mark compact region dead
+ddcPrimCompactRegionMarkDead (handle : Nat#) : Void#
+ = do handleValid = ddcCompactRegionHandleValidation handle
+      case handleValid of
+        False# 
+          -> do fail# --invalid handle
+        True#
+          -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+                regionRawBase = read# [Addr#] tableBase (mul# 8# handle)
+                flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 0#)
+                write# regionRawBase 0# (band# flag8 0b01111111w8#) 
 
 ddcCompactRegionResizeStore [r1 : Region] 
                               (handle : Nat#)
@@ -152,7 +151,7 @@ ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
 
 -- return true if the compact region is live
 -- otherwise false
-ddcCompactRegionIsAlive (regionBase : Addr#) : Bool#
+ddcCompactRegionIsLive (regionBase : Addr#) : Bool#
  = do
         flag8  = truncate# [Word8#] (read# [Addr#] regionBase 0#)
         case band# flag8 0b10000000w8# of
@@ -169,23 +168,23 @@ ddcCompactRegionHandleValidation (handle : Nat#) : Bool#
         lt# handle tableSize
 
 
-iteratingOverRegionList (base : Addr#) (max : Addr#) (target : Addr#) : Unit
- = do    
-        case ge# base max of 
-          True#
-            -> ()
-          False#
-            -> do 
-                  offset = read# [Nat#] base 8# 
-                  case gt# target base  of
-                    True#
-                      -> do
-                            case le# target (plusAddr# base offset) of
-                              True#
-                                -> do
-                                      write# [Word8#] base 16# (bor# 0b10000000w8# (read# [Word8#] base 16#))
-                                      ()
-                              False#
-                                -> iteratingOverRegionList (plusAddr# base 17#) max target
-                    False#
-                      -> do iteratingOverRegionList (plusAddr# base 17#) max target
+-- iteratingOverRegionList (base : Addr#) (max : Addr#) (target : Addr#) : Unit
+--  = do    
+--         case ge# base max of 
+--           True#
+--             -> ()
+--           False#
+--             -> do 
+--                   offset = read# [Nat#] base 8# 
+--                   case gt# target base  of
+--                     True#
+--                       -> do
+--                             case le# target (plusAddr# base offset) of
+--                               True#
+--                                 -> do
+--                                       write# [Word8#] base 16# (bor# 0b10000000w8# (read# [Word8#] base 16#))
+--                                       ()
+--                               False#
+--                                 -> iteratingOverRegionList (plusAddr# base 17#) max target
+--                     False#
+--                       -> do iteratingOverRegionList (plusAddr# base 17#) max target
