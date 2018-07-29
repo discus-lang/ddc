@@ -42,6 +42,8 @@ runJob state job
           -> runBuildModuleOfPath state fPath
 
 
+-- FIXME: Fix writing to different output dir.
+
 ---------------------------------------------------------------------------------------------------
 -- | Load a module interface into the store.
 runBuildModuleOfName :: State -> C.ModuleName -> S Bool
@@ -206,8 +208,7 @@ buildDiscusSourceModule state filePath mmDiscus
         mmSalt
          <- withExceptT ErrorBuild
          $  G.Discus.discusToSalt
-                config_driver (SourceFile filePath)
-                [] -- mnsTrans
+                config_driver (SourceFile filePath) []
                 mmDiscus
 
         mmSalt `deepseq` return ()
@@ -254,8 +255,8 @@ getLinkObjectsOfModule state mn
         -- Get the set of modules transitively imported by this one.
         mmns    <- liftIO $ C.resolveModuleTransitiveDeps (stateStore state) mn
         mns     <- case mmns of
-                        Nothing   -> error "getLinkObjectsOfModule: cannot load interface"
-                        Just mns' -> return mns'
+                    Nothing   -> error "getLinkObjectsOfModule: cannot load interface"
+                    Just mns' -> return mns'
 
         -- Find all the original source files for those modules.
         fsDS    <- mapM (queryLocateModule state)

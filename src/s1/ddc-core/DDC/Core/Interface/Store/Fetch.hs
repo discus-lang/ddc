@@ -32,17 +32,11 @@ lookupInterface store nModule
         return  $ Map.lookup nModule ints
 
 
--- | Try to find and load the interface file for the given module into the store,
---   or do nothing if we already have it.
-
---   If the interface file cannot be found then return False, otherwise True.
---   If the interface file exists but cannot be loaded then `error`.
---   If there is no load function defined then `error`.
+-- | If we already have the given interface in the store then return
+--   it directly, otherwise try to load it from the file system.
 --
---   FIXME: we need to check that the interface file is fresh relative
---   to any existing source files and dependent modules. When statting the dep
---   modules also make sure to avoid restatting the same module over and over.
---   The top level compile driver used to do this job.
+--   The load function checks whether the interface file is fresh relative
+--   to the source files, so we don't need to check that again here.
 --
 fetchInterface
         :: (Ord n, Show n)

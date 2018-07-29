@@ -2,6 +2,7 @@
 module DDC.Driver.Interface.Status
         ( Status (..)
         , newStatus
+        , purgeCacheForFile
         , cachedDoesFileExist
         , cachedModificationTimeIfExists)
 where
@@ -41,9 +42,20 @@ newStatus
                 , statusModificationTime = refModificationTime }
 
 
+-- | Purge information about the given file.
+--   This needs to be done when we modify a file ourselves.
+purgeCacheForFile :: Status -> FilePath -> IO ()
+purgeCacheForFile status filePath
+ = do
+        modifyIORef' (statusFileExists status)
+         $ \ss -> Map.delete filePath ss
+
+        modifyIORef' (statusModificationTime status)
+         $ \ss -> Map.delete filePath ss
+
+
 -- | Check if a file exists or not.
-cachedDoesFileExist
-        :: Status -> FilePath -> IO Bool
+cachedDoesFileExist :: Status -> FilePath -> IO Bool
 cachedDoesFileExist status filePath
  = do   exists <- readIORef (statusFileExists status)
         case Map.lookup filePath exists of
