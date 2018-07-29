@@ -98,5 +98,5 @@ vec3_cross      ((Vec3 x1 y1 z1): Vec3) ((Vec3 x2 y2 z2): Vec3): Vec3
 
 -- | Normalize a vector.
 vec3_normalize  (v: Vec3): Vec3
- = vec3_muls v (div 1.0 (vec3_magnitude v))
+ = vec3_muls v (div 1.0f64 (vec3_magnitude v))
 

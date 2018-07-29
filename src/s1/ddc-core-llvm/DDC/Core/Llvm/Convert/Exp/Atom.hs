@@ -111,7 +111,7 @@ mconvAtom ctx xx
                 -- Literal floating point value of some width.
                 A.PrimLitFloat val bits
                  -> Just $ do
-                        t' <- convertType pp kenv (A.tWord bits)
+                        t' <- convertType pp kenv (A.tFloat bits)
                         return $ XLit (LitFloat t' val)
 
                 -- Literal character

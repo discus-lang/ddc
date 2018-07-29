@@ -2,8 +2,11 @@
 module Main
 import Trace; World; Object; Light
 import Main.Args
+import Math.Vec3
 import System.IO.Console
 import Class.Show
+import Data.Maybe
+import Data.Numeric
 where
 
 

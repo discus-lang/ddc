@@ -4,16 +4,18 @@ import Lambda.Source.Parser
 import Lambda.Source.Lexer
 import Lambda.Eval.Step
 import Lambda.Exp.Pretty
+import Lambda.Exp.Base
 import Lambda.Exp
 import Class.Show
 import Data.Tuple
+import Data.Text.List
 import Data.Text
 import System.IO.Console
 where
 
 
 main ()
- = do  
+ = do
         cs      = charListOfText "(\\x. x) (\\foo. bar foo) (\\y. y)"
         ts      = lexTokens cs
 

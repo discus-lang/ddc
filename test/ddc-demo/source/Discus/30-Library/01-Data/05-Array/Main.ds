@@ -4,7 +4,7 @@ import System.IO.Console
 import Class.Show
 import Data.Numeric.Nat
 import Data.Function
-import Data.Array
+import Data.Array.Store
 where
 
 

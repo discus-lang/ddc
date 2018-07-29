@@ -7,6 +7,8 @@ import Control.Parsec
 import Class.Show
 import Data.Numeric
 import Data.Tuple
+import Data.List
+import Data.Text.List
 import Data.Text
 where
 
