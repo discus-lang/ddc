@@ -2,6 +2,7 @@ module DDC.Driver.Command.Compile
         ( cmdCompileRecursive)
 where
 import DDC.Driver.Stage
+import qualified DDC.Data.Pretty                as P
 import qualified DDC.Driver.Build               as Build
 
 import System.FilePath
@@ -58,14 +59,15 @@ cmdCompileRecursive config _bBuildExe store fsPath
 
         -- Split file list into souce files and extra objects.
         let fsDS  = filter (\f -> takeExtension f == ".ds") fsPath
+
+        -- FIXME: link against extra object files.
 --        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
 
         -- TODO: detect other files given to us that we don't know what to do with.
 
         -- Start recursive build.
-        withExceptT show
-         $ do
-                state   <- Build.newStateOfStore config status store
+        withExceptT (P.renderIndent . P.ppr)
+         $ do   state   <- Build.newStateOfStore config status store
                 Build.addJobs state [Build.JobBuildModuleOfPath fPath | fPath <- fsDS ]
                 Build.buildWithState state
 

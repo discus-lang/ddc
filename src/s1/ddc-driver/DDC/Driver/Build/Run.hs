@@ -4,6 +4,7 @@ import DDC.Driver.Build.Query
 import DDC.Driver.Build.State
 import DDC.Driver.Interface.Source
 import DDC.Driver.Config
+import qualified DDC.Driver.Interface.Status            as Status
 
 import Control.DeepSeq
 import Data.Maybe
@@ -24,8 +25,9 @@ import qualified DDC.Core.Salt                          as S
 import qualified DDC.Version                            as V
 import qualified DDC.Core.Salt.Runtime                  as A
 
-import qualified Data.Time.Clock                        as S
 import qualified System.FilePath                        as S
+import qualified System.Directory                       as S
+import qualified Data.Time.Clock                        as S
 import qualified Data.Text                              as T
 import qualified Data.Set                               as Set
 
@@ -42,8 +44,6 @@ runJob state job
           -> runBuildModuleOfPath state fPath
 
 
--- FIXME: Fix writing to different output dir.
-
 ---------------------------------------------------------------------------------------------------
 -- | Load a module interface into the store.
 runBuildModuleOfName :: State -> C.ModuleName -> S Bool
@@ -58,12 +58,11 @@ runBuildModuleOfName state nModule
                 return True
 
          | otherwise
-         = do   -- See if our build state knows we already have the interface.
+         = do   -- See if we already have the interface.
+                -- If the interface is in the store then we assume that it's fresh.
                 bHave   <- queryHaveInterface state nModule
                 if bHave
-                 then   -- TODO: need to check transitive freshness
-                        return True
-
+                 then   return True
                  else   goEnsure
 
         goEnsure
@@ -156,9 +155,12 @@ buildDiscusSourceModuleOfPath state filePath nModule
         mmDiscus `deepseq` return ()
 
         -- Store the interface file for later.
-        let pathDI = S.replaceExtension filePath "di"
+        let pathBase    = fromMaybe "." $ configOutputDir $ stateConfig state
+        let pathDI      = S.replaceExtension (pathBase S.</> filePath) "di"
+        liftIO $ S.createDirectoryIfMissing True (S.takeDirectory pathDI)
+
         storeInterfaceOfModule state mmDiscus pathDI
-        addFactHaveInterface state nModule
+        addFactHaveInterface   state nModule
 
         -- Continue compilation.
         buildDiscusSourceModule state filePath mmDiscus
@@ -183,7 +185,7 @@ storeInterfaceOfModule state mm pathDI
                 , C.Encode.configTakeVarName    = D.Encode.takeVarName
                 , C.Encode.configTakeConName    = D.Encode.takeConName }
 
-        liftIO  $ C.Encode.storeInterface cEncode pathDI int
+        liftIO $ C.Encode.storeInterface cEncode pathDI int
 
         -- Add the new interface to the store.
         liftIO $ C.addInterface (stateStore state) int
@@ -262,8 +264,29 @@ getLinkObjectsOfModule state mn
         fsDS    <- mapM (queryLocateModule state)
                 $  Set.toList $ Set.delete (C.ModuleName ["Main"]) mns
 
-        -- Produce the corresponding .o files, that need to be next to the source files.
-        let fsO =  map (flip S.replaceExtension ".o") fsDS
+        -- Find the .o files that we've built for each of the modules.
+        -- These should all have been built by the time we reach this point,
+        -- but they might be located either next to the .ds file or in the
+        -- auxilliary output directory.
+        let findO mOutputDir fileDS =
+             case mOutputDir of
+                Just pathOut
+                 -> do  let fileO_inAux = S.replaceExtension (pathOut S.</> fileDS) ".o"
+                        bHaveInAux <- Status.cachedDoesFileExist (stateStatus state) fileO_inAux
+                        if bHaveInAux
+                         then return fileO_inAux
+                         else findO Nothing fileDS
+
+                Nothing
+                 -> do  let fileO_nearDS = S.replaceExtension fileDS ".o"
+                        bHaveNearDS <- Status.cachedDoesFileExist (stateStatus state) fileO_nearDS
+                        if bHaveNearDS
+                         then return fileO_nearDS
+                         else error $ "ddc-driver.getLinkObjectsOfModule: missing " ++ fileO_nearDS
+
+        -- Get paths for the corresponding .o files, that need to be next to the source files.
+        let mOutputDir = configOutputDir $ stateConfig state
+        fsO     <- liftIO $ mapM (findO mOutputDir) fsDS
 
         return fsO
 

@@ -18,6 +18,7 @@ module DDC.Driver.Build.State
         , module Control.Monad.IO.Class)
 where
 import DDC.Core.Module                          (ModuleName)
+import DDC.Data.Pretty
 import Data.IORef
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
@@ -52,6 +53,16 @@ data Error
         | ErrorLocate      Driver.ErrorLocate
         | ErrorBuild       [B.Error]
         deriving Show
+
+instance Pretty Error where
+ ppr (ErrorMissingFile filePath)
+  = string "Missing file " % string filePath
+
+ ppr (ErrorLocate err)
+  = ppr err
+
+ ppr (ErrorBuild errs)
+  = vcat $ map ppr errs
 
 
 ---------------------------------------------------------------------------------------------------
