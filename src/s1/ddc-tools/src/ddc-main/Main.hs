@@ -306,23 +306,23 @@ getDriverConfig config mFilePath
 newDiscusStore :: Driver.Config -> Driver.Status -> IO (Store.Store Discus.Name)
 newDiscusStore config status
  = do   store   <- Store.new
-        return  $ store { Store.storeLoadInterface = Just goLocate }
+        return  $ store { Store.storeLoadInterface = Just (goLocate store) }
  where
         basePaths
          =  Driver.configModuleBaseDirectories config
          ++ [Build.buildBaseSrcDir (Driver.configBuilder config) </> "base"]
 
-        goLocate nModule
+        goLocate store nModule
          = Driver.locateModuleFromPaths
                 status basePaths nModule "interface" ".di"
          >>= \case
                 Left Driver.ErrorLocateNotFound{}
                            -> return Nothing
                 Left err   -> failStore err
-                Right path -> goLoad path
+                Right path -> goLoad store path
 
-        goLoad path
-         = Driver.loadInterface Discus.takeName path
+        goLoad store path
+         = Driver.loadFreshInterface Discus.takeName status store path
          >>= \case
                 Left err   -> failStore err
                 Right ii   -> return $ Just ii

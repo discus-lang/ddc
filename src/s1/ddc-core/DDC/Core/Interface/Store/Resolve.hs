@@ -39,12 +39,24 @@ data Error n
         = ErrorNotFound n
         | ErrorMultipleModules    n (Set ModuleName)
         | ErrorMultipleTyConThing [TyConThing n]
+        | ErrorUnknownModule      ModuleName
 
         -- | The index maps in the interface store are broken.
         --   They said the store contained some value but it didn't.
         --   TODO: ditch this.
         | ErrorInternal           String
         deriving Show
+
+
+---------------------------------------------------------------------------------------------------
+-- | Resolve the set of transitive dependencies of a module.
+resolveModuleTransitiveDeps
+        :: Store n -> ModuleName
+        -> IO (Maybe (Set ModuleName))
+
+resolveModuleTransitiveDeps store mn
+ = do   deps <- readIORef $ storeModuleTransitiveDeps store
+        return $ Map.lookup mn deps
 
 
 ---------------------------------------------------------------------------------------------------

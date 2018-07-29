@@ -1,10 +1,15 @@
 
 module DDC.Driver.Interface.Load
-        ( ErrorLoad(..)
-        , loadInterface)
+        ( loadFreshInterface
+        , loadInterface
+        , ErrorLoad(..))
 where
 import DDC.Data.Pretty
 import System.Directory
+import DDC.Core.Discus                          as D
+import DDC.Core.Interface.Store                 (Store)
+import DDC.Driver.Interface.Status              (Status)
+--import qualified DDC.Driver.Interface.Status    as Status
 import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Core.Codec.Shimmer.Decode  as Decode
 import qualified SMR.Core.Exp                   as SMR
@@ -34,6 +39,36 @@ instance Pretty ErrorLoad where
   = vcat
   [ text "Decode of interface file failed."
   , indent 4 $ string path ]
+
+
+-------------------------------------------------------------------------------
+-- | Load a fresh interface from a named file.
+--
+--   If the interface file exists but is not fresh then `Nothing`.
+--
+--   When loading it we inspect the set of transitive dependencies and
+--   check that all the dependent interfaces are also fresh. This is done
+--   using the file modification times in the file system cache so that we
+--   don't end up making a quadratic number of file modification time requests
+--   to the operating system.
+--
+loadFreshInterface
+        :: (SMR.Exp Text SMR.Prim -> Maybe D.Name)
+                                -- ^ Function to load a name.
+        -> Status               -- ^ File status cache.
+        -> Store D.Name         -- ^ Interface store for trans. module deps.
+        -> FilePath             -- ^ Path to load file from.
+        -> IO (Either ErrorLoad (Store.Interface D.Name))
+
+loadFreshInterface takeRef _status _store filePath
+ = do   putStrLn $ "* loadFreshInterface " ++ show filePath
+
+        -- TODO: check if the current interface is fresh.
+
+        -- Load the root interface
+        ii      <- loadInterface takeRef filePath
+
+        return ii
 
 
 -------------------------------------------------------------------------------
@@ -70,3 +105,4 @@ loadInterface takeRef filePath
          -- Some other file that isn't an interface.
          else do
                 return $ Left $ ErrorLoadBadMagic filePath
+

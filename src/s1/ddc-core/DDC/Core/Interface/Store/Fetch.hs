@@ -7,7 +7,6 @@ import DDC.Core.Module
 import Data.IORef
 import Data.Set                         (Set)
 import qualified Data.Map.Strict        as Map
-import qualified Data.Set               as Set
 
 
 ---------------------------------------------------------------------------------------------------
@@ -84,32 +83,26 @@ fetchInterface store nModule
 --   Store the list of transitive imports directly in each module,
 --   so we don't need to load the complete graph of imports.
 --
-fetchTransitiveImports
+fetchModuleTransitiveDeps
         :: (Ord n, Show n)
-        => Store n -> ModuleName -> IO (Set ModuleName)
+        => Store n -> ModuleName -> IO (Maybe (Set ModuleName))
 
-fetchTransitiveImports store mn
- = loop Set.empty (Set.singleton mn)
+fetchModuleTransitiveDeps store nModule
+ = goCheck
  where
-        loop mnsHave mnsNext
-         | mnNext : _       <- Set.toList mnsNext
-         = if Set.member mnNext mnsHave
-            then loop mnsHave (Set.delete mnNext mnsNext)
-            else do
-                Just ii <- fetchInterface store mnNext
+        -- Check if we've alredy got the info in the store.
+        goCheck
+         = do   deps   <- readIORef $ storeModuleTransitiveDeps store
+                case Map.lookup nModule deps of
+                 Just mns -> return $ Just mns
+                 Nothing  -> goLoad
 
-                let mnsMoar
-                        = Set.fromList $ moduleImportModules $ interfaceModule ii
-
-                let mnsNext'
-                        = Set.difference
-                                (Set.union mnsNext mnsMoar)
-                                (Set.insert mnNext mnsHave)
-
-                loop (Set.insert mnNext mnsHave) mnsNext'
-
-         | otherwise
-         = return mnsHave
+        -- Try to load the interface from the file system.
+        goLoad
+         = do   mInt <- fetchInterface store nModule
+                case mInt of
+                 Just ii  -> return $ Just $ moduleTransitiveDeps $ interfaceModule ii
+                 Nothing  -> return Nothing
 
 
 -- Caps -------------------------------------------------------------------------------------------

@@ -252,8 +252,10 @@ getLinkObjectsOfModule :: State -> ModuleName -> S [FilePath]
 getLinkObjectsOfModule state mn
  = do
         -- Get the set of modules transitively imported by this one.
-        -- FIXME: this will currently load all the transitive interface files.
-        mns     <- liftIO $ C.fetchTransitiveImports (stateStore state) mn
+        mmns    <- liftIO $ C.resolveModuleTransitiveDeps (stateStore state) mn
+        mns     <- case mmns of
+                        Nothing   -> error "getLinkObjectsOfModule: cannot load interface"
+                        Just mns' -> return mns'
 
         -- Find all the original source files for those modules.
         fsDS    <- mapM (queryLocateModule state)

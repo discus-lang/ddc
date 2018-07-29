@@ -15,10 +15,11 @@ module DDC.Core.Interface.Store
         , getModuleNames
         , lookupInterface
         , fetchInterface
-        , fetchTransitiveImports
+        , fetchModuleTransitiveDeps
 
         -- * Name Resolution
         , kindOfTyConThing
+        , resolveModuleTransitiveDeps
         , resolveTyConThing
         , resolveDataCtor
         , resolveValueName

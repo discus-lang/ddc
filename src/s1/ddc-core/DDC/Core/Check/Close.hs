@@ -86,14 +86,18 @@ closeModuleWithOracle kenv oracle mm
         let mm_closed
                 = wrapModuleWithImportThings its' mm_reexport
 
-        -- Update the set of transitive dependencies by taking the union
-        -- of all dependencies of modules that this one uses.
+        -- Update the set of transitive dependencies by taking the union of all
+        -- dependencies of modules that this one uses. We need the modules from
+        -- which values are imported, as well as the ones from which data types
+        -- are imported so that we get the data ctor initialization code.
         let mns_import
-                = Set.fromList
-                $ map moduleNameOfImportValue
-                $ map snd $ moduleImportValues mm_closed
+                = Set.unions
+                [ Set.fromList $ moduleImportModules mm_closed
+                , Set.fromList $ map moduleNameOfImportValue
+                               $ map snd $ moduleImportValues mm_closed ]
 
         mpDeps  <- readIORef (Store.storeModuleTransitiveDeps $ Oracle.oracleStore oracle)
+
         let mns_dep
                 = Set.unions
                 $ mns_import
