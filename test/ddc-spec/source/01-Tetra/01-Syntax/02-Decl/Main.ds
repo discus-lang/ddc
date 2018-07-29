@@ -3,6 +3,7 @@
 module Main
 import System.IO.Console
 import Class.Show
+import Data.Numeric
 where
 
 -- Data type declaration where the constructors have arguments.
