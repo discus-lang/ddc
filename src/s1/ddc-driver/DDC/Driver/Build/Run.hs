@@ -89,6 +89,24 @@ runBuildModuleOfName state nModule
 -- | Build a module from a file path.
 runBuildModuleOfPath :: State -> FilePath -> S Bool
 runBuildModuleOfPath state filePath
+ | S.takeExtension filePath == ".ds"
+ =      chaseDiscusSourceModuleOfPath state filePath
+
+ | S.takeExtension filePath == ".dct"
+ = do   buildCoreDiscusModuleOfPath state filePath
+        return True
+
+ | S.takeExtension filePath == ".dcs"
+ = do   buildCoreSaltModuleOfPath state filePath
+        return True
+
+ | otherwise
+ = error $ "ddc-driver.runBuildModuleOfPath: don't know how to build a " ++ show filePath
+
+
+-- Source Discus ----------------------------------------------------------------------------------
+chaseDiscusSourceModuleOfPath :: State -> FilePath -> S Bool
+chaseDiscusSourceModuleOfPath state filePath
  = goCheckInterface
  where
         -- Check if we already have the interface of the target module,
@@ -113,7 +131,7 @@ runBuildModuleOfPath state filePath
         goCheckDeps nModule nsImport
          = do   bHaveDeps <- queryHaveInterfaces state nsImport
                 if bHaveDeps
-                 then   buildModuleOfPath state filePath nModule
+                 then   buildDiscusSourceModuleOfPath state filePath nModule
 
                  else do
                         -- TODO: only add modules we know are not in the interface store.
@@ -124,21 +142,12 @@ runBuildModuleOfPath state filePath
                         return False
 
 
----------------------------------------------------------------------------------------------------
--- | Build a source module, deciding what do do based on the file extension.
-buildModuleOfPath :: State -> FilePath -> ModuleName -> S Bool
-buildModuleOfPath state filePath nModule
- = do
-        liftIO $ putStrLn $ "* Compiling " ++ filePath
-        buildDiscusSourceModuleOfPath state filePath nModule
-        return True
-
-
----------------------------------------------------------------------------------------------------
 -- | Build a Discus source module from a file path.
-buildDiscusSourceModuleOfPath :: State -> FilePath -> ModuleName -> S ()
+buildDiscusSourceModuleOfPath :: State -> FilePath -> ModuleName -> S Bool
 buildDiscusSourceModuleOfPath state filePath nModule
  = do
+        liftIO $ putStrLn $ "* Compiling " ++ filePath
+
         sSource   <- liftIO $ readFile filePath
 
         -- TODO: just checking the source takes a fraction of the time
@@ -147,8 +156,7 @@ buildDiscusSourceModuleOfPath state filePath nModule
          <- withExceptT ErrorBuild
          $  fmap (C.Reannotate.reannotate (const ()))
          $  G.Discus.sourceLoadText
-                (stateConfig state)
-                (stateStore state)
+                (stateConfig state) (stateStore state)
                 (SourceFile filePath)
                 sSource
 
@@ -164,6 +172,32 @@ buildDiscusSourceModuleOfPath state filePath nModule
 
         -- Continue compilation.
         buildDiscusSourceModule state filePath mmDiscus
+
+        return True
+
+
+-- | Build a Discus source module from the AST representation.
+buildDiscusSourceModule :: State -> FilePath -> C.Module () D.Name -> S ()
+buildDiscusSourceModule state filePath mmDiscus
+ = do
+        let config_runtime
+                = (configRuntime $ stateConfig state)
+                { A.configHookHandleTopLevel
+                        = Just (T.pack "Console", T.pack "ddcHookHandleTopLevel") }
+
+        let config_driver
+                = (stateConfig state)
+                { configRuntime = config_runtime }
+
+        mmSalt
+         <- withExceptT ErrorBuild
+         $  G.Discus.discusToSalt
+                config_driver (SourceFile filePath) []
+                mmDiscus
+
+        mmSalt `deepseq` return ()
+
+        buildCoreSaltModule state filePath mmSalt
 
 
 storeInterfaceOfModule state mm pathDI
@@ -193,50 +227,80 @@ storeInterfaceOfModule state mm pathDI
         return ()
 
 
----------------------------------------------------------------------------------------------------
--- | Build a Discus source module from the AST representation.
-buildDiscusSourceModule :: State -> FilePath -> C.Module () D.Name -> S ()
-buildDiscusSourceModule state filePath mmDiscus
+-- Core Discus ------------------------------------------------------------------------------------
+-- | Build a Discus Core Module.
+buildCoreDiscusModuleOfPath :: State -> FilePath -> S ()
+buildCoreDiscusModuleOfPath state filePath
  = do
-        let config_runtime
-                = (configRuntime $ stateConfig state)
-                { A.configHookHandleTopLevel
-                        = Just (T.pack "Console", T.pack "ddcHookHandleTopLevel") }
+        liftIO $ putStrLn $ "* Compiling " ++ filePath
 
-        let config_driver
-                = (stateConfig state)
-                { configRuntime = config_runtime }
+        -- TODO: don't use strings
+        sSource   <- liftIO $ readFile filePath
+
+        mmDiscus
+         <- withExceptT ErrorBuild
+         $  fmap (C.Reannotate.reannotate (const ()))
+         $  G.Discus.discusLoadText
+                (stateConfig state) (stateStore  state)
+                (SourceFile filePath)
+                sSource
+
+        mmDiscus `deepseq` return ()
 
         mmSalt
          <- withExceptT ErrorBuild
          $  G.Discus.discusToSalt
-                config_driver (SourceFile filePath) []
+                (stateConfig state)
+                (SourceFile filePath)
+                []
                 mmDiscus
 
         mmSalt `deepseq` return ()
 
-        buildDiscusSaltModule state filePath mmSalt
+        buildCoreSaltModule state filePath mmSalt
 
 
----------------------------------------------------------------------------------------------------
+-- Core Salt --------------------------------------------------------------------------------------
+buildCoreSaltModuleOfPath :: State -> FilePath -> S ()
+buildCoreSaltModuleOfPath state filePath
+ = do
+        liftIO $ putStrLn $ "* Compiling " ++ filePath
+
+        -- TODO: don't use strings
+        sSource <- liftIO $ readFile filePath
+
+        mmSalt
+         <- withExceptT ErrorBuild
+         $  fmap (C.Reannotate.reannotate (const ()))
+         $  G.Salt.saltLoadText
+                (stateConfig state)
+                (SourceFile filePath)
+                sSource
+
+        mmSalt `deepseq` return ()
+
+        buildCoreSaltModule state filePath mmSalt
+
+
 -- | Build a Salt module that has been lowered from Discus code.
-buildDiscusSaltModule :: State -> FilePath -> C.Module () S.Name -> S ()
-buildDiscusSaltModule state filePath mmSalt
+buildCoreSaltModule :: State -> FilePath -> C.Module () S.Name -> S ()
+buildCoreSaltModule state filePath mmSalt
  = do
         -- Link the file into an executable if this is the Main module.
-        let bBuildExe
-                = S.takeBaseName filePath == "Main"
+        let bBuildExe = S.takeBaseName filePath == "Main"
+
+        -- Link in dependent modules.
+        let bLinkDeps = bBuildExe && S.takeExtension filePath == ".ds"
+
+        -- Add GC slot stack if we're not compiling a Core Salt file.
+        let bSlotify  = S.takeExtension filePath == ".ds"
 
         -- When building an executable,
         -- get the list of extra .o files we need to link with.
         mfsLink
-         <- if not bBuildExe
-                then return Nothing
-                else fmap Just $ getLinkObjectsOfModule state (C.moduleName mmSalt)
-
-        -- Add GC slot stack if we're not compiling a Core Salt file.
-        let bSlotify
-                = not $ S.takeExtension filePath == ".dcs"
+         <- if bLinkDeps
+                then fmap Just $ getLinkObjectsOfModule state (C.moduleName mmSalt)
+                else return Nothing
 
         -- FIXME: this uses up 80% of the compilation time.
         -- What's going wrong? How much is the LLVM compiler?

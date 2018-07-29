@@ -106,10 +106,13 @@ saltCompileViaLlvm
 saltCompileViaLlvm config source mOtherExeObjs
         bSlotify bShouldLinkExe mm
  = do
-        let (oPath, _)  = D.objectPathsOfConfig config (D.nameOfSource source)
-        let mExePath    = if bShouldLinkExe
-                                then Just $ D.exePathOfConfig config oPath
-                                else Nothing
+        let (oPath, _)
+                = D.objectPathsOfConfig config (D.nameOfSource source)
+
+        let mExePath
+                = if bShouldLinkExe
+                        then Just $ D.exePathOfConfig config (D.nameOfSource source)
+                        else Nothing
 
         BA.saltCompileViaLlvm
                 (D.nameOfSource source)

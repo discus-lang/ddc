@@ -58,7 +58,9 @@ cmdCompileRecursive config _bBuildExe store fsPath
                  $ throwE $ "No such file " ++ show fPath
 
         -- Split file list into souce files and extra objects.
-        let fsDS  = filter (\f -> takeExtension f == ".ds") fsPath
+        let fsDS  = filter (\f -> takeExtension f == ".ds")  fsPath
+        let fsDCT = filter (\f -> takeExtension f == ".dct") fsPath
+        let fsDCS = filter (\f -> takeExtension f == ".dcs") fsPath
 
         -- FIXME: link against extra object files.
 --        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
@@ -68,7 +70,9 @@ cmdCompileRecursive config _bBuildExe store fsPath
         -- Start recursive build.
         withExceptT (P.renderIndent . P.ppr)
          $ do   state   <- Build.newStateOfStore config status store
-                Build.addJobs state [Build.JobBuildModuleOfPath fPath | fPath <- fsDS ]
+                Build.addJobs state
+                        [ Build.JobBuildModuleOfPath fPath
+                        | fPath <- fsDS ++ fsDCT ++ fsDCS]
                 Build.buildWithState state
 
         return ()

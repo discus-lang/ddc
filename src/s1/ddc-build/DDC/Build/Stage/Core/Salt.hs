@@ -34,6 +34,7 @@ import qualified DDC.Core.Llvm.Convert                  as ALlvm
 import qualified DDC.Llvm.Syntax                        as L
 import qualified DDC.Llvm.Pretty                        as L
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Compile Salt Code using the system Llvm compiler.
 saltCompileViaLlvm
@@ -55,9 +56,7 @@ saltCompileViaLlvm
 saltCompileViaLlvm
         srcName builder pathO mPathExe mPathsOther
         bSlotify bKeepLlvmFiles bKeepAsmFiles
-        sinkPrep sinkSlots sinkTransfer
-        mm
-
+        sinkPrep sinkSlots sinkTransfer mm
  = do
         -- Decide where to place the build products.
         let pathLL      = FilePath.replaceExtension pathO ".ddc.ll"
@@ -77,6 +76,7 @@ saltCompileViaLlvm
         let strLlvm     = renderIndent $ pprModePrec llMode (0 :: Int) mm_llvm
 
         -- Write out Llvm source file.
+        liftIO $ System.createDirectoryIfMissing True (FilePath.takeDirectory pathLL)
         liftIO $ writeFile pathLL strLlvm
 
         -- Compile Llvm source file into .s file.
@@ -156,8 +156,8 @@ saltToLlvm
         mm_slotify
          <- if bAddSlots
              then do mm' <- case ASlotify.slotifyModule () mm_checked of
-                                Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
-                                Right mm'' -> return mm''
+                             Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
+                             Right mm'' -> return mm''
 
                      liftIO $ B.pipeSink (renderIndent $ pprModule mm') sinkSlots
                      return mm'
