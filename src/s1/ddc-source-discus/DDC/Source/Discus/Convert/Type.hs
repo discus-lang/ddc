@@ -33,8 +33,7 @@ toCoreTypeDef
 toCoreTypeDef (b, t)
  = do   n       <- toCoreTBCN b
         t'      <- toCoreT UniverseSpec t
-        let hole = C.TVar (C.UName C.NameHole)
-        return  (n, (hole, t'))
+        return  (n, (C.kData, t'))
 
 
 -- Type -------------------------------------------------------------------------------------------
