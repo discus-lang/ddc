@@ -88,7 +88,7 @@ data Context a
 
         , contextConvertAlt
                 :: a
-                -> Bound E.Name -> Type E.Name
+                -> Maybe (Bound E.Name) -> Type E.Name
                 -> ExpContext   -> Context a
                 -> Alt  (AnTEC a E.Name) E.Name
                 -> ConvertM a (Alt a A.Name)

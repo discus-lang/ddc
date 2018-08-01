@@ -39,9 +39,9 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
  --  of the runtime system.
  | DaConUnit    <- dc
  = return $ A.xAllocBoxed a A.rTop
-                0                -- constructor tag
-                (A.xWord a 1 32) -- info index
-                (A.xNat  a 0)    -- arity
+        0                -- constructor tag
+        (A.xWord a 1 32) -- info index
+        (A.xNat  a 0)    -- arity
 
  -- Literal values
  | DaConPrim n  <- dc
@@ -116,8 +116,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorApp _ _ dc xsArgsAll
- = throw $  ErrorMalformed
-         $  "Invalid constructor application "
-         ++ (show (dc, xsArgsAll))
---         ++ (renderIndent $ ppr (dc, xsArgsAll))
+ = throw $  ErrorMalformed $ unlines
+         [ "ddc-core-discus.convertCtorApp"
+         , "Invalid constructor application: " ++ show (dc, xsArgsAll) ]
 

@@ -20,14 +20,14 @@ import qualified Data.Map                as Map
 -- | Convert a Discus alternative to Salt.
 convertAlt
         :: a                            -- ^ Annotation from case expression.
-        -> Bound E.Name                 -- ^ Bound of scrutinee.
+        -> Maybe (Bound E.Name)         -- ^ Bound of scrutinee.
         -> Type  E.Name                 -- ^ Type  of scrutinee
         -> ExpContext                   -- ^ Context of enclosing case-expression.
         -> Context a                    -- ^ Type context of the conversion.
         -> Alt (AnTEC a E.Name) E.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a A.Name)
 
-convertAlt a uScrut tScrut ectx ctx alt
+convertAlt a muScrut tScrut ectx ctx alt
  = let  pp       = contextPlatform   ctx
         defs     = contextDataDefs   ctx
         kenv     = contextKindEnv    ctx
@@ -55,7 +55,8 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Match against records.
         AAlt (PData dc bsFields) x
-         | DaConRecord _nsFields   <- dc
+         | Just uScrut             <- muScrut
+         , DaConRecord _nsFields   <- dc
          , (_tRecord : tsArgs)     <- takeTApps tScrut
          -> do
                 -- Convert the scrutinee.
@@ -96,7 +97,8 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Match against user-defined algebraic data.
         AAlt (PData dc bsFields) x
-         | Just (DaConBoundName _ _ nCtor) <- takeNameOfDaConBound dc
+         | Just uScrut <- muScrut
+         , Just (DaConBoundName _ _ nCtor) <- takeNameOfDaConBound dc
          , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          -> do
                 -- Convert the scrutinee.

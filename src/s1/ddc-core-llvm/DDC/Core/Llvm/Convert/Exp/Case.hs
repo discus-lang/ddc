@@ -27,9 +27,9 @@ convertCase
         -> ConvertM (Seq Block)
 
 convertCase ctx ectx label instrs xScrut alts
- | Just mVar    <- takeLocalV ctx xScrut
+ | Just mScrut <- mconvAtom ctx xScrut
  = do
-        vScrut' <- mVar
+        xScrut' <- mScrut
 
         -- Convert all the alternatives.
         -- If we're in a nested context we'll also get a block to join the
@@ -57,7 +57,7 @@ convertCase ctx ectx label instrs xScrut alts
         let switchBlock
                 =  Block label
                 $  instrs
-                |> (annotNil $ ISwitch (XVar vScrut') lDefault table)
+                |> (annotNil $ ISwitch xScrut' lDefault table)
 
         return  $  switchBlock
                 <| (blocksTable >< blocksDefault >< blocksJoin)

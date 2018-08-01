@@ -164,7 +164,8 @@ boxingX config xx
          , Just tLit1    <- configValueTypeOfLitName config n
          , Just RepBoxed <- configRepOfType config tLit1
          -> let alts'    = map (boxingAlt config) alts
-            in  boxingCase config a tLit1 xScrut alts'
+                xScrut'  = boxingX config xScrut
+            in  boxingCase config a tLit1 xScrut' alts'
 
         -- Boilerplate.
         XVar{}          -> xx
