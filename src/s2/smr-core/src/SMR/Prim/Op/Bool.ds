@@ -2,6 +2,7 @@
 module SMR.Prim.Op.Bool
 export makePrimOpsBool
 import SMR.Prim.Op.Base
+import Data.Numeric
 where
 
 

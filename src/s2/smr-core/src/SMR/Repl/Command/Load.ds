@@ -3,9 +3,19 @@ module SMR.Repl.Command.Load
 export loadSources; loadSource
 import SMR.Source.Parser
 import SMR.Source.Lexer
+import SMR.Source.Pretty
+import SMR.Source.Expected
+import SMR.Prim.Name
+import SMR.Prim.Op.Base
 import System.IO.Console
+import System.IO.File
 import System.Posix.Stdlib
+import Data.List
+import Class.Pretty
+import Class.Show
+import Data.Text.Char
 where
+
 
 
 -- | Load source files.

@@ -2,7 +2,9 @@
 module SMR.Prim.Op.Smr
 export makePrimOpsSmr
 import SMR.Prim.Op.Base
+import SMR.Core.Step
 import SMR.Core.Exp.Push
+import SMR.Core.Exp.Eq
 import SMR.Transform.Combinate
 where
 

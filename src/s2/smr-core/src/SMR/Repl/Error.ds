@@ -2,6 +2,7 @@
 module SMR.Repl.Error
 export { pretty_Location; pretty_ErrorRepl }
 import Class.Pretty
+import SMR.Source.Token
 import Data.Text.Location
 where
 

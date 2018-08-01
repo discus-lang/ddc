@@ -4,7 +4,9 @@ export
 {       pretty_Exp
 }
 import SMR.Core.Exp
+import Class.Show
 import Class.Pretty
+import Data.List
 import Data.Text
 where
 

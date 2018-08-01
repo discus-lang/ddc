@@ -2,6 +2,10 @@
 module SMR.Prim.Op.Match
 export makePrimOpsMatch
 import SMR.Prim.Op.Base
+import SMR.Core.Exp.Compounds
+import Class.Functor
+import Data.List
+import Data.Maybe
 where
 
 

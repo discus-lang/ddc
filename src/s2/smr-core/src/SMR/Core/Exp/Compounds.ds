@@ -8,6 +8,8 @@ export
         flattenExp;     flattenExps
 }
 import SMR.Core.Exp.Base
+import Class.Eq
+import Data.List
 import Data.Text
 where
 

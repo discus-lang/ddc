@@ -4,9 +4,12 @@ export
 {       pretty_Prim;
         prettyPrim; parsePrim;
 }
+import SMR.Prim.Op.Base
 import System.Posix.Stdlib
 import Class.Show
 import Class.Pretty
+import Data.List
+import Data.Text.Char
 where
 
 
