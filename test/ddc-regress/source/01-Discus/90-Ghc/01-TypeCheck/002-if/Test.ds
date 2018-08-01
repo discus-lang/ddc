@@ -1,5 +1,5 @@
 module Test
-import Prelude.Numeric
+import Data.Numeric
 where
 
 b = if True then 1 else 2

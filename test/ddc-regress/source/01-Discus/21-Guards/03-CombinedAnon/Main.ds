@@ -1,7 +1,9 @@
 
 module Main
+import Class.Show
 import System.IO.Console
 import Data.Function
+import Data.Numeric
 where
 
 -- This is an edge-case in pattern matching desugaring.

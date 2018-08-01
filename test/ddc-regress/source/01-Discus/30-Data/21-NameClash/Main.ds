@@ -2,7 +2,8 @@
 -- Test using a pattern where the same named is used in multiple left-hand
 -- sides. This used to fail due to a bug in the LLVM code generator.
 module Main
-import Data.Numeric.Nat
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

@@ -2,7 +2,8 @@
 -- Test over-application.
 -- Calling supers with more args than their arity.
 module Main
-import Data.Numeric.Nat
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

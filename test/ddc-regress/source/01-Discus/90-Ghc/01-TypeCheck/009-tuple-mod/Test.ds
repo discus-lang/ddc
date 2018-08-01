@@ -1,5 +1,5 @@
-module Test 
-import Prelude.Data
+module Test
+import Data.List
 where
 
 -- mod: tuple syntax

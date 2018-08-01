@@ -3,8 +3,14 @@ module Main
 import Class.Show
 import Data.Text
 import Data.Text.Stream
+import Data.Text.List
+import Data.Text.Numeric
+import Data.Text.Operator
 import Data.Text.Base
+import Data.Text.Parse
 import Data.List
+import Data.Maybe
+import Data.Numeric
 import System.IO.Console
 where
 

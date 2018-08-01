@@ -1,8 +1,9 @@
 
 -- Test basic use of box and run at a variety of arities.
 module Main
-import Data.Numeric.Nat
+import Data.Numeric
 import Data.Maybe
+import Class.Show
 import System.IO.Console
 where
 
