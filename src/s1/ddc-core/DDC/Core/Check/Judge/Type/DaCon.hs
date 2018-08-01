@@ -17,7 +17,7 @@ checkDaConM
         -> DaCon n (Type n)     -- ^ Data constructor to check.
         -> CheckM a n (DaCon n (Type n), Type n)
 
-checkDaConM _config ctx _xx _a dc
+checkDaConM _config ctx xx a dc
  = case dc of
     -- Type type of the unit data constructor is baked-in.
     DaConUnit
@@ -48,18 +48,16 @@ checkDaConM _config ctx _xx _a dc
 
          DataModeSmall nsCtors
           | L.elem nCtor nsCtors -> return (dc, tPrim)
-          | otherwise            -> error $ show dc -- throw $ ErrorUndefinedCtor a xx
+          | otherwise            -> throw $ ErrorUndefinedCtor a xx
 
          DataModeLarge  -> return (dc, tPrim)
 
-     | otherwise        -> error $ show dc
-
-     -- throw $ ErrorUndefinedCtor a xx
+     | otherwise        -> throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
-    -- FIXME: use the module and type names.
 
+    -- TODO: use the module and type names.
     -- Convert primitive data constructors to `DaConPrim` form.
     DaConBound (DaConBoundName Nothing Nothing nCtor)
      |  Just tPrim <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
@@ -68,5 +66,5 @@ checkDaConM _config ctx _xx _a dc
     DaConBound (DaConBoundName _ _ nCtor)
      -> lookupDataCtor ctx nCtor
      >>= \case
-        Nothing         -> error $ show dc -- throw $ ErrorUndefinedCtor a xx
+        Nothing         -> throw $ ErrorUndefinedCtor a xx
         Just dataCtor   -> return (dc, typeOfDataCtor dataCtor)
