@@ -7,6 +7,7 @@ export
         pExpAtom;
 }
 import Lambda.Exp
+import Lambda.Source.Token
 import Lambda.Source.Lexer
 import Control.Parsec
 import Data.Maybe

@@ -9,6 +9,7 @@ export {
 import Data.Map.Base
 import Data.Array.Fun
 import Class.Eq
+import Class.Ord
 where
 
 

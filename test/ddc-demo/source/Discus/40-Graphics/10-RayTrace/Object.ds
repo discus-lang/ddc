@@ -131,8 +131,7 @@ object_shine (object: Object) (point: Vec3): Float
 checkers ((Vec3 x y z ): Vec3): Vec3
  |   xor (rem (float64_trunc (div (float64_fabs x) 20.0)) 2.0 >= 1.0)
    $ xor (rem (float64_trunc (div (float64_fabs y) 20.0)) 2.0 >= 1.0)
-   $ xor (x < 0.0) (y < 0.0)
-
+   $ xor (x < 0.0f64) (y < 0.0f64)
  = Vec3 1.0 1.0 1.0
 
  | otherwise

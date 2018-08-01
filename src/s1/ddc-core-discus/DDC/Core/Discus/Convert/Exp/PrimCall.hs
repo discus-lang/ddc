@@ -36,7 +36,7 @@ convertPrimCall _ectx ctx xx
         -- Reify a top-level super.
         XApp (AnTEC _t _ _ a)  xa xb
          | (xR,   [RType _, RType _, RTerm xF]) <- takeXApps1 xa xb
-         , XVar _ (UPrim nR)        <- xR
+         , XVar _ (UName nR)        <- xR
          , E.NameOpFun E.OpFunReify <- nR
 
            -- Given the expression defining the super, retrieve its
@@ -135,7 +135,7 @@ convertPrimCall _ectx ctx xx
         --   as they differ only in the Discus-level closure type.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, args)            <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim)  <- x1
+         , XVar _ (UName nPrim)  <- x1
 
          , Just nArgs
             <- case nPrim of
@@ -180,7 +180,7 @@ convertPrimCall _ectx ctx xx
         -- Apply a thunk.
         XApp (AnTEC _t _ _ a) xa xb
          | (x1, args)            <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim)  <- x1
+         , XVar _ (UName nPrim)  <- x1
          , Just nArgs
             <- case nPrim of
                 E.NameOpFun (E.OpFunApply  nArgs) -> Just nArgs

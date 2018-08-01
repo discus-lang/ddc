@@ -2,7 +2,10 @@
 -- Demonstrate the term-level binding expressions.
 module Main
 import System.IO.Console
+import Class.Monad
 import Class.Show
+import Data.Maybe
+import Data.Numeric
 where
 
 

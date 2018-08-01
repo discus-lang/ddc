@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Core.Codec.Text.Parser.ImportSpec
         ( ImportSpec    (..)
@@ -24,8 +25,11 @@ import qualified Data.Text              as T
 --   buckets if it wants to.
 --
 data ImportSpec n
+        -- | Import modules.
+        = ImportModule          ModuleName
+
         -- | Foreign imported types.
-        = ImportForeignType  n (ImportType   n (Type n))
+        | ImportForeignType  n (ImportType   n (Type n))
 
         -- | Foreign imported capabilities.
         | ImportForeignCap   n (ImportCap    n (Type n))
@@ -44,16 +48,21 @@ data ImportSpec n
 -- | Parse some import specifications.
 pImportSpecs
         :: (Ord n, Pretty n)
-        => Context n -> Parser n [ImportSpec n]
+        => Context n -> ModuleName -> Parser n [ImportSpec n]
 
-pImportSpecs c
+pImportSpecs c modName
  = do
         -- import ...
         pTok (KKeyword EImport)
 
         P.choice
-         [      -- data ...
-           do   def     <- pDataDef c Nothing
+         [      -- module ...
+            do  pTok (KKeyword EModule)
+                mn      <- pModuleName
+                return  [ ImportModule mn ]
+
+                -- data ...
+         ,  do  def     <- pDataDef c Nothing
                 return  [ ImportData def ]
 
                 -- type { (NAME :: KIND)+ }
@@ -98,7 +107,7 @@ pImportSpecs c
                         -- import foreign MODE value { (NAME : TYPE)+ }
                  , do   pKey    EValue
                         pSym    SBraceBra
-                        sigs    <- P.sepEndBy1 (pImportForeignValue c src) (pSym SSemiColon)
+                        sigs    <- P.sepEndBy1 (pImportForeignValue c modName src) (pSym SSemiColon)
                         pSym    SBraceKet
                         return  sigs
                  ]
@@ -191,21 +200,21 @@ pImportValue c
 -- | Parse a foreign value import spec.
 pImportForeignValue
         :: (Ord n, Pretty n)
-        => Context n -> String -> Parser n (ImportSpec n)
+        => Context n -> ModuleName -> String -> Parser n (ImportSpec n)
 
-pImportForeignValue c src
-        | "c"           <- src
-        = do    n       <- pName
-                pTokSP (KOp ":")
-                k       <- pType c
+pImportForeignValue c mn src
+ | "c"          <- src
+ = do   n       <- pName
+        pTokSP (KOp ":")
+        k       <- pType c
 
-                -- ISSUE #327: Allow external symbol name to be specified
-                -- with foreign C imports and exports, rather than forcing
-                -- the external name to be the same as the internal one.
-                let symbol = renderIndent (ppr n)
+        -- ISSUE #327: Allow external symbol name to be specified
+        -- with foreign C imports and exports, rather than forcing
+        -- the external name to be the same as the internal one.
+        let symbol = renderIndent (ppr n)
 
-                return  $ ImportForeignValue n (ImportValueSea n (T.pack symbol) k)
+        return  $ ImportForeignValue n (ImportValueSea mn n (T.pack symbol) k)
 
-        | otherwise
-        = P.unexpected "import mode for foreign value."
+ | otherwise
+ = P.unexpected "import mode for foreign value."
 

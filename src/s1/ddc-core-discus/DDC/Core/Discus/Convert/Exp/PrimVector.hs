@@ -30,7 +30,7 @@ convertPrimVector _ectx ctx xxExp
         XCast _ CastRun xxApp@(XApp a _ _)
          | Just ( E.NameOpVector E.OpVectorAlloc True
                 , [RType _rPrime, RType tElem, RTerm xLength])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          ,  isNumericType tElem
          -> Just $ do
                 let a'   =  annotTail a
@@ -66,7 +66,7 @@ convertPrimVector _ectx ctx xxExp
         XApp a _ _
          | Just ( E.NameOpVector E.OpVectorLength True
                 , [RType _tPrime, RType tElem, RTerm xVec])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          , isNumericType tElem
          -> Just $ do
                 let a'  =  annotTail a
@@ -88,7 +88,7 @@ convertPrimVector _ectx ctx xxExp
          | Just ( E.NameOpVector E.OpVectorRead True
                 , [ RType _rPrime, RType tElem
                   , RTerm xVec,    RTerm xIndex])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          , isNumericType tElem
          -> Just $ do
                 let a'  =  annotTail a
@@ -133,7 +133,7 @@ convertPrimVector _ectx ctx xxExp
          | Just ( E.NameOpVector E.OpVectorWrite True
                 , [ RType _rPrime, RType tElem
                   , RTerm xVec, RTerm xIndex, RTerm xValue])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          , isNumericType tElem
          -> Just $ do
                 let a'          = annotTail a

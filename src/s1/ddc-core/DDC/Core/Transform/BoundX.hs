@@ -1,6 +1,6 @@
 
 -- | Lifting and lowering level-0 deBruijn indices in core things.
--- 
+--
 --   Level-0 indices are used for both value and witness variables.
 --
 module DDC.Core.Transform.BoundX
@@ -13,7 +13,7 @@ import DDC.Core.Exp
 
 -- Lift -----------------------------------------------------------------------
 -- | Lift debruijn indices less than or equal to the given depth.
-liftAtDepthX   
+liftAtDepthX
         :: MapBoundX c n
         => Int          -- ^ Number of levels to lift.
         -> Int          -- ^ Current binding depth.
@@ -21,26 +21,25 @@ liftAtDepthX
         -> c n
 
 liftAtDepthX n d
- = {-# SCC liftAtDepthX #-} 
+ = {-# SCC liftAtDepthX #-}
    mapBoundAtDepthX liftU d
- where  
+ where
         liftU d' u
          = case u of
                 UName{}         -> u
-                UPrim{}         -> u
                 UIx i
                  | d' <= i      -> UIx (i + n)
                  | otherwise    -> u
 
 
--- | Wrapper for `liftAtDepthX` that starts at depth 0.       
+-- | Wrapper for `liftAtDepthX` that starts at depth 0.
 liftX   :: MapBoundX c n => Int -> c n -> c n
 liftX n xx  = liftAtDepthX n 0 xx
 
 
 -- Lower ----------------------------------------------------------------------
 -- | Lower debruijn indices less than or equal to the given depth.
-lowerAtDepthX   
+lowerAtDepthX
         :: MapBoundX c n
         => Int          -- ^ Number of levels to lower.
         -> Int          -- ^ Current binding depth.
@@ -50,17 +49,16 @@ lowerAtDepthX
 lowerAtDepthX n d
  = {-# SCC lowerAtDepthX #-}
    mapBoundAtDepthX liftU d
- where  
+ where
         liftU d' u
          = case u of
                 UName{}         -> u
-                UPrim{}         -> u
                 UIx i
                  | d' <= i      -> UIx (i - n)
                  | otherwise    -> u
 
 
--- | Wrapper for `lowerAtDepthX` that starts at depth 0.       
+-- | Wrapper for `lowerAtDepthX` that starts at depth 0.
 lowerX   :: MapBoundX c n => Int -> c n -> c n
 lowerX n xx  = lowerAtDepthX n 0 xx
 
@@ -71,7 +69,7 @@ class MapBoundX (c :: * -> *) n where
  --   The function is passed the current binding depth.
  --   This is used to defined both `liftX` and `lowerX`.
  mapBoundAtDepthX
-        :: (Int -> Bound n -> Bound n)  
+        :: (Int -> Bound n -> Bound n)
                         -- ^ Function to apply to the bound occ.
                         --   It is passed the current binding depth.
         -> Int          -- ^ Current binding depth.
@@ -102,9 +100,9 @@ instance MapBoundX (Exp a) n where
          -> XAbs a (MImplicit b) (mapBoundAtDepthX f (d + countBAnons [b]) x)
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
-         
-        XLet a lets x   
-         -> let (lets', levels) = mapBoundAtDepthXLets f d lets 
+
+        XLet a lets x
+         -> let (lets', levels) = mapBoundAtDepthXLets f d lets
             in  XLet a lets' (mapBoundAtDepthX f (d + levels) x)
 
         XCase a x alts  -> XCase a (down x)  (map down alts)
@@ -143,16 +141,16 @@ instance MapBoundX (Cast a) n where
 instance MapBoundX (Alt a) n where
  mapBoundAtDepthX f d (AAlt p x)
   = case p of
-        PDefault 
+        PDefault
          -> AAlt PDefault (mapBoundAtDepthX f d x)
 
-        PData _ bs 
+        PData _ bs
          -> let d' = d + countBAnons bs
             in  AAlt p (mapBoundAtDepthX f d' x)
-        
+
 
 mapBoundAtDepthXLets
-        :: (Int -> Bound n -> Bound n)  
+        :: (Int -> Bound n -> Bound n)
                                 -- ^ Number of levels to lift.
         -> Int                  -- ^ Current binding depth.
         -> Lets a n             -- ^ Lift exp indices in this thing.
@@ -162,7 +160,7 @@ mapBoundAtDepthXLets f d lts
  = case lts of
         LLet b x
          -> let inc = countBAnons [b]
-                
+
                 -- non-recursive binding: do not increase x's depth
                 x'  = mapBoundAtDepthX f d x
             in  (LLet b x', inc)
@@ -172,7 +170,7 @@ mapBoundAtDepthXLets f d lts
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX f (d+inc) e)) bs
             in  (LRec bs', inc)
 
-        LPrivate _b _ bs 
+        LPrivate _b _ bs
          -> (lts, countBAnons bs)
 
 

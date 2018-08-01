@@ -258,7 +258,7 @@ pPatSimple
 
         -- Lit
  , do   nLit    <- pDaConBoundLit
-        return  $ PData (DaConPrim nLit (TBot S.KData)) []
+        return  $ PData (DaConPrim nLit) []
 
         -- Named algebraic constructors.
  , do   nCon    <- pDaConBoundName

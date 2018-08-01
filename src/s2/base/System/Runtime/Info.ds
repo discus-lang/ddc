@@ -13,6 +13,7 @@ export foreign c value
 
 import Control.Exception
 import Data.Text
+import Data.Text.Base
 
 import foreign c value
  ddcInfoFrameNew                : Nat# -> Addr#

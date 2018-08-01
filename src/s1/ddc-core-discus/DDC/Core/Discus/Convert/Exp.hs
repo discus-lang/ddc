@@ -18,6 +18,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                           (AnTEC(..))
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Call                  as Call
 import qualified DDC.Core.Discus.Prim           as D
 import qualified DDC.Core.Salt.Compounds        as A
@@ -132,14 +133,13 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Fully applied primitive data constructor.
-        --  The type of the constructor is attached directly to this node of the AST.
         --  The data constructor must be fully applied. Partial applications of data
         --  constructors that appear in the source language need to be eta-expanded
         --  before Discus -> Salt conversion.
         XApp a xa xb
-         | (x1, xsArgs)         <- takeXApps1 xa xb
-         , XCon _ dc            <- x1
-         , Just tCon            <- takeTypeOfDaCon dc
+         | (x1, xsArgs) <- takeXApps1 xa xb
+         , XCon _ dc@(DaConPrim n) <- x1
+         , Just tCon    <- Env.lookupName n $ contextTypeEnv ctx
          -> if length xsArgs == arityOfType tCon
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
@@ -152,9 +152,9 @@ convertExp ectx ctx xx
         --  constructors that appear in the source language need to be eta-expanded
         --  before Discus -> Salt conversion.
         XApp a xa xb
-         | (x1, xsArgs   )          <- takeXApps1 xa xb
+         | (x1, xsArgs)  <- takeXApps1 xa xb
          , XCon _ dc@(DaConBound (DaConBoundName _ _ n)) <- x1
-         , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
+         , Just dataCtor <- Map.lookup n (dataDefsCtors defs)
          -> if length xsArgs
                        == length (dataCtorTypeParams dataCtor)
                        +  length (dataCtorFieldTypes dataCtor)
@@ -206,14 +206,19 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Match against literal unboxed values.
         --  The branch is against the literal value itself.
-        XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
-         | isUnboxedRepType tScrut
+        XCase (AnTEC _ _ _ a') xScrut alts
+         | Just (tScrut, muScrut)
+                <- case xScrut of
+                        XVar (AnTEC tScrut _ _ _) uScrut -> Just (tScrut, Just uScrut)
+                        XCon (AnTEC tScrut _ _ _) _      -> Just (tScrut, Nothing)
+                        _                                -> Nothing
+         , isUnboxedRepType tScrut
          -> do
                 -- Convert the scrutinee.
                 xScrut' <- convertX ExpArg ctx xScrut
 
                 -- Convert the alternatives.
-                alts'   <- mapM (convertA a' uScrut tScrut
+                alts'   <- mapM (convertA a' muScrut tScrut
                                           (min ectx ExpBody) ctx)
                                 alts
 
@@ -235,7 +240,7 @@ convertExp ectx ctx xx
                            $ takePrimeRegion tScrut'
 
                 -- Convert alternatives.
-                alts'   <- mapM (convertA a' uScrut tScrut
+                alts'   <- mapM (convertA a' (Just uScrut) tScrut
                                           (min ectx ExpBody) ctx)
                                 alts
 
@@ -365,7 +370,7 @@ takeNameFragAppX :: Exp a D.Name -> Maybe D.Name
 takeNameFragAppX xx
  = case xx of
         XApp{}
-          -> case takeXFragApps xx of
+          -> case takeXNameApps xx of
                 Just (n, _)     -> Just n
                 Nothing         -> Nothing
 

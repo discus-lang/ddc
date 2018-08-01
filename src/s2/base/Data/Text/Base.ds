@@ -31,10 +31,12 @@ export
 
 import Data.Text.Char
 import Data.Numeric.Nat
+import Data.Numeric.Bool
 import Data.Numeric.Word8
 import Data.Numeric.Word32
 import Data.Function
 import Data.Maybe
+import Class.Numeric
 import Class.Ord
 import Class.Eq
 

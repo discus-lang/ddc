@@ -25,45 +25,45 @@ effectSupported
         -> Maybe (Effect n)
 
 effectSupported ctx eff
-        -- Check that all the components of a sum are supported.
-        | TSum ts       <- eff
-        = listToMaybe $ concat [ maybeToList $ effectSupported ctx e
-                               | e <- Sum.toList ts ]
+ -- Check that all the components of a sum are supported.
+ | TSum ts       <- eff
+ = listToMaybe $ concat [ maybeToList $ effectSupported ctx e
+                        | e <- Sum.toList ts ]
 
-        -- Abstract effects are fine.
-        --  We'll find out if it is really supported once it's instantiated.
-        | TVar {} <- eff
-        = Nothing
+ -- Abstract effects are fine.
+ --  We'll find out if it is really supported once it's instantiated.
+ | TVar {} <- eff
+ = Nothing
 
-        -- Abstract global effects are always supported.
-        | TCon (TyConBound _ k) <- eff
-        , k == kEffect
-        = Nothing
+ -- Abstract global effects are always supported.
+ -- We assume this has already been checked to be an effect constructor.
+ | TCon (TyConBound _) <- eff
+ = Nothing
 
-        -- For an effects on concrete region,
-        -- the capability is supported if it's in the lexical environment.
-        | TApp (TCon (TyConSpec tc)) _t2 <- eff
-        , elem tc [TcConRead, TcConWrite, TcConAlloc]
+ -- For an effects on concrete region,
+ -- the capability is supported if it's in the lexical environment.
+ | TApp (TCon (TyConSpec tc)) _t2 <- eff
+ , elem tc [TcConRead, TcConWrite, TcConAlloc]
 
-        ,   -- Capability in local environment.
-            (any  (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff)
-                  [ b | ElemType b <- contextElems ctx ] )
+ ,   -- Capability in local environment.
+     (any  (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff)
+           [ b | ElemType b <- contextElems ctx ] )
 
-            -- Capability imported at top level.
-         || (any  (\t -> equivT (contextEnvT ctx) t eff)
-                  (Map.elems $ EnvT.envtCapabilities $ contextEnvT ctx))
-        = Nothing
+     -- Capability imported at top level.
+  || (any  (\t -> equivT (contextEnvT ctx) t eff)
+           (Map.elems $ EnvT.envtCapabilities $ contextEnvT ctx))
+ = Nothing
 
-        -- For an effect on an abstract region, we allow any capability.
-        --  We'll find out if it really has this capability when we try
-        --  to run the computation.
-        | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
-        , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        = case lookupKind u ctx of
-                Just (_, RoleConcrete)  -> Just eff
-                Just (_, RoleAbstract)  -> Nothing
-                Nothing                 -> Nothing
+ -- For an effect on an abstract region, we allow any capability.
+ --  We'll find out if it really has this capability when we try
+ --  to run the computation.
+ | TApp (TCon (TyConSpec tc)) (TVar u) <- eff
+ , elem tc [TcConRead, TcConWrite, TcConAlloc]
+ = case lookupKind u ctx of
+         Just (_, RoleConcrete)  -> Just eff
+         Just (_, RoleAbstract)  -> Nothing
+         Nothing                 -> Nothing
 
-        | otherwise
-        = Just eff
+ | otherwise
+ = Just eff
 

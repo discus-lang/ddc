@@ -1,8 +1,9 @@
 -- Check that we can export a higher order function from a module.
 -- The arity information ends up in the interface file.
 module Module
-export { addThing1; addThing2 }
-import Data.Numeric.Nat
+export addThing1; addThing2
+import Class.Show
+import Data.Numeric
 where
 
 

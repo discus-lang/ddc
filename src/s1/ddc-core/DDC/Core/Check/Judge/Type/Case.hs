@@ -8,7 +8,6 @@ import DDC.Core.Check.Judge.Type.Base
 import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum           as Sum
 import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified Data.Map               as Map
 import Data.List                        as L
 
 
@@ -45,47 +44,37 @@ checkCase !table !ctx0 mode demand
         -- data type constructor (if there is one).
         let tDiscrim' = crushHeadT (contextEnvT ctx2) tDiscrim
 
-        let dataDefs  = EnvX.envxDataDefs $ contextEnvX ctx2
-
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc.
-        (mDataMode, tsArgs)
+        (dataMode, tsArgs)
          <- case takeTyConApps tDiscrim' of
              Just (tc, ts)
               -- The unit data type.
               | TyConSpec TcConUnit         <- tc
-              -> return ( Just (DataModeSmall [])
+              -> return ( DataModeSmall []
                         , [] )
 
               -- Primitive record types.
               | TyConSpec (TcConRecord _)   <- tc
-              -> return ( Just DataModeSingle
+              -> return ( DataModeSingle
                         , ts)
 
               -- User defined or imported data types.
-              | TyConBound (UName nTyCon) _ <- tc
-              , Just dataType  <- Map.lookup nTyCon $ dataDefsTypes dataDefs
-              , k              <- kindOfDataType dataType
-              , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon dataDefs
-                        , ts )
+              | TyConBound nTyCon <- tc
+              -> lookupDataType ctx2 nTyCon
+              >>= \case Nothing
+                         -> throw $ ErrorType $ ErrorTypeUndefined (UName nTyCon)
 
-              -- Primitive data types.
-              | TyConBound u@(UPrim nTyCon) _ <- tc
-              , Just (k, _)    <- lookupKind u ctx0
-              , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon dataDefs
-                        , ts )
+                        Just dataType
+                         | k <- kindOfDataType dataType
+                         , takeResultKind k == kData
+                         -> return ( dataTypeMode dataType
+                                   , ts)
+
+                        _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
 
              _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
-
-        -- Get the mode of the data type,
-        --   this tells us how many constructors there are.
-        dataMode
-         <- case mDataMode of
-             Nothing -> throw $ ErrorCaseScrutineeTypeUndeclared a xx tDiscrim
-             Just m  -> return m
 
         -- If we're doing bidirectional checking then we don't infer a separate
         -- type for each alternative. Instead, pass down the same existential.
@@ -155,7 +144,7 @@ checkCase _ _ _ _ _
 --   the expected type when checking the discriminant.
 --
 takeDiscrimCheckModeFromAlts
-        :: Ord n
+        :: (Ord n, Show n)
         => Table a n          -- ^ Checker table.
         -> a                  -- ^ Annotation for error messages.
         -> Context n          -- ^ Current context.
@@ -279,7 +268,8 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
                 , mempty ]
 
         -- Get the constructor type associated with this pattern.
-        Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
+        (dc', tCtor)
+         <- checkPatPData table ctx a dc
 
         -- Take the type of the constructor and instantiate it with the
         -- type arguments we got from the discriminant. If the ctor type
@@ -305,7 +295,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
         when (length tsFields_ctor < length bsArg)
-         $ throw $ ErrorCaseTooManyBinders a xx dc
+         $ throw $ ErrorCaseTooManyBinders a xx dc'
                         (length tsFields_ctor) (length bsArg)
 
         -- Merge the field types we get by instantiating the constructor
@@ -343,7 +333,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of
         -- alternatives to matter for type inference.
-        return  ( AAlt (PData dc bsArg') xBody'
+        return  ( AAlt (PData dc' bsArg') xBody'
                 , tBody'
                 , effsBody
                 , ctx_cut)
@@ -407,37 +397,43 @@ checkFieldAnnots table bidir a xx tts ctx0
 --   transform won't have given it a proper type.
 --   Note that we can't simply check whether the constructor is in the
 ---  environment because literals like 42# never are.
-ctorTypeOfPat
-        :: Ord n
+checkPatPData
+        :: (Ord n, Show n)
         => Table a n            -- ^ Checker table.
         -> Context n            -- ^ Type checker context
         -> a                    -- ^ Annotation for error messages.
-        -> Pat n                -- ^ Pattern.
-        -> CheckM a n (Maybe (Type n))
+        -> DaCon n (Type n)     -- ^ Pattern data constructor.
+        -> CheckM a n (DaCon n (Type n), Type n)
 
-ctorTypeOfPat _table ctx a (PData dc _)
+checkPatPData _table ctx a dc
  = case dc of
         DaConUnit
-         -> return $ Just $ tUnit
+         -> return $ (dc, tUnit)
 
-        DaConRecord{}
-         -> do  let Just t = takeTypeOfDaCon dc
-                return (Just t)
+        DaConRecord ns
+         -> return
+                ( dc
+                , tForalls (map (const kData) ns) $ \tsArg
+                        -> tFunOfParamResult tsArg
+                        $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
 
-        DaConPrim{}
-         -> return $ Just $ daConType dc
+        DaConPrim nCtor
+         -> case EnvX.envxPrimFun (contextEnvX ctx) nCtor of
+                Nothing         -> throw $ ErrorUndefinedCtor a $ XCon a dc
+                Just tPrim      -> return (dc, tPrim)
 
         -- FIXME: use the module and type names.
-        DaConBound (DaConBoundName _ _ n)
-         -- Types of algebraic data ctors should be in the defs table.
-         |  Just ctor   <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
-         -> return $ Just $ typeOfDataCtor ctor
+        DaConBound (DaConBoundName Nothing Nothing nCtor)
+         -- Recognise a primitive data constructor wrapped in a DaConBoundName
+         |  Just t    <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
+         -> return (DaConPrim nCtor, t)
 
-         | otherwise
-         -> throw  $ ErrorUndefinedCtor a $ XCon a dc
-
-ctorTypeOfPat _table _ctx _a PDefault
- = return Nothing
+        -- TODO: use module ids.
+        DaConBound (DaConBoundName _ _ nCtor)
+         -> lookupDataCtor ctx nCtor
+         >>= \case
+                Nothing         -> throw $ ErrorUndefinedCtor a $ XCon a dc
+                Just dataCtor   -> return (dc, typeOfDataCtor dataCtor)
 
 
 -- | Get the data type associated with a pattern,
@@ -447,7 +443,7 @@ ctorTypeOfPat _table _ctx _a PDefault
 --   For example, given pattern (Cons x xs), return (forall [a : Data]. List a)
 --
 dataTypeOfPat
-        :: Ord n
+        :: (Ord n, Show n)
         => Table a n            -- ^ Checker table.
         -> Context n            -- ^ Type Checker context.
         -> a                    -- ^ Annotation for error messages.
@@ -455,11 +451,12 @@ dataTypeOfPat
         -> CheckM a n (Maybe (Type n))
 
 dataTypeOfPat table ctx a pat
- = do   mtCtor      <- ctorTypeOfPat table ctx a pat
+ = case pat of
+        PData dc _
+         -> do  (_, tCtor) <- checkPatPData table ctx a dc
+                return $ Just $ eat [] tCtor
 
-        case mtCtor of
-         Nothing    -> return Nothing
-         Just tCtor -> return $ Just $ eat [] tCtor
+        _ -> return Nothing
 
  where  eat bs tt
          = case tt of

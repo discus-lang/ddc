@@ -4,6 +4,9 @@ module SMR.Core.Exp.Eq
 export {eq_Exp; eq_Key; eq_Car; eq_Snv; eq_Ups; eq_Ref}
 import SMR.Core.Exp.Push
 import SMR.Core.Exp.Base
+import Data.Numeric
+import Data.List
+import Data.Text
 import Class.Eq
 where
 

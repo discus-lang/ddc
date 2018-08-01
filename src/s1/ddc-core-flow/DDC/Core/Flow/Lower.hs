@@ -130,10 +130,10 @@ lowerEither _config _procnames (Right (b,xx))
  where
 
   -- Replace all calls to runProcess# with runProcessUnit#
-  replaceRunProc (XVar (UPrim (NameOpSeries OpSeriesRunProcess)))
+  replaceRunProc (XVar (UName (NameOpSeries OpSeriesRunProcess)))
    = Just
    $ XVar
-   $ UPrim (NameOpSeries OpSeriesRunProcessUnit)
+   $ UName (NameOpSeries OpSeriesRunProcessUnit)
   -- Also replace any Process# types with Units
   replaceRunProc (XType t)
    = Just
@@ -164,7 +164,7 @@ lowerEither _config _procnames (Right (b,xx))
        -> TAbs bind (replaceProcTy tt')
 
       TApp l r
-       | Just (NameTyConFlow TyConFlowProcess, [_,_]) <- takePrimTyConApps tt
+       | Just (NameTyConFlow TyConFlowProcess, [_,_]) <- takeNameTyConApps tt
        -> tUnit
        | otherwise
        -> TApp (replaceProcTy l) (replaceProcTy r)

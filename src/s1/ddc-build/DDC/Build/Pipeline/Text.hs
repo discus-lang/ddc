@@ -48,12 +48,12 @@ pipeText !srcName !srcLine !str
          !(PipeTextLoadCore !fragment !mode !sink !pipes)
  = do
         result  <- runExceptT
-                $  BC.coreLoad "TextLoadCore" fragment mode srcName srcLine str
+                $  BC.coreLoad "TextLoadCore" fragment Nothing mode srcName srcLine str
                 $  BC.ConfigCoreLoad
-                        { BC.configSinkTokens           = SinkDiscard
-                        , BC.configSinkParsed           = sink
-                        , BC.configSinkChecked          = SinkDiscard
-                        , BC.configSinkTrace            = SinkDiscard }
+                   { BC.configSinkTokens           = SinkDiscard
+                   , BC.configSinkParsed           = sink
+                   , BC.configSinkChecked          = SinkDiscard
+                   , BC.configSinkTrace            = SinkDiscard }
 
         case result of
          Left errs      -> return errs

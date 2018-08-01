@@ -1,5 +1,5 @@
 module Test
-import Prelude.Numeric
+import Data.Numeric
 where
 
 a x = y + 2 where y = x + 3

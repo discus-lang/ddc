@@ -60,26 +60,20 @@ kindTyConDiscus tc
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConDiscus (TyConDiscusTuple (length tys))) tys
 
-
 -- | Construct a vector type.
 tVector ::  Region Name -> Type Name -> Type Name
 tVector tR tA   = tApps (tConTyConDiscus TyConDiscusVector) [tR, tA]
-
 
 -- | Construct an unboxed representation type.
 tUnboxed :: Type Name -> Type Name
 tUnboxed t      = tApp (tConTyConDiscus TyConDiscusU) t
 
-
 -- | Construct a reified function type.
 tFunValue :: Type Name -> Type Name
 tFunValue t     = tApp (tConTyConDiscus TyConDiscusF) t
 
-
 -- Utils ----------------------------------------------------------------------
 tConTyConDiscus :: TyConDiscus -> Type Name
 tConTyConDiscus tcf
- = let  k       = kindTyConDiscus tcf
-        u       = UPrim (NameTyConDiscus tcf)
-        tc      = TyConBound u k
-   in   TCon tc
+ = TCon (TyConBound (NameTyConDiscus tcf))
+

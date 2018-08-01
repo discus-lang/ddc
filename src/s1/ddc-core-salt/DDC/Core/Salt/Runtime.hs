@@ -129,9 +129,10 @@ runtimeImportTypes
 
     , rn utErrorDefault]
 
- where   rn (UName n, t)  = (n, ImportValueSea n (T.pack $ renderPlain $ ppr n) t)
+ where   rn (UName n, t) = (n, ImportValueSea mn n (T.pack $ renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
+         mn     = ModuleName ["DDC", "Internal", "Runtime"]
 
 -- Thunk ------------------------------------------------------------------------------------------
 -- | Allocate a Thunk object.
@@ -304,7 +305,7 @@ xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name -> Exp a Na
 xAllocBoxed a tR tag xInfo x2
  = xApps a (XVar a $ fst utAllocBoxed)
         [ RType tR
-        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag))  tTag)
+        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)))
         , RTerm xInfo
         , RTerm x2]
 
@@ -412,7 +413,7 @@ xAllocSlot a tR
 
 uAllocSlot :: Bound Name
 uAllocSlot
- = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
+ = UName (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
 
 
 -- | Allocate a pointer on the stack for a GC root.
@@ -422,7 +423,7 @@ xAllocSlotVal a tR xVal
 
 uAllocSlotVal :: Bound Name
 uAllocSlotVal
- = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
+ = UName (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
 
 
 -- Small ------------------------------------------------------------------------------------------
@@ -531,5 +532,5 @@ xCast a r toType fromType xPtr
               (RTerm xPtr)
 
 uCast :: Bound Name
-uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
+uCast = UName (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
 

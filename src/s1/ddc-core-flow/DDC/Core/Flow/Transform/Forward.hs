@@ -45,7 +45,7 @@ forwardBind b xx
   isFloatable_process lts
      = case lts of
         LLet (BName _ _) x
-          | Just (n,_) <- takeXFragApps x
+          | Just (n,_) <- takeXNameApps x
           -> case n of
              NameOpConcrete _   -> Forward.FloatDeny
              NameOpControl  _   -> Forward.FloatDeny

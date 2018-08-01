@@ -34,8 +34,7 @@ threadConfig
 -- | Wrap the result type of a stateful computation with the state type.
 wrapResultType :: Type Name -> Type Name
 wrapResultType tt
- | Just (TyConBound u _, tsArgs)        <- takeTyConApps tt
- , UPrim n                              <- u
+ | Just (TyConBound n, tsArgs)          <- takeTyConApps tt
  , NameTyConFlow (TyConFlowTuple _)     <- n
  = tTupleN (tWorld : tsArgs)
 
@@ -65,7 +64,7 @@ wrapResultExp xWorld xResult
         xResult' = reannotate annotTail xResult
    in   case C.takeXConApps xResult' of
          Just (dc, xa)
-          | DaConPrim (NameDaConFlow (DaConFlowTuple n)) _ <- dc
+          | DaConPrim (NameDaConFlow (DaConFlowTuple n)) <- dc
           , x <- length xa
           , x >= 2
           -> let (b, a) = splitAt (x `quot` 2) xa

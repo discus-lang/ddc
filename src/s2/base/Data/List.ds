@@ -27,15 +27,17 @@ export
         filter; filterS;
         all; any;
 }
-import  Data.Numeric.Nat
-import  Data.Numeric.Bool
-import  Data.Tuple
-import  Data.Maybe
-import  Data.Function
-import  Class.Functor
-import  Class.Monad
-import  Class.Ord
-import  Class.Eq
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import Data.Tuple
+import Data.Maybe
+import Data.Function
+import Class.Numeric
+import Class.Category
+import Class.Functor
+import Class.Monad
+import Class.Ord
+import Class.Eq
 where
 
 
@@ -131,8 +133,6 @@ intersperse (c: a) (xx: List a): List a
 
         Cons x (Cons y xs)
          -> Cons x (Cons c (intersperse c (Cons y xs)))
-
-
 
 
 -- Projections ----------------------------------------------------------------

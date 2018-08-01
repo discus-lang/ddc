@@ -7,7 +7,9 @@ module DDC.Core.Collect.Support
         , SupportX      (..)
         , supportEnvFlags
         , emptySupport
-        , unionSupport)
+        , unionSupport
+        , supportOfImportCap
+        , supportOfImportValue)
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
@@ -120,6 +122,7 @@ instance SupportX Type where
                 , supportSpVar  = fvs1 }
 
 
+---------------------------------------------------------------------------------------------------
 instance SupportX (Module a) where
  support kenv tenv mm
   = let kenv'   = Env.union kenv (moduleKindEnv mm)
@@ -127,6 +130,34 @@ instance SupportX (Module a) where
     in  support kenv' tenv' (moduleBody mm)
 
 
+-- | Compute the support set of an `ImportCap`.
+supportOfImportCap
+        :: Ord n
+        => KindEnv n -> TypeEnv n
+        -> ImportCap n (Type n) -> Support n
+
+supportOfImportCap kenv tenv ic
+ = case ic of
+        ImportCapAbstract t
+         -> support kenv tenv t
+
+
+-- | Compute the support set of an `ImportValue`.
+supportOfImportValue
+        :: Ord n
+        => KindEnv n -> TypeEnv n
+        -> ImportValue n (Type n) -> Support n
+
+supportOfImportValue kenv tenv iv
+ = case iv of
+        ImportValueModule _mn _n t _arity
+         -> support kenv tenv t
+
+        ImportValueSea _mn _n _tx t
+         -> support kenv tenv t
+
+
+---------------------------------------------------------------------------------------------------
 instance SupportX (Exp a) where
  support kenv tenv xx
   = case xx of

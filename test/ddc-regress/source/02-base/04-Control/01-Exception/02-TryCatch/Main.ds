@@ -1,5 +1,6 @@
 
 module Main
+import Data.Text
 import Control.Exception
 import System.IO.Console
 where

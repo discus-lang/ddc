@@ -84,7 +84,7 @@ isRateNatTypeOfRate
 
 isRateNatTypeOfRate tR tRN
         | Just ( NameTyConFlow TyConFlowRateNat
-               , [tR'])    <- takePrimTyConApps tRN
+               , [tR'])    <- takeNameTyConApps tRN
         , tR == tR'
         = True
 
@@ -118,7 +118,7 @@ isSeriesTypeOfRate
 
 isSeriesTypeOfRate tK tS
         | Just ( NameTyConFlow TyConFlowSeries
-               , [tP, tK', tA])    <- takePrimTyConApps tS
+               , [tP, tK', tA])    <- takeNameTyConApps tS
         , tK == tK'
         = Just (tP, tK, tA)
 

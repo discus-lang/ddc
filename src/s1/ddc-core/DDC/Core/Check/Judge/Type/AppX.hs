@@ -152,7 +152,7 @@ synthAppArg table
         xFn tFn effsFn arg
 
  -- Look through synonyms in the functional type
- | TCon (TyConBound (UName n) _) <- tFn
+ | TCon (TyConBound n) <- tFn
  , Just tFn'    <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
  = do   synthAppArg table a xx ctx0 demand isScope xFn tFn' effsFn arg
 

@@ -6,8 +6,8 @@ module DDC.Core.Codec.Text.Lexer.Token.Builtin
         , acceptBuiltin)
 where
 import DDC.Core.Codec.Text.Lexer.Token.Names
+import DDC.Core.Codec.Text.Pretty.Type
 import DDC.Core.Exp
-import DDC.Data.Pretty
 import Text.Lexer.Inchworm.Char
 import qualified Data.List      as List
 import qualified Data.Char      as Char

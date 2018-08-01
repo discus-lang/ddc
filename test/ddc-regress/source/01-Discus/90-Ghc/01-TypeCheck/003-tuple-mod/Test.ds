@@ -1,5 +1,6 @@
 module Test
-import Prelude.Numeric
+import Data.Numeric
+import Data.Tuple
 where
 
 -- this is supposed to test monomorphism restriction, which we don't have.

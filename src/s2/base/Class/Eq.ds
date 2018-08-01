@@ -24,7 +24,7 @@ data Eq (a: Data) where
 
 
 -- | Check whether two values are equal.
-eq  {(Eq eq' _):  Eq a} (x1 x2: a): Bool
+eq  {(Eq eq' _): Eq a} (x1 x2: a): Bool
  = eq'  x1 x2
 
 

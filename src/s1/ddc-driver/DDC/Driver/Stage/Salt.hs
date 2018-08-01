@@ -42,7 +42,7 @@ saltLoadText
 saltLoadText config source str
  = B.coreLoad
         "SaltLoad"
-        BA.fragment
+        BA.fragment Nothing
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
@@ -106,10 +106,13 @@ saltCompileViaLlvm
 saltCompileViaLlvm config source mOtherExeObjs
         bSlotify bShouldLinkExe mm
  = do
-        let (oPath, _)  = D.objectPathsOfConfig config (D.nameOfSource source)
-        let mExePath    = if bShouldLinkExe
-                                then Just $ D.exePathOfConfig config oPath
-                                else Nothing
+        let (oPath, _)
+                = D.objectPathsOfConfig config (D.nameOfSource source)
+
+        let mExePath
+                = if bShouldLinkExe
+                        then Just $ D.exePathOfConfig config (D.nameOfSource source)
+                        else Nothing
 
         BA.saltCompileViaLlvm
                 (D.nameOfSource source)

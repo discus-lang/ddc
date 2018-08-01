@@ -8,7 +8,12 @@ export
         nameOfPrimEval;
         primEvalOp1; primEvalOp2
 }
-import  SMR.Core.Exp
+import SMR.Core.Exp
+import Class.Show
+import Class.Eq
+import Data.Text
+import Data.Function
+import Data.Numeric
 where
 
 

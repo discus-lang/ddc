@@ -40,57 +40,44 @@ kindPrimTyCon tc
 tVoid   :: Type Name
 tVoid   = tConPrim PrimTyConVoid
 
-
 -- | Primitive `Bool` type.
 tBool   :: Type Name
 tBool   = tConPrim PrimTyConBool
-
 
 -- | Primitive `Nat` type.
 tNat    :: Type Name
 tNat    = tConPrim PrimTyConNat
 
-
 -- | Primitive `Int` type.
 tInt    :: Type Name
 tInt    = tConPrim PrimTyConInt
-
 
 -- | Primitive `WordN` type of the given width.
 tWord   :: Int -> Type Name
 tWord bits = tConPrim (PrimTyConWord bits)
 
-
 -- | Primitive `Addr` type.
 tAddr  :: Type Name
 tAddr   = tConPrim PrimTyConAddr
-
 
 -- | Primitive `Size` type.
 tSize   :: Type Name
 tSize   = tConPrim PrimTyConSize
 
-
 -- | Primitive `FloatN` type of the given width.
 tFloat  :: Int -> Type Name
 tFloat bits = tConPrim (PrimTyConFloat bits)
 
-
 -- | Primitive `Ptr` type with given region and data type
 tPtr   :: Type Name -> Type Name -> Type Name
-tPtr r a
-         = tConPrim PrimTyConPtr `TApp` r `TApp` a
-
+tPtr r a = tConPrim PrimTyConPtr `TApp` r `TApp` a
 
 -- | The text literal type.
 tTextLit :: Type Name
 tTextLit = tConPrim PrimTyConTextLit
 
-
 -- | Yield the type for a primtiive type constructor.
 tConPrim :: PrimTyCon -> Type Name
-tConPrim tc
- = let k = kindPrimTyCon tc
-   in      TCon (TyConBound (UPrim (NamePrimTyCon tc)) k)
+tConPrim tc = TCon (TyConBound (NamePrimTyCon tc))
 
 

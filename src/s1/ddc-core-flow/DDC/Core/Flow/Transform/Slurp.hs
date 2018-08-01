@@ -33,7 +33,7 @@ slurpProcessesX xx
  = case xx of
         -- Slurp processes definitions from the let-bindings.
         XLet lts x'
-          -> do ps1     <- slurpProcessesLts lts 
+          -> do ps1     <- slurpProcessesLts lts
                 ps2     <- slurpProcessesX x'
                 return  $ ps1 ++ ps2
 
@@ -57,7 +57,7 @@ slurpProcessesLts _
 
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from a top-level binding.
-slurpProcessLet 
+slurpProcessLet
         :: Bind Name            -- ^ Binder for the whole process.
         -> Exp () Name          -- ^ Expression of body.
         -> Either Error (Either Process (Bind Name, Exp () Name))
@@ -66,9 +66,9 @@ slurpProcessLet (BName n t) xx
 
  -- We assume that all type params come before the value params.
  | Just (NameTyConFlow TyConFlowProcess, [tProc, tLoopRate])
-        <- takePrimTyConApps $ snd $ takeTFunAllArgResult t
+        <- takeNameTyConApps $ snd $ takeTFunAllArgResult t
  , Just (fbs, xBody)    <- takeXLamFlags xx
- = let  
+ = let
         -- Value binders.
         bvs             = map snd
                         $ filter (not.fst)
@@ -99,7 +99,7 @@ slurpSeriesArguments (b:bs) e
  | BName n t <- b
  , Just (NameTyConFlow TyConFlowSeries
         , [_P, tK, tA] )
-       <- takePrimTyConApps t
+       <- takeNameTyConApps t
  = let op          = OpSeriesOfArgument
                    { opResultSeries        = b
                    , opInputRate           = tK
@@ -115,15 +115,15 @@ slurpSeriesArguments (b:bs) e
 
 
 -------------------------------------------------------------------------------
--- | Slurp stream operators from the body of a function and add them to 
---   the provided loop nest. 
--- 
+-- | Slurp stream operators from the body of a function and add them to
+--   the provided loop nest.
+--
 --   The process type environment records what process bindings are in scope,
---   so that we can check that the overall process is well formed. 
+--   so that we can check that the overall process is well formed.
 --   This environment only needs to contain locally defined process variables,
 --   not the global environment for the whole module.
 --
-slurpProcessX 
+slurpProcessX
         :: TypeEnv Name         -- ^ Process type environment.
         -> Map.Map Name Context -- ^ Contexts of in-scope
         -> Map.Map Name Resize  -- ^ Resizes of in-scope
@@ -132,7 +132,7 @@ slurpProcessX
 
 slurpProcessX tenv ctxs rs xx
  | XLet (LLet b x) xMore        <- xx
- = do   
+ = do
         -- Slurp operators from the binding.
         (ctxs', rs')            <- slurpBindingX tenv ctxs rs b x
 
@@ -154,7 +154,7 @@ slurpProcessX tenv ctxs _rs xx
  , Just c       <- Map.lookup u' ctxs
  = return c
 
- -- Process finishes with some expression that doesn't look like it 
+ -- Process finishes with some expression that doesn't look like it
  -- actually defines a value of type Process#.
  | otherwise
  = Left (ErrorBadProcess xx)
@@ -162,13 +162,13 @@ slurpProcessX tenv ctxs _rs xx
 
 -------------------------------------------------------------------------------
 -- | Slurp stream operators from a let-binding.
-slurpBindingX 
+slurpBindingX
         :: TypeEnv Name         -- ^ Process type environment.
         -> Map.Map Name Context -- ^ Contexts of in-scope
         -> Map.Map Name Resize  -- ^ Resizes of in-scope
         -> BindF                -- ^ Binder to assign result to.
         -> ExpF                 -- ^ Right of the binding.
-        -> Either 
+        -> Either
                 Error
                 ( Map.Map Name Context
                 , Map.Map Name Resize )
@@ -178,7 +178,7 @@ slurpBindingX
 -- We get these when entering into a nested context.
 slurpBindingX tenv ctxs rs b1 xx
  | XLet (LLet b2 x2) xMore      <- xx
- = do   
+ = do
         -- Slurp operators from the binding.
         (ctxs', rs')            <- slurpBindingX tenv ctxs rs b2 x2
 
@@ -194,7 +194,7 @@ slurpBindingX tenv ctxs rs b1 xx
 -- Slurp a series#
 -- This creates a new context
 slurpBindingX _tenv ctxs rs b@(BName n _)
- (   takeXPrimApps 
+ (   takeXPrimApps
   -> Just ( NameOpSeries OpSeriesSeriesOfRateVec
           , [ XType _tProc
             , XType tK
@@ -204,7 +204,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
         let op          = OpSeriesOfRateVec
                         { opResultSeries        = b
                         , opInputRate           = tK
-                        , opInputRateVec        = vec 
+                        , opInputRateVec        = vec
                         , opElemType            = tA }
 
         let context     = ContextRate
@@ -212,7 +212,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
                         , contextOps            = [op]
                         , contextInner          = [] }
 
-        let ctxs' = Map.insert n context ctxs 
+        let ctxs' = Map.insert n context ctxs
 
         return (ctxs', rs)
 
@@ -220,7 +220,7 @@ slurpBindingX _tenv ctxs rs b@(BName n _)
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
 slurpBindingX tenv ctxs rs (BName n _)
- (   takeXPrimApps 
+ (   takeXPrimApps
   -> Just ( NameOpSeries (OpSeriesMkSel 1)
           , [ XType tProc
             , XType tK1
@@ -262,7 +262,7 @@ slurpBindingX tenv ctxs rs (BName n _)
 -- Slurp a mkSel1#
 -- This creates a nested selector context.
 slurpBindingX tenv ctxs rs (BName n _)
- (   takeXPrimApps 
+ (   takeXPrimApps
   -> Just ( NameOpSeries OpSeriesMkSegd
           , [ XType tProc
             , XType tK1
@@ -326,7 +326,7 @@ slurpBindingX _ ctxs rs b@(BName n _) xx
 slurpBindingX _ ctxs rs b@(BName n _) xx
  | Just (NameOpSeries OpSeriesAppend
         , [ XType _P, XType tK1, XType tK2, XType tA
-          , XVar (UName nIn1), XVar (UName nIn2) ] ) 
+          , XVar (UName nIn1), XVar (UName nIn2) ] )
                                 <- takeXPrimApps xx
  = do   in1            <- lookupOrDie nIn1 ctxs
         in2            <- lookupOrDie nIn2 ctxs
@@ -394,7 +394,7 @@ slurpBindingX _tenv ctxs rs (BName n _) xx
         return (ctxs', rs)
 
 
- -- Process finishes with some expression that doesn't look like it 
+ -- Process finishes with some expression that doesn't look like it
  -- actually defines a value of type Process#.
 slurpBindingX _ _ _ _ xx
  = Left (ErrorBadOperator xx)

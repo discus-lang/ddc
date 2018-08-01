@@ -30,6 +30,7 @@ library
         Data.Numeric.Word64
         Data.Numeric.Float32
         Data.Numeric.Float64
+        Data.Numeric
         Data.Ref
         Data.Function
         Data.Maybe
@@ -50,7 +51,6 @@ library
         Class.Show
         Class.Parse
         Class.Pretty
-        Data.Numeric
         Data.Array.Base
         Data.Array.Fun
         Data.Array.Store
@@ -72,3 +72,5 @@ library
         System.Runtime.Reflect
         System.Env
         Main.Args
+        Prelude.Data
+        Prelude.Numeric

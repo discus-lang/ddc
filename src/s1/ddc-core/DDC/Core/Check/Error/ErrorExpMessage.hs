@@ -15,6 +15,15 @@ instance (Pretty a, Show n, Eq n, Pretty n)
        => Pretty (Error a n) where
  ppr = ppr'
 
+-- Contexts -------------------------------------------------------------------
+ppr' (ErrorCtxData n err')
+ = vcat [ text "In data definition '" % ppr n % text "'"
+        , ppr err' ]
+
+ppr' (ErrorCtxBind n err')
+ = vcat [ text "In binding '" % ppr n % text "'"
+        , ppr err' ]
+
 
 -- Wrapped Errors -------------------------------------------------------------
 ppr' (ErrorType err')

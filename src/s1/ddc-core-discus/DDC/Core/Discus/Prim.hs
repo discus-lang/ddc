@@ -257,6 +257,7 @@ takeTypeOfLitName nn
         NameLitInt{}            -> Just tInt
         NameLitWord _ bits      -> Just (tWord  bits)
         NameLitFloat _ bits     -> Just (tFloat bits)
+        NameLitChar _           -> Just (tWord  32)     -- TODO: char wants its own type.
         NameLitTextLit _        -> Just tTextLit
         _                       -> Nothing
 

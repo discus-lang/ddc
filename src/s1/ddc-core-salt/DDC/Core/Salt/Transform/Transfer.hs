@@ -96,7 +96,7 @@ transSuper tails xx
 
          -> let arity   = length asArgsVal
                 p       = PrimControlTailCall arity
-                u       = UPrim (NamePrimOp (PrimControl p))
+                u       = UName (NamePrimOp (PrimControl p))
             in  xApps a (XVar a u)
                         $  (map RType  (tsValArgs  ++ [tResult]))
                         ++ [RTerm $ xApps a xv (asArgsType ++ asArgsWit)]
@@ -121,7 +121,7 @@ addReturnX a t xx
 
         -- If there is already a control transfer primitive here then
         -- don't add another one.
-        | Just (NamePrimOp p, _)  <- takeXFragApps xx
+        | Just (NamePrimOp p, _)  <- takeXNameApps xx
         , case p of
                 PrimControl (PrimControlFail)       -> True
                 PrimControl (PrimControlReturn)     -> True

@@ -5,6 +5,8 @@ export
         add_Int; sub_Int; mul_Int; div_Int; rem_Int;
 }
 import Class.Numeric
+import Class.Ord
+import Class.Eq
 where
 
 

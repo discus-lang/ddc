@@ -149,6 +149,7 @@ typeOfPrimName dc
         NameLitUnboxed NameLitBool{}         -> Just $ tUnboxed tBool
         NameLitUnboxed NameLitNat{}          -> Just $ tUnboxed tNat
         NameLitUnboxed NameLitInt{}          -> Just $ tUnboxed tInt
+        NameLitUnboxed NameLitChar{}         -> Just $ tUnboxed (tWord 32)
         NameLitUnboxed (NameLitWord  _ bits) -> Just $ tUnboxed (tWord bits)
         NameLitUnboxed (NameLitFloat _ bits) -> Just $ tUnboxed (tFloat bits)
         NameLitUnboxed NameLitTextLit{}      -> Just $ tUnboxed tTextLit

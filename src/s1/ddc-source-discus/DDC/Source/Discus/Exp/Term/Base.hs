@@ -324,8 +324,8 @@ data GWiCon a
 
 
 -- Patterns ---------------------------------------------------------------------------------------
-pattern PTrue  = PData (DaConPrim (DaConBoundLit (PrimLitBool True))  TBool) []
-pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
+pattern PTrue  = PData (DaConPrim (DaConBoundLit (PrimLitBool True)))  []
+pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False))) []
 
 
 -------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Exp.Lit
-import DDC.Core.Codec.Text.Pretty
+-- import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Core.Module.Name
 import DDC.Core.Check                    (AnTEC(..))
@@ -37,14 +37,14 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
  -- The unit constructor.
  --  This is statically defined to have info table index 1 in Init.dcs
  --  of the runtime system.
- | DaConUnit      <- dc
+ | DaConUnit    <- dc
  = return $ A.xAllocBoxed a A.rTop
-                0                -- constructor tag
-                (A.xWord a 1 32) -- info index
-                (A.xNat  a 0)    -- arity
+        0                -- constructor tag
+        (A.xWord a 1 32) -- info index
+        (A.xNat  a 0)    -- arity
 
  -- Literal values
- | DaConPrim n _  <- dc
+ | DaConPrim n  <- dc
  , E.isNameLitUnboxed n
  =      convertLitCtor a dc
 
@@ -116,7 +116,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorApp _ _ dc xsArgsAll
- = throw $  ErrorMalformed
-         $  "Invalid constructor application "
-         ++ (renderIndent $ ppr (dc, xsArgsAll))
+ = throw $  ErrorMalformed $ unlines
+         [ "ddc-core-discus.convertCtorApp"
+         , "Invalid constructor application: " ++ show (dc, xsArgsAll) ]
 

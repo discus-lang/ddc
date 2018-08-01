@@ -1,10 +1,11 @@
 
 module Cell
-export 
+export
 {       isEmpty; isAlive;
         stepCell
 }
 import Data.Function
+import Data.Numeric.Bool
 import Data.List
 where
 
@@ -32,11 +33,11 @@ isAlive (cell: Cell): Bool
 -- | Step a single cell to the next time step,
 --   given a list of its eight immediate neighbours.
 stepCell (cell: Cell) (neighbours: List Cell): Cell
- = do   
+ = do
         nAlive  = length $ filter isAlive $ neighbours
 
         case cell of
-         CellAlive      
+         CellAlive
           | nAlive == 2 ∨ nAlive == 3   -> CellAlive
           | otherwise                   -> CellEmpty
 

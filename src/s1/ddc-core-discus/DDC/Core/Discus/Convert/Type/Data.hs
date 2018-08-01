@@ -43,23 +43,20 @@ convertDataU uu
          -> return $ Just $ UIx i
 
         UName n
-         -> do  n'      <- convertBindNameM n
-                return $ Just $ UName n'
-
-        -- When converting primops, use the type directly specified by the
-        -- Salt language instead of converting it from Discus. The types from
-        -- each language definition may not be inter-convertible.
-        UPrim n
          -> case n of
+                -- When converting primops, use the type directly specified by the
+                -- Salt language instead of converting it from Discus. The types from
+                -- each language definition may not be inter-convertible.
                 E.NamePrimArith op True
                   -> return
-                  $  Just $ UPrim (A.NamePrimOp (A.PrimArith op))
+                  $  Just $ UName (A.NamePrimOp (A.PrimArith op))
 
                 E.NamePrimCast op True
                   -> return
-                  $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op))
+                  $  Just $ UName (A.NamePrimOp (A.PrimCast  op))
 
-                _ -> return Nothing
+                _ -> do n'      <- convertBindNameM n
+                        return $ Just $ UName n'
 
 
 -- | Convert a value type from Core Discus to Core Salt.
@@ -131,18 +128,18 @@ convertDataAppT ctx tt
         -- been converted to explicitly unboxed form by the boxing transform.
 
         -- The Void# type.
-        | Just (E.NamePrimTyCon E.PrimTyConVoid,     [])  <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon E.PrimTyConVoid,     [])  <- takeNameTyConApps tt
         =      return A.tVoid
 
         -- The Ptr# type.
         | Just  ( E.NamePrimTyCon E.PrimTyConPtr
-                , [_tR, _tA])       <- takePrimTyConApps tt
+                , [_tR, _tA])       <- takeNameTyConApps tt
         = do    return $ A.tPtr A.rTop A.tObj
 
 
         -- Numeric TyCons ---------------------------------
         -- These are represented in boxed form.
-        | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
+        | Just (E.NamePrimTyCon n, [])  <- takeNameTyConApps tt
         , True <- case n of
                         E.PrimTyConBool         -> True
                         E.PrimTyConNat          -> True
@@ -160,7 +157,7 @@ convertDataAppT ctx tt
         -- In Salt, unboxed numeric values are represented directly as
         -- values of the corresponding machine type.
         | Just  ( E.NameTyConDiscus E.TyConDiscusU
-                , [tNum])       <- takePrimTyConApps tt
+                , [tNum])       <- takeNameTyConApps tt
         , isNumericType tNum || isAddrType tNum
         = do   tNum'   <- convertDataPrimitiveT tNum
                return tNum'
@@ -168,19 +165,19 @@ convertDataAppT ctx tt
         -- Explicitly unboxed text literals.
         -- These are represented as pointers to static memory.
         | Just  ( E.NameTyConDiscus E.TyConDiscusU
-                , [tStr])       <- takePrimTyConApps tt
+                , [tStr])       <- takeNameTyConApps tt
         , isTextLitType tStr
         = do    return $ A.tPtr A.rTop (A.tWord 8)
 
         -- The F# type (reified function)
         | Just  ( E.NameTyConDiscus E.TyConDiscusF
-                , [_])          <- takePrimTyConApps tt
+                , [_])          <- takeNameTyConApps tt
         =       return  $ A.tPtr A.rTop A.tObj
 
         -- Boxed text literals.
         -- The box holds a pointer to the string data.
         | Just (E.NamePrimTyCon E.PrimTyConTextLit, [])
-                <- takePrimTyConApps tt
+                <- takeNameTyConApps tt
         =      return   $ A.tPtr A.rTop A.tObj
 
 
@@ -191,14 +188,14 @@ convertDataAppT ctx tt
 
         -- Boxed vectors of unboxed values-----------------
         | Just  ( E.NameTyConDiscus E.TyConDiscusVector
-                , [_, _])      <- takePrimTyConApps tt
+                , [_, _])      <- takeNameTyConApps tt
         =       return $ A.tPtr A.rTop A.tObj
 
 
         -- Foreign boxed data types -----------------------
         --   If these have a primary region then we use that,
         --   otherwise they are represnted in generic boxed form.
-        | Just (TyConBound (UName n) _, args) <- takeTyConApps tt
+        | Just (TyConBound n, args) <- takeTyConApps tt
         , Set.member n (contextForeignBoxedTypeCtors ctx)
         = case args of
                 tR : _
@@ -214,7 +211,7 @@ convertDataAppT ctx tt
         -- User defined TyCons ----------------------------
         -- A user-defined data type with a primary region.
         --   These are converted to generic boxed objects in the same region.
-        | Just (TyConBound (UName n) _, tR : _args) <- takeTyConApps tt
+        | Just (TyConBound n, tR : _args) <- takeTyConApps tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         , TVar u       <- tR
         , Just k       <- Env.lookup u (contextKindEnv ctx)
@@ -224,12 +221,12 @@ convertDataAppT ctx tt
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
-        | Just (TyConBound (UName n) _, _) <- takeTyConApps tt
+        | Just (TyConBound n, _) <- takeTyConApps tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
 
         -- ISSUE #377: Look through type equations during Discus to Salt transform.
-        | Just (TyConBound (UName n) _, []) <- takeTyConApps tt
+        | Just (TyConBound n, []) <- takeTyConApps tt
         , Just t' <- Map.lookup n (contextTypeEqns ctx)
         = convertDataAppT ctx t'
 
@@ -247,7 +244,7 @@ convertDataAppT ctx tt
 -- | Convert a primitive type directly to its Salt form.
 convertDataPrimitiveT :: Type E.Name -> ConvertM a (Type A.Name)
 convertDataPrimitiveT tt
- | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
+ | Just (E.NamePrimTyCon n, [])  <- takeNameTyConApps tt
  = case n of
         E.PrimTyConBool         -> return $ A.tBool
         E.PrimTyConNat          -> return $ A.tNat

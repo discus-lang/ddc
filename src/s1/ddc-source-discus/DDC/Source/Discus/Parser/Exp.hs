@@ -232,14 +232,14 @@ pExpAtomSP
  = P.choice
  [      -- Named algebraic constructors.
    do   (con, sp)       <- pDaConBoundNameSP
-        return  (sp, XCon  (DaConBound (C.DaConBoundName Nothing Nothing con)))
+        return  (sp, XCon (DaConBound (C.DaConBoundName Nothing Nothing con)))
 
         -- Literals.
-        --  We just fill-in the type with a hole for now, and leave it to
-        --  We also set the literal as being algebraic, which may not be
-        --  true (as for Floats). The spreader also needs to fix this.
+        -- We treat these as DaConBound in the parser.
+        -- The type checker will then convert them to DaConPrim once it notices
+        -- that they are primtive.
  , do   (lit, sp)       <- pDaConBoundLitSP
-        return  (sp, XCon (DaConPrim lit (TVar UHole)))
+        return  (sp, XCon (DaConBound (C.DaConBoundName Nothing Nothing lit)))
 
         -- Fragment specific primitive names.
  , do   (nPrim, sp)     <- pPrimValSP

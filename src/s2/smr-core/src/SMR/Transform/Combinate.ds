@@ -2,6 +2,11 @@
 module SMR.Transform.Combinate
 export {combinate; abstract}
 import SMR.Core.Exp
+import SMR.Core.Exp.Push
+import Class.Eq
+import Data.Function
+import Data.Numeric
+import Data.Text
 where
 
 

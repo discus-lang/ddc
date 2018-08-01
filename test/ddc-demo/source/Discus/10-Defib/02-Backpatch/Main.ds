@@ -2,6 +2,7 @@
 module Main
 import System.IO.Console
 import Class.Show
+import Data.Numeric
 import Data.Ref
 where
 

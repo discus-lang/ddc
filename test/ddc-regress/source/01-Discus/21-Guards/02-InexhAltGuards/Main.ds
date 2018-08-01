@@ -1,7 +1,9 @@
 
 module Main
+import Class.Show
 import Data.Maybe
 import Data.Function
+import Data.Numeric
 import System.IO.Console
 where
 

@@ -62,11 +62,6 @@ initializeInfo mnsImport mm
         , C.moduleImportValues
             =  C.moduleImportValues mm
 
-{-
-            ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
-               , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
-               , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]
--}
                -- Import the initialization functions for transitively imported modules.
             ++ [ ( initNameOfModule mn
                  , C.ImportValueModule
@@ -175,10 +170,8 @@ makeInfoInitForDataDef a modName dataDef
                 $  D.xInfoFrameAddData a
                         (C.XVar a (C.UIx 0))
                         iTag (length $ C.dataCtorFieldTypes ctor)
-                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))
-                                               (D.tTextLit)))
-                        (C.XCon a (C.DaConPrim (textLitOfConName $ C.dataCtorName ctor)
-                                               (D.tTextLit)))
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))))
+                        (C.XCon a (C.DaConPrim (textLitOfConName $ C.dataCtorName ctor)))
                 | ctor  <- ctors
                 | iTag  <- [0..]]
 
@@ -204,7 +197,8 @@ initializeMain
         ivHookHandleTopLevel
          = ( nHookHandleTopLevel
            , C.ImportValueSea
-                { C.importValueSeaNameInternal  = nHookHandleTopLevel
+                { C.importValueSeaModuleName    = C.ModuleName ["DDC", "Internal", "Runtime"]
+                , C.importValueSeaNameInternal  = nHookHandleTopLevel
                 , C.importValueSeaNameExternal  = txHookHandleTopLevel
                 , C.importValueSeaType          = tHookHandleTopLevel })
 

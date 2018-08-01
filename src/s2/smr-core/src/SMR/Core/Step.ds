@@ -1,31 +1,16 @@
 
 module SMR.Core.Step
 export { step; steps }
+import SMR.Core.Exp.Push
+import SMR.Core.Exp.Train
+import SMR.Core.Exp.Compounds
+import SMR.Core.Step.Base
 import SMR.Core.Exp
+import SMR.Prim.Op.Base
+import Data.List
+import Data.Maybe
+import Data.Function
 where
-
-
--------------------------------------------------------------------------------
--- | Evaluation strength.
-data StepStrength where
-        StepStrength
-         :  Bool                    -- ^ Reduce under lambdas.
-         -> Bool                    -- ^ Reduce args when head is not an abs.
-         -> StepStrength
-
-
--- | Evaluation context.
-data StepContext (s p: Data) where
-        StepContext
-         :  List (p, PrimEval s p)  -- ^ Primitive operator evaluators.
-         -> List (Decl s p)         -- ^ Top-level declarations.
-         -> StepContext s p
-
-
--- | Describe the result of an evaluation.
-data Result where
-        ResultDone  : Result
-        ResultError : Text -> Result
 
 
 -------------------------------------------------------------------------------

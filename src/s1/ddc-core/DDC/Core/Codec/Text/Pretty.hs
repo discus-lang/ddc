@@ -37,6 +37,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         { moduleName            = name
         , moduleExportTypes     = exportTypes
         , moduleExportValues    = exportValues
+        , moduleImportModules   = importModules
         , moduleImportTypes     = importTypes
         , moduleImportCaps      = importCaps
         , moduleImportValues    = importValues
@@ -59,6 +60,10 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | otherwise            = (vcat $ map (pprExportValue . snd) exportValues) <> line
 
         -- Imports --------------------
+        dImportModules
+         | null $ importModules = mempty
+         | otherwise            = (vcat $ map pprImportModule importModules) <> line
+
         dImportTypes
          | null $ importTypes   = mempty
          | otherwise            = (vcat $ map pprImportType  importTypes)  <> line
@@ -83,7 +88,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
          | otherwise
          = line % dExportTypes % dExportValues
-                % dImportTypes % dImportCaps % dImportValues
+                % dImportModules % dImportTypes % dImportCaps % dImportValues
 
         -- Data Definitions -----
         docsDataImport
@@ -158,13 +163,20 @@ pprExportValue esrc
                         %% text "#-}"
                  , mempty ]
 
-        ExportValueSea iName xName t
+        ExportValueSea mn iName xName t
          -> vcat [ text "export foreign c value"
-                 , indent 8 (padL 15 (ppr iName) % text ":" %% ppr t % semi)
-                 , indent 8 (text " from " % string (show xName)) ]
+                 , indent 8 (padL 15 (ppr mn % text "." % ppr iName) % text ":" %% ppr t % semi)
+                 , indent 8 (text " from " % string (show xName))
+                 , mempty ]
 
 
 -- Imports ----------------------------------------------------------------------------------------
+-- | Pretty print a module import.
+pprImportModule :: ModuleName -> Doc
+pprImportModule mn
+ =      text "import module" %% ppr mn
+
+
 -- | Pretty print a type import.
 pprImportType :: (Pretty n, Pretty t) => (n, ImportType n t) -> Doc
 pprImportType (n, isrc)
@@ -213,9 +225,9 @@ pprImportValue isrc
 
                  , mempty ]
 
-        ImportValueSea nInternal _nExternal t
+        ImportValueSea mn nInternal _nExternal t
          -> text "import foreign c value" % line
-          % indent 8 (padL 15 (ppr nInternal) %% text ":" %% ppr t % semi)
+          % indent 8 (padL 15 (ppr mn % text "." % ppr nInternal) %% text ":" %% ppr t % semi)
           % line
 
 

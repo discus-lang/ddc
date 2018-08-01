@@ -2,7 +2,6 @@
 module DDC.Core.Discus.Convert.Type.DaCon
         (convertDaCon)
 where
-import DDC.Core.Discus.Convert.Type.Super
 import DDC.Core.Discus.Convert.Type.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
@@ -17,17 +16,14 @@ convertDaCon
         -> DaCon E.Name (Type E.Name)
         -> ConvertM a (DaCon A.Name (Type A.Name))
 
-convertDaCon ctx dc
+convertDaCon _ctx dc
  = case dc of
         DaConUnit       -> return $ DaConUnit
         DaConRecord ns  -> return $ DaConRecord ns
 
-        DaConPrim n t
+        DaConPrim n
          -> do  n'      <- convertDaConNameM dc n
-                t'      <- convertSuperT ctx t
-                return  $ DaConPrim
-                        { daConName             = n'
-                        , daConType             = t' }
+                return  $ DaConPrim n'
 
         DaConBound (DaConBoundName _ _ n)
          -> do  n'      <- convertDaConNameM dc n

@@ -6,6 +6,9 @@ export
         bits_Word64;
 }
 import Class.Numeric
+import Class.Bits
+import Class.Ord
+import Class.Eq
 where
 
 
@@ -35,19 +38,19 @@ add_Word64: Add Word64
 
 
 -- | Sub dictionary for Nat.
-sub_Word64: Sub Word64 
+sub_Word64: Sub Word64
  = Sub (\x y -> if gt# [Word64#] y x
                  then 0w64
                  else sub# [Word64#] x y)
 
 
 -- | Mul dictionary for Word64.
-mul_Word64: Mul Word64 
+mul_Word64: Mul Word64
  = Mul (\x y -> mul# [Word64#] x y)
 
 
 -- | Div dictionary for Word64.
-div_Word64: Div Word64 
+div_Word64: Div Word64
  = Div (\x y -> div# [Word64#] x y)
 
 

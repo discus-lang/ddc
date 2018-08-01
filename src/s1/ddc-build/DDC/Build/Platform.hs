@@ -1,13 +1,15 @@
 
 module DDC.Build.Platform
-        ( -- * Data types
+        ( -- * Platform
           Platform      (..)
         , staticFileExtensionOfPlatform
         , sharedFileExtensionOfPlatform
 
+          -- * Architecture
         , Arch          (..)
         , archPointerWidth
 
+          -- * Os
         , Os            (..)
 
           -- * Host platform determination

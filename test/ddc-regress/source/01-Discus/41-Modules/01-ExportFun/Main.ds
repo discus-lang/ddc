@@ -2,6 +2,8 @@
 -- The code generator needs to use the arity information in the interface file.
 module Main
 import Module
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

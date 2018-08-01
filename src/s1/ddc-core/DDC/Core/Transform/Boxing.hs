@@ -80,8 +80,8 @@ boxingModule config mm
         -- Use explicitly unboxed types when importing foreign sea functions.
         boxingImport imp
          = case imp of
-                ImportValueSea nx ni t
-                  -> ImportValueSea nx ni $ boxingForeignSeaType config t
+                ImportValueSea mn nx ni t
+                  -> ImportValueSea mn nx ni $ boxingForeignSeaType config t
                 _ -> imp
 
         -- Use explicitly unboxed types when exporting foreign sea functions.
@@ -107,34 +107,34 @@ boxingX config xx
  = case xx of
 
         -- Convert literals to their unboxed form, followed by a boxing conversion.
-        XCon a (DaConPrim n tLit)
-         | Just RepBoxed        <- configRepOfType config tLit
+        XCon a (DaConPrim n)
+         | Just tLit            <- configValueTypeOfLitName config n
+         , Just RepBoxed        <- configRepOfType config tLit
          , Just tLitU           <- configConvertRepType config RepUnboxed tLit
          , Just nU              <- configUnboxLitName   config n
-
          , Just xLit            <- configConvertRepExp  config RepBoxed a tLitU
-                                $  XCon a (DaConPrim nU tLitU)
+                                $  XCon a (DaConPrim nU)
          -> xLit
 
         -- Application of primop being run at call site.
         XCast _ CastRun xx'@(XApp a _ _)
-         |  Just (n, asArgsAll) <- takeXFragApps xx'
+         |  Just (n, asArgsAll) <- takeXNameApps xx'
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a True xx' (XVar a (UPrim n'))
+            in  boxingPrimitive config a True xx' (XVar a (UName n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
         -- Application of primop.
         XApp a _ _
-         |  Just (n, asArgsAll) <- takeXFragApps xx
+         |  Just (n, asArgsAll) <- takeXNameApps xx
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a False xx (XVar a (UPrim n'))
+            in  boxingPrimitive config a False xx (XVar a (UName n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
@@ -160,11 +160,12 @@ boxingX config xx
 
         -- Unbox literal patterns in alternatives.
         XCase a xScrut alts
-         | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
-         , Just tLit1    <- configValueTypeOfLitName config (daConName p)
+         | n : _         <- [ n  | AAlt (PData (DaConPrim n) []) _ <- alts]
+         , Just tLit1    <- configValueTypeOfLitName config n
          , Just RepBoxed <- configRepOfType config tLit1
          -> let alts'    = map (boxingAlt config) alts
-            in  boxingCase config a tLit1 xScrut alts'
+                xScrut'  = boxingX config xScrut
+            in  boxingCase config a tLit1 xScrut' alts'
 
         -- Boilerplate.
         XVar{}          -> xx
@@ -403,11 +404,11 @@ boxingCase
 
 boxingCase config a tLit1 xScrut alts
  = let
-        unboxAlt (AAlt (PData (DaConPrim n tLit) []) x)
-         | Just RepBoxed <- configRepOfType config tLit
+        unboxAlt (AAlt (PData (DaConPrim n) []) x)
+         | Just tLit     <- configValueTypeOfLitName config n
+         , Just RepBoxed <- configRepOfType config tLit
          , Just nU       <- configUnboxLitName config n
-         , Just tLitU    <- configConvertRepType config RepUnboxed tLit
-         = Just (AAlt (PData (DaConPrim nU tLitU) []) x)
+         = Just (AAlt (PData (DaConPrim nU) []) x)
 
         unboxAlt alt@(AAlt PDefault _) = Just alt
         unboxAlt _                     = Nothing

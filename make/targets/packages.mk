@@ -8,7 +8,6 @@ PACKAGES = \
 	ddc-core-discus \
 	ddc-core-flow \
 	ddc-core-machine \
-	ddc-core-babel \
         ddc-source-discus \
 	ddc-build \
 	ddc-driver
@@ -90,13 +89,6 @@ src/s1/ddc-core-machine/%.o : src/s1/ddc-core-machine/%.hs
 		-c $< -isrc/s1/ddc-core \
 		      -isrc/s1/ddc-core-machine
 
-src/s1/ddc-core-babel/%.o : src/s1/ddc-core-babel/%.hs
-	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -isrc/s1/ddc-core \
-		      -isrc/s1/ddc-core-salt  \
-		      -isrc/s1/ddc-core-discus
-
 src/s1/ddc-core-discus/%.o : src/s1/ddc-core-discus/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -116,7 +108,6 @@ src/s1/ddc-build/%.o : src/s1/ddc-build/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -isrc/s1/ddc-core \
-		      -isrc/s1/ddc-core-babel \
 		      -isrc/s1/ddc-core-salt \
 		      -isrc/s1/ddc-core-llvm \
 		      -isrc/s1/ddc-core-flow \
@@ -135,7 +126,6 @@ src/s1/ddc-driver/%.o : src/s1/ddc-driver/%.hs
 		      -isrc/s1/ddc-core-flow \
 		      -isrc/s1/ddc-core-machine \
 		      -isrc/s1/ddc-core-discus \
-		      -isrc/s1/ddc-core-babel \
 		      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver

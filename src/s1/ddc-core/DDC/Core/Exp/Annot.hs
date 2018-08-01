@@ -100,7 +100,7 @@ module DDC.Core.Exp.Annot
         , takeXAppsWithAnnots
         , takeXConApps
         , takeXPrimApps
-        , takeXFragApps
+        , takeXNameApps
 
           -- ** Arguments
         , takeRType
@@ -141,7 +141,6 @@ module DDC.Core.Exp.Annot
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
         , takeBaseCtorNameOfDaCon
-        , takeTypeOfDaCon
 
           -- ** Bound Variables
         , takeBoundOfExp

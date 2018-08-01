@@ -2,8 +2,9 @@
 -- Demonstrate the effect constructs.
 module Main
 import System.IO.Console
-import Data.Ref
 import Class.Show
+import Data.Numeric
+import Data.Ref
 where
 
 

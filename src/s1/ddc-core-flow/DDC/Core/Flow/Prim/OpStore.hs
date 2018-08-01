@@ -259,5 +259,5 @@ xBufOfRateVec tRate tElem xArr
 -- Utils ----------------------------------------------------------------------
 xVarOpStore :: OpStore -> Exp () Name
 xVarOpStore op
-        = XVar (UPrim (NameOpStore op))
+        = XVar (UName (NameOpStore op))
 

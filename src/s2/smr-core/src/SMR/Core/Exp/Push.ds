@@ -1,8 +1,10 @@
 
 module SMR.Core.Exp.Push
 export {pushHead; pushDeep; pushTrain}
+import SMR.Core.Exp.Compounds
 import SMR.Core.Exp.Train
 import SMR.Core.Exp.Base
+import Data.List
 import Data.Ref
 where
 

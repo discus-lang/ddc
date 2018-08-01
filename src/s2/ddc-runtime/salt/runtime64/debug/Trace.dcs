@@ -10,7 +10,7 @@ export foreign c value
         -> Addr# -> Addr# -> Addr#
         -> Unit
 
- ddcTraceObj            : [r : Region]. Bool# -> Bool# -> Ptr# r Obj -> Ptr# r Obj
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ptr# r Obj -> Ptr# r Obj
  ddcTraceRoots          : Bool# -> Unit
  ddcTraceHeap           : Bool# -> Unit
 

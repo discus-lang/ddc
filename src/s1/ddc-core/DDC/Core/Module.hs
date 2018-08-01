@@ -34,8 +34,15 @@ module DDC.Core.Module
         , ExportValue  (..)
         , takeTypeOfExportValue
         , mapTypeOfExportValue
+        , exportOfImportValue
 
          -- * Import Definitions
+         -- ** Import Things
+        , ImportThing   (..)
+        , nameOfImportThing
+        , importThingsOfModule
+        , wrapModuleWithImportThings
+
          -- ** Import Types
         , ImportType    (..)
         , kindOfImportType
@@ -46,8 +53,9 @@ module DDC.Core.Module
         , typeOfImportCap
         , mapTypeOfImportCap
 
-         -- ** Import Types
+         -- ** Import Values
         , ImportValue   (..)
+        , moduleNameOfImportValue
         , typeOfImportValue
         , mapTypeOfImportValue)
 where
@@ -72,7 +80,6 @@ import Data.Maybe
 
 
 -- Module -----------------------------------------------------------------------------------------
--- | A module can be mutually recursive with other modules.
 data Module a n
         = ModuleCore
         { -- | Name of this module.
@@ -83,6 +90,12 @@ data Module a n
           --   but no function definitions. Module headers are used in interface files.
         , moduleIsHeader        :: !Bool
 
+          -- | Lists of modules that this one transitively depends on.
+          --   This is used by the build system to determine what other modules
+          --   we need to link against when producing an executable. We also use
+          --   it do decide if the current one needs to be recompiled.
+        , moduleTransitiveDeps  :: !(Set ModuleName)
+
           -- Exports ------------------
           -- | Kinds of exported types.
         , moduleExportTypes     :: ![(n, ExportType   n (Type n))]
@@ -91,6 +104,9 @@ data Module a n
         , moduleExportValues    :: ![(n, ExportValue  n (Type n))]
 
           -- Imports ------------------
+          -- | Import all things the given modules export into this one.
+        , moduleImportModules   :: ![ModuleName]
+
           -- | Imported foreign types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
@@ -127,6 +143,7 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleIsHeader       mm)
         `seq` rnf (moduleExportTypes    mm)
         `seq` rnf (moduleExportValues   mm)
+        `seq` rnf (moduleImportModules  mm)
         `seq` rnf (moduleImportTypes    mm)
         `seq` rnf (moduleImportCaps     mm)
         `seq` rnf (moduleImportValues   mm)
@@ -173,6 +190,67 @@ moduleTypeEnv mm
         $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
 
 
+---------------------------------------------------------------------------------------------------
+-- | Slurp a map of import things from a module.
+importThingsOfModule :: Ord n => Module a n -> Map n (ImportThing n)
+importThingsOfModule mm
+ = Map.unions
+        [ Map.fromList  [ (n, ImportThingDataType n dt)
+                        | (n, dt)       <- Map.toList $ dataDefsTypes
+                                        $  fromListDataDefs $ map snd $ moduleImportDataDefs mm ]
+
+        , Map.fromList  [ (n, ImportThingSyn n k t)
+                        | (n, (k, t))   <- moduleImportTypeDefs mm ]
+
+        , Map.fromList  [ (n, ImportThingType n it)
+                        | (n, it)       <- moduleImportTypes mm ]
+
+        , Map.fromList  [ (n, ImportThingCap n ic)
+                        | (n, ic)       <- moduleImportCaps mm ]
+
+        , Map.fromList  [ (n, ImportThingValue n iv)
+                        | (n, iv)       <- moduleImportValues mm ]
+        ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Add import things to the import declarations of a module.
+wrapModuleWithImportThings
+        :: Ord n
+        => Map n (ImportThing n)
+        -> Module a n
+        -> Module a n
+
+wrapModuleWithImportThings mp mm
+ = mm
+ { moduleImportTypeDefs
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportTypeDefs mm))
+                (Map.fromList [(n, (k, t)) | ImportThingSyn n k t <- Map.elems mp ])
+
+ , moduleImportDataDefs
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportDataDefs mm))
+                (Map.fromList [(n, dataDefOfDataType dt)
+                                           | ImportThingDataType n dt <- Map.elems mp])
+ , moduleImportTypes
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportTypes mm))
+                (Map.fromList [(n, it)     | ImportThingType n it  <- Map.elems mp ])
+
+ , moduleImportCaps
+         = Map.toList $ Map.union
+                (Map.fromList (moduleImportCaps mm))
+                (Map.fromList [(n, ic)     | ImportThingCap n ic   <- Map.elems mp])
+
+ , moduleImportValues
+        = Map.toList $ Map.union
+                (Map.fromList (moduleImportValues mm))
+                (Map.fromList [(n, iv)     | ImportThingValue n iv <- Map.elems mp])
+ }
+
+
+---------------------------------------------------------------------------------------------------
 -- | Extract the top-level `EnvT` environment from a module.
 --
 --   This includes kinds for abstract types, data types, and type equations,
@@ -190,6 +268,9 @@ moduleEnvT kenvPrim mm
         = Map.unions
         [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
         , Map.fromList [(n, t)  | (n, (_, t)) <- moduleLocalTypeDefs  mm]]
+
+ , EnvT.envtForeignTypes
+        = Map.fromList $ moduleImportTypes mm
 
  , EnvT.envtCapabilities
         = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]

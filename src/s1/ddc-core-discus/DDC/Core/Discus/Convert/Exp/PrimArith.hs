@@ -33,7 +33,7 @@ convertPrimArith _ectx ctx xx
         -- Saturated application of a primitive operator.
         XApp a xa xb
          | (x1, asArgs)           <- takeXApps1 xa xb
-         , XVar _ uPrim@(UPrim nPrim) <- x1
+         , XVar _ uPrim@(UName nPrim) <- x1
          , Just tPrim             <- Env.lookup uPrim $ contextTypeEnv ctx
 
          -- All the value arguments have representatable types.

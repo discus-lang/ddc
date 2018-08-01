@@ -6,6 +6,8 @@ export  arrayStore_alloc; arrayStore_compute; arrayStore_write
 import Data.Array.Base
 import Data.Array.Fun
 import Data.Numeric.Nat
+import Class.Ord
+import Class.Numeric
 
 import foreign boxed type
  StoreArray : Region -> Data -> Data

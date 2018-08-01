@@ -1,8 +1,8 @@
 
-
 -- Check partial application of data constructor.
 module Main
-import Data.Numeric.Nat
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

@@ -8,6 +8,7 @@ export
         stake; stakeWhile;
         sfilter;
 }
+import Data.Array.Store
 import Data.Numeric.Nat
 import Data.List
 import Data.Maybe

@@ -6,9 +6,11 @@ import SMR.Core.Exp
 import System.Posix.Stdlib
 import Control.Parsec
 import Class.Show
+import Class.Eq
 import Data.Tuple
 import Data.Text
 import Data.Text.Location
+import Data.List
 where
 
 

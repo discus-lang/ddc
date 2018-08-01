@@ -10,7 +10,7 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
-import qualified DDC.Core.Interface.Base        as C
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
@@ -20,11 +20,12 @@ import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
 import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 import Data.Text                                (Text)
 import DDC.Data.Pretty
 
-import qualified Foreign.Marshal.Alloc                  as Foreign
-import qualified System.IO                              as System
+import qualified Foreign.Marshal.Alloc          as Foreign
+import qualified System.IO                      as System
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -63,19 +64,22 @@ storeInterface config pathDst ii
 --
 takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
 takeModuleDecls c mm@C.ModuleCore{}
- =  [ dName,   dExTyp,  dExTrm
-    , dImTyp,  dImDat, dImSyn, dImCap, dImTrm
+ =  [ dName,   dDeps
+    , dExTyp,  dExTrm
+    , dImMod,  dImTyp,  dImDat, dImSyn, dImCap, dImTrm
     , dLcDat,  dLcSyn ]
  ++ concat
     [ dsImDat, dsImSyn, dsImTrm
     , dsLcDat, dsLcSyn, dsLcTrm ]
  where
-
+        -- Module Name.
         dName
-         = S.DeclSet "m-name"
-         $ case C.moduleName mm of
-                C.ModuleName sParts
-                 -> xList $ map (xTxt . T.pack) sParts
+         = S.DeclSet "m-name" $ takeModuleName $ C.moduleName mm
+
+        -- Transitive dependencies on other modules.
+        dDeps
+         = S.DeclSet "m-deps"
+         $ xList $ map takeModuleName $ Set.toList $ C.moduleTransitiveDeps mm
 
         -- Exported Types.
         dExTyp
@@ -88,6 +92,11 @@ takeModuleDecls c mm@C.ModuleCore{}
         dExTrm
          = S.DeclSet "m-ex-val"
          $ xList $ map (takeExportValue c) $ map snd $ C.moduleExportValues mm
+
+        -- Imported Modules.
+        dImMod
+         = S.DeclSet "m-im-mod" $ xList xsImport
+         where xsImport  = map takeModuleName  $ C.moduleImportModules mm
 
         -- Imported Types.
         dImTyp
@@ -175,16 +184,14 @@ takeExportValue c es
                         [ takeModuleName mn, xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
                         , xNat aT, xNat aX, xNat aB]
 
-        C.ExportValueLocalNoType n
-         -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc"
-                        [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+        C.ExportValueLocalNoType _
+         -> error "ddc-core.takeExportValue: not exporting ValueLocalNoType"
 
         -- TODO: split type into own decl so we can import/export via the same data.
-        C.ExportValueSea n x t
+        C.ExportValueSea mn n x t
          -> let Just tx = configTakeVarName c n
             in  xAps "ex-val-sea"
-                        [ xTxt tx, xTxt x, takeType c t ]
+                        [ takeModuleName mn, xTxt tx, xTxt x, takeType c t ]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------
@@ -273,7 +280,8 @@ takeImportValue c iv
         C.ImportValueSea{}
          -> let Just tx = configTakeVarName c (C.importValueSeaNameInternal iv)
             in  ( xAps "im-val-sea"
-                        [ xTxt tx
+                        [ takeModuleName $ C.importValueSeaModuleName iv
+                        , xTxt tx
                         , xTxt (C.importValueSeaNameExternal iv)
                         , xMac ("t-" <> tx)]
                 , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueSeaType iv)])
@@ -300,7 +308,7 @@ takeExp c xx
          -> case dc of
                 C.DaConUnit      -> xSym "xdu"
                 C.DaConRecord fs -> xAps "xdr" (map xSym fs)
-                C.DaConPrim n _  -> configTakeRef c n
+                C.DaConPrim n    -> configTakeRef c n
                 C.DaConBound n   -> takeDaConBoundName c n
 
         -- Abs -----
@@ -415,10 +423,10 @@ takeAlt c aa
          -> xAps "ar" ((xList (map xSym fs) : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Prim
-        C.AAlt (C.PData (C.DaConPrim n _) []) x
+        C.AAlt (C.PData (C.DaConPrim n) []) x
          -> xAps "ap" [configTakeRef c n, takeExp c x]
 
-        C.AAlt (C.PData (C.DaConPrim n _) bs) x
+        C.AAlt (C.PData (C.DaConPrim n) bs) x
          -> xAps "ap" ((configTakeRef c n  : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Bound
@@ -459,9 +467,9 @@ takeType c tt
    in   xAps "tf" (map takeFunParam tcsParam ++ [takeType c tResult])
 
  -- Flatten out applications of data type constructor.
- | Just (tc, tsArg)    <- C.takeTyConApps tt
- , C.TyConBound u _ <- tc
- = xAps "tu" (takeBound c u : map (takeType c) tsArg)
+ | Just (tc, tsArg) <- C.takeTyConApps tt
+ , C.TyConBound n   <- tc
+ = xAps "tu" (takeBound c (C.UName n) : map (takeType c) tsArg)
 
  -- Some other type.
  | otherwise
@@ -513,8 +521,6 @@ takeBound c uu
          | Just tx   <- configTakeConName c n -> xTxt tx
          | otherwise -> configTakeRef c n
 
-        C.UPrim n       -> xAps "up" [configTakeRef c n]
-
 
 -- TyCon ------------------------------------------------------------------------------------------
 takeTyCon :: Config n -> C.TyCon n -> SExp
@@ -524,7 +530,9 @@ takeTyCon c tc
         C.TyConKind    cn       -> takeKiCon cn
         C.TyConWitness cn       -> takeTwCon cn
         C.TyConSpec    cn       -> takeTcCon cn
-        C.TyConBound   u _k     -> xApp (xSym "tcb") [takeBound c u]
+
+        -- TODO: elim intermediate Bound
+        C.TyConBound   n        -> xApp (xSym "tcb") [takeBound c (C.UName n)]
         C.TyConExists  i k      -> xApp (xSym "tcy") [xNat i, takeType c k]
 
 

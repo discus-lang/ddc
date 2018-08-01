@@ -1,7 +1,6 @@
 -- | Various functions on integers.
 module Main
-import Data.Numeric.Nat
-import Data.Numeric.Bool
+import Data.Numeric
 import Data.Function
 import Data.Text
 import Class.Show

@@ -6,6 +6,9 @@ export
         bits_Word16;
 }
 import Class.Numeric
+import Class.Bits
+import Class.Ord
+import Class.Eq
 where
 
 
@@ -35,19 +38,19 @@ add_Word16: Add Word16
 
 
 -- | Sub dictionary for Nat.
-sub_Word16: Sub Word16 
+sub_Word16: Sub Word16
  = Sub (\x y -> if gt# [Word16#] y x
                  then 0w16
                  else sub# [Word16#] x y)
 
 
 -- | Mul dictionary for Word16.
-mul_Word16: Mul Word16 
+mul_Word16: Mul Word16
  = Mul (\x y -> mul# [Word16#] x y)
 
 
 -- | Div dictionary for Word16.
-div_Word16: Div Word16 
+div_Word16: Div Word16
  = Div (\x y -> div# [Word16#] x y)
 
 

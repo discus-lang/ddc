@@ -2,6 +2,7 @@
 module SMR.Prim.Op.Nat
 export makePrimOpsNat
 import SMR.Prim.Op.Base
+import Data.Numeric
 where
 
 

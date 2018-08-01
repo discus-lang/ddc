@@ -133,7 +133,7 @@ extractProcs lets env
 
   go1 b nm x e
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries (OpSeriesRateVecsOfVectors n)))    <- op
+   , XVar (UName (NameOpSeries (OpSeriesRateVecsOfVectors n)))    <- op
    , (xs, [lam])                                        <- splitAt (length args - 1) args
    , (lams,body)                                        <- takeXLamFlags_safe lam
    , ([LLet n' x'], binds)                              <- go1 b nm body (lams ++ e)
@@ -143,7 +143,7 @@ extractProcs lets env
      , binds)
 
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries OpSeriesRunProcess))    <- op
+   , XVar (UName (NameOpSeries OpSeriesRunProcess))    <- op
    , (xs, [lam])                                         <- splitAt (length args - 1) args
 
    = let fsX = freeX Env.empty lam
@@ -488,14 +488,14 @@ process types env arrIns bs
   var n   = XVar $ UName n
 
 
-xVarOpSeries n = XVar (UPrim (NameOpSeries n))
-xVarOpVector n = XVar (UPrim (NameOpVector n))
+xVarOpSeries n = XVar (UName (NameOpSeries n))
+xVarOpVector n = XVar (UName (NameOpVector n))
 
 
 -- | Get underlying scalar of a vector type - or just return original type if it's not a vector.
 getScalarType :: TypeF -> TypeF
 getScalarType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowVector, [sc])      -> sc
         _                                               -> tt
 

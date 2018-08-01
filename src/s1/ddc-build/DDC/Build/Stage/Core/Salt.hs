@@ -25,7 +25,6 @@ import qualified DDC.Core.Simplifier.Recipe             as C
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
 
-
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Platform                 as A
 import qualified DDC.Core.Salt.Transform.Transfer       as ATransfer
@@ -34,6 +33,7 @@ import qualified DDC.Core.Llvm.Convert                  as ALlvm
 
 import qualified DDC.Llvm.Syntax                        as L
 import qualified DDC.Llvm.Pretty                        as L
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Compile Salt Code using the system Llvm compiler.
@@ -56,9 +56,7 @@ saltCompileViaLlvm
 saltCompileViaLlvm
         srcName builder pathO mPathExe mPathsOther
         bSlotify bKeepLlvmFiles bKeepAsmFiles
-        sinkPrep sinkSlots sinkTransfer
-        mm
-
+        sinkPrep sinkSlots sinkTransfer mm
  = do
         -- Decide where to place the build products.
         let pathLL      = FilePath.replaceExtension pathO ".ddc.ll"
@@ -78,6 +76,7 @@ saltCompileViaLlvm
         let strLlvm     = renderIndent $ pprModePrec llMode (0 :: Int) mm_llvm
 
         -- Write out Llvm source file.
+        liftIO $ System.createDirectoryIfMissing True (FilePath.takeDirectory pathLL)
         liftIO $ writeFile pathLL strLlvm
 
         -- Compile Llvm source file into .s file.
@@ -146,7 +145,7 @@ saltToLlvm
         -- Check normalized code to produce type annotations on every node.
         mm_checked
          <- BC.coreCheck
-                "saltToLlvm" BA.fragment C.Recon
+                "saltToLlvm" BA.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
 
         liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep
@@ -157,8 +156,8 @@ saltToLlvm
         mm_slotify
          <- if bAddSlots
              then do mm' <- case ASlotify.slotifyModule () mm_checked of
-                                Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
-                                Right mm'' -> return mm''
+                             Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
+                             Right mm'' -> return mm''
 
                      liftIO $ B.pipeSink (renderIndent $ pprModule mm') sinkSlots
                      return mm'

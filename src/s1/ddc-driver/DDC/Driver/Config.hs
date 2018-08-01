@@ -79,7 +79,6 @@ data Config
         , configTaintAvoidTypeChecks    :: Bool
         }
 
-
 ---------------------------------------------------------------------------------------------------
 -- | Core language pretty printer configuration.
 data ConfigPretty

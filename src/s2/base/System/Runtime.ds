@@ -8,7 +8,9 @@ export foreign c value
  ddcHookSetExceptionFile        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
  ddcHookSetExceptionNetwork     : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
 
-import Data.Numeric.Bool
+import Data.Numeric
+import Data.Text.Base   -- TODO: TextVec not being transitively imported.
+import Data.Text
 
 
 ---------------------------------------------------------------------------------------------------

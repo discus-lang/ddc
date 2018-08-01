@@ -1,6 +1,7 @@
 
 module Main
-import Data.Numeric.Nat
+import Class.Show
+import Data.Numeric
 import Data.Text
 import System.IO.Console
 where

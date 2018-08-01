@@ -28,7 +28,7 @@ convertX xx
  = withRateXLAM b $ removeXLAM b <$> convertX x
 
  -- Operators that just need a region added as first argument
- | Just (op, xs@(_:_)) <- takeXFragApps xx
+ | Just (op, xs@(_:_)) <- takeXNameApps xx
  = case op of
 
     F.NameOpStore F.OpStoreNew
@@ -190,8 +190,8 @@ convertX xx
          Nothing       -> error "ddc-core-flow.convertX: impossible!"
 
  | Just
-    (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _
-    , args)                                             <- takeXConApps xx
+    (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n))
+    , args)     <- takeXConApps xx
  , length args == n * 2
  , (xts, as)            <- splitAt n args
  , Just ts              <- mapM takeRType xts
@@ -204,8 +204,8 @@ convertX xx
  = convertApp f args
 
  | XCase _ x
-    [AAlt (PData (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _) bs) x1]
-                                                        <- xx
+    [AAlt (PData (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n))) bs) x1]
+                        <- xx
  , length bs == n
  = do   x'  <- convertX x
         bs' <- mapM convertBind bs
@@ -257,7 +257,7 @@ convertX xx
 
 
 prim anno n args
- = xApps anno (XVar anno (UPrim (T.NamePrimOp n))) args
+ = xApps anno (XVar anno (UName (T.NamePrimOp n))) args
 
 
 ---------------------------------------------------------------------------------------------------
@@ -307,8 +307,8 @@ convertDaCon dd
    DaConUnit      -> return   DaConUnit
    DaConRecord ns -> return $ DaConRecord ns
 
-   DaConPrim n t
-    -> DaConPrim  <$> convertName n <*> convertType t
+   DaConPrim n
+    -> DaConPrim  <$> convertName n
 
    DaConBound (DaConBoundName _ _ n)
     -> DaConBound <$> (DaConBoundName <$> pure Nothing <*> pure Nothing <*> convertName n)

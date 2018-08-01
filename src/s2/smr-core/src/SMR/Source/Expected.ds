@@ -7,8 +7,11 @@ export
         pretty_LocatedToken;
 }
 import SMR.Source.Token
+import SMR.Source.Pretty
 import Control.Parsec
 import Data.Bag
+import Data.Text.Location
+import Data.Text.List
 where
 
 
@@ -56,7 +59,7 @@ pretty_Expected
          %  "\n" % (text_unlines' $ map ppr $ bag_toList es)
 
 
--------------------------------------------------------------------------------
+----------------------------------q---------------------------------------------
 -- | Parser error.
 data ParseError (t e: Data) where
         ParseError

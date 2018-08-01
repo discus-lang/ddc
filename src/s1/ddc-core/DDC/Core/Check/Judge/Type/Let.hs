@@ -123,11 +123,12 @@ checkLetsM
                 , Pos                   --   Context position with bindings pushed.
                 , Context n)            --   Output context.
 
-checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
-
- -- Reconstruct the type of a non-recursive let-binding.
- | False  <- bidir
- = do
+-- Reconstruct the type of a non-recursive let-binding.
+checkLetsM !False xx !table !ctx0 !demand (LLet b xBind)
+ = (case b of
+        BName n _ -> mapErr (ErrorCtxBind n)
+        _         -> id)
+ $ do
         let config      = tableConfig table
         let a           = annotOfExp xx
 
@@ -162,10 +163,13 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
                 , effsBind
                 , pos1, ctx3)
 
- -- Synthesise the type of a non-recursive let-binding,
- -- using any annotation on the binder as the expected type.
- | True   <- bidir
- = do
+-- Synthesise the type of a non-recursive let-binding,
+-- using any annotation on the binder as the expected type.
+checkLetsM True xx !table !ctx0 !demand (LLet b xBind)
+ = (case b of
+        BName n _ -> mapErr (ErrorCtxBind n)
+        _         -> id)
+ $ do
         let config      = tableConfig table
         let a           = annotOfExp xx
 
@@ -323,7 +327,10 @@ checkRecBinds table bidir a xx ctx0 bs0
         config  = tableConfig  table
 
         checkRecBind b ctx
-         = case bidir of
+         = (case b of
+                BName n _ -> mapErr (ErrorCtxBind n)
+                _         -> id)
+         $ case bidir of
             False
              -> do
                 -- In Recon mode, all recursive let-bindings must have full

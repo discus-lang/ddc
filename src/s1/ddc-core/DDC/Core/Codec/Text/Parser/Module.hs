@@ -1,4 +1,5 @@
-{-# OPTIONS -fno-warn-unused-binds #-}
+{-# OPTIONS_HADDOCK hide #-}
+
 module DDC.Core.Codec.Text.Parser.Module
         (pModule)
 where
@@ -16,6 +17,7 @@ import DDC.Core.Exp.Annot
 import DDC.Data.Pretty
 import Data.Char
 import qualified Data.Map               as Map
+import qualified Data.Set               as Set
 import qualified Data.Text              as T
 import qualified DDC.Control.Parser     as P
 
@@ -74,15 +76,17 @@ pModule c
         return  $ ModuleCore
                 { moduleName            = modName
                 , moduleIsHeader        = isHeader
+                , moduleTransitiveDeps  = Set.empty
                 , moduleExportTypes     = []
-                , moduleExportValues    = [(n, s)      | ExportValue n s        <- exportSpecs]
-                , moduleImportTypes     = [(n, s)      | ImportForeignType  n s <- importSpecs]
-                , moduleImportCaps      = [(n, s)      | ImportForeignCap   n s <- importSpecs]
-                , moduleImportValues    = [(n, s)      | ImportForeignValue n s <- importSpecs]
-                , moduleImportTypeDefs  = [(n, (k, t)) | ImportType  n k t      <- importSpecs]
+                , moduleExportValues    = [(n, s)       | ExportValue n s        <- exportSpecs]
+                , moduleImportModules   = [mn           | ImportModule mn        <- importSpecs]
+                , moduleImportTypes     = [(n, s)       | ImportForeignType  n s <- importSpecs]
+                , moduleImportCaps      = [(n, s)       | ImportForeignCap   n s <- importSpecs]
+                , moduleImportValues    = [(n, s)       | ImportForeignValue n s <- importSpecs]
+                , moduleImportTypeDefs  = [(n, (k, t))  | ImportType  n k t      <- importSpecs]
 
                 , moduleImportDataDefs  = [(dataDefTypeName def, def)
-                                                        | ImportData  def        <- importSpecs]
+                                                        | ImportData  def       <- importSpecs]
 
                 , moduleLocalDataDefs   = dataDefsLocal
                 , moduleLocalTypeDefs   = typeDefsLocal
@@ -116,10 +120,10 @@ pHeadDecl :: (Ord n, Pretty n)
 
 pHeadDecl ctx modName
  = P.choice
-        [ do    imports <- pImportSpecs ctx
+        [ do    imports <- pImportSpecs ctx modName
                 return  $ HeadImportSpecs imports
 
-        , do    exports <- pExportSpecs ctx
+        , do    exports <- pExportSpecs ctx modName
                 return  $ HeadExportSpecs exports
 
         , do    def     <- pDataDef ctx (Just modName)

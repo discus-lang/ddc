@@ -10,11 +10,14 @@
 --
 module Main
 import System.IO.Console
+import Class.Category
 import Class.Show
+import Data.Function
+import Data.Numeric
+import Data.Stream
+import Data.Tuple
 import Data.List
 import Data.Text
-import Data.Function
-import Data.Stream
 where
 
 

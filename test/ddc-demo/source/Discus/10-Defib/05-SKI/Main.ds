@@ -1,8 +1,9 @@
 
 -- | Demo that uses SKI combinators to add two Church-encoded natural numbers.
 module Main
-import Data.Numeric.Nat
 import System.IO.Console
+import Data.Numeric
+import Data.Text
 where
 
 
@@ -29,7 +30,7 @@ ppExp xx
         XI              -> "I"
         XVar v          -> v
         XApp x1 x2      -> "("  % ppExp x1    %% ppExp x2 % ")"
-        XAbs v1 x2      -> "(λ" %  v1 %% " →" %% ppExp x2 % ")" 
+        XAbs v1 x2      -> "(λ" %  v1 %% " →" %% ppExp x2 % ")"
 
 
 -- | Convert lambda expressions to SKI combinator form.
@@ -41,7 +42,7 @@ convert xx
         XI              -> xx
         XVar x          -> XVar x
 
-        XApp x1 x2      
+        XApp x1 x2
          -> XApp (convert x1) (convert x2)
 
         XAbs v1 x2
@@ -67,7 +68,7 @@ occursFree var xx
         XApp x1 x2
          -> occursFree var x1 ∨ occursFree var x2
 
-        XAbs v1 x2     
+        XAbs v1 x2
          | eqText v1 var        -> False
          | otherwise            -> occursFree var x2
 
@@ -81,7 +82,7 @@ occursFree var xx
 step : Exp -> Exp
 step xx
  = case xx of
-        XApp XI x                       
+        XApp XI x
          -> x
 
         XApp (XApp XK x) y
@@ -97,15 +98,15 @@ step xx
 
 
 main ()
- = do   
+ = do
         -- Church encoded two.
         xtwo    = XAbs "s" $ XAbs "z"
                 $ XApp (XVar "s") (XApp (XVar "s") (XVar "z"))
 
-        writel  $ "two     = " 
+        writel  $ "two     = "
                 % (ppExp   $ convert xtwo)
 
-        writel  $ "two'    = " 
+        writel  $ "two'    = "
                 % (ppExp   $ step $ step $ step $ step
                            $ XApp (XApp (convert xtwo) (XVar "s")) (XVar "z"))
 
@@ -118,13 +119,13 @@ main ()
                 % (ppExp   $ convert xthree)
 
         writel  $ "three'  = "
-                % (ppExp   $ step $ step $ step $ step $ step 
+                % (ppExp   $ step $ step $ step $ step $ step
                            $ XApp (XApp (convert xthree) (XVar "s")) (XVar "z"))
 
 
         -- Church encoded plus.
-        xplus   = XAbs "m" $ XAbs "n" $ XAbs "s" $ XAbs "z" 
-                $ XApp (XApp (XVar "m") (XVar "s")) 
+        xplus   = XAbs "m" $ XAbs "n" $ XAbs "s" $ XAbs "z"
+                $ XApp (XApp (XVar "m") (XVar "s"))
                        (XApp (XApp (XVar "n") (XVar "s")) (XVar "z"))
 
         writel  $ "plus    = "
@@ -134,7 +135,7 @@ main ()
         -- Add two and three by evaluating the SK combinator version.
         xfive   = XApp (XApp xplus xtwo) xthree
 
-        writel  $ "five'   = " 
+        writel  $ "five'   = "
                 % (ppExp   $ step $ step $ step $ step $ step $ step $ step
                            $ XApp (XApp (convert xfive) (XVar "s")) (XVar "z"))
 

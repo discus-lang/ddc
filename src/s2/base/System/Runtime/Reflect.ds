@@ -8,7 +8,10 @@ export  show_ValueFormat
 import Control.Exception
 import System.IO.Console
 import System.Runtime.Info
+import Class.Show
 import Data.Numeric
+import Data.List
+import Data.Text
 
 import foreign abstract type
  -- Effect of computations that use the Reflection system.

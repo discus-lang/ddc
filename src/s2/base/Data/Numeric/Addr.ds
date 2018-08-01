@@ -4,6 +4,8 @@ export
 {       eq_Addr; ord_Addr;
 }
 import Class.Numeric
+import Class.Eq
+import Class.Ord
 where
 
 type Addr = Addr#
