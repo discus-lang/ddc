@@ -3,6 +3,7 @@ module Codec.Json.Pretty
 export pretty_Json
 import Codec.Json.Base
 import Class.Pretty
+import Class.Show
 where
 
 

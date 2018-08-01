@@ -8,6 +8,7 @@ export
 import Codec.Json.Base
 import Class.Show
 import Data.Numeric
+import Data.Text.Stream
 import Data.Text
 where
 

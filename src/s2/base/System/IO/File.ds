@@ -4,6 +4,7 @@ export
 {       file_read
 }
 import Data.Text
+import Data.Text.Base
 import System.IO.Console
 import System.Posix.Stdlib
 

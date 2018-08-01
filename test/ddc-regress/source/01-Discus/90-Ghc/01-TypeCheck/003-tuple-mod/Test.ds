@@ -1,4 +1,5 @@
 module Test
+import Data.Numeric
 import Data.Tuple
 where
 

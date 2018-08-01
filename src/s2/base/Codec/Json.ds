@@ -1,5 +1,9 @@
 
 module Codec.Json
+export parseJson; parseJsonPrefix
+       show_JsonParseError; show_JsonParseContext
+       pretty_Json
+
 import Codec.Json.Base
 import Codec.Json.State
 import Codec.Json.Pretty

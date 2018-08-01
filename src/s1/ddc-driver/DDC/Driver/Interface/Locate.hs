@@ -46,9 +46,9 @@ instance Pretty ErrorLocate where
   = vcat
   [ text "Candidate file of" %% string thing %% text "for module" %% ppr mn
   , text " found at multiple paths:"
-  , indent 4 $ vcat $ map ppr files
+  , indent 4 $ vcat $ map string files
   , text " when searching from base paths:"
-  , indent 4 $ vcat $ map ppr paths ]
+  , indent 4 $ vcat $ map string paths ]
 
 
 -------------------------------------------------------------------------------
