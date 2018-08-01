@@ -409,11 +409,8 @@ takeAlt c aa
          -> xAps "ae" [takeExp c x]
 
         -- Unit
-        C.AAlt (C.PData C.DaConUnit []) x
-         -> xAps "au" [takeExp c x]
-
         C.AAlt (C.PData C.DaConUnit bs) x
-         -> xAps "au" (takeExp c x : map (takeBind c) bs)
+         -> xAps "au" (map (takeBind c) bs ++ [takeExp c x])
 
         -- Record
         C.AAlt (C.PData (C.DaConRecord fs) []) x
@@ -423,19 +420,12 @@ takeAlt c aa
          -> xAps "ar" ((xList (map xSym fs) : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Prim
-        C.AAlt (C.PData (C.DaConPrim n) []) x
-         -> xAps "ap" [configTakeRef c n, takeExp c x]
-
         C.AAlt (C.PData (C.DaConPrim n) bs) x
          -> xAps "ap" ((configTakeRef c n  : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Bound
-        C.AAlt (C.PData (C.DaConBound n) []) x
-         -> xAps "ab"   [ takeDaConBoundName c n
-                        , takeExp c x]
-
         C.AAlt (C.PData (C.DaConBound n) bs) x
-         -> xAps "ab"   ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
+         -> xAps "ab" ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
 
 
 -- Witness ----------------------------------------------------------------------------------------
@@ -492,7 +482,7 @@ takeType c tt
 -- DaConBoundName ---------------------------------------------------------------------------------
 takeDaConBoundName :: Config n -> C.DaConBoundName n -> SExp
 takeDaConBoundName c (C.DaConBoundName mnModule mnType nCtor)
- = xAps "dcbn"
+ = xAps "dcn"
         [ xMaybe xModuleName mnModule
         , xMaybe (configTakeRef c) mnType
         , configTakeRef c nCtor ]
