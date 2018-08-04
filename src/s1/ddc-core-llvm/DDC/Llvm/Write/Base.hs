@@ -1,37 +1,51 @@
 
-module DDC.Llvm.Pretty.Base
-        ( Config(..)
-        , Version
-        , defaultConfig
+module DDC.Llvm.Write.Base
+        ( Config (..), Version
         , configOfVersion
-        , versionWantsMetadataAsValue
-        , versionWantsLoadReturnTypes)
+        , configOfHandle
+        , module DDC.Data.Write)
 where
-import Data.List
+import DDC.Data.Write
 import Data.Maybe
+import Data.List
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as T
+import qualified System.IO              as S
 
 
--------------------------------------------------------------------------------
--- | LLVM pretty printer configuration.
+-- | LLVM Writer configuration.
 data Config
         = Config
-        { configLlvmVersion             :: Version
+        { configHandle                  :: S.Handle
+
+        -- The LLVM version that we're targeting.
+        , configVersion                 :: Version
+
+        -- Wants meta-data encoded as values.
         , configWantsMetadataAsValue    :: Bool
+
+         -- From LLVM 3.7 we need to give the type of the source pointer
+         -- as well as the type of the result of the load. Before this
+         -- we only needed to give the type of the source pointer.
         , configWantsLoadReturnTypes    :: Bool }
-        deriving Show
+
+
+instance Write Config T.Text where
+ write o tx
+  = T.hPutStr (configHandle o) tx
+ {-# INLINE write #-}
 
 
 -- | LLVM version descriptor.
-type Version
-        = String
+type Version = String
 
 
--- | Default config that can be used for debugging.
-defaultConfig :: Config
-defaultConfig =  configOfVersion Nothing
+-- | Construct a writer config assuming the latest supported LLVM version.
+configOfHandle :: S.Handle -> Config
+configOfHandle h = configOfVersion h Nothing
 
 
--- | Produce a default pretty printer config for the given version.
+-- | Construct a writer config for the given LLVM version.
 --
 --   Assume LLVM 3.8 as the default version unless told otherwise.
 --   This default should only be used during debugging,
@@ -40,11 +54,12 @@ defaultConfig =  configOfVersion Nothing
 --
 --   LLVM version 3.8.0 was current as of March 2016.
 --
-configOfVersion :: Maybe Version -> Config
-configOfVersion mVersion
+configOfVersion :: S.Handle -> Maybe Version -> Config
+configOfVersion h mVersion
  = let  version = fromMaybe "3.8.0" mVersion
    in   Config
-        { configLlvmVersion             = version
+        { configHandle  = h
+        , configVersion = version
 
         , configWantsMetadataAsValue
                 = fromMaybe False  $ versionWantsMetadataAsValue version
@@ -83,5 +98,4 @@ versionWantsLoadReturnTypes v
         | isPrefixOf "3.8." v   = Just True
         | isPrefixOf "3.9." v   = Just True
         | otherwise             = Nothing
-
 

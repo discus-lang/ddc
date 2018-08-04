@@ -7,6 +7,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import Data.Maybe
+import qualified System.IO                              as System
 import qualified System.Directory                       as System
 import qualified System.FilePath                        as FilePath
 
@@ -32,7 +33,7 @@ import qualified DDC.Core.Salt.Transform.Slotify        as ASlotify
 import qualified DDC.Core.Llvm.Convert                  as ALlvm
 
 import qualified DDC.Llvm.Syntax                        as L
-import qualified DDC.Llvm.Pretty                        as L
+import qualified DDC.Llvm.Write                         as L
 
 
 ---------------------------------------------------------------------------------------------------
@@ -70,14 +71,12 @@ saltCompileViaLlvm
                 sinkPrep sinkSlots sinkTransfer
                 mm
 
-        -- Render Llvm module as a string.
-        let llConfig    = L.configOfVersion $ Just $ B.buildLlvmVersion builder
-        let llMode      = L.prettyModeModuleOfConfig llConfig
-        let strLlvm     = renderIndent $ pprModePrec llMode (0 :: Int) mm_llvm
-
         -- Write out Llvm source file.
         liftIO $ System.createDirectoryIfMissing True (FilePath.takeDirectory pathLL)
-        liftIO $ writeFile pathLL strLlvm
+        hOut            <- liftIO $ System.openFile pathLL System.WriteMode
+        let llConfig    = L.configOfVersion hOut $ Just $ B.buildLlvmVersion builder
+        liftIO $ L.write llConfig mm_llvm
+        liftIO $ System.hClose hOut
 
         -- Compile Llvm source file into .s file.
         liftIO $ B.buildLlc builder pathLL pathS

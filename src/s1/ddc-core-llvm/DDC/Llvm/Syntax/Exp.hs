@@ -22,7 +22,6 @@ module DDC.Llvm.Syntax.Exp
 where
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Prim
-import DDC.Llvm.Pretty.Prim             ()
 import Data.Text                        (Text)
 import Data.Char
 import Numeric
