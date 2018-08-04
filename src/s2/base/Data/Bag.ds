@@ -10,11 +10,11 @@ where
 
 -- | An unordered collection of things.
 --    O(1) to add a single element, a list of elements, or union two bags.
-data Bag (a: Data) where
-        BagNil          :                   Bag a
-        BagElem         : a              -> Bag a
-        BagList         : List a         -> Bag a
-        BagUnion        : Bag a -> Bag a -> Bag a
+data Bag (a: Data)
+        = BagNil
+        | BagElem  a
+        | BagList  (List a)
+        | BagUnion (Bag a) (Bag a)
 
 
 -- | O(1). Construct an empty bag.

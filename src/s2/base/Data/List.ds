@@ -43,9 +43,9 @@ where
 
 -------------------------------------------------------------------------------
 -- | Standard Cons-lists.
-data List (a: Data) where
-        Nil     : List a
-        Cons    : a -> List a -> List a
+data List (a: Data)
+        = Nil
+        | Cons a (List a)
 
 
 -- Dictionaries ---------------------------------------------------------------

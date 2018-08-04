@@ -267,8 +267,17 @@ pDeclData
          [ -- Data declaration with constructors that have explicit types.
            do   pKey EWhere
                 pSym SBraceBra
-                ctors   <- P.sepEndBy1 pDeclDataCtor (pSym SSemiColon)
+                ctors   <- P.sepEndBy1 pDeclDataCtorType (pSym SSemiColon)
                 pSym SBraceKet
+                return  $ TopData sp (DataDef b ps ctors)
+
+           -- Data declaration with just data ctor names and params listed.
+         , do   pSym SEquals
+                let TyConBindName tx = b
+                let tResult = makeTApps (TCon (TyConBound (TyConBoundName tx)))
+                            $ [ TVar (let Just u = takeBoundOfBind p in u)
+                              | (p, _k) <- ps ]
+                ctors   <- P.sepEndBy1 (pDeclDataCtorParams tResult) (pSym SBar)
                 return  $ TopData sp (DataDef b ps ctors)
 
            -- Data declaration with no data constructors.
@@ -276,16 +285,28 @@ pDeclData
          ]
 
 
--- | Parse a data constructor declaration.
-pDeclDataCtor :: Parser (DataCtor SourcePos)
-pDeclDataCtor
+-- | Parse a data constructor declaration,
+--   where the data constructor is given a full type signature.
+pDeclDataCtorType :: Parser (DataCtor SourcePos)
+pDeclDataCtorType
  = do   n       <- pDaConBindName
         pTokSP (KOp ":")
         t       <- pType
-        let (tsArg, tResult) = takeTFuns t
-
+        let (tsFields, tResult) = takeTFuns t
         return  $ DataCtor
                 { dataCtorName          = n
-                , dataCtorFieldTypes    = tsArg
+                , dataCtorFieldTypes    = tsFields
+                , dataCtorResultType    = tResult }
+
+
+-- | Parse a data constructor declaration,
+--   where the data constructor is only given its parameter types.
+pDeclDataCtorParams :: Type -> Parser (DataCtor SourcePos)
+pDeclDataCtorParams tResult
+ = do   n         <- pDaConBindName
+        tspFields <- P.many pTypeArgSP
+        return  $ DataCtor
+                { dataCtorName          = n
+                , dataCtorFieldTypes    = map fst $ tspFields
                 , dataCtorResultType    = tResult }
 

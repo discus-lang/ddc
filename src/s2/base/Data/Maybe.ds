@@ -13,9 +13,9 @@ import Data.Numeric.Bool
 where
 
 -- | A `Maybe` may contain a value, or not.
-data Maybe (a: Data) where
-        Nothing : Maybe a
-        Just    : a -> Maybe a
+data Maybe (a: Data)
+        = Nothing
+        | Just a
 
 
 -- Functor --------------------------------------------------------------------
