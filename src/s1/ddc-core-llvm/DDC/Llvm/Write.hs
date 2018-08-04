@@ -1,6 +1,8 @@
 
 module DDC.Llvm.Write
-        ( Config (..)
+        ( Config (..), Version
+        , configOfVersion
+        , configOfHandle
         , module DDC.Data.Write)
 where
 import DDC.Llvm.Write.Base

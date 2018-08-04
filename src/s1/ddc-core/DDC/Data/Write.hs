@@ -33,10 +33,13 @@ punc    :: (Write o Text, Write o a)
 punc o tx xx
  = go xx
  where  go []   = return ()
-        go (x : xs)
-         = do   write o x
-                write o tx
-                go xs
+
+        go (x1 : [])
+         = do   write o x1
+
+        go (x1 : x2 : xs)
+         = do   write o x1; text o tx; go (x2 : xs)
+
         {-# INLINE go #-}
 {-# INLINE punc #-}
 
@@ -46,10 +49,12 @@ punc'   :: Write o Text
 punc' o tx xx
  = go xx
  where  go []   = return ()
-        go (x : xs)
-         = do   x
-                write o tx
-                go xs
+
+        go (x1 : [])
+         = do   x1
+
+        go (x1 : x2 : xs)
+         = do   x1; text o tx; go (x2 : xs)
         {-# INLINE go #-}
 {-# INLINE punc' #-}
 
@@ -64,6 +69,18 @@ vwrite'    :: Write o Text
         => o -> [IO ()] -> IO ()
 vwrite' o xs = punc' o "\n" xs
 {-# INLINE vwrite' #-}
+
+
+hwrite    :: (Write o a, Write o Text)
+        => o -> [a] -> IO ()
+hwrite o xs = punc o " " xs
+{-# INLINE hwrite #-}
+
+
+hwrite'    :: Write o Text
+        => o -> [IO ()] -> IO ()
+hwrite' o xs = punc' o " " xs
+{-# INLINE hwrite' #-}
 
 
 brackets :: Write o Text => o -> IO () -> IO ()

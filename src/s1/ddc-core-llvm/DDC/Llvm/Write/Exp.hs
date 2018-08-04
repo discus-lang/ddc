@@ -14,9 +14,8 @@ instance Write Config Name where
 
 
 instance Write Config Var where
- write o vv
-  = case vv of
-        Var n t         -> do write o n; space o; write o t
+ write o (Var n t)
+  = do write o t; space o; write o n
 
 
 instance Write Config Lit where
@@ -34,9 +33,9 @@ instance Write Config Lit where
 instance Write Config Exp where
  write o xx
   = case xx of
-        XVar v          -> write o v
-        XLit l          -> do write o (typeOfExp xx); write o l
-        XUndef _        -> text o "undef"
+        XVar v          -> write o (nameOfVar v)
+        XLit l          -> write o l
+        XUndef _        -> text  o "undef"
         XConv _ c x     -> parens o $ do write o c; write o x
 
         XGet _ x is

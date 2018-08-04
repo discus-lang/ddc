@@ -6,7 +6,6 @@ import DDC.Llvm.Write.Type      ()
 import DDC.Llvm.Write.Attr      ()
 import DDC.Llvm.Write.Instr     ()
 import DDC.Llvm.Write.Base
-import Control.Monad
 import Data.Text                (Text)
 import qualified Data.Text      as T
 
@@ -26,8 +25,8 @@ instance Write Config Function where
           SectionSpecific s
            -> do text o "section "; dquotes o (string o s))
 
-        space o; text  o "{"
-        mapM_ (write o) blocks
+        space o; text  o "{"; line o
+        vwrite o blocks
         line  o; text  o "}"; line  o
 
 
@@ -42,23 +41,29 @@ writeFunctionDeclWithNames o
         text  o " @"; string o name
 
         parens o $ do
-                (case mnsParams of
-                  Nothing
-                   -> mapM_ (\(Param t attrs)
-                             -> do write o t; space o; punc o " " attrs)
-                            params
+            (case mnsParams of
+              Nothing
+               -> punc' o ", "
+                    [ do write o t
+                         (case attrs of
+                            []      -> return ()
+                            as      -> do space o; punc o " " as)
+                    | Param t attrs <- params ]
 
-                  Just nsParams
-                   -> zipWithM_
-                            (\(Param t attrs) nParam
-                             -> do  write o t; space o; punc o " " attrs
-                                    text  o " %"; text o nParam)
-                            params nsParams)
+              Just nsParams
+               -> punc' o ", "
+                    [ do write o t
+                         (case attrs of
+                            []      -> return ()
+                            as      -> do space o; punc o " " as)
+                         text o " %"; text o nParam
+                    | Param t attrs <- params
+                    | nParam <- nsParams ])
 
-                (case varg of
-                  VarArgs | null params -> text o "..."
-                          | otherwise   -> text o ", ..."
-                  _                     -> return ())
+            (case varg of
+              VarArgs | null params -> text o "..."
+                      | otherwise   -> text o ", ..."
+              _                     -> return ())
 
         (case align of
                 AlignNone       -> return ()
@@ -66,5 +71,5 @@ writeFunctionDeclWithNames o
 
         (case mGcStrat of
                 Nothing         -> return ()
-                Just sStrat     -> do text o " gc"; dquotes o (string o sStrat))
+                Just sStrat     -> do text o " gc "; dquotes o (string o sStrat))
 

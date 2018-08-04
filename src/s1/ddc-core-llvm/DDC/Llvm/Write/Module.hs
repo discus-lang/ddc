@@ -9,39 +9,41 @@ import DDC.Llvm.Write.Type      ()
 import DDC.Llvm.Write.Base
 
 
-
 instance Write Config Module where
  write o (Module _comments aliases globals decls funcs mdecls)
-  = do
-        vwrite  o aliases
-        vwrite  o globals
+  = do  vwrite  o aliases; line o
+        vwrite  o globals; line o
+
         vwrite' o [ do text o "declare "; writeFunctionDeclWithNames o decl Nothing
                   | decl <- decls ]
         line    o
-        vwrite  o funcs
 
-        line    o
-        vwrite  o mdecls
+        vwrite  o funcs;  line o
+        vwrite  o mdecls; line o
 
 
 instance Write Config Global where
  write o gg
   = case gg of
-        GlobalStatic (Var name _) static
-         -> do write o name; text o " = global "; write o static
+        GlobalStatic (Var name _t) static
+         -> do  write o name
+                text  o " = global "
+                write o static
 
         GlobalExternal (Var name t)
-         -> do write o name; text o " = external global "; write o t
+         -> do  write o name
+                text  o " = external global "
+                write o t
 
 
 instance Write Config Static where
  write o ss
   = case ss of
         StaticComment s
-         -> do text o "; "; string o s
+         -> do  text o "; "; string o s
 
         StaticLit l
-         -> write o l
+         -> do  write o (typeOfLit l); space o; write o l
 
         StaticUninitType t
          -> do  write o t; text o " undef"
