@@ -188,7 +188,6 @@ instance Write Config Instr where
 
 
 instance Write Config Label where
- write o ll
-  = case ll of
-        Label str       -> string o str
+ write o (Label str)
+  = string o str
 

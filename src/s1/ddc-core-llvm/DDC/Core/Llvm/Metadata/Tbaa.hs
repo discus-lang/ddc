@@ -5,13 +5,11 @@ module DDC.Core.Llvm.Metadata.Tbaa
        , lookup, lookups )
 where
 import DDC.Llvm.Syntax.Metadata
-import DDC.Llvm.Pretty.Metadata         ()
 import DDC.Core.Collect
 import DDC.Type.Env                     (KindEnv)
 import DDC.Type.Exp.Simple
 import DDC.Core.Llvm.Metadata.Graph
 import DDC.Core.Llvm.Convert.Base
-import DDC.Data.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Llvm.Syntax        as V
@@ -39,10 +37,6 @@ data MDSuper
             --    declarations. e.g. "1 = !{ metadata "id", !parent, !i11}
           , decls       :: [MDecl]
           } deriving Show
-
-instance Pretty (MDSuper) where
- ppr (MDSuper _ metadata)
-  = vcat $ map ppr metadata
 
 
 -- | Map region variables to relevant metadata

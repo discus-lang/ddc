@@ -21,7 +21,6 @@ import DDC.Core.Simplifier
 import DDC.Data.Pretty
 import DDC.Data.Name
 import DDC.Data.Canned
-import DDC.Llvm.Pretty                                  ()
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Forward        as Flow
