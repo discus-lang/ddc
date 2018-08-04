@@ -8,6 +8,15 @@ import DDC.Llvm.Pretty.Type             ()
 import DDC.Data.Pretty
 
 
+instance Pretty Name where
+ ppr (NameGlobal str)   = text "@" % string str
+ ppr (NameLocal  str)   = text "%" % string str
+
+
+instance Pretty Var where
+ ppr (Var n t)          = ppr t %% ppr n
+
+
 instance Pretty Exp where
  ppr xx
   = case xx of
@@ -40,14 +49,6 @@ pprPlainX xx
 
         XAdd t x1 x2
          -> parens $ hsep [ text "#ADD", ppr t, ppr x1, ppr x2]
-
-instance Pretty Var where
- ppr (Var n t)          = ppr t %% ppr n
-
-
-instance Pretty Name where
- ppr (NameGlobal str)   = text "@" % string str
- ppr (NameLocal  str)   = text "%" % string str
 
 
 instance Pretty Lit where
