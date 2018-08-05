@@ -24,8 +24,15 @@ import foreign c value
         ddcPrimShowAddr   : Addr#    -> TextLit#
         ddcPrimStdoutPutTextLit : TextLit# -> Void#
         ddcPrimStdoutPutNat : Nat# -> Void#
-        -- strcmp
-        strcmp : Addr# -> TextLit# -> Nat#
+        ddcPrimStderrPutAddr : Addr# -> Void#
+
+        ddcTextVecCompare : TextLit# -> TextLit# -> Nat#
+        
+        ddcPrimEnvGetRuntimeArgVal     : Nat# -> TextLit#
+        ddcPrimTakeTextLit     : TextLit# -> Addr#
+        ddcPrimSizeOfTextLit   : TextLit# -> Nat#
+
+
 with letrec
 
 
@@ -60,14 +67,15 @@ ddcStatsOnTerminate( u : Unit) : Unit
 
 ddcShouldPrintStats (argc : Nat#) :  Bool#
  = do 
-      True#
       case eq# argc 0# of
         True#
           -> do False#
         False#
           -> do 
-                val = read# [Addr#] (global# [Addr#] "ddcGlobalEnvArgVal"#) (sub# argc 1#)
-                case eq# (strcmp val "enableStats"# ) 0# of
+                val = ddcPrimEnvGetRuntimeArgVal (sub# argc 1#)
+                -- ddcPrimStderrPutTextLit val
+                -- ddcPrimStderrPutTextLit "\n"#
+                case eq# (ddcTextVecCompare val "enableStats"#) 0# of
                   True#
                     -> do True#
                   False#

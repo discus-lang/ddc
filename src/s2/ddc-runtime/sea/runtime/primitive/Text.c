@@ -48,3 +48,9 @@ Obj* ddcTextVecPrintf(const char* fmt, ...)
         return ddcTextVecVPrintf(fmt, ap);
 }
 
+int ddcTextVecCompare (void* ptr1, void* ptr2){
+        if(ptr1 == NULL || ptr2 == NULL){
+                return 1;
+        }
+        return strcmp(ptr1,ptr2);
+}
