@@ -226,7 +226,10 @@ data OpInfo
         -- | Push an info table frame on the frame stack.
         | OpInfoFramePush
 
-        -- | Add a data constructor to an allocated info table frame.
+        -- | Add a data constructor entry to an allocated info table frame.
         | OpInfoFrameAddData
+
+        -- | Add a super entry to an allocated info table frame.
+        | OpInfoFrameAddSuper
         deriving (Eq, Ord, Show)
 

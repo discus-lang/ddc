@@ -66,13 +66,15 @@ takeName ss
         XSym "ov-write-b"               -> Just $ D.NameOpVector    D.OpVectorAlloc    False
 
         -- OpInfo
-        XSym "oi-frame-new-u"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew     True
-        XSym "oi-frame-push-u"          -> Just $ D.NameOpInfo      D.OpInfoFramePush    True
-        XSym "oi-frame-add-data-u"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData True
+        XSym "oi-frame-new-u"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew      True
+        XSym "oi-frame-push-u"          -> Just $ D.NameOpInfo      D.OpInfoFramePush     True
+        XSym "oi-frame-add-data-u"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  True
+        XSym "oi-frame-add-super-u"     -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper True
 
-        XSym "oi-frame-new-b"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew     False
-        XSym "oi-frame-push-b"          -> Just $ D.NameOpInfo      D.OpInfoFramePush    False
-        XSym "oi-frame-add-data-b"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData False
+        XSym "oi-frame-new-b"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew      False
+        XSym "oi-frame-push-b"          -> Just $ D.NameOpInfo      D.OpInfoFramePush     False
+        XSym "oi-frame-add-data-b"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  False
+        XSym "oi-frame-add-super-b"     -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper False
 
         -- PrimTyCon
         XSym "pt-void"                  -> Just $ D.NamePrimTyCon   D.PrimTyConVoid

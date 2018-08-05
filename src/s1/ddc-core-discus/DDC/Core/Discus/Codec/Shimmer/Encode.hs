@@ -148,6 +148,7 @@ takeOpInfo pm bx
         D.OpInfoFrameNew        -> "oi-frame-new"
         D.OpInfoFramePush       -> "oi-frame-push"
         D.OpInfoFrameAddData    -> "oi-frame-add-data"
+        D.OpInfoFrameAddSuper   -> "oi-frame-add-super"
 
    nbx
     = case bx of

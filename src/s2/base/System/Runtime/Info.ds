@@ -21,11 +21,19 @@ import foreign c value
  ddcInfoFrameAddData            : Addr# -> Word16# -> Word16# -> TextLit# -> TextLit# -> Word32#
 
  ddcInfoEntryLookup             : Word32# -> Addr#
+
  ddcInfoEntryGetIdent           : Addr# -> Word32#
  ddcInfoEntryGetType            : Addr# -> Word16#
- ddcInfoEntryGetArity           : Addr# -> Word16#
- ddcInfoEntryGetModuleName      : Addr# -> TextLit#
- ddcInfoEntryGetCtorName        : Addr# -> TextLit#
+
+ ddcInfoEntryGetDataTag         : Addr# -> Word16#
+ ddcInfoEntryGetDataArity       : Addr# -> Word16#
+ ddcInfoEntryGetDataModuleName  : Addr# -> TextLit#
+ ddcInfoEntryGetDataCtorName    : Addr# -> TextLit#
+
+ ddcInfoEntryGetSuperParams     : Addr# -> Word16#
+ ddcInfoEntryGetSuperBoxes      : Addr# -> Word16#
+ ddcInfoEntryGetSuperModuleName : Addr# -> TextLit#
+ ddcInfoEntryGetSuperSuperName  : Addr# -> TextLit#
 
  ddcPrimTakeTextLit             : TextLit -> TextLit#
 
@@ -49,15 +57,15 @@ info_getType       (aEntry: Addr#): Nat
 
 -- | Get the arity of an info table entry.
 info_getArity      (aEntry: Addr#): Nat
- = promote# (ddcInfoEntryGetArity aEntry)
+ = promote# (ddcInfoEntryGetDataArity aEntry)
 
 
 -- | Get the module name of an info table entry.
 info_getModuleName (aEntry: Addr#): Text
- = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetModuleName aEntry))
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataModuleName aEntry))
 
 
 -- | Get the ctor name of an info table entry.
 info_getCtorName   (aEntry: Addr#): Text
- = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetCtorName aEntry))
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataCtorName aEntry))
 
