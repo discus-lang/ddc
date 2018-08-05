@@ -6,14 +6,21 @@ export foreign c value
  ddcInfoFrameNew                : Word32# -> Addr#
  ddcInfoFramePush               : Addr#   -> Unit
  ddcInfoFrameAddData            : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
+ ddcInfoFrameAddSuper           : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
 
  ddcInfoEntryLookup             : Word32# -> Addr#
  ddcInfoEntryGetIdent           : Addr# -> Word32#
  ddcInfoEntryGetType            : Addr# -> Word16#
- ddcInfoEntryGetTag             : Addr# -> Word16#
- ddcInfoEntryGetArity           : Addr# -> Word16#
- ddcInfoEntryGetModuleName      : Addr# -> Addr#
- ddcInfoEntryGetCtorName        : Addr# -> Addr#
+
+ ddcInfoEntryGetDataTag         : Addr# -> Word16#
+ ddcInfoEntryGetDataArity       : Addr# -> Word16#
+ ddcInfoEntryGetDataModuleName  : Addr# -> Addr#
+ ddcInfoEntryGetDataCtorName    : Addr# -> Addr#
+
+ ddcInfoEntryGetSuperParams     : Addr# -> Word16#
+ ddcInfoEntryGetSuperBoxes      : Addr# -> Word16#
+ ddcInfoEntryGetSuperModuleName : Addr# -> Addr#
+ ddcInfoEntryGetSuperSuperName  : Addr# -> Addr#
 
 
 import foreign c value
@@ -45,60 +52,60 @@ ddcInfoInitStatic (_: Unit): Unit
 
         -- 1 Base.Unit
         iUnit   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "Unit"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Unit"#) 0# iUnit
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Unit"#) 0# iUnit
 
         -- 2 Base.TextLit
         iTxLit  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "TextLit"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.TextLit"#) 0# iTxLit
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.TextLit"#) 0# iTxLit
 
         -- 3 Base.Bool
         iBool   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert#  "Bool"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Bool"#) 0# iBool
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Bool"#) 0# iBool
 
         -- 4 Base.Nat
         iNat    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Nat"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Nat"#) 0# iNat
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Nat"#) 0# iNat
 
         -- 5 Base.Int
         -- CAREFUL: ddcPrimMakeInt in Numeric.dcs uses the info table index 5 as a magic number.
         iInt    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Int"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Int"#) 0# iInt
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Int"#) 0# iInt
 
         -- 6 Base.Size
         iSize   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Size"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Size"#) 0# iSize
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Size"#) 0# iSize
 
         -- 7 Base.Word8
         iWord8  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word8"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word8"#) 0# iWord8
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Word8"#) 0# iWord8
 
         -- 8 Base.Word16
         iWord16  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word16"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word16"#) 0# iWord16
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Word16"#) 0# iWord16
 
         -- 9 Base.Word32
         iWord32 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word32"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word32"#) 0# iWord32
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Word32"#) 0# iWord32
 
         -- 10 Base.Word64
         iWord64 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Word64"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Word64"#) 0# iWord64
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Word64"#) 0# iWord64
 
         -- 11 Base.Float32
         iFloat32 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Float32"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Float32"#) 0# iFloat32
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Float32"#) 0# iFloat32
 
         -- 12 Base.Float64
         iFloat64 = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Float64"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Float64"#) 0# iFloat64
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Float64"#) 0# iFloat64
 
         -- 13 Base.Addr
         iAddr   = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Addr"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Addr"#) 0# iAddr
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Addr"#) 0# iAddr
 
         -- 14 Base.Ptr
         iPtr    = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "Ptr"#)
-        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.Base.Ptr"#) 0# iPtr
+        write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Ptr"#) 0# iPtr
 
         ddcInfoFramePush aFrame
 
@@ -124,7 +131,7 @@ ddcInfoInitStatic (_: Unit): Unit
 -- }
 --
 -- struct InfoEntry
--- {  uint32 index
+-- {  uint32 ident
 --    uint16 type
 -- }
 --
@@ -139,6 +146,17 @@ ddcInfoInitStatic (_: Unit): Unit
 --    24 addr64  ctorName       -- Address of null-terminated string of constructor name.
 -- }
 --
+-- struct InfoEntrySuper <: InfoEntry
+-- {                            -- Total size = 32 bytes.
+--    0  uint32  ident          -- Identifier of entry in infotable.
+--    4  uint16  type   = 1     -- Type of entry in infotable (1 = Super)
+--    6  uint16  params         -- Number of parameters of function.
+--    8  uint16  boxes          -- Number of inner boxes of function.
+--    10 uint8[] .. padding ..
+--    16 addr64  moduleName     -- Address of null-terminated string of module name.
+--    24 addr64  ctorName       -- Address of null-terminated string of constructor name.
+-- }
+
 
 -- | Allocate a new info table frame with enough space for the
 --   given number of entries.
@@ -183,7 +201,7 @@ ddcInfoFrameAddData
  = do
         nSizeOfEntry    = 32#
 
-        -- Check that we're not about to overflowing the frame.
+        -- Check that we're not about to overflow the frame.
         nFrameUsed      = read# [Word32#] aFrame 0#
         nFrameMax       = read# [Word32#] aFrame 4#
         (case ge# nFrameUsed nFrameMax of
@@ -212,6 +230,54 @@ ddcInfoFrameAddData
         nIdent
 
 
+-- | Add an entry for a top level supercombinator to the given info frame,
+--   using the next available table index from the global index counter.
+--
+--   We call this a 'Super(combinator)' to distinguish it from nested functions
+--   that don't have names.
+--
+--   This code is currently identical to the ddcInfoFrameAddData, but we'll
+--   add the hash of the super ast in a subsequent step.
+--
+ddcInfoFrameAddSuper
+        (aFrame:        Addr#)          -- Address of frame to add info entry to.
+        (nParams:       Word16#)        -- Number of value parameters for super.
+        (nBoxes:        Word16#)        -- Number of inner boxes of super.
+        (aNameModule:   Addr#)          -- Address of null-terminated string of module name.
+        (aNameSuper:    Addr#)          -- Address of null-terminated string of super name.
+        : Word32#                       -- Index of new entry.
+ = do
+        nSizeOfEntry    = 32#
+
+        -- Check that we're not about to overflow the frame.
+        nFrameUsed      = read# [Word32#] aFrame 0#
+        nFrameMax       = read# [Word32#] aFrame 4#
+        (case ge# nFrameUsed nFrameMax of
+          True#  -> fail#
+          False# -> ())
+
+        -- Allocate a global identifier for the new entry.
+        nIdent  = read# (global# [Word32#] "ddcInfoIdentNext"#) 0#
+        write# (global# [Word32#] "ddcInfoIdentNext"#) 0# (add# nIdent 1w32#)
+
+        -- Initialize the entry in the frame.
+        aEntry  = plusAddr# aFrame
+                 (add#  16#
+                        (mul# (promote# nFrameUsed) 32#))
+
+        write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
+        write# [Word16#] aEntry 4#  0w16#       -- Entry type (0 = Data)
+        write# [Word16#] aEntry 6#  nParams     -- Tag of data constructor.
+        write# [Word16#] aEntry 8#  nBoxes      -- Arity of data constructor.
+        write# [Addr#]   aEntry 16# aNameModule -- Module name.
+        write# [Addr#]   aEntry 24# aNameSuper  -- Super name.
+
+        -- Bump the count of entries in the frame.
+        write# [Word32#] aFrame 0#  (add# nFrameUsed 1w32#)
+
+        nIdent
+
+
 -- Entry ------------------------------------------------------------------------------------------
 ddcInfoEntryGetIdent      (aEntry: Addr#): Word32#
  =      read# [Word32#] aEntry 0#
@@ -219,16 +285,32 @@ ddcInfoEntryGetIdent      (aEntry: Addr#): Word32#
 ddcInfoEntryGetType       (aEntry: Addr#): Word16#
  =      read# [Word16#] aEntry 4#
 
-ddcInfoEntryGetTag        (aEntry: Addr#): Word16#
+
+-- Data
+ddcInfoEntryGetDataTag   (aEntry: Addr#): Word16#
  =      read# [Word16#] aEntry 6#
 
-ddcInfoEntryGetArity      (aEntry: Addr#): Word16#
+ddcInfoEntryGetDataArity (aEntry: Addr#): Word16#
  =      read# [Word16#] aEntry 8#
 
-ddcInfoEntryGetModuleName (aEntry: Addr#): Addr#
+ddcInfoEntryGetDataModuleName (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 16#
 
-ddcInfoEntryGetCtorName   (aEntry: Addr#): Addr#
+ddcInfoEntryGetDataCtorName   (aEntry: Addr#): Addr#
+ =      read# [Addr#]   aEntry 24#
+
+
+-- Super
+ddcInfoEntryGetSuperParams (aEntry: Addr#): Word16#
+ =      read# [Word16#] aEntry 6#
+
+ddcInfoEntryGetSuperBoxes  (aEntry: Addr#): Word16#
+ =      read# [Word16#] aEntry 8#
+
+ddcInfoEntryGetSuperModuleName (aEntry: Addr#): Addr#
+ =      read# [Addr#]   aEntry 16#
+
+ddcInfoEntryGetSuperSuperName  (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 24#
 
 

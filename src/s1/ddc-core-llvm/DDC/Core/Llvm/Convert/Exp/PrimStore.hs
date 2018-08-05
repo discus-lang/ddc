@@ -346,7 +346,7 @@ convPrimStore ctx mdst p as
          ,  Just vDst   <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
-                let vPtr = Var (NameGlobal (Text.unpack txName)) (TPointer t')
+                let vPtr = Var (NameGlobal (A.sanitizeName $ Text.unpack txName)) (TPointer t')
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint (XVar vPtr)
 

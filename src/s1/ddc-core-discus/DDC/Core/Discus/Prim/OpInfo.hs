@@ -22,6 +22,7 @@ instance Pretty OpInfo where
         OpInfoFrameNew          -> text "infoFrameNew#"
         OpInfoFramePush         -> text "infoFramePush#"
         OpInfoFrameAddData      -> text "infoFrameAddData#"
+        OpInfoFrameAddSuper     -> text "infoFrameAddSuper#"
 
 
 -- | Read a primitive info table operator.
@@ -36,6 +37,10 @@ readOpInfoFlag str
 
         "infoFrameAddData#"     -> Just (OpInfoFrameAddData, False)
         "infoFrameAddData##"    -> Just (OpInfoFrameAddData, True)
+
+        "infoFrameAddSuper#"    -> Just (OpInfoFrameAddSuper, False)
+        "infoFrameAddSuper##"   -> Just (OpInfoFrameAddSuper, True)
+
         _                       -> Nothing
 
 
@@ -54,6 +59,11 @@ typeOpInfoFlag op False
                   `tFun` tTextLit `tFun` tTextLit
                   `tFun` tWord 32
 
+        OpInfoFrameAddSuper
+         -> tAddr `tFun` tWord 16 `tFun` tWord 16
+                  `tFun` tTextLit `tFun` tTextLit
+                  `tFun` tWord 32
+
 typeOpInfoFlag op True
  = case op of
         OpInfoFrameNew
@@ -63,6 +73,11 @@ typeOpInfoFlag op True
          -> tUnboxed tAddr `tFun` tUnit
 
         OpInfoFrameAddData
+         -> tUnboxed tAddr `tFun` tUnboxed (tWord 16) `tFun` tUnboxed (tWord 16)
+                           `tFun` tUnboxed tTextLit   `tFun` tUnboxed tTextLit
+                           `tFun` tUnboxed (tWord 32)
+
+        OpInfoFrameAddSuper
          -> tUnboxed tAddr `tFun` tUnboxed (tWord 16) `tFun` tUnboxed (tWord 16)
                            `tFun` tUnboxed tTextLit   `tFun` tUnboxed tTextLit
                            `tFun` tUnboxed (tWord 32)

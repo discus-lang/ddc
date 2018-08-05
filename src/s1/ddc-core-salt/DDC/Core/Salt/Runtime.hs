@@ -126,6 +126,7 @@ runtimeImportTypes
     , rn utInfoFrameNew
     , rn utInfoFramePush
     , rn utInfoFrameAddData
+    , rn utInfoFrameAddSuper
 
     , rn utErrorDefault]
 
@@ -520,6 +521,12 @@ utInfoFrameAddData
                 `tFun` tTextLit `tFun` tTextLit
                 `tFun` tWord 32)
 
+utInfoFrameAddSuper :: (Bound Name, Type Name)
+utInfoFrameAddSuper
+ =      ( UName (NameVar "ddcInfoFrameAddSuper")
+        , tAddr `tFun` tWord 16 `tFun` tWord 16
+                `tFun` tTextLit `tFun` tTextLit
+                `tFun` tWord 32)
 
 -- Primops ----------------------------------------------------------------------------------------
 -- | Cast a pointer

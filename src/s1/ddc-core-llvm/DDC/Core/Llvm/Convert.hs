@@ -210,7 +210,7 @@ collectGlobalsOfModule pp mm
                 -- Uses of the "globali#" primitive indicate that the symbol
                 -- should be define in this module, which gets set to 0.
                 | bDefineHere
-                = GlobalStatic   (Var (NameGlobal (Text.unpack name))
+                = GlobalStatic   (Var (NameGlobal (A.sanitizeName $ Text.unpack name))
                                       (TPointer tGlobal))
                 $ case tGlobal of
                         TPointer _ -> StaticLit (LitInt (tAddr pp) 0)
@@ -221,7 +221,7 @@ collectGlobalsOfModule pp mm
                 -- Uses of the "global#" primtive refer to symbol defined
                 -- in some other module, so we import them externally.
                 | otherwise
-                = GlobalExternal (Var (NameGlobal (Text.unpack name))
+                = GlobalExternal (Var (NameGlobal (A.sanitizeName $ Text.unpack name))
                                       tGlobal)
 
         return $ map takeDecl globals_llvm

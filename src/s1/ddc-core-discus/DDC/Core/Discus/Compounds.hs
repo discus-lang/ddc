@@ -15,7 +15,8 @@ module DDC.Core.Discus.Compounds
           -- * Info table primitive
         , xInfoFrameNew,        tInfoFrameNew
         , xInfoFramePush,       tInfoFramePush
-        , xInfoFrameAddData,    tInfoFrameAddData)
+        , xInfoFrameAddData,    tInfoFrameAddData
+        , xInfoFrameAddSuper,   tInfoFrameAddSuper)
 where
 import DDC.Core.Discus.Prim.TyConDiscus
 import DDC.Core.Discus.Prim.TyConPrim
@@ -139,6 +140,34 @@ xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
 -- | Type of the ddcInfoFrameAddData runtime primitive.
 tInfoFrameAddData :: Type Name
 tInfoFrameAddData
+        = tAddr `tFun` tWord 16 `tFun` tWord 16
+        `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
+
+
+-- | Add the name of a super definition to an info-table frame.
+--   This function is defined in the runtime system.
+xInfoFrameAddSuper
+        :: a
+        -> Exp a Name   -- ^ Frame pointer.
+        -> Int          -- ^ Number of parameters of super.
+        -> Int          -- ^ Number of boxes of super.
+        -> Exp a Name   -- ^ Name of defining module.
+        -> Exp a Name   -- ^ Name of super.
+        -> Exp a Name
+
+xInfoFrameAddSuper a xPtr iParams iBoxes xNameModule xNameSuper
+ = xApps a
+        (XVar a (UName (NameOpInfo OpInfoFrameAddSuper False)))
+        [ RTerm xPtr
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iParams) 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iBoxes)  16))
+        , RTerm xNameModule
+        , RTerm xNameSuper]
+
+
+-- | Type of the ddcInfoFrameAddData runtime primitive.
+tInfoFrameAddSuper :: Type Name
+tInfoFrameAddSuper
         = tAddr `tFun` tWord 16 `tFun` tWord 16
         `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
 

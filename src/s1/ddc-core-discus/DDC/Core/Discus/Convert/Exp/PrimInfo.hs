@@ -45,9 +45,7 @@ convertPrimInfo _ectx ctx xxExp
 
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFrameAddData True
-                , [ RTerm xAddr
-                  , RTerm xTag
-                  , RTerm xArity
+                , [ RTerm xAddr, RTerm xTag, RTerm xArity
                   , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModuleName))
                   , RTerm xTxtCon   @(XCon _ (DaConPrim nTxtCtorName)) ])
                 <- takeXNameApps xxExp
@@ -62,8 +60,7 @@ convertPrimInfo _ectx ctx xxExp
                 xTxtCon'    <- convertX ExpArg ctx xTxtCon
 
                 let txSymbolInfoIndex
-                        = "ddcInfoIndex." T.<> txModuleName
-                        T.<> "." T.<> txCtorName
+                        = "ddcInfoIndex.data." T.<> txModuleName T.<> "." T.<> txCtorName
 
                 return
                  $ xLets a'
@@ -71,6 +68,40 @@ convertPrimInfo _ectx ctx xxExp
                           $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddData")))
                                 [ RTerm xAddr', RTerm xTag', RTerm xArith'
                                 , RTerm xTxtModule', RTerm xTxtCon' ]
+
+                        , LLet  (BNone $ A.tVoid)
+                          $ A.xWrite a'
+                                (A.tWord 32)
+                                (A.xGlobali a' (A.tWord 32) txSymbolInfoIndex)
+                                (A.xNat a' 0)
+                                (XVar a' (UIx 0)) ]
+                 $ XVar a' (UIx 0)
+
+        XApp a _xa _xb
+         | Just ( D.NameOpInfo D.OpInfoFrameAddSuper True
+                , [ RTerm xAddr, RTerm xParams, RTerm xBoxes
+                  , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModule))
+                  , RTerm xTxtSuper @(XCon _ (DaConPrim nTxtSuper)) ])
+                <- takeXNameApps xxExp
+         , D.NameLitUnboxed (D.NameLitTextLit txModule) <- nTxtModule
+         , D.NameLitUnboxed (D.NameLitTextLit txSuper)  <- nTxtSuper
+         -> Just $ do
+                let a'   =  annotTail a
+                xAddr'      <- convertX ExpArg ctx xAddr
+                xParams'    <- convertX ExpArg ctx xParams
+                xBoxes'     <- convertX ExpArg ctx xBoxes
+                xTxtModule' <- convertX ExpArg ctx xTxtModule
+                xTxtSuper'  <- convertX ExpArg ctx xTxtSuper
+
+                let txSymbolInfoIndex
+                        = "ddcInfoIndex.super." T.<> txModule T.<> "." T.<> txSuper
+
+                return
+                 $ xLets a'
+                        [ LLet  (BAnon $ A.tWord 32)
+                          $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddSuper")))
+                                [ RTerm xAddr', RTerm xParams', RTerm xBoxes'
+                                , RTerm xTxtModule', RTerm xTxtSuper' ]
 
                         , LLet  (BNone $ A.tVoid)
                           $ A.xWrite a'

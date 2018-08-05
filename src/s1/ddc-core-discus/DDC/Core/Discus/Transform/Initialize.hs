@@ -8,11 +8,13 @@ import qualified DDC.Type.DataDef               as C
 import qualified DDC.Core.Exp.Annot             as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Salt.Runtime          as A
+import qualified DDC.Core.Call                  as Call
 import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Discus.Compounds      as D
 import qualified Data.Text                      as T
 import qualified Data.Set                       as Set
 import Data.List
+import Data.Maybe
 
 
 ---------------------------------------------------------------------------------------------------
@@ -36,15 +38,17 @@ initializeModule config mm
 initializeInfo :: C.Module a D.Name -> C.Module a D.Name
 initializeInfo mm
  = let  modName   = C.moduleName mm
-        dataDefs  = map snd $ C.moduleLocalDataDefs mm
 
         mnsImport = if C.isMainModuleName $ C.moduleName mm
                         then Set.toList $ C.moduleTransitiveDeps mm
                         else []
 
+        dataDefs  = map snd $ C.moduleLocalDataDefs mm
+        superDefs = slurpSuperDefs modName $ C.moduleBody mm
+
    in mm
         { C.moduleBody
-            = injectInfoInit modName mnsImport dataDefs
+            = injectInfoInit modName mnsImport dataDefs superDefs
             $ C.moduleBody   mm
 
         , C.moduleExportValues
@@ -87,15 +91,54 @@ initBoundOfModule :: C.ModuleName -> C.Bound D.Name
 initBoundOfModule mn = C.UName $ initNameOfModule mn
 
 
+---------------------------------------------------------------------------------------------------
+data SuperDef
+        = SuperDef
+        { superDefModuleName    :: C.ModuleName
+        , superDefName          :: T.Text
+        , superDefParams        :: Int
+        , superDefBoxes         :: Int }
+        deriving Show
+
+
+-- | Slurp super definitions from the top-level of the module.
+slurpSuperDefs
+        :: C.ModuleName
+        -> C.Exp a D.Name
+        -> [SuperDef]
+
+slurpSuperDefs modName xx
+ = downTop xx
+ where
+        downTop x
+         = case x of
+                C.XLLet _a b x1 x2 -> maybeToList (slurpSuperDef b x1) ++ downTop x2
+                C.XLRec _a bxs x2  -> mapMaybe (uncurry slurpSuperDef) bxs ++ downTop x2
+                _                  -> []
+
+        slurpSuperDef (D.BName b _t) x
+         = let  cs = Call.takeCallConsFromExp x
+                D.NameVar txName = b
+                Just (_csType, csValue, csBox) = Call.splitStdCallCons cs
+           in   Just $ SuperDef
+                 { superDefModuleName   = modName
+                 , superDefName         = txName
+                 , superDefParams       = length csValue
+                 , superDefBoxes        = length csBox }
+
+        slurpSuperDef _ _ = Nothing
+
+
 -- | Inject the info table initialization function into the end of the module.
 injectInfoInit
         :: C.ModuleName         -- ^ Name of the module we're making the table for.
         -> [C.ModuleName]       -- ^ Also call the init function for these other modules.
-        -> [C.DataDef D.Name]   -- ^ Data type declarations defined locally in the module.
+        -> [C.DataDef D.Name]   -- ^ Descriptions of data types defined locally in the module.
+        -> [SuperDef]           -- ^ Descriptions of supers defined locally in the module.
         -> C.Exp a D.Name       -- ^ Body expression of the module to inject into.
         -> C.Exp a D.Name
 
-injectInfoInit modName mnsImport dataDefs xx
+injectInfoInit modName mnsImport dataDefs superDefs xx
  = downTop xx
  where
         downTop x
@@ -110,8 +153,11 @@ injectInfoInit modName mnsImport dataDefs xx
         xInit'  = C.XAbs a' (C.MTerm (C.BNone D.tUnit))
                 $ makeInfoInitImport      a' mnsImport
                 $ makeInfoInitForDataDefs a' modName dataDefs
+                $ makeInfoInitForSupers   a' superDefs
+                $ D.xUnit a'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Call the info table initialization functions for transitively imported modules.
 makeInfoInitImport
         :: a -> [C.ModuleName]
@@ -126,16 +172,17 @@ makeInfoInitImport a mnsImport xx
            in   C.LLet (C.BNone D.tUnit) (C.XApp a (C.XVar a u') (C.RTerm (C.xUnit a)))
 
 
+---------------------------------------------------------------------------------------------------
 -- | Create a new frame to hold info about the given data type definitions,
 --   and push it on the frame stack.
 makeInfoInitForDataDefs
-        :: a
-        -> C.ModuleName         -- ^ Name of module the data types are defined in.
-        -> [C.DataDef D.Name]   -- ^ Data type definitions to create info table frames for.
-        -> C.Exp a D.Name
+        :: a -> C.ModuleName -> [C.DataDef D.Name]
+        -> C.Exp a D.Name -> C.Exp a D.Name
 
-makeInfoInitForDataDefs a modName dataDefs
- = foldr (C.XLet a) (D.xUnit a)
+makeInfoInitForDataDefs a modName dataDefs xBase
+ | null dataDefs = xBase
+ | otherwise
+ = foldr (C.XLet a) xBase
  $ concatMap (makeInfoInitForDataDef a modName) dataDefs
 
 
@@ -157,7 +204,7 @@ makeInfoInitForDataDef a modName dataDef
                 _ -> error "ddc-core-discus.makeInfoInitForDataDef: invalid ctor name"
 
         C.ModuleName parts = modName
-        flatName = intercalate "." parts
+        flatName           = intercalate "." parts
 
         makeFrame ctors
          =  [ C.LLet (C.BAnon D.tAddr)
@@ -174,6 +221,40 @@ makeInfoInitForDataDef a modName dataDef
 
          ++ [ C.LLet (C.BNone D.tUnit)
                 $ D.xInfoFramePush a (C.XVar a (C.UIx 0)) ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Create a new frame to hold info about the given supers,
+--   and push it on the frame stack.
+makeInfoInitForSupers
+        :: a -> [SuperDef]
+        -> C.Exp a D.Name -> C.Exp a D.Name
+
+makeInfoInitForSupers a superDefs xBase
+ | null superDefs = xBase
+ | otherwise
+ = let
+        lFrameNew
+         = C.LLet (C.BAnon D.tAddr)
+         $ D.xInfoFrameNew a (length superDefs)
+
+        lsAddSuper
+         = [ let C.ModuleName parts = superDefModuleName super
+                 flatName = intercalate "." parts
+             in  C.LLet (C.BNone (D.tWord 32))
+                  $ D.xInfoFrameAddSuper a
+                        (C.XVar a (C.UIx 0))
+                        (superDefParams super) (superDefBoxes super)
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))))
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (superDefName super))))
+           | super <- superDefs ]
+
+        lFramePush
+         = C.LLet (C.BNone D.tUnit)
+         $ D.xInfoFramePush a (C.XVar a (C.UIx 0))
+
+   in   foldr (C.XLet a) xBase
+         $ lFrameNew : lsAddSuper ++ [lFramePush]
 
 
 ---------------------------------------------------------------------------------------------------
