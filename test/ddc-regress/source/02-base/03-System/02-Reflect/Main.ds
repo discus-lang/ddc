@@ -13,14 +13,17 @@ data Thing where
         ThingUnit       : Unit -> Thing
 
 main ()
- = do   -- Check reflection of user defined data types,
+ = do   -- Check reification of user defined data types,
         --   as well as the static info table entry for unit.
         printl (reflect_toValue ThingOne)
         printl (reflect_toValue (ThingWrap ThingOne))
         printl (reflect_toValue (ThingWrap (ThingUnit ())))
 
-        -- Check reflection of data type defined in another module.
+        -- Check reification of data type defined in another module.
         printl (reflect_toValue (Cons 3 Nil))
 
-        -- Check reflection of functional value.
+        -- Check reification of a named functional value.
+        printl (reflect_toValue (printl {@Int}))
+
+        -- Check reification of internal functional value.
         printl (reflect_toValue ((\y z -> writel $ "derp" % z) 5))

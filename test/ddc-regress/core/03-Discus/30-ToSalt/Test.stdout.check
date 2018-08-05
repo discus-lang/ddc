@@ -954,7 +954,7 @@ letrec {
             ^0 in
       let xx17: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx16 2w16# 0w16# "DDC"# "thing$l$L$2"# in
+                = ddcInfoFrameAddSuper xx16 2w16# 0w16# "DDC"# "thingZdllZdlLZdl2"# in
             let _: Void#
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.thing$l$L$2"#) 0# ^0 in
             ^0 in

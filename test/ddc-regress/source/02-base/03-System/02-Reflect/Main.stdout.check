@@ -2,4 +2,5 @@ Main.ThingOne
 (Main.ThingWrap Main.ThingOne)
 (Main.ThingWrap (Main.ThingUnit ()))
 (Data.List.Cons 3 Data.List.Nil)
-((THUNK {params = 2, boxes = 1, args = 1, runs = 0}) 5)
+DDC.printl
+(DDC.mainZdllZdlLZdl0 5)
