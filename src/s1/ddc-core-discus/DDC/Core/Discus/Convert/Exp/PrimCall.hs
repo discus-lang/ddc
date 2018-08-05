@@ -9,16 +9,28 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Type.Transform.Instantiate
 import DDC.Core.Exp.Annot
+import DDC.Data.Pretty
 import DDC.Core.Check                    (AnTEC(..))
 import qualified Data.Map                as Map
 import qualified DDC.Core.Call           as Call
-import qualified DDC.Core.Discus.Prim     as E
+import qualified DDC.Core.Discus.Prim    as E
+import qualified DDC.Core.Module         as C
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A
+import qualified Data.Text               as T
 import Data.Maybe
 
 
+-- Env --------------------------------------------------------------------------------------------
+-- TOOD: reuse this at the construction site.
+nameOfInfoIndexSuperRef :: C.ModuleName -> T.Text -> T.Text
+nameOfInfoIndexSuperRef (C.ModuleName parts) txCtorName
+ = let  mn' = T.intercalate (T.pack ".") $ map T.pack parts
+   in   "ddcInfoIndex.super." % mn' % "." % txCtorName
+
+
+-- Convert ----------------------------------------------------------------------------------------
 -- | Convert a Discus function call primitive to Salt.
 convertPrimCall
         :: ExpContext                   -- ^ The surrounding expression context.
@@ -29,9 +41,7 @@ convertPrimCall
 convertPrimCall _ectx ctx xx
  = let  convertX  = contextConvertExp  ctx
         downArgX  = convertX           ExpArg ctx
-
    in case xx of
-
         ---------------------------------------------------
         -- Reify a top-level super.
         XApp (AnTEC _t _ _ a)  xa xb
@@ -41,7 +51,7 @@ convertPrimCall _ectx ctx xx
 
            -- Given the expression defining the super, retrieve its
            -- value arity and any extra type arguments we need to apply.
-         , Just (xF_super, tSuper, csCall, tksArgs)
+         , Just (xF_super, nSuper, tSuper, csCall, tksArgs)
             <- case xF of
                 XVar aF (UName nF)
                  -- This variable was let-bound to the application of a super
@@ -74,7 +84,7 @@ convertPrimCall _ectx ctx xx
                         tSuper          = typeOfCallable callable
                         csSuper         = consOfCallable callable
 
-                    in  Just (xF', tSuper, csSuper, tksArgs)
+                    in  Just (xF', nSuper, tSuper, csSuper, tksArgs)
 
                  -- The name is that of an existing top-level super, either
                  -- defined in this module or imported from somewhere else.
@@ -88,7 +98,7 @@ convertPrimCall _ectx ctx xx
                         tSuper          = typeOfCallable callable
                         csSuper         = consOfCallable callable
 
-                    in  Just (xF, tSuper, csSuper, [])
+                    in  Just (xF, nF, tSuper, csSuper, [])
 
                 _ -> Nothing
 
@@ -115,18 +125,44 @@ convertPrimCall _ectx ctx xx
                 let Just (_csType, csValue, csBoxes)
                         = Call.splitStdCallCons csCall
 
+                let squashName (E.NameVar tx)   = tx
+                    squashName (E.NameExt n tx) = squashName n <> "$" <> tx
+                    squashName _
+                     = error $ "ddc-core-discus.convertPrimCall: invalid super name "
+                             ++ show nSuper
+
+                -- Get the info table index for this super.
+                -- TODO: we don't have the real module name available.
+                let xInfoIndex nSuper'
+                     = case nSuper' of
+                        E.NameVar txSuperName
+                         -> let txInfoRef
+                                 = nameOfInfoIndexSuperRef
+                                        (C.ModuleName ["DDC"]) txSuperName
+                            in  A.xRead a (A.tWord 32)
+                                          (A.xGlobal a (A.tWord 32) txInfoRef)
+                                          (A.xNat a 0)
+
+                        E.NameExt{}
+                          -> xInfoIndex (E.NameVar $ squashName nSuper')
+
+                        _ -> error $ "ddc-core-discus.convertPrimCall: invalid super name "
+                                   ++ show nSuper
+
                 -- Get the Sea-level type of the super.
                 --   We need to use the call pattern here to detect the case
                 --   where the super returns a functional value. We can't do
                 --   this directly from the Discus-level type.
-                tF'       <- convertSuperConsT (typeContext ctx) csCall' tSuper'
+                tF' <- convertSuperConsT (typeContext ctx) csCall' tSuper'
 
-                return  $ A.xAllocThunk a A.rTop
-                                (xConvert a A.tAddr tF' xF')
-                                (A.xNat a $ fromIntegral $ length csValue)
-                                (A.xNat a $ fromIntegral $ length csBoxes)
-                                (A.xNat a 0)                                -- args
-                                (A.xNat a 0)                                -- runs
+                return
+                 $ A.xAllocThunk a A.rTop
+                        (xConvert a A.tAddr tF' xF')
+                        (xInfoIndex nSuper)
+                        (A.xNat a $ fromIntegral $ length csValue)
+                        (A.xNat a $ fromIntegral $ length csBoxes)
+                        (A.xNat a 0)                                -- args
+                        (A.xNat a 0)                                -- runs
 
 
         ---------------------------------------------------
@@ -190,21 +226,20 @@ convertPrimCall _ectx ctx xx
          , Just (xF : xsArgs)   <- sequence $ map takeRTerm $ drop (nArgs + 1) args
          -> Just $ do
                 -- Functional expression.
-                xF'             <- downArgX xF
+                xF'     <- downArgX xF
 
                 -- Arguments and their ypes.
-                xsArg'          <- mapM downArgX xsArgs
-                tsArg'          <- mapM (convertDataT (typeContext ctx)) tsArg
+                xsArg'  <- mapM downArgX xsArgs
+                tsArg'  <- mapM (convertDataT (typeContext ctx)) tsArg
 
                 -- Evaluate a thunk, returning the resulting Addr#,
                 -- then cast it back to a pointer of the appropriate type
-                return  $ A.xApplyThunk a nArgs
-                                A.rTop
-                                [  fromMaybe A.rTop $ takePrimeRegion tArg'
-                                        | tArg'         <- tsArg']
-                                A.rTop
-                                xF'
-                                xsArg'
+                return
+                 $ A.xApplyThunk a nArgs
+                        A.rTop
+                        [  fromMaybe A.rTop $ takePrimeRegion tArg'
+                                | tArg' <- tsArg']
+                        A.rTop xF' xsArg'
 
 
         ---------------------------------------------------

@@ -104,8 +104,8 @@ discusToSalt config source mm
         (CReannotate.reannotate (const ()) mm)
  $ BCD.ConfigDiscusToSalt
         { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"
-        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-03.initialize.dcd"
-        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-04-lambdas.dcd"
+        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-03-lambdas.dcd"
+        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-04.initialize.dcd"
         , BCD.configSinkUnshare         = D.dump config source "dump.1-discus-05-unshare.dcd"
         , BCD.configSinkCurry           = D.dump config source "dump.1-discus-06-curry.dcd"
         , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-07-boxing.dcd"

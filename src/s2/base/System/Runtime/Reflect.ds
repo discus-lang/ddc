@@ -131,8 +131,7 @@ reflect_showValueFormat (f: ValueFormat): Text
 -------------------------------------------------------------------------------
 -- | Throw a reflection failure exception.
 reflect_fail (tx: Text): a
- = ddcPrimExceptionThrow {@Pure}
- $ ExceptionSystemReflect tx
+ = ddcPrimExceptionThrow {@Pure} (ExceptionSystemReflect tx)
 
 
 -------------------------------------------------------------------------------

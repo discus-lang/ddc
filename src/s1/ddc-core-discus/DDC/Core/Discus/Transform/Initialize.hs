@@ -107,7 +107,7 @@ slurpSuperDefs
         -> C.Exp a D.Name
         -> [SuperDef]
 
-slurpSuperDefs modName xx
+slurpSuperDefs _modName xx
  = downTop xx
  where
         downTop x
@@ -116,17 +116,30 @@ slurpSuperDefs modName xx
                 C.XLRec _a bxs x2  -> mapMaybe (uncurry slurpSuperDef) bxs ++ downTop x2
                 _                  -> []
 
-        slurpSuperDef (D.BName b _t) x
-         = let  cs = Call.takeCallConsFromExp x
-                D.NameVar txName = b
-                Just (_csType, csValue, csBox) = Call.splitStdCallCons cs
+        -- Some top level thing that looks like a super we can
+        -- make an info table entry for.
+        slurpSuperDef (D.BName n _t) x
+         | Just (_csType, csValue, csBox)
+                <-  Call.splitStdCallCons
+                $   Call.takeCallConsFromExp x
+         = let  txName = squashName n
            in   Just $ SuperDef
-                 { superDefModuleName   = modName
+                 { superDefModuleName   = C.ModuleName ["DDC"]
+                        -- TODO: we don't have module names at use sites for the reify# prim,
+                        -- for now all supers are tagged with the same dummy module name.
                  , superDefName         = txName
                  , superDefParams       = length csValue
                  , superDefBoxes        = length csBox }
 
+        -- Some top level thing that doesn't look like a super.
+        -- This is probably a CAF.
         slurpSuperDef _ _ = Nothing
+
+        -- TODO: this is a copy-pasto from PrimCall. Put it somewhere shared.
+        squashName (D.NameVar tx)   = tx
+        squashName (D.NameExt n tx) = squashName n <> "$" <> tx
+        squashName nSuper
+         = error $ "ddc-core-discus.slurpSuperDefs: invalid super name " ++ show nSuper
 
 
 -- | Inject the info table initialization function into the end of the module.

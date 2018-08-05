@@ -24,7 +24,7 @@ export foreign c value
 
 
 import foreign c value
- ddcThunkAlloc  : [r1: Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcThunkAlloc  : [r1: Region]. Addr# -> Word32# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcThunkCopy   : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcThunkExtend : [r1: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
 
@@ -33,6 +33,7 @@ import foreign c value
  ddcThunkBoxes  : [r1: Region]. Ptr# r1 Obj -> Nat#
  ddcThunkArgs   : [r1: Region]. Ptr# r1 Obj -> Nat#
  ddcThunkRuns   : [r1: Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkInfo   : [r1: Region]. Ptr# r1 Obj -> Word32#
 
  ddcThunkSetField : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj -> Void#
  ddcThunkGetField : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
@@ -67,6 +68,7 @@ ddcRunThunk
                 fun     = ddcThunkFun    pSrc
                 params  = ddcThunkParams pSrc
                 args    = ddcThunkArgs   pSrc
+                info    = ddcThunkInfo   pSrc
                 runs'   = add# (ddcThunkRuns pSrc) 1#
 
                 -- Allocate a new thunk with the original function and arity,
@@ -74,7 +76,7 @@ ddcRunThunk
                 --  holding the source pointer in a slot across the allocation.
                 poke# sSrc pSrc
 
-                pDst    = ddcThunkAlloc [r1] fun params boxes args runs'
+                pDst    = ddcThunkAlloc [r1] fun info params boxes args runs'
 
                 -- Copy argument pointers from the source to the new thunk.
                 ddcThunkCopy (peek# sSrc) pDst 0# args
