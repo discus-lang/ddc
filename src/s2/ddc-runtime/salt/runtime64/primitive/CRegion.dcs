@@ -64,9 +64,9 @@ ddcCompactRegionExtendsTable (u : Unit): Void#
       tableMaxOld = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
       oldSize = truncate# [Nat#] (sub# tableMaxOld tableBaseOld)
       newSize = add# oldSize (read# (global# [Addr#] "ddcCRTableSize"#) 0#)
-      ddcPrimStdoutPutTextLit "newSize:"#
-      ddcPrimStdoutPutNat newSize
-      ddcPrimStdoutPutTextLit "\n"#
+      -- ddcPrimStdoutPutTextLit "newSize:"#
+      -- ddcPrimStdoutPutNat newSize
+      -- ddcPrimStdoutPutTextLit "\n"#
       tableBaseNew = malloc newSize
       tableMaxNew = plusAddr# tableBaseNew (sub# newSize 1#)
  
