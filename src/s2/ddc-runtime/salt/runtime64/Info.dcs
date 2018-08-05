@@ -15,12 +15,12 @@ export foreign c value
  ddcInfoEntryGetDataTag         : Addr# -> Word16#
  ddcInfoEntryGetDataArity       : Addr# -> Word16#
  ddcInfoEntryGetDataModuleName  : Addr# -> Addr#
- ddcInfoEntryGetDataCtorName    : Addr# -> Addr#
+ ddcInfoEntryGetDataName        : Addr# -> Addr#
 
  ddcInfoEntryGetSuperParams     : Addr# -> Word16#
  ddcInfoEntryGetSuperBoxes      : Addr# -> Word16#
  ddcInfoEntryGetSuperModuleName : Addr# -> Addr#
- ddcInfoEntryGetSuperSuperName  : Addr# -> Addr#
+ ddcInfoEntryGetSuperName       : Addr# -> Addr#
 
 
 import foreign c value
@@ -266,7 +266,7 @@ ddcInfoFrameAddSuper
                         (mul# (promote# nFrameUsed) 32#))
 
         write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
-        write# [Word16#] aEntry 4#  0w16#       -- Entry type (0 = Data)
+        write# [Word16#] aEntry 4#  1w16#       -- Entry type (0 = Super)
         write# [Word16#] aEntry 6#  nParams     -- Tag of data constructor.
         write# [Word16#] aEntry 8#  nBoxes      -- Arity of data constructor.
         write# [Addr#]   aEntry 16# aNameModule -- Module name.
@@ -296,7 +296,7 @@ ddcInfoEntryGetDataArity (aEntry: Addr#): Word16#
 ddcInfoEntryGetDataModuleName (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 16#
 
-ddcInfoEntryGetDataCtorName   (aEntry: Addr#): Addr#
+ddcInfoEntryGetDataName  (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 24#
 
 
@@ -310,7 +310,7 @@ ddcInfoEntryGetSuperBoxes  (aEntry: Addr#): Word16#
 ddcInfoEntryGetSuperModuleName (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 16#
 
-ddcInfoEntryGetSuperSuperName  (aEntry: Addr#): Addr#
+ddcInfoEntryGetSuperName  (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 24#
 
 

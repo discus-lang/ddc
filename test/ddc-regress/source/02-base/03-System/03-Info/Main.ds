@@ -40,8 +40,8 @@ main ()
         -- modules, eg System.IO.Console, so the test output isn't stable.
 --      writel $ "ident      = " % show (info_getIdent aEntry)
 
-        writel $ "moduleName = " % info_getModuleName aEntry
-        writel $ "ctorName   = " % info_getCtorName   aEntry
+        writel $ "moduleName = " % info_getDataModuleName aEntry
+        writel $ "ctorName   = " % info_getDataName   aEntry
 
 
 unpackTextLit (tx: Text): TextLit#

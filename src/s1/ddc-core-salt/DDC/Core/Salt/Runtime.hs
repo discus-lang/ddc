@@ -12,27 +12,18 @@ module DDC.Core.Salt.Runtime
 
           -- * Runtime Functions
           -- ** Boxed Objects
-        , xAllocBoxed
-        , xBoxedTag
-        , xGetFieldOfBoxed
-        , xSetFieldOfBoxed
+        , xAllocBoxed, xBoxedTag
+        , xGetFieldOfBoxed, xSetFieldOfBoxed
 
           -- ** Raw Objects
-        , xAllocRaw
-        , xPayloadOfRaw
+        , xAllocRaw, xPayloadOfRaw
 
           -- ** Raw Small Objects
-        , xAllocSmall
-        , xPayloadOfSmall
+        , xAllocSmall, xPayloadOfSmall
 
           -- ** Thunk Objects
-        , xAllocThunk
-        , xArgsOfThunk
-        , xSetFieldOfThunk
-        , xExtendThunk
-        , xCopyArgsOfThunk
-        , xApplyThunk
-        , xRunThunk
+        , xAllocThunk, xArgsOfThunk, xSetFieldOfThunk, xExtendThunk, xCopyArgsOfThunk
+        , xApplyThunk, xRunThunk
 
           -- ** Allocator
         , xddcInit, xddcExit
@@ -46,9 +37,7 @@ module DDC.Core.Salt.Runtime
         , xAllocSlotVal
         , xRead, xWrite
         , xPeek, xPoke
-        , xCast
-        , xFail
-        , xReturn)
+        , xCast, xFail, xReturn)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
@@ -141,23 +130,25 @@ xAllocThunk
         :: a
         -> Type Name
         -> Exp a Name   -- ^ Function
+        -> Exp a Name   -- ^ Infotable index.
         -> Exp a Name   -- ^ Value paramters.
         -> Exp a Name   -- ^ Times boxed.
         -> Exp a Name   -- ^ Value args.
         -> Exp a Name   -- ^ Times run.
         -> Exp a Name
 
-xAllocThunk a tR xFun xParam xBoxes xArgs xRun
+xAllocThunk a tR xFun xInfo xParam xBoxes xArgs xRun
  = xApps a (XVar a $ fst utAllocThunk)
         [ RType tR
-        , RTerm xFun, RTerm xParam, RTerm xBoxes, RTerm xArgs, RTerm xRun]
+        , RTerm xFun, RTerm xInfo, RTerm xParam, RTerm xBoxes, RTerm xArgs, RTerm xRun]
 
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
  =      ( UName (NameVar "ddcThunkAlloc")
         , tForall kRegion
-           $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat
-                           `tFun` tNat `tFun` tPtr tR tObj))
+           $ \tR -> (tAddr `tFun` tWord 32
+                           `tFun` tNat `tFun` tNat `tFun` tNat `tFun` tNat
+                           `tFun` tPtr tR tObj))
 
 
 -- | Copy the available arguments from one thunk to another.

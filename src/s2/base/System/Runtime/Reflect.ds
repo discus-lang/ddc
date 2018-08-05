@@ -75,14 +75,20 @@ where
 data ValueFormat where
         -- | Format of a Thunk heap object.
         ValueFormatThunk
-         : Nat -> Nat -> Nat -> Nat -> ValueFormat
+         :  Text        -- ^ Module name of super
+         -> Text        -- ^ Name of super
+         -> Nat         -- ^ Number of params.
+         -> Nat         -- ^ Number of boxes.
+         -> Nat         -- ^ Number of args.
+         -> Nat         -- ^ Number of runs.
+         -> ValueFormat
 
         -- | Format of a Boxed heap object.
         ValueFormatBoxed
-         :  Text   -- ^ Module name of definition.
-         -> Text   -- ^ Constructor name.
-         -> Nat    -- ^ Data contructor tag.
-         -> Nat    -- ^ Number of fields in object.
+         :  Text        -- ^ Module name of definition.
+         -> Text        -- ^ Constructor name.
+         -> Nat         -- ^ Data contructor tag.
+         -> Nat         -- ^ Number of fields in object.
          -> ValueFormat
 
         -- | Format of an Array heap object.
@@ -106,10 +112,11 @@ show_ValueFormat: Show ValueFormat
 
 reflect_showValueFormat (f: ValueFormat): Text
  = case f of
-        ValueFormatThunk nParams nBoxes nArgs nRuns
+        ValueFormatThunk txModule txName nParams nBoxes nArgs nRuns
          -> parens $ "THUNK"
-         %%  "{params =" %% show nParams % ", boxes ="  %% show nBoxes
-          % ", args ="   %% show nArgs   % ", runs ="   %% show nRuns %  "}"
+         %%  "{ module =" %% show txModule % ", name ="  %% show txName
+          %  ", params =" %% show nParams  % ", boxes =" %% show nBoxes
+          %  ", args ="   %% show nArgs    % ", runs ="  %% show nRuns %  "}"
 
         ValueFormatBoxed txModule txCtor nTag nFields
          -> parens $ "BOXED"
@@ -131,8 +138,7 @@ reflect_showValueFormat (f: ValueFormat): Text
 -------------------------------------------------------------------------------
 -- | Throw a reflection failure exception.
 reflect_fail (tx: Text): a
- = ddcPrimExceptionThrow {@Pure}
- $ ExceptionSystemReflect tx
+ = ddcPrimExceptionThrow {@Pure} (ExceptionSystemReflect tx)
 
 
 -------------------------------------------------------------------------------
@@ -157,14 +163,16 @@ reflect_formatOfValue (v: Value): ValueFormat
                 nBoxes   = ddcThunkBoxes_value  v
                 nArgs    = ddcThunkArgs_value   v
                 nRuns    = ddcThunkRuns_value   v
-                ValueFormatThunk nParams nBoxes nArgs nRuns
+                aEntry   = info_lookup (ddcObjectInfoIndex_value v)
+                txModule = info_getSuperModuleName aEntry
+                txName   = info_getSuperName aEntry
+                ValueFormatThunk txModule txName nParams nBoxes nArgs nRuns
 
         3 -> do nTag     = ddcBoxedTag_value v
                 nFields  = ddcBoxedFields v
-                infoIdx  = ddcObjectInfoIndex_value v
-                aEntry   = info_lookup infoIdx
-                txModule = info_getModuleName aEntry
-                txCtor   = info_getCtorName aEntry
+                aEntry   = info_lookup (ddcObjectInfoIndex_value v)
+                txModule = info_getDataModuleName aEntry
+                txCtor   = info_getDataName aEntry
                 ValueFormatBoxed txModule txCtor nTag nFields
 
         4 -> ValueFormatRaw
@@ -174,8 +182,8 @@ reflect_formatOfValue (v: Value): ValueFormat
         6 -> do nSize    = ddcSmallPayloadSize_value v
                 infoIdx  = ddcObjectInfoIndex_value v
                 aEntry   = info_lookup infoIdx
-                txModule = info_getModuleName aEntry
-                txCtor   = info_getCtorName aEntry
+                txModule = info_getDataModuleName aEntry
+                txCtor   = info_getDataName aEntry
                 ValueFormatSmall txModule txCtor nSize
 
         _ -> reflect_fail "formatOfValue"
@@ -196,21 +204,29 @@ show_Value: Show Value
 reflect_showValue (v: Value): Text
  = let fmt = reflect_formatOfValue v
    in  case fmt of
-        ValueFormatThunk nParams nBoxes nArgs nRuns
-         -> parens $ show fmt
-         %  foldl pastes ""
-                (map (\n -> reflect_showValue (ddcThunkGetField_value v n))
-                     (generate nArgs id))
-
-        ValueFormatBoxed txModuleName txCtorName nTag nFields
-         |  nFields == 0
-         -> case ddcObjectInfoIndex_value v of
-                1w32    -> show (ddcPrimReflectUnit v)
-                _       -> txModuleName % "." % txCtorName
+        -- TODO: wrong number of args not detected,
+        -- during dev had left off txModule, txName and got segfault.
+        ValueFormatThunk txModuleName txName nParams nBoxes nArgs nRuns
+         | nArgs == 0
+         -> txModuleName % "." % txName
 
          | otherwise
          -> parens
-          $ txModuleName % "." % txCtorName
+          $ txModuleName % "." % txName
+          % foldl pastes ""
+                (map (\n -> reflect_showValue (ddcThunkGetField_value v n))
+                     (generate nArgs id))
+
+
+        ValueFormatBoxed txModuleName txName nTag nFields
+         | nFields == 0
+         -> case ddcObjectInfoIndex_value v of
+                1w32    -> show (ddcPrimReflectUnit v)
+                _       -> txModuleName % "." % txName
+
+         | otherwise
+         -> parens
+          $ txModuleName % "." % txName
           % foldl pastes ""
                 (map (\n -> reflect_showValue (ddcBoxedGetField_value v n))
                      (generate nFields id))

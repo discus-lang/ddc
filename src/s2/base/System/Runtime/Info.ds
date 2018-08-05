@@ -3,8 +3,9 @@
 module System.Runtime.Info
 
 export  info_lookup
-        info_getIdent; info_getType; info_getArity
-        info_getModuleName; info_getCtorName
+        info_getIdent; info_getType
+        info_getDataModuleName; info_getDataName; info_getDataTag; info_getDataArity
+        info_getSuperModuleName; info_getSuperName; info_getSuperParams; info_getSuperBoxes
 
 export foreign c value
  ddcInfoFrameNew                : Nat# -> Addr#
@@ -25,15 +26,15 @@ import foreign c value
  ddcInfoEntryGetIdent           : Addr# -> Word32#
  ddcInfoEntryGetType            : Addr# -> Word16#
 
+ ddcInfoEntryGetDataModuleName  : Addr# -> TextLit#
+ ddcInfoEntryGetDataName        : Addr# -> TextLit#
  ddcInfoEntryGetDataTag         : Addr# -> Word16#
  ddcInfoEntryGetDataArity       : Addr# -> Word16#
- ddcInfoEntryGetDataModuleName  : Addr# -> TextLit#
- ddcInfoEntryGetDataCtorName    : Addr# -> TextLit#
 
+ ddcInfoEntryGetSuperModuleName : Addr# -> TextLit#
+ ddcInfoEntryGetSuperName       : Addr# -> TextLit#
  ddcInfoEntryGetSuperParams     : Addr# -> Word16#
  ddcInfoEntryGetSuperBoxes      : Addr# -> Word16#
- ddcInfoEntryGetSuperModuleName : Addr# -> TextLit#
- ddcInfoEntryGetSuperSuperName  : Addr# -> TextLit#
 
  ddcPrimTakeTextLit             : TextLit -> TextLit#
 
@@ -45,6 +46,7 @@ info_lookup (ident: Word32#): Addr#
  = ddcInfoEntryLookup ident
 
 
+-- Shared ---------------------------------------------------------------------
 -- | Get the identifier from an info table entry.
 info_getIdent      (aEntry: Addr#): Nat
  = promote# (ddcInfoEntryGetIdent aEntry)
@@ -55,17 +57,38 @@ info_getType       (aEntry: Addr#): Nat
  = promote# (ddcInfoEntryGetType aEntry)
 
 
+-- Data -----------------------------------------------------------------------
+-- | Get the module name of an info table entry.
+info_getDataModuleName (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataModuleName aEntry))
+
+-- | Get the ctor name of an info table entry.
+info_getDataName (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataName aEntry))
+
 -- | Get the arity of an info table entry.
-info_getArity      (aEntry: Addr#): Nat
+info_getDataTag (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetDataTag aEntry)
+
+-- | Get the arity of an info table entry.
+info_getDataArity (aEntry: Addr#): Nat
  = promote# (ddcInfoEntryGetDataArity aEntry)
 
 
+-- Data -----------------------------------------------------------------------
 -- | Get the module name of an info table entry.
-info_getModuleName (aEntry: Addr#): Text
- = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataModuleName aEntry))
-
+info_getSuperModuleName (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetSuperModuleName aEntry))
 
 -- | Get the ctor name of an info table entry.
-info_getCtorName   (aEntry: Addr#): Text
- = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetDataCtorName aEntry))
+info_getSuperName (aEntry: Addr#): Text
+ = TextLit (ddcPrimMakeTextLit (ddcInfoEntryGetSuperName aEntry))
+
+-- | Get the number of params of a super info table entry.
+info_getSuperParams (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetSuperParams aEntry)
+
+-- | Get the number of boxes of a super info table entry.
+info_getSuperBoxes (aEntry: Addr#): Nat
+ = promote# (ddcInfoEntryGetSuperBoxes aEntry)
 

@@ -6,6 +6,7 @@ import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import qualified Data.Monoid             as T
+import qualified Data.Text               as T
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Discus.Prim    as D
 import qualified DDC.Core.Salt.Name      as A
@@ -81,7 +82,7 @@ convertPrimInfo _ectx ctx xxExp
          | Just ( D.NameOpInfo D.OpInfoFrameAddSuper True
                 , [ RTerm xAddr, RTerm xParams, RTerm xBoxes
                   , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModule))
-                  , RTerm xTxtSuper @(XCon _ (DaConPrim nTxtSuper)) ])
+                  , RTerm _xTxtSuper@(XCon _ (DaConPrim nTxtSuper)) ])
                 <- takeXNameApps xxExp
          , D.NameLitUnboxed (D.NameLitTextLit txModule) <- nTxtModule
          , D.NameLitUnboxed (D.NameLitTextLit txSuper)  <- nTxtSuper
@@ -91,22 +92,26 @@ convertPrimInfo _ectx ctx xxExp
                 xParams'    <- convertX ExpArg ctx xParams
                 xBoxes'     <- convertX ExpArg ctx xBoxes
                 xTxtModule' <- convertX ExpArg ctx xTxtModule
-                xTxtSuper'  <- convertX ExpArg ctx xTxtSuper
 
-                let txSymbolInfoIndex
-                        = "ddcInfoIndex.super." T.<> txModule T.<> "." T.<> txSuper
+                let txSymbolInfoIndexRaw
+                        = "ddcInfoIndex.super." T.<> txModule T.<> "."
+                        T.<> txSuper
+
+                let txSuperNameSanitized
+                        = T.pack $ A.sanitizeName $ T.unpack txSuper
 
                 return
                  $ xLets a'
                         [ LLet  (BAnon $ A.tWord 32)
                           $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddSuper")))
                                 [ RTerm xAddr', RTerm xParams', RTerm xBoxes'
-                                , RTerm xTxtModule', RTerm xTxtSuper' ]
+                                , RTerm xTxtModule'
+                                , RTerm (A.xTextLit a' txSuperNameSanitized) ]
 
                         , LLet  (BNone $ A.tVoid)
                           $ A.xWrite a'
                                 (A.tWord 32)
-                                (A.xGlobali a' (A.tWord 32) txSymbolInfoIndex)
+                                (A.xGlobali a' (A.tWord 32) txSymbolInfoIndexRaw)
                                 (A.xNat a' 0)
                                 (XVar a' (UIx 0)) ]
                  $ XVar a' (UIx 0)

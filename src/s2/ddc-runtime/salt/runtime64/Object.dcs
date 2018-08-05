@@ -80,7 +80,9 @@ export foreign c value
  ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
  -- Thunk initialization.
- ddcThunkAlloc          : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcThunkAlloc          : [r1:    Region]. Addr# -> Word32#
+                                        -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+
  ddcThunkCopy           : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
  ddcThunkExtend         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
@@ -89,6 +91,7 @@ export foreign c value
  ddcThunkBoxes          : [r1:    Region]. Ptr# r1 Obj -> Nat#
  ddcThunkArgs           : [r1:    Region]. Ptr# r1 Obj -> Nat#
  ddcThunkRuns           : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkInfo           : [r1:    Region]. Ptr# r1 Obj -> Word32#
 
  ddcThunkSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
  ddcThunkGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
@@ -300,8 +303,8 @@ ddcForwardWrite
 --
 ddcThunkAlloc
         [r: Region]
-        (aFun:   Addr#)
-        (params: Nat#) (boxes: Nat#) (args:   Nat#) (runs:  Nat#)
+        (aFun:   Addr#) (info:  Word32#)
+        (params: Nat#)  (boxes: Nat#) (args:   Nat#) (runs:  Nat#)
         : Ptr# r Obj
  = do
         -- Size of the object we need to allocate.
@@ -329,7 +332,8 @@ ddcThunkAlloc
            (bor# (shl# (promote# [Word64#] args)   48w64#)
            (bor# (shl# (promote# [Word64#] boxes)  40w64#)
            (bor# (shl# (promote# [Word64#] runs)   32w64#)
-                 0b00010001w64#))))
+           (bor# (shl# (promote# [Word64#] info)   8w64#)
+                 0b00010001w64#)))))
 
         -- Write the function pointer
         write# addr 8# aFun
@@ -378,21 +382,18 @@ ddcThunkExtend
         fun     = ddcThunkFun    pSrc
         params  = ddcThunkParams pSrc
         boxes   = ddcThunkBoxes  pSrc
+        args    = ddcThunkArgs   pSrc
+        runs    = ddcThunkRuns   pSrc
+        info    = ddcThunkInfo   pSrc
+        aFun    = ddcThunkFun    pSrc
 
         -- Available arguments in source and destination.
-        args    = ddcThunkArgs   pSrc
         args'   = add# args      more
-
-        -- Number of times the thunk has been run
-        runs    = ddcThunkRuns   pSrc
-
-        -- Function pointer.
-        aFun    = ddcThunkFun pSrc
 
         -- Allocate a new thunk with the orignal function and arity,
         --  holding the source pointer in a slot over the allocation.
         poke# sSrc pSrc
-        pDst    = ddcThunkAlloc [rDst] aFun params boxes args' runs
+        pDst    = ddcThunkAlloc [rDst] aFun info params boxes args' runs
         pSrc'   = peek# sSrc
 
         -- Copy argument pointers from the source into the new thunk.
@@ -422,6 +423,11 @@ ddcThunkRuns    [r: Region] (obj: Ptr# r Obj): Nat#
  = do   header64    = read# [Word64#] (takePtr# obj) 0#
         promote# (band# (shr# header64 32w64#) 0xffw64#)
 
+
+-- | Get the info table index from a thunk.
+ddcThunkInfo    [r: Region] (obj: Ptr# r Obj): Word32#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        truncate# (band# (shr# header64 8w64#) 0xffffffw64#)
 
 -- | Get the function pointer from a thunk.
 ddcThunkFun     [r: Region] (obj: Ptr# r Obj): Addr#
