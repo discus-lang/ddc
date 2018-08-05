@@ -26,8 +26,7 @@ initializeModule
 
 initializeModule config mm
  | C.isMainModuleName $ C.moduleName mm
- = initializeMain config
- $ initializeInfo mm
+ = initializeInfo $ initializeMain config mm
 
  | otherwise
  = initializeInfo mm
@@ -313,11 +312,10 @@ initializeMainExp nHookHandleTopLevel xx
         downTop x
          = case x of
                 C.XLLet a b x1 x2 -> C.XLLet a b x1 (downTop x2)
-                C.XLRec a bxs x2  -> C.XLRec a (map downBind bxs) (downTop x2)
+                C.XLRec a bxs x2  -> C.XLRec a (concatMap downBind bxs) (downTop x2)
                 _                 -> x
 
         -- Insert the handler into the main binding.
-
         -- TODO: We do an inner box run to preserve the arity of the main function,
         --       so that the runtime system can call it directly.
         --       Make sure the main function can be bound directly to a closure value
@@ -326,21 +324,28 @@ initializeMainExp nHookHandleTopLevel xx
         downBind (C.BName n@(D.NameVar "main") tMain, x)
          | Just (_tParam, tSusp)              <- C.takeTFun tMain
          , Just (tEff,   _tResult)            <- C.takeTSusp tSusp
-         , C.XAbs a p@(C.MTerm _bParam) xBody <- x
-         = ( C.BName n tMain
-           , C.XAbs a p
-              $ C.XBox a
-              $ C.XLet a (C.LLet  (C.BNone D.tUnit)
+         , C.XAbs a p@(C.MTerm bParam) xBody <- x
+         = [ ( C.BName n tMain
+             , C.XAbs a p
+                $ C.XBox a
+                $ C.XLet a (C.LLet  (C.BNone D.tUnit)
                                   (C.xApps a
                                         (C.XVar a (C.UName (D.NameVar "_init$Main")))
                                         [C.RTerm $ D.xUnit a]))
-              $ C.XRun a
-              $ C.xApps a (C.xApps a (C.XVar a (C.UName nHookHandleTopLevel)) [C.RType tEff])
-                          [C.RTerm xBody])
+                $ C.XRun a
+                $ C.xApps a (C.xApps a (C.XVar a (C.UName nHookHandleTopLevel)) [C.RType tEff])
+                          [C.RTerm (C.XApp a (C.XVar a (C.UName nMainUser)) (C.RTerm (D.xUnit a)))])
+
+           , ( C.BName nMainUser tMain
+             , C.XAbs a (C.MTerm bParam) xBody)
+           ]
 
          | otherwise
          = error "ddc-core-discus.initializeModule: invalid type for main binding"
 
         downBind (b, x)
-         = (b, x)
+         = [(b, x)]
+
+        nMainUser = D.NameVar "_main$start"
+
 

@@ -78,9 +78,9 @@ letrec {
             ^0 in
       let xx7: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx2: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -178,9 +178,9 @@ letrec {
             ^0 in
       let xx7: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx2: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -278,9 +278,9 @@ letrec {
             ^0 in
       let xx7: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx2: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -369,9 +369,9 @@ letrec {
             ^0 in
       let xx7: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx2: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -439,9 +439,9 @@ letrec {
             ^0 in
       let xx6: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx5 2w16# 0w16# "Test"# "app"# in
+                = ddcInfoFrameAddSuper xx5 2w16# 0w16# "DDC"# "app"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.app"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.app"#) 0# ^0 in
             ^0 in
       let xx2: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -586,9 +586,9 @@ letrec {
             ^0 in
       let xx17: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx16 1w16# 0w16# "Test"# "singleton"# in
+                = ddcInfoFrameAddSuper xx16 1w16# 0w16# "DDC"# "singleton"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.singleton"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.singleton"#) 0# ^0 in
             ^0 in
       let xx7: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -732,9 +732,9 @@ letrec {
             ^0 in
       let xx17: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx16 1w16# 0w16# "Test"# "headUnit"# in
+                = ddcInfoFrameAddSuper xx16 1w16# 0w16# "DDC"# "headUnit"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.headUnit"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.headUnit"#) 0# ^0 in
             ^0 in
       let xx7: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -805,9 +805,9 @@ letrec {
             ^0 in
       let xx7: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "Test"# "id"# in
+                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "id"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.id"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.id"#) 0# ^0 in
             ^0 in
       let xx3: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -861,8 +861,9 @@ letrec {
   thing: Ptr# rT Obj -> Ptr# rT Obj
     = λ(xx0: Ptr# rT Obj).
       let xx1: Ptr# rT Obj
-          = ddcThunkAlloc [rT] (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
-      let xx9: Ptr# rT Obj
+          = ddcThunkAlloc [rT] (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2)
+                (read# [Word32#] (global# [Word32#] "ddcInfoIndex.super.DDC.thing$l$L$2"#) 0#) 2# 0# 0# 0# in
+      let xx10: Ptr# rT Obj
           = let ^: Ptr# rT Obj
                 = ddcSmallAlloc [rT]
                       (read# [Word32#] (global# [Word32#] "ddcInfoIndex.data.Base.Nat"#) 0#) 1# in
@@ -877,12 +878,12 @@ letrec {
       let ^: Nat# 
           = ddcThunkArgs [rT] xx1 in
       let _: Void#
-          = ddcThunkSetField [rT] [rT] ^1 ^0 0# xx9 in
+          = ddcThunkSetField [rT] [rT] ^1 ^0 0# xx10 in
       ^1;
   
   _init$Test: Ptr# rT Obj -> Ptr# rT Obj
     = λ(xx2: Ptr# rT Obj).
-      let xx10: Addr#
+      let xx11: Addr#
           = ddcInfoFrameNew 1# in
       let xx3: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -892,9 +893,9 @@ letrec {
                 = ddcSmallPayload [rT] ^0 in
             let _: Void#
                 = poke# [rT] [Addr#]
-                      (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx10 in
+                      (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx11 in
             ^1 in
-      let xx11: Addr#
+      let xx12: Addr#
           = let ^: Ptr# rT Obj
                 = xx3 in
             let ^: Ptr# rT Word8#
@@ -903,9 +904,9 @@ letrec {
                 = peek# [rT] [Addr#]
                       (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
             ^0 in
-      let xx12: Word32#
+      let xx13: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddData xx11 0w16# 2w16# "Test"# "Thing"# in
+                = ddcInfoFrameAddData xx12 0w16# 2w16# "Test"# "Thing"# in
             let _: Void#
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Thing"#) 0# ^0 in
             ^0 in
@@ -917,9 +918,9 @@ letrec {
                 = ddcSmallPayload [rT] ^0 in
             let _: Void#
                 = poke# [rT] [Word32#]
-                      (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx12 in
+                      (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx13 in
             ^1 in
-      let xx13: Addr#
+      let xx14: Addr#
           = let ^: Ptr# rT Obj
                 = xx3 in
             let ^: Ptr# rT Word8#
@@ -929,9 +930,9 @@ letrec {
                       (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
             ^0 in
       let xx5: Ptr# rT Obj
-          = ddcInfoFramePush xx13 in
-      let xx14: Addr#
-          = ddcInfoFrameNew 1# in
+          = ddcInfoFramePush xx14 in
+      let xx15: Addr#
+          = ddcInfoFrameNew 2# in
       let xx6: Ptr# rT Obj
           = let ^: Ptr# rT Obj
                 = ddcSmallAlloc [rT]
@@ -940,9 +941,9 @@ letrec {
                 = ddcSmallPayload [rT] ^0 in
             let _: Void#
                 = poke# [rT] [Addr#]
-                      (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx14 in
+                      (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) xx15 in
             ^1 in
-      let xx15: Addr#
+      let xx16: Addr#
           = let ^: Ptr# rT Obj
                 = xx6 in
             let ^: Ptr# rT Word8#
@@ -951,11 +952,11 @@ letrec {
                 = peek# [rT] [Addr#]
                       (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
             ^0 in
-      let xx16: Word32#
+      let xx17: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx15 1w16# 0w16# "Test"# "thing"# in
+                = ddcInfoFrameAddSuper xx16 2w16# 0w16# "DDC"# "thing$l$L$2"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.thing"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.thing$l$L$2"#) 0# ^0 in
             ^0 in
       let xx7: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -965,9 +966,9 @@ letrec {
                 = ddcSmallPayload [rT] ^0 in
             let _: Void#
                 = poke# [rT] [Word32#]
-                      (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx16 in
+                      (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx17 in
             ^1 in
-      let xx17: Addr#
+      let xx18: Addr#
           = let ^: Ptr# rT Obj
                 = xx6 in
             let ^: Ptr# rT Word8#
@@ -976,8 +977,33 @@ letrec {
                 = peek# [rT] [Addr#]
                       (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
             ^0 in
+      let xx19: Word32#
+          = let ^: Word32#
+                = ddcInfoFrameAddSuper xx18 1w16# 0w16# "DDC"# "thing"# in
+            let _: Void#
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.thing"#) 0# ^0 in
+            ^0 in
       let xx8: Ptr# rT Obj
-          = ddcInfoFramePush xx17 in
+          = let ^: Ptr# rT Obj
+                = ddcSmallAlloc [rT]
+                      (read# [Word32#] (global# [Word32#] "ddcInfoIndex.data.Base.Word32"#) 0#) 1# in
+            let ^: Ptr# rT Word8#
+                = ddcSmallPayload [rT] ^0 in
+            let _: Void#
+                = poke# [rT] [Word32#]
+                      (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) xx19 in
+            ^1 in
+      let xx20: Addr#
+          = let ^: Ptr# rT Obj
+                = xx6 in
+            let ^: Ptr# rT Word8#
+                = ddcSmallPayload [rT] ^0 in
+            let ^: Addr#
+                = peek# [rT] [Addr#]
+                      (plusPtr# [rT] [Addr#] (castPtr# [rT] [Addr#] [Word8#] ^0) 0#) in
+            ^0 in
+      let xx9: Ptr# rT Obj
+          = ddcInfoFramePush xx20 in
       ddcBoxedAlloc [rT] TAG0# 1w32# 0#
 }
 
@@ -1039,9 +1065,9 @@ letrec {
             ^0 in
       let xx9: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx8 1w16# 0w16# "Test"# "id"# in
+                = ddcInfoFrameAddSuper xx8 1w16# 0w16# "DDC"# "id"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.id"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.id"#) 0# ^0 in
             ^0 in
       let xx4: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -1064,9 +1090,9 @@ letrec {
             ^0 in
       let xx11: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx10 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx10 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx5: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -1187,9 +1213,9 @@ letrec {
             ^0 in
       let xx16: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx15 1w16# 0w16# "Test"# "nothin"# in
+                = ddcInfoFrameAddSuper xx15 1w16# 0w16# "DDC"# "nothin"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.nothin"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.nothin"#) 0# ^0 in
             ^0 in
       let xx6: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -1212,9 +1238,9 @@ letrec {
             ^0 in
       let xx18: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx17 1w16# 0w16# "Test"# "foo"# in
+                = ddcInfoFrameAddSuper xx17 1w16# 0w16# "DDC"# "foo"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.foo"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
       let xx7: Ptr# rT Obj
           = let ^: Ptr# rT Obj
@@ -1283,9 +1309,9 @@ letrec {
             ^0 in
       let xx10: Word32#
           = let ^: Word32#
-                = ddcInfoFrameAddSuper xx9 1w16# 0w16# "Test"# "blerk"# in
+                = ddcInfoFrameAddSuper xx9 1w16# 0w16# "DDC"# "blerk"# in
             let _: Void#
-                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.Test.blerk"#) 0# ^0 in
+                = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.blerk"#) 0# ^0 in
             ^0 in
       let xx6: Ptr# rT Obj
           = let ^: Ptr# rT Obj
