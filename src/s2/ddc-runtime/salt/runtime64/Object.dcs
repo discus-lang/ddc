@@ -39,15 +39,18 @@
 --   bit     7  6  5  4  3  2  1  0
 --
 --           X  X  X  X  X  0  0  0  -- Forward
---           0  0  0  1  X  X  0  1  -- Thunk
---           0  0  1  0  X  X  0  1  -- Boxed
---           0  0  1  1  X  X  0  1  -- Raw
---           0  1  0  0  X  X  0  1  -- Array
+--           X  0  0  1  X  X  0  1  -- Thunk
+--           X  0  1  0  X  X  0  1  -- Boxed
+--           X  0  1  1  X  X  0  1  -- Raw
+--           X  1  0  0  X  X  0  1  -- Array
 --           -- size --  X  X  1  1  -- Small
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
 --
---
+--   Compact Region
+--     The 7th bit of the flag is used for the compact region
+--     if the flag is set, the garbage collector will stop tracing the object
+--     and assume any reference from it will keep live.
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
 --     "to-space" its header in the "from-space" is overwritten with a pointer
@@ -153,7 +156,7 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
 
           -- Object with format set by second nibble of header word.
           0b01w8#
-           -> case band# fmt8 0b11110000w8# of
+           -> case band# fmt8 0b01110000w8# of
                 0b00010000w8# -> 2# -- Thunk
                 0b00100000w8# -> 3# -- Boxed
                 0b00110000w8# -> 4# -- Raw
