@@ -42,8 +42,7 @@ sourceLoadText config store source str
  = BSD.sourceLoad
         (D.nameOfSource source)
         (D.lineStartOfSource source)
-        str
-        store
+        str store
  $ BSD.ConfigLoadSourceTetra
         { BSD.configSinkTokens          = D.dump config source "dump.0-source-01-tokens.txt"
         , BSD.configSinkParsed          = D.dump config source "dump.0-source-02-parsed.ds"
@@ -95,15 +94,13 @@ discusLoadText config _store source str
 discusToSalt
         :: D.Config
         -> D.Source
-        -> [C.ModuleName]
         -> C.Module a CE.Name
         -> ExceptT [B.Error] IO (C.Module () CA.Name)
 
-discusToSalt config source mnsInit mm
+discusToSalt config source mm
  = BCD.discusToSalt
         (B.buildSpec $ D.configBuilder config)
         (D.configRuntime config)
-        mnsInit
         (CReannotate.reannotate (const ()) mm)
  $ BCD.ConfigDiscusToSalt
         { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"

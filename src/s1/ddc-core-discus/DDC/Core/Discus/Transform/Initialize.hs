@@ -11,6 +11,7 @@ import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Discus.Compounds      as D
 import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 import Data.List
 
 
@@ -18,32 +19,28 @@ import Data.List
 -- | Insert inititialization code into the module.
 initializeModule
         :: A.Config             -- ^ Runtime system configuration.
-        -> [C.ModuleName]       -- ^ Names of modules transitively imported by this one.
         -> C.Module a D.Name
         -> C.Module a D.Name
 
-initializeModule config mnsImport mm
+initializeModule config mm
  | C.isMainModuleName $ C.moduleName mm
  = initializeMain config
- $ initializeInfo mnsImport mm
+ $ initializeInfo mm
 
  | otherwise
- = initializeInfo [] mm
+ = initializeInfo mm
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert initialization code into a module.
-initializeInfo
-        :: [C.ModuleName]       -- ^ Also call infotable init functions for these modules.
-        -> C.Module a D.Name    -- ^ Module to add initialization code to.
-        -> C.Module a D.Name
+initializeInfo :: C.Module a D.Name -> C.Module a D.Name
+initializeInfo mm
+ = let  modName   = C.moduleName mm
+        dataDefs  = map snd $ C.moduleLocalDataDefs mm
 
-initializeInfo mnsImport mm
- = let  modName  = C.moduleName mm
-        dataDefs = map snd $ C.moduleLocalDataDefs mm
-
---        importValueSea n t
---         = (D.NameVar n, C.ImportValueSea (D.NameVar n) n t)
+        mnsImport = if C.isMainModuleName $ C.moduleName mm
+                        then Set.toList $ C.moduleTransitiveDeps mm
+                        else []
 
    in mm
         { C.moduleBody

@@ -192,7 +192,7 @@ buildDiscusSourceModule state filePath mmDiscus
         mmSalt
          <- withExceptT ErrorBuild
          $  G.Discus.discusToSalt
-                config_driver (SourceFile filePath) []
+                config_driver (SourceFile filePath)
                 mmDiscus
 
         mmSalt `deepseq` return ()
@@ -250,9 +250,7 @@ buildCoreDiscusModuleOfPath state filePath
         mmSalt
          <- withExceptT ErrorBuild
          $  G.Discus.discusToSalt
-                (stateConfig state)
-                (SourceFile filePath)
-                []
+                (stateConfig state) (SourceFile filePath)
                 mmDiscus
 
         mmSalt `deepseq` return ()
