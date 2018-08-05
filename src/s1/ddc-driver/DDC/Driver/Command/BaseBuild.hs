@@ -22,6 +22,7 @@ baseSaltFiles builder
         runtime = "ddc-runtime" </> "salt" </> "runtime"
    in   [ runtime         </> "Alloc.dcs"
         , runtime         </> "Collect.dcs"
+        , runtime         </> "Stats.dcs"
         , runtime         </> "Hook.dcs"
         , runtime         </> "Init.dcs"
         , runtime ++ bits </> "debug"     </> "Check.dcs"

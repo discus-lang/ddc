@@ -19,7 +19,7 @@ import foreign c value
         ddcPrimCompactRegionAlloc    : Nat# -> Nat#
         ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
         ddcPrimCompactRegionMarkDead : Nat# -> Void#
-
+        ddcPerformGC                 : Unit -> Unit
 with letrec
 
 
@@ -130,7 +130,7 @@ compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 4096000#
+        ddcInit 1024#
 
         original = boxWord32 [r1] 10w32#
         
@@ -138,7 +138,10 @@ main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
 
         handle = ddcPrimCompactRegionAlloc 1024#
         objInRegion = ddcPrimCompactRegionStore [r1] [r1] handle original
-       
+
+        ddcPrimCompactRegionMarkDead handle
+        ddcPerformGC ()
+
         -- Apply the factorial function.
         x2      = fac objInRegion
 
@@ -149,7 +152,7 @@ main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcPrimStdoutPutTextLit "\n"#
         
 
-        ddcPrimCompactRegionMarkDead handle
+  
         -- Return success.
         0i#
 

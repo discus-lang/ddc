@@ -5,6 +5,8 @@ export foreign c value
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
  ddcPrimCompactRegionMarkDead : Nat# -> Void#
 
+ ddcCompactRegionIsLive: Addr# -> Bool#
+
 import foreign c value
  malloc           : Nat#  -> Addr#
  free             : Addr# -> Void#
@@ -15,7 +17,7 @@ import foreign c value
  ddcPrimStdoutPutNat : Nat# -> Void#
  ddcPrimStdoutPutAddr : Addr# -> Void#
  ddcPrimStdoutPutTextLit : TextLit#   -> Void#
-
+ ddcPerformGC : Unit -> Unit
 
 with letrec
 
@@ -63,7 +65,7 @@ ddcCompactRegionExtendsTable (u : Unit): Void#
       tableBaseOld = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
       tableMaxOld = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
       oldSize = truncate# [Nat#] (sub# tableMaxOld tableBaseOld)
-      newSize = add# oldSize (read# (global# [Addr#] "ddcCRTableSize"#) 0#)
+      newSize = add# oldSize (read# (global# [Nat#] "ddcCRTableSize"#) 0#)
       -- ddcPrimStdoutPutTextLit "newSize:"#
       -- ddcPrimStdoutPutNat newSize
       -- ddcPrimStdoutPutTextLit "\n"#
@@ -118,6 +120,8 @@ ddcPrimCompactRegionMarkDead (handle : Nat#) : Void#
                 regionRawBase = read# [Addr#] tableBase handle
                 flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 0#)
                 write# regionRawBase 0# (band# flag8 0b01111111w8#) 
+                
+
 
 ddcCompactRegionResizeStore [r1 : Region] 
                               (handle : Nat#)
@@ -188,11 +192,13 @@ ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
 -- return true if the compact region is live
 -- otherwise false
 ddcCompactRegionIsLive (regionBase : Addr#) : Bool#
- = do
-        flag8  = truncate# [Word8#] (read# [Addr#] regionBase 0#)
-        case band# flag8 0b10000000w8# of
-          0b10000000w8# -> True#
-          _             -> False#
+ = do   case eq# (truncate# [Nat#] regionBase) 0# of
+          True#  -> False#
+          False# -> do
+                flag8  = truncate# [Word8#] (read# [Addr#] regionBase 0#)
+                case band# flag8 0b10000000w8# of
+                  0b10000000w8# -> True#
+                  _             -> False#
 
 -- return true if handle is valid
 -- otherwise, false   

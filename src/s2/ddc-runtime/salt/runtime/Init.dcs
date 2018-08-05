@@ -22,6 +22,8 @@ import foreign c value
  free           : Addr# -> Void#
  exit           : Nat#  -> Void#
  ddcInfoInitStatic : Unit -> Unit
+ ddcStatsPrint  : Unit -> Unit
+ ddcStatsOnTerminate : Unit -> Unit
 
 with letrec
 
@@ -35,6 +37,8 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
  = do
         -- Initialize the heap.
         ddcAllocInit   defaultHeapSize
+        -- Initialize statistics module
+        ddcStatsInit ()
 
         -- Create refs for the object info table, and initialize the static portion.
         --   The allocatable info table indices start from 1,
@@ -73,23 +77,34 @@ ddcAllocInit (heapSize : Nat#) : Unit
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         -- Create the compact region table
-        maxRegionTableSize = (mul# 2048# 8#)
-        write# (globali# [Addr#] "ddcCRTableSize"#) 0# maxRegionTableSize
+        write# (globali# [Bool#] "ddcCREnable"#) 0# True#
+        maxRegionTableSize = (mul# 1024# 8#)
+        write# (globali# [Nat#] "ddcCRTableSize"#) 0# maxRegionTableSize
         pTableBase = malloc maxRegionTableSize
         write# (globali# [Addr#] "ddcCRTableBase"#) 0# pTableBase
         write# (globali# [Addr#] "ddcCRTableMax"#) 0# 
                (plusAddr# pTableBase (sub# maxRegionTableSize 1#))
         ()
 
+ddcStatsInit (x : Unit) : Unit
+ = do
+         write# (globali# [Nat#] "ddcStatsTotalAllocated"# )  0#       0#
+         write# (globali# [Nat#] "ddcStatsGCCycles"# )        0#       0#
+         write# [Addr#] (globali# [Addr#] "ddcHeapLastTop"#)  0# (read# (global# [Addr#] "ddcHeapBase"#) 0#)   
+         x
 
 ---------------------------------------------------------------------------------------------------
 -- | Shutdown the runtime system and exit cleanly.
 ddcExit (code: Nat#): Void#
  = do
+        -- call termination
+        ddcStatsOnTerminate ()
+        -- print statistics 
+        ddcStatsPrint ()
         -- Free the space for the heaps.
         pHeapBaseA      = read# (globali# [Addr#] "ddcHeapBase"#)     0#
         pHeapBackBaseA  = read# (globali# [Addr#] "ddcHeapBackBase"#) 0#
-
+  
         free pHeapBaseA
         free pHeapBackBaseA
 
