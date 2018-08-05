@@ -20,8 +20,7 @@ main ()
         printl (reflect_toValue (ThingWrap (ThingUnit ())))
 
         -- Check reflection of data type defined in another module.
---      TODO: this one is broken.
---        printl (reflect_toValue (Cons 3 Nil))
+        printl (reflect_toValue (Cons 3 Nil))
 
         -- Check reflection of functional value.
         printl (reflect_toValue ((\y z -> writel $ "derp" % z) 5))

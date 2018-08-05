@@ -96,7 +96,7 @@ cmdToLlvmSourceTetraFromString config store source str
         modLlvm'
          <-  DA.saltToLlvm     config source True
          =<< DA.saltSimplify   config source
-         =<< DE.discusToSalt   config source []
+         =<< DE.discusToSalt   config source
          =<< DE.sourceLoadText config store  source str
 
         liftIO $ Llvm.write (Llvm.configOfHandle S.stdout) modLlvm'
@@ -153,7 +153,7 @@ cmdToLlvmCoreFromString config language source str
         let makeSalt
                 |   fragName == "Tetra"
                 =   DA.saltSimplify   config source
-                =<< DE.discusToSalt   config source []
+                =<< DE.discusToSalt   config source
                 =<< DE.discusLoadText config store source str
 
                 |   fragName == "Salt"
