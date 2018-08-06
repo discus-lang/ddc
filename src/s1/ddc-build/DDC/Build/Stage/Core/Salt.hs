@@ -6,7 +6,9 @@ where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
+import Control.DeepSeq
 import Data.Maybe
+import qualified Data.Time.Clock                        as Time
 import qualified System.IO                              as System
 import qualified System.Directory                       as System
 import qualified System.FilePath                        as FilePath
@@ -35,11 +37,34 @@ import qualified DDC.Core.Llvm.Convert                  as ALlvm
 import qualified DDC.Llvm.Syntax                        as L
 import qualified DDC.Llvm.Write                         as L
 
+---------------------------------------------------------------------------------------------------
+runWithTimeIO
+        :: NFData a
+        => IO a -> IO (a, Time.NominalDiffTime)
+runWithTimeIO action
+ = do   time1 <- Time.getCurrentTime
+        x <- action
+        x `deepseq` return ()
+        time2 <- Time.getCurrentTime
+        let timeElapsed = Time.diffUTCTime time2 time1
+        return  (x, timeElapsed)
+
+
+---------------------------------------------------------------------------------------------------
+runWithTimeExceptIO
+        :: (NFData a, NFData e)
+        => ExceptT e IO a -> ExceptT e IO (a, Time.NominalDiffTime)
+runWithTimeExceptIO action
+ = do   (e, tm) <- liftIO $ runWithTimeIO $ runExceptT action
+        case e of
+         Left err       -> throwE err
+         Right x        -> return (x, tm)
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Compile Salt Code using the system Llvm compiler.
 saltCompileViaLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => String               -- ^ Name of source module, for error messages.
         -> B.Builder            -- ^ Builder for target platform.
         -> FilePath             -- ^ Path for object file.
@@ -59,36 +84,69 @@ saltCompileViaLlvm
         bSlotify bKeepLlvmFiles bKeepAsmFiles
         sinkPrep sinkSlots sinkTransfer mm
  = do
+        let bPrintTiming = False
+
         -- Decide where to place the build products.
         let pathLL      = FilePath.replaceExtension pathO ".ddc.ll"
         let pathS       = FilePath.replaceExtension pathO ".ddc.s"
 
         -- Convert Salt code to Llvm code.
         let platform    = B.buildSpec builder
-        mm_llvm
-         <- saltToLlvm
+        (mm_llvm, tmSaltToLlvm)
+         <- srcName `deepseq` bSlotify `deepseq` mm `deepseq`
+            runWithTimeExceptIO
+          $ saltToLlvm
                 srcName platform bSlotify
                 sinkPrep sinkSlots sinkTransfer
                 mm
 
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- salt to llvm (total) : " ++ show tmSaltToLlvm
+
+
         -- Write out Llvm source file.
-        liftIO $ System.createDirectoryIfMissing True (FilePath.takeDirectory pathLL)
-        hOut            <- liftIO $ System.openFile pathLL System.WriteMode
-        let llConfig    = L.configOfVersion hOut $ Just $ B.buildLlvmVersion builder
-        liftIO $ L.write llConfig mm_llvm
-        liftIO $ System.hClose hOut
+        (_, tmLlvmWrite)
+         <- pathLL `deepseq` mm_llvm `deepseq`
+            liftIO $ runWithTimeIO $ do
+                System.createDirectoryIfMissing True (FilePath.takeDirectory pathLL)
+                hOut <- System.openFile pathLL System.WriteMode
+                let llConfig = L.configOfVersion hOut $ Just $ B.buildLlvmVersion builder
+                L.write llConfig mm_llvm
+                System.hClose hOut
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- llvm write to file   : " ++ show tmLlvmWrite
+
 
         -- Compile Llvm source file into .s file.
-        liftIO $ B.buildLlc builder pathLL pathS
+        (_, tmCompileLtoS)
+         <- liftIO $ runWithTimeIO
+         $  B.buildLlc builder pathLL pathS
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- llvm compile to .s   : " ++ show tmCompileLtoS
+
 
         -- Assemble .s file into .o file.
-        liftIO $ B.buildAs  builder pathS  pathO
+        (_, tmCompileStoO)
+         <- liftIO $ runWithTimeIO
+          $ B.buildAs  builder pathS  pathO
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- llvm assemble .s     : " ++ show tmCompileStoO
+
 
         -- Link .o file into an executable if we were asked for one.
         let pathsO = pathO : (concat $ maybeToList mPathsOther)
-        (case mPathExe of
-          Nothing       -> return ()
-          Just pathExe  -> liftIO $ B.buildLdExe builder pathsO pathExe)
+        (_, tmLink)
+         <- liftIO $ runWithTimeIO
+         $   case mPathExe of
+              Nothing       -> return ()
+              Just pathExe  -> B.buildLdExe builder pathsO pathExe
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- link .o files        : " ++ show tmLink
+
 
         -- Remove intermediate .ll files if we weren't asked for them.
         when (not bKeepLlvmFiles)
@@ -104,7 +162,7 @@ saltCompileViaLlvm
 ---------------------------------------------------------------------------------------------------
 -- | Convert Salt code to Shadow Stack Slotted LLVM.
 saltToLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => String               -- ^ Name of source module, for error messages.
         -> A.Platform           -- ^ Platform to produce code for.
         -> Bool                 -- ^ Whether to introduce stack slots.
@@ -119,6 +177,8 @@ saltToLlvm
         sinkPrep sinkSlots sinkTransfer
         mm
  = do
+        let bPrintTiming = False
+
         -- Pretty print a-normalized salt modules with a separate column
         -- for the binders, as the code is mostly a list of function calls
         -- and primop applications.
@@ -131,54 +191,75 @@ saltToLlvm
         let pprModule mm' = pprModePrec md_flat 0 mm'
 
         -- Normalize code in preparation for conversion.
-        mm_simpl
-         <- BC.coreSimplify
+        (mm_simpl, tmNormalize)
+         <- mm `deepseq`
+            runWithTimeExceptIO
+          $ BC.coreSimplify
                 BA.fragment (0 :: Int)
                 (C.anormalize (CNamify.makeNamifier A.freshT)
                               (CNamify.makeNamifier A.freshX))
                 mm
 
+        when bPrintTiming
+         $ liftIO $ putStrLn $ "- salt normalize       : " ++ show tmNormalize
+
         liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep
 
 
         -- Check normalized code to produce type annotations on every node.
-        mm_checked
-         <- BC.coreCheck
+        (mm_checked, tmCheck)
+         <- runWithTimeExceptIO
+         $  BC.coreCheck
                 "saltToLlvm" BA.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
+
+        when bPrintTiming
+         $ liftIO $ putStrLn $ "- salt check           : " ++ show tmCheck
 
         liftIO $ B.pipeSink (renderIndent $ pprModule mm_simpl) sinkPrep
 
 
         -- Insert shadow stack slot management instructions,
         --  if we were asked for them.
-        mm_slotify
-         <- if bAddSlots
-             then do mm' <- case ASlotify.slotifyModule () mm_checked of
-                             Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
-                             Right mm'' -> return mm''
-
-                     liftIO $ B.pipeSink (renderIndent $ pprModule mm') sinkSlots
-                     return mm'
-
+        (mm_slotify, tmSlotify)
+         <- runWithTimeExceptIO
+         $  if bAddSlots
+             then case ASlotify.slotifyModule mm_checked of
+                   Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/slotify" err]
+                   Right mm'' -> return mm''
              else return mm_checked
+
+        when bPrintTiming
+         $ liftIO $ putStrLn $ "- salt slotify         : " ++ show tmSlotify
+
+        when bAddSlots
+         $ do   _ <- liftIO $ B.pipeSink (renderIndent $ pprModule mm_slotify) sinkSlots
+                return ()
 
 
         -- Insert control transfer primops.
-        mm_transfer
-         <- case ATransfer.transferModule mm_slotify of
+        (mm_transfer, tmTransfer)
+         <- runWithTimeExceptIO
+         $  case ATransfer.transferModule mm_slotify of
                 Left err   -> throwE [B.ErrorSaltConvert "saltToLlvm/transfer" err]
                 Right mm'  -> return mm'
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- salt transfer        : " ++ show tmTransfer
 
         liftIO $ B.pipeSink (renderIndent $ pprModule mm_transfer) sinkTransfer
 
 
         -- Convert to LLVM source code.
-        srcLlvm
-         <- case ALlvm.convertModule platform
+        (srcLlvm, tmConvert)
+         <- runWithTimeExceptIO
+         $  case ALlvm.convertModule platform
                   (CReannotate.reannotate (const ()) mm_transfer) of
                 Left  err -> throwE [B.ErrorSaltConvert "saltToLlvm/convert" err]
                 Right mm' -> return mm'
+
+        when (bPrintTiming)
+         $ liftIO $ putStrLn $ "- salt convert         : " ++ show tmConvert
 
         return srcLlvm
 

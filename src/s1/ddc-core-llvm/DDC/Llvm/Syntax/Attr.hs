@@ -22,11 +22,11 @@ data FuncAttr
         = AlwaysInline
 
         -- | The source code contained a hint that inlining this function is
-        --   desirable (such as the \"inline\" keyword in C/C++). 
+        --   desirable (such as the \"inline\" keyword in C/C++).
         --   It is just a hint; it imposes no requirements on the inliner.
         | InlineHint
 
-        -- | The inliner should never inline this function in any situation. 
+        -- | The inliner should never inline this function in any situation.
         --   This attribute may not be used together with the alwaysinline attribute.
         | NoInline
 
@@ -35,16 +35,16 @@ data FuncAttr
         --   optimizations specifically to reduce code size.
         | OptSize
 
-        -- | The function never returns normally. 
+        -- | The function never returns normally.
         --   This produces undefined behavior at runtime if the function ever does
         --   dynamically return.
         | NoReturn
 
-        -- | The function never returns with an unwind or exceptional control flow. 
+        -- | The function never returns with an unwind or exceptional control flow.
         --   If the function does unwind, its runtime behavior is undefined.
         | NoUnwind
 
-        -- | The function computes its result (or decides to unwind an exception) 
+        -- | The function computes its result (or decides to unwind an exception)
         --   based strictly on its arguments, without
         --   dereferencing any pointer arguments or otherwise accessing any mutable
         --   state (e.g. memory, control registers, etc) visible to caller functions.
@@ -64,7 +64,7 @@ data FuncAttr
         --   throwing methods, but may use the unwind instruction.
         | ReadOnly
 
-        -- | The function should emit a stack smashing protector. 
+        -- | The function should emit a stack smashing protector.
         --   It is in the form of a \"canary\"—a random value placed on the
         --   stack before the local variables that's checked upon return from the
         --   function to see if it has been overwritten. A heuristic is used to
@@ -74,7 +74,7 @@ data FuncAttr
         --   ssp attribute.
         | Ssp
 
-        -- | The function should always emit a stack smashing protector. 
+        -- | The function should always emit a stack smashing protector.
         --   This overrides the ssp function attribute.
         --   If a function that has an sspreq attribute is inlined into a function
         --   that doesn't have an sspreq attribute or which has an ssp attribute,
@@ -161,7 +161,7 @@ data CallConv
         -- | Any calling convention may be specified by number, allowing
         --   target-specific calling conventions to be used. Target specific calling
         --   conventions start at 64.
-        | CC_Ncc Int
+        | CC_Ncc !Int
 
         -- | X86 Specific 'StdCall' convention. LLVM includes a specific alias for it
         --   rather than just using CC_Ncc.
@@ -234,5 +234,4 @@ data CallType
         -- | Tail call, perform the call in the current stack frame.
         | CallTypeTail
         deriving (Eq, Show)
-
 

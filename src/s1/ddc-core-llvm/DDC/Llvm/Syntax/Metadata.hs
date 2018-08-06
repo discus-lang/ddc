@@ -18,7 +18,7 @@ import DDC.Llvm.Syntax.Type
 --      e.g. 'debug', 'tbaa', 'range', etc.
 data Metadata
         -- Metadata used for type-based alias analysis.
-        = Tbaa  MDNode
+        = Tbaa  !MDNode
         -- Metadata for debugging, here as an example only.
         | Debug
         deriving (Eq, Show)
@@ -27,12 +27,12 @@ data Metadata
 -- | Maps matadata references to metadata nodes
 --      e.g. !2 = !{ metadata "id", !0, !i11}
 data MDecl
-        = MDecl MRef Metadata
+        = MDecl !MRef !Metadata
         deriving Show
 
 
 data MRef
-        = MRef Int
+        = MRef  !Int
         deriving (Show, Eq)
 
 
@@ -43,12 +43,12 @@ rval (MDecl _ m) = m
 -- Metadata internal-----------------------------------------------------------
 -- | Primitive types of LLVM metadata
 data MDString
-        = MDString String
+        = MDString !String
         deriving (Eq, Show)
 
 
 data MDNode
-        = MDNode   [MDNodeOp]
+        = MDNode ![MDNodeOp]
         deriving (Eq, Show)
 
 
@@ -56,11 +56,11 @@ data MDNode
 --    Note: no type parameter to avoid using existentials
 data MDNodeOp
         = OpNull
-        | OpMDString  MDString
-        | OpMDNode    MDNode
-        | OpMDRef     MRef
-        | OpBool      Bool
-        | OpType      Type
+        | OpMDString  !MDString
+        | OpMDNode    !MDNode
+        | OpMDRef     !MRef
+        | OpBool      !Bool
+        | OpType      !Type
         deriving (Eq, Show)
 
 
