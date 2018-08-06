@@ -4,11 +4,13 @@ export { lexText; lexList; lexSingle }
 import DDC.Core.Codec.SExp.Lexer.Token
 import DDC.Core.Codec.SExp.Parser.Base
 import Class.Show
+import Class.Eq
+import Data.Text.List
 import Data.Text
 import Data.Ref
 where
 
-eqChar (c1 c2: Char): Bool
+lexer_eqChar (c1 c2: Char): Bool
  = eqText (textOfChar c1) (textOfChar c2)
 
 -- | Lex text into SExp tokens.

@@ -1,124 +1,114 @@
 
 module DDC.Core.Exp where
 
-
+-------------------------------------------------------------------------------
 -- | Names used for variables and constructors.
-data Name where
-        Name    : Text          -> Name
+data Name       = Name Text
 
-
--- | Bound occurrence of a variable.
-data Bound where
-        -- | Bound occurrence of a variable with a name and bump counter.
-        Bound   : Name  -> Nat  -> Bound
-
+-- | Bound occurrence of a variable with a name and bump counter.
+data Bound      = Bound Name Nat
 
 -- | Binding occurrence of a variable.
-data Bind where
-        Bind    : Name          -> Bind
+data Bind       = Bind Name
 
 
--- | Expressions, used for both types and terms.
-data Exp (a: Data) (p: Data) where
-
-        -- | Expression annotation.
-        XAnnot  : a         -> Exp a p          -> Exp a p
-
-        -- | Atomic primitive or data constructor.
-        XAtom   : Atom  p                       -> Exp a p
-
-        -- | Bound occurrence of a variable.
-        XVar    : Bound                         -> Exp a p
-
-        -- | Function abstraction.
-        XAbs    : Param a p -> Exp a p          -> Exp a p
-
-        -- | Function application.
-        XApp    : Exp a p   -> Arg a p          -> Exp a p
-
-        -- | Possibly recursive bindings.
-        XLet    : Lets a p  -> Exp a p          -> Exp a p
-
-        -- | Case branching.
-        XCase   : Exp a p   -> List (Alt a p)   -> Exp a p
-
-        -- | Type casting.
-        XCast   : Cast a p  -> Exp a p          -> Exp a p
+-------------------------------------------------------------------------------
+-- | Type expressions.
+data Type (a: Data) (p: Data)
+        = TAnn  a (Type a p)                    -- ^ Type annotation.
+        | TVar  Bound                           -- ^ Bound variable.
+        | TAbs  (TypeParam a p) (Type a p)      -- ^ Type abstraction.
+        | TApp  (Type a p) (TypeArg a p)        -- ^ Type application.
+        | TAtom (TypeAtom p)                    -- ^ Type atom.
 
 
--- | Atomic constructs that have no free variables.
-data Atom (p: Data) where
-
-        -- | Primitive in the ambient calculus.
-        APrim   : Prim  -> Atom p
-
-        -- | Data constructor.
-        ACtor   : Name  -> Atom p
-
-        -- | A language fragment specific primitive.
-        AFrag   : p     -> Atom p
+-- | Parameter to a type abstraction.
+data TypeParam (a p: Data)
+        = TPTypeX Bind (Type a p)               -- ^ Explicit type parameter.
 
 
--- | Parameter of an abstraction.
-data Param (a p: Data) where
-        -- | Explicit parameter.
-        MExp      : Bind -> Exp a p             -> Param a p
-
-        -- | Implicit term parameter.
-        MImplicit : Bind -> Exp a p             -> Param a p
+-- | Argument to a type application.
+data TypeArg (a p: Data)
+        = TGTypeX (Type a p)                    -- ^ Explicit type argument.
 
 
--- | Argument of an application.
-data Arg (a p: Data) where
-        -- | Explicit argument.
-        RArg      : Exp  a p                    -> Arg a p
+-- | Type atoms.
+data TypeAtom (p: Data)
+        = TAPrim TypePrim                       -- ^ Primitive in calculus.
+        | TAFrag p                              -- ^ Primitive in lang. frag.
+        | TACtor Name                           -- ^ Bound type constructor.
 
-        -- | Implicit term argument.
-        RImplicit : Exp  a p                    -> Arg a p
+
+-- | Type primitives baked into calculus.
+data TypePrim
+        = TPConVoid                             -- ^ Void type constructor.
+        | TPConUnit                             -- ^ Unit type constructor.
+        | TPConFunX                             -- ^ Explicit function.
+        | TPConFunI                             -- ^ Implicit function.
+
+
+-------------------------------------------------------------------------------
+-- | Term expressions.
+data Term (a: Data) (p: Data)
+        = MAnn  a (Term a p)                    -- ^ Expression annotation.
+        | MVar  Bound                           -- ^ Bound variable.
+        | MAbs  (TermParam a p) (Term a p)      -- ^ Function abstraction.
+        | MApp  (Term a p) (TermArg a p)        -- ^ Function application.
+        | MLet  (Lets a p) (Term a p)           -- ^ Let bindings.
+        | MAtom (TermAtom p)                    -- ^ Atomic primitive.
+        | MCast (Cast a p) (Term a p)           -- ^ Type cast.
+        | MCase (Term a p)
+                (List (Alt a p)) (Term a p)     -- ^ Case branching /w default.
+
+
+-- | Parameter to a term abstraction.
+data TermParam (a p: Data)
+        = MPTermX Bind (Type a p)               -- ^ Explicit term parameter.
+        | MPTermI Bind (Type a p)               -- ^ Implicit term parameter.
+
+
+-- | Argument to a term application.
+data TermArg (a p: Data)
+        = MRTermX (Term a p)                    -- ^ Explicit term argument.
+        | MRTermI (Term a p)                    -- ^ Implicit term argument.
+
+
+-- | Term atoms.
+data TermAtom (p: Data)
+        = MAPrim TermPrim                       -- ^ Primitive in calculus.
+        | MAFrag p                              -- ^ Primitive in lang. frag.
+        | MACtor Name                           -- ^ Bound data constructor.
+
+
+-- | Term primitives baked into calculus.
+data TermPrim
+        = MPConUnit                             -- ^ Unit data constructor.
 
 
 -- | Let-bindings.
-data Lets  (a p: Data) where
-        LLet      : Bind -> Exp a p             -> Lets a p
-        LRec      : List (Tup2 Bind (Exp a p))  -> Lets a p
+--   TODO: if one of these Term tycons is renamed to Exp the close transform panics.
+data Lets  (a p: Data)
+        = LLet     Bind (Term a p)              -- ^ Non-recursive binding.
+        | LRec     (List (Bind, Term a p))      -- ^ Recursive binding.
 
-        LPrivate  :  List Bind 
-                  -> (Maybe (Exp a p)) 
-                  -> List (Tup2 Bind (Exp a p))
-                  -> Lets a p
+        | LPrivate (List Bind)
+                   (Maybe (Term a p))
+                   (List (Bind, Term a p))      -- ^ Private region binding.
 
--- | Case-alternatives.
-data Alt (a p: Data) where
-        AAlt    : Pat a p -> Exp a p            -> Alt a p
+
+-- | Case-alternative.
+data Alt (a p: Data)
+        = AAlt (Pat a p) (Term a p)
 
 
 -- | Pattern matching.
-data Pat (a p: Data) where
-        -- | The default pattern always matches.
-        PDefault :                                 Pat a p
-
-        -- | Match a data constructor and bind its arguments.
-        PData    : Name -> List Bind            -> Pat a p
+data Pat (a p: Data)
+        = AData Name (List Bind)                -- ^ Match data ctor.
 
 
 -- | Type casts.
-data Cast (a p: Data) where
-        -- | Weaken an effect.
-        CEffect : Exp a p                       -> Cast a p
-
-        -- | Box up a computation.
-        CBox    :                                  Cast a p
-
-        -- | Run a computation.
-        CRun    :                                  Cast a p
-
-
-data Prim where
-        -- | Type constructors.
-        PrimTyVoid      : Prim
-        PrimTyUnit      : Prim
-        PrimTyArr       : Prim
-
-        -- | Data constructors.
-        PrimDaUnit      : Prim
+data Cast (a p: Data)
+        = CEffect (Term a p)                    -- ^ Weaken an effect.
+        | CBox                                  -- ^ Box up a computation.
+        | CRun                                  -- ^ Run a computation.
 

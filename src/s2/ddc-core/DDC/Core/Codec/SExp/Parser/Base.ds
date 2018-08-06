@@ -1,7 +1,7 @@
 
 module DDC.Core.Codec.SExp.Parser.Base
 export { stateOfList;
-         peek; shift; next; take; takeToksWhile }
+         peek; shift; next; parser_take; takeToksWhile }
 import Data.Text
 import Data.Ref
 
@@ -65,7 +65,8 @@ shift (s: State r a): S (Read r + Write r) a
 
 
 -- | Take the next token if it matches the given predicate, otherwise fail.
-take    (s:     State r a)
+parser_take
+        (s:     State r a)
         (want:  a -> Bool)
         : S (Read r + Write r) (Maybe a)
  = case peek s of

@@ -1,20 +1,20 @@
 
 -- | S-expression pretty printer for core expressions.
-module DDC.Core.Codec.SExp.Pretty 
+module DDC.Core.Codec.SExp.Pretty
 export  { pretty_Nat;   pretty_Name
         ; pretty_Bound; pretty_Bind
-        ; pretty_Exp
-        ; pretty_Atom; pretty_Param; pretty_Arg
-        ; pretty_Lets;  pretty_Alt;  pretty_Pat;   pretty_Cast; pretty_Prim 
+        ; pretty_Term;  pretty_TermAtom; pretty_TermParam; pretty_TermArg; pretty_TermPrim
+        ; pretty_Lets;  pretty_Alt;      pretty_Pat;       pretty_Cast
         }
 import DDC.Core.Codec.SExp.Pretty.Base
 import DDC.Core.Exp
+import Class.Show
 import Data.Text
 where
 
 
 pretty_Nat: Pretty Nat
- =  Pretty $ \n 
+ =  Pretty $ \n
  -> sexp1 "nat" (showNat n)
 
 
@@ -33,39 +33,53 @@ pretty_Bind: Pretty Bind
  -> sexp1 "bind" (ppr n)
 
 
-pretty_Exp      {Pretty a} {Pretty p}: Pretty (Exp a p)
+        -- Type constructors.
+--        MPrimTyVoid     -> "ty_Void"
+--        MPrimTyUnit     -> "ty_Unit"
+--        MPrimTyArr      -> "ty_Arr"
+
+
+-------------------------------------------------------------------------------
+pretty_Term      {Pretty a} {Pretty p}: Pretty (Term a p)
  =  Pretty $ \xx
  -> case xx of
-        XAnnot a x      -> sexp2 "annot"    (ppr a) (ppr x)
-        XAtom  m        -> sexp1 "atom"     (ppr m)
-        XVar   b        -> sexp1 "var"      (ppr b)
-        XAbs   m x      -> sexp2 "abs"      (ppr m)   (ppr x)
-        XApp   x a      -> sexp2 "app"      (ppr x)   (ppr a)
-        XLet   lts x    -> sexp2 "let"      (ppr lts) (ppr x)
-        XCase  x alts   -> sexp2 "case"     (ppr x)   (ppr alts)
-        XCast  c x      -> sexp2 "cast"     (ppr c)   (ppr x)
+        MAnn a x        -> sexp2 "%mann"  (ppr a)   (ppr x)
+        MVar   b        -> sexp1 "%mvar"  (ppr b)
+        MAbs   m x      -> sexp2 "%mabs"  (ppr m)   (ppr x)
+        MApp   x a      -> sexp2 "%mapp"  (ppr x)   (ppr a)
+        MLet   lts x    -> sexp2 "%mlet"  (ppr lts) (ppr x)
+        MCase  x as xd  -> sexp3 "%mcase" (ppr x)   (ppr as) (ppr xd)
+        MCast  c x      -> sexp2 "%mcast" (ppr c)   (ppr x)
+        MAtom  m        -> ppr m
 
 
-pretty_Atom  {Pretty p}: Pretty (Atom p)
+pretty_TermAtom  {Pretty p}: Pretty (TermAtom p)
  =  Pretty $ \atom
  -> case atom of
-        APrim m         -> sexp1 "prim"     (ppr m)
-        ACtor n         -> sexp1 "ctor"     (ppr n)
-        AFrag p         -> sexp1 "frag"     (ppr p)
+        MAPrim m        -> sexp1 "%mprim" (ppr m)
+        MACtor n        -> sexp1 "%mctor" (ppr n)
+        MAFrag p        -> sexp1 "%mfrag" (ppr p)
 
 
-pretty_Param {Pretty a} {Pretty p}: Pretty (Param a p)
+pretty_TermParam {Pretty a} {Pretty p}: Pretty (TermParam a p)
  =  Pretty $ \mm
  -> case mm of
-        MExp b x        -> sexp1 "exp"      (ppr x)
-        MImplicit b x   -> sexp1 "implicit" (ppr x)
+        MPTermX b t     -> "mpx" -- sexp1 "mpx"  (ppr x)
+        MPTermI b t     -> "mpi" -- sexp1 "mpi"  (ppr x)
 
 
-pretty_Arg   {Pretty a} {Pretty p}: Pretty (Arg a p)
+pretty_TermArg   {Pretty a} {Pretty p}: Pretty (TermArg a p)
  =  Pretty $ \arg
  -> case arg of
-        RArg x          -> sexp1 "arg"      (ppr x)
-        RImplicit x     -> sexp1 "implicit" (ppr x)
+        MRTermX x       -> sexp1 "mrx"  (ppr x)
+        MRTermI x       -> sexp1 "mri"  (ppr x)
+
+
+pretty_TermPrim: Pretty TermPrim
+ =  Pretty $ \pp
+ -> case pp of
+        -- Data constructors.
+        MPConUnit       -> "mp-con-unit"
 
 
 pretty_Lets  {Pretty a} {Pretty p}: Pretty (Lets a p)
@@ -77,7 +91,7 @@ pretty_Lets  {Pretty a} {Pretty p}: Pretty (Lets a p)
         LRec bxs
          -> sexp1 "rec"     (ppr bxs)
 
-        LPrivate bs mt bxs 
+        LPrivate bs mt bxs
          -> sexp3 "private" (ppr bs) (ppr mt) (ppr bxs)
 
 
@@ -90,8 +104,7 @@ pretty_Alt  {Pretty a} {Pretty p}: Pretty (Alt a p)
 pretty_Pat: Pretty (Pat a p)
  =  Pretty $ \pat
  -> case pat of
-        PDefault        -> "default"
-        PData n bs      -> sexp2 "data"   (ppr n) (ppr bs)
+        AData n bs      -> sexp2 "data"   (ppr n) (ppr bs)
 
 
 pretty_Cast {Pretty a} {Pretty p}: Pretty (Cast a p)
@@ -102,14 +115,4 @@ pretty_Cast {Pretty a} {Pretty p}: Pretty (Cast a p)
         CRun            -> "run"
 
 
-pretty_Prim: Pretty Prim
- =  Pretty $ \pp
- -> case pp of
-        -- Type constructors.
-        PrimTyVoid      -> "ty_Void"
-        PrimTyUnit      -> "ty_Unit"
-        PrimTyArr       -> "ty_Arr"
-
-        -- Data constructors.
-        PrimDaUnit      -> "da_Unit"
 

@@ -7,6 +7,7 @@ import DDC.Core.Codec.SExp.Lexer
 import DDC.Core.Codec.SExp.Lexer.Token
 import DDC.Core.Codec.SExp.Parser
 import System.IO.Console
+import Class.Show
 import Data.Function
 where
 
@@ -26,13 +27,13 @@ pretty_Frag: Pretty Frag
         FTyNat  -> "ty_Nat"
 
 main ()
- = do   exp     = XAbs  (MExp (Bind  (Name "x")) (XAtom (AFrag FTyNat)))
-                        (XVar (Bound (Name "x") 0))
+ = do   exp     = MAbs  (MPTermX (Bind  (Name "x")) (TAtom (TAFrag FTyNat)))
+                        (MVar    (Bound (Name "x") 0))
 
         -- ISSUE #439: Post type check does not find unresolved metavariables.
         -- The result of 'ppr exp' has a free metavariable ?21 for the prim type,
         -- and due to this the elaborator fails.
-        writel $ ppr {pretty_Exp {pretty_Annot} {pretty_Frag}} exp
+        writel $ ppr {pretty_Term {pretty_Annot} {pretty_Frag}} exp
 --        writel $ ppr exp
 
         toks    = lexText "(abs (exp (atom (frag ty_Nat))) (var (bound (name \"x\") (nat \"0\"))))"

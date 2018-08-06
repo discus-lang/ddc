@@ -4,6 +4,8 @@ export  { sexp1;  sexp2;  sexp3
         ; ppr
         ; pretty_Tup2; pretty_List; pretty_Maybe }
 import Data.Text
+import Data.List
+import Data.Function
 where
 
 data Pretty (a: Data) where
