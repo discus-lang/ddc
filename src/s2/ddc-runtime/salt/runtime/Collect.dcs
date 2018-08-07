@@ -294,7 +294,7 @@ ddcCollectCompactRegion
       -- ddcPrimStdoutPutAddr rawBase
       -- ddcPrimStdoutPutString "\n"#
       case (ddcCompactRegionIsLive rawBase) of
-        True# -> do free rawBase
+        True# -> do free rawBase -- TODO: refs
                     ()
         False#-> do ()
 

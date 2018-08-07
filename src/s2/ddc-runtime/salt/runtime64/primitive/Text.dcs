@@ -50,9 +50,7 @@ ddcPrimTakeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
 ddcPrimSizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
  = do
         payload = takePtr# (ddcRawPayload obj)
-        case eq# payload (promote# [Addr#] payload) of
-          True# -> do 0#
-          False# -> do promote# (read# [Word32#] payload 0#)
+        promote# (read# [Word32#] payload 0#)
         
 
 
