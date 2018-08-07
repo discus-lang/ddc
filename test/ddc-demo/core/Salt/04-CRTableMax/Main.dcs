@@ -102,57 +102,35 @@ fac [r1: Region] (x: Ptr# r1 Obj): Ptr# r1 Obj
                 mulWord32 x n4
 
 compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
- = do        
-        handle = ddcPrimCompactRegionAlloc 512#
+ = do
+      handle = ddcPrimCompactRegionAlloc 16#
+      r = (ddcPrimCompactRegionStore [r1] [r1] handle original)
+      one =  boxWord32 [r1] 1w32#
+      x2      = addWord32 [r1] [r1] [r1] r one
 
-        ss     = ddcPrimShowInt [r1] (truncate# [Int#] [Nat#] (div# handle 8#))
-        -- ddcPrimStdoutPutTextLit "Index: "#
-        -- ddcPrimStdoutPutVector ss
-        -- ddcPrimStdoutPutTextLit "\n"#
+      -- Print out the result.
+      x2u     = unboxWord32 x2
+      str     = ddcPrimShowInt [r1] (truncate# [Int#] [Word32#] x2u)
+      ddcPrimStdoutPutVector str
+      ddcPrimStdoutPutTextLit "\n"#
 
-        objInRegion = ddcPrimCompactRegionStore [r1] [r1] handle original
-       
-        -- Apply the factorial function.
-        x2      = fac objInRegion
-         
-        -- Print out the result.
-        x2u     = unboxWord32 x2
-        -- str     = ddcPrimShowInt [r1] (truncate# [Int#] [Word32#] x2u)
-        -- ddcPrimStdoutPutVector str
-        -- ddcPrimStdoutPutTextLit "\n"#
-
-        ddcPrimCompactRegionMarkDead handle
-        case gt# acc 1024# of
-          True# -> ()
-          False#-> do compactRegionTableMax [r1] original (add# acc 1#)
+      ddcPrimCompactRegionMarkDead handle
+      case gt# acc 1024# of
+        True# -> do
+            ddcPrimStdoutPutTextLit "pass\n"#
+            ()
+        False#-> do compactRegionTableMax [r1] x2 (add# acc 1#)
 
 
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 1024#
+        ddcInit 1024000#
 
-        original = boxWord32 [r1] 10w32#
+        original = boxWord32 [r1] 0w32#
         
         compactRegionTableMax [r1] original 0#
-
-        handle = ddcPrimCompactRegionAlloc 1024#
-        objInRegion = ddcPrimCompactRegionStore [r1] [r1] handle original
-
-        ddcPrimCompactRegionMarkDead handle
-        ddcPerformGC ()
-
-        -- Apply the factorial function.
-        x2      = fac objInRegion
-
-        -- Print out the result.
-        x2u     = unboxWord32 x2
-        str     = ddcPrimShowInt [r1] (truncate# [Int#] [Word32#] x2u)
-        ddcPrimStdoutPutVector str
-        ddcPrimStdoutPutTextLit "\n"#
         
-
-  
         -- Return success.
         0i#
 
