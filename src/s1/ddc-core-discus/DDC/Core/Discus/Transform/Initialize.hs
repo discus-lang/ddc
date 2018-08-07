@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 -- | Add code to initialize the module.
 module DDC.Core.Discus.Transform.Initialize
         (initializeModule)
@@ -13,6 +13,7 @@ import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Discus.Compounds      as D
 import qualified Data.Text                      as T
 import qualified Data.Set                       as Set
+import Data.Monoid
 import Data.List
 import Data.Maybe
 
