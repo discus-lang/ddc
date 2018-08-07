@@ -21,7 +21,7 @@ export foreign c value
 
 import foreign c value
   malloc                : Nat# -> Addr#
-
+  free                  : Addr# -> Void#
   ddcObjectFormat       : Addr# -> Nat#
   ddcObjectSize         : Addr# -> Nat#
   ddcObjectIsAnchored   : Addr# -> Bool#
@@ -37,10 +37,16 @@ import foreign c value
   ddcBoxedGetField      : Addr# -> Nat# -> Addr#
   ddcBoxedSetField      : Addr# -> Nat# -> Addr# -> Void#
 
+  ddcStatsOnGCEnd       : Unit -> Unit
+  ddcStatsOnGCStart     : Unit -> Unit
+
   ddcLlvmRootIsEnd      : Addr# -> Bool#
   ddcLlvmRootGetStart   : Nat#  -> Addr#
 
+  ddcCompactRegionIsLive: Addr# -> Bool#
+
   ddcPrimStdoutPutString : TextLit# -> Void#
+  ddcPrimStdoutPutAddr : Addr# -> Void#
 
 with letrec
 
@@ -75,6 +81,7 @@ ddcCollectHeap
         (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
         (aaBackBase aaBackTop aaBackMax  : Addr#) : Unit
  = do
+        ddcStatsOnGCStart ()
         -- Reset the top of the to-heap as we're about to overwrite
         -- what's already there.
         aBackBase'      = read# [Addr#] aaBackBase 0#
@@ -110,6 +117,12 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
+        -- collect compact regions
+        ddcCollectCompactRegionTable
+                  (read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#)
+                  (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
+
+        ddcStatsOnGCEnd ()
         ()
 
 
@@ -252,6 +265,38 @@ ddcEvacuateCopy
 
         aObjNew
 
+ddcCollectCompactRegionTable
+        ( tableBase :   Addr# )
+        ( tableMax  :   Addr# )
+                    :   Unit
+ = do
+      ddcCollectCompactRegionTableIter tableBase tableMax 0#
+-- | 
+ddcCollectCompactRegionTableIter
+        ( tableBase :   Addr# )
+        ( tableMax  :   Addr# )
+        ( acc       :   Nat#  )
+                    :   Unit
+ = do rawBase = read# tableBase acc
+      case gt# (plusAddr# tableBase acc) tableMax of
+        True# -> ()
+        False# -> do
+          ddcCollectCompactRegion rawBase
+          ddcCollectCompactRegionTableIter tableBase tableMax (add# acc 8#)
+          ()
+
+      
+ddcCollectCompactRegion
+        ( rawBase   :   Addr# )
+                    :   Unit
+ = do
+      -- ddcPrimStdoutPutString " * GC Free Base CR :"#
+      -- ddcPrimStdoutPutAddr rawBase
+      -- ddcPrimStdoutPutString "\n"#
+      case (ddcCompactRegionIsLive rawBase) of
+        True# -> do free rawBase -- TODO: refs
+                    ()
+        False#-> do ()
 
 -- Scan functions ---------------------------------------------------------------------------------
 --   "Scanning" means to look at the other objects this one points to and also

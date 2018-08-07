@@ -9,4 +9,5 @@ main ()
         writel "Καλημέρα κόσμε"
         writel "こんにちは 世界"
         writel "হ্যালো বিশ্ব"
+        writel "世界，你好!"
 

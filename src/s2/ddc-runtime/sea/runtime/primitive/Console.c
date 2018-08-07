@@ -96,3 +96,39 @@ void ddcPrimStderrPutNat(nat_t x)
 {       fprintf(stderr, "%lu", x);
         fflush(stderr);
 }
+
+// Print a text literal to stderr.
+void ddcPrimStderrPutTextLit (string_t* str)
+{       fputs(str, stderr);
+        fflush(stderr);
+}
+
+// Print a text vector to stderr.
+void ddcPrimStderrPutVector (Obj* obj)
+{       string_t* str = (string_t*) (ddcRawPayload(obj) + 4);
+        fputs(str, stderr);
+        fflush(stderr);
+}
+
+// Print a pointer.
+void ddcPrimStderrPutAddr (void* ptr)
+{       printf("%p", ptr);
+        fflush(stderr);
+}
+
+// Print a Word32 to stdout.
+void ddcPrimStderrPutWord32 (uint32_t val)
+{       printf("%#04" PRIx32, val);
+        fflush(stderr);
+}
+
+// Print a Word64 to stdout.
+void ddcPrimStderrPutWord64 (uint64_t val)
+{       printf("%#08" PRIx64, val);
+        fflush(stderr);
+}
+
+// Flush stdout.
+void ddcPrimStderrFlush (Obj* obj)
+{       fflush(stderr);
+}

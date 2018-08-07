@@ -51,6 +51,7 @@ ddcPrimSizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
  = do
         payload = takePtr# (ddcRawPayload obj)
         promote# (read# [Word32#] payload 0#)
+        
 
 
 -- | Get a single byte of a text literal.

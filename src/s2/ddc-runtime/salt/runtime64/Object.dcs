@@ -47,7 +47,10 @@
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
 --
---
+--   Compact Region
+--     The 7th bit of the flag is used for the compact region
+--     if the flag is set, the garbage collector will stop tracing the object
+--     and assume any reference from it will keep live.
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
 --     "to-space" its header in the "from-space" is overwritten with a pointer

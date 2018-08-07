@@ -68,3 +68,4 @@ Obj*            ddcTextVecPrintf                (const char* fmt, ...);
 // -- Vector --------------------------------------------------------------------------------------
 Obj*            ddcPrimVectorAlloc8             (nat_t len);
 uint8_t*        ddcPrimVectorPayload8           (Obj*  vec);
+
