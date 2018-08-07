@@ -26,16 +26,15 @@ import qualified Data.Map                               as Map
 -- | Insert slot allocations for heap objects.
 slotifyModule
         :: (Show a, Pretty a)
-        => a
-        -> Module (AnTEC a A.Name) A.Name
+        => Module (AnTEC a A.Name) A.Name
         -> Either String
                   (Module (AnTEC a A.Name) A.Name)
 
-slotifyModule a mm@ModuleCore{}
+slotifyModule mm@ModuleCore{}
  | mmStrip               <- Reannotate.reannotate annotTail mm
  , XLet aa (LRec bxs) x1 <- moduleBody mmStrip
  = let
-        bxs'    = map (slotifyLet a) bxs
+        bxs'    = map (slotifyLet (annotOfExp x1)) bxs
         mmSlots = mmStrip { moduleBody = XLet aa (LRec bxs') x1 }
 
         anorm   = Simp.anormalize (Namify.makeNamifier A.freshT)

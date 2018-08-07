@@ -40,22 +40,22 @@ import qualified Data.ByteString        as BS
 --
 data Exp
         -- | Use of a variable.
-        = XVar   Var
+        = XVar   !Var
 
         -- | A literal.
-        | XLit   Lit
+        | XLit   !Lit
 
         -- | An undefined value.
-        | XUndef Type
+        | XUndef !Type
 
         -- | (synthetic) Cast an expression to the given type.
-        | XConv  Type Conv Exp
+        | XConv  !Type !Conv !Exp
 
         -- | (synthetic) Get a pointer to an element of the expression.
-        | XGet   Type Exp [Exp]
+        | XGet   !Type !Exp ![Exp]
 
         -- | (synthetic) Add a value to an expression.
-        | XAdd   Type Exp Exp
+        | XAdd   !Type !Exp !Exp
         deriving (Eq, Show)
 
 
@@ -112,7 +112,7 @@ isClosedConstantExp xx
 -- Var ------------------------------------------------------------------------
 -- | A variable that can be assigned to.
 data Var
-        = Var   Name    Type
+        = Var   !Name   !Type
         deriving (Eq, Show)
 
 
@@ -134,8 +134,8 @@ instance Ord Var where
 -- Name -----------------------------------------------------------------------
 -- | Names of variables.
 data Name
-        = NameGlobal String
-        | NameLocal  String
+        = NameGlobal !String            -- TODO: squash strings in names.
+        | NameLocal  !String
         deriving (Show, Eq, Ord)
 
 
@@ -149,10 +149,10 @@ textOfName (NameLocal  str) = str
 -- | Literal data.
 data Lit
         -- | An integer literal
-        = LitInt        Type    Integer
+        = LitInt        !Type   !Integer
 
         -- | A floating-point literal.
-        | LitFloat      Type    Double
+        | LitFloat      !Type   !Double
 
         -- | A string literal.
         --   In LLVM these have the same type as array literals, but have a
@@ -160,16 +160,16 @@ data Lit
         --   while the second its the pretty printed hex encoding that
         --   the LLVM frontend accepts.
         | LitString
-        { litSource             :: Text
-        , litHexEncoded         :: Text
-        , litEncodingLength     :: Int }
+        { litSource             :: !Text
+        , litHexEncoded         :: !Text
+        , litEncodingLength     :: !Int }
 
         -- | A null pointer literal.
         --   Only applicable to pointer types
-        | LitNull       Type
+        | LitNull       !Type
 
         -- | A completely undefined value.
-        | LitUndef      Type
+        | LitUndef      !Type
         deriving (Eq, Show)
 
 

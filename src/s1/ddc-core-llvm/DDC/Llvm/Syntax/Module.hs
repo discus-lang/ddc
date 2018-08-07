@@ -24,24 +24,24 @@ import Control.Monad
 -- Module ---------------------------------------------------------------------
 -- | This is a top level container in LLVM.
 data Module
-        = Module  
+        = Module
         { -- | Comments to include at the start of the module.
-          modComments  :: [String]
+          modComments  :: ![String]
 
           -- | Alias type definitions.
-        , modAliases   :: [TypeAlias]
+        , modAliases   :: ![TypeAlias]
 
           -- | Global variables to include in the module.
-        , modGlobals   :: [Global]
+        , modGlobals   :: ![Global]
 
           -- | Functions used in this module but defined in other modules.
-        , modFwdDecls  :: [FunctionDecl]
+        , modFwdDecls  :: ![FunctionDecl]
 
           -- | Functions defined in this module.
-        , modFuncs     :: [Function]
-        
+        , modFuncs     :: ![Function]
+
           -- | Metdata for alias analysis
-        , modMDecls    :: [MDecl]
+        , modMDecls    :: ![MDecl]
         }
 
 
@@ -58,8 +58,8 @@ lookupCallConv name mm
 -- Global ---------------------------------------------------------------------
 -- | A global mutable variable. Maybe defined or external
 data Global
-        = GlobalStatic   Var Static
-        | GlobalExternal Var 
+        = GlobalStatic   !Var !Static
+        | GlobalExternal !Var
         deriving Show
 
 
@@ -84,48 +84,48 @@ varOfGlobal gg
 --   These represent the possible global level variables and constants.
 data Static
         -- | A comment in a static section.
-        = StaticComment       String
+        = StaticComment !String         -- TODO: kill this, has no type.
 
         -- | A static variant of a literal value.
-        | StaticLit             Lit
+        | StaticLit     !Lit
 
         -- | For uninitialised data.
-        | StaticUninitType      Type
+        | StaticUninitType !Type
 
         -- | Defines a static 'LMString'.
-        | StaticStr             String   Type
+        | StaticStr     !String   !Type
 
         -- | A static array.
-        | StaticArray           [Static] Type
+        | StaticArray   ![Static] !Type
 
         -- | A static structure type.
-        | StaticStruct          [Static] Type
+        | StaticStruct  ![Static] !Type
 
         -- | A pointer to other data.
-        | StaticPointer         Var
+        | StaticPointer !Var
 
         -- Static expressions.
         -- | Pointer to Pointer conversion.
-        | StaticBitc            Static Type                    
+        | StaticBitc    !Static !Type
 
         -- | Pointer to Integer conversion.
-        | StaticPtoI            Static Type                    
+        | StaticPtoI    !Static !Type
 
         -- | Constant addition operation.
-        | StaticAdd             Static Static                 
+        | StaticAdd     !Static !Static
 
         -- | Constant subtraction operation.
-        | StaticSub             Static Static  
-        deriving (Show)                
+        | StaticSub     !Static !Static
+        deriving (Show)
 
 
 -- | Return the 'LlvmType' of the 'LlvmStatic'.
 typeOfStatic :: Static -> Type
 typeOfStatic ss
  = case ss of
-        StaticComment{}         
+        StaticComment{}
          -> error "ddc-core-llvm.typeOfStatic: can't call getStatType on LMComment!"
-        
+
         StaticLit   l           -> typeOfLit l
         StaticUninitType t      -> t
         StaticStr    _ t        -> t

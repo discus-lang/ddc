@@ -20,8 +20,8 @@ import Control.Monad
 
 
 -- | An LLVM Function
-data FunctionDecl 
-        = FunctionDecl 
+data FunctionDecl
+        = FunctionDecl
         { -- | Unique identifier of the function
           declName              :: String
 
@@ -56,63 +56,63 @@ data ParamListType
 
 
 -- | Describes a function parameter.
-data Param 
+data Param
         = Param
-        { paramType         :: Type
-        , paramAttrs        :: [ParamAttr] }
+        { paramType         :: !Type
+        , paramAttrs        :: ![ParamAttr] }
         deriving (Show, Eq)
 
 
 -- | Alignment.
 data Align
         = AlignNone
-        | AlignBytes Integer
+        | AlignBytes !Integer
         deriving (Show, Eq)
 
 
 -- | A type alias.
-data TypeAlias 
-        = TypeAlias     String Type
+data TypeAlias
+        = TypeAlias !String !Type
         deriving (Eq, Show)
 
 
 -- | Llvm Types.
 data Type
         -- | Void type
-        = TVoid                         
+        = TVoid
 
         -- | An integer with a given width in bits.
-        | TInt          Integer         
+        | TInt          !Integer
 
         -- | 32-bit floating point
         | TFloat
 
         -- | 64-bit floating point
-        | TDouble                       
+        | TDouble
 
         -- | 80 bit (x86 only) floating point
-        | TFloat80                      
+        | TFloat80
 
         -- | 128 bit floating point
-        | TFloat128                     
+        | TFloat128
 
         -- |  A block label.
-        | TLabel                       
+        | TLabel
 
         -- | A pointer to another type of thing.
-        | TPointer      Type           
+        | TPointer      !Type
 
         -- | An array of things.
-        | TArray        Integer Type
+        | TArray        !Integer !Type
 
         -- | A structure type.
         | TStruct       [Type]
 
         -- | A type alias.
-        | TAlias        TypeAlias
+        | TAlias        !TypeAlias
 
         -- | Function type, used to create pointers to functions.
-        | TFunction     FunctionDecl
+        | TFunction     !FunctionDecl
         deriving (Eq, Show)
 
 
@@ -161,7 +161,7 @@ takeBytesOfType bytesPtr tt
         TLabel{}        -> Nothing
         TVoid{}         -> Nothing
 
-        TStruct tys     
+        TStruct tys
          -> liftM sum $ sequence $ map (takeBytesOfType bytesPtr) tys
 
         TAlias (TypeAlias _ t)

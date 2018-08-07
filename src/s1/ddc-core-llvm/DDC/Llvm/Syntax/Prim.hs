@@ -36,8 +36,8 @@ data Op
 
 -- | Conditions.
 data Cond
-        = ICond ICond
-        | FCond FCond
+        = ICond !ICond
+        | FCond !FCond
         deriving (Eq, Show)
 
 

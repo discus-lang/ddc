@@ -7,6 +7,7 @@ module DDC.Driver.Stage.Salt
         , saltCompileViaLlvm)
 where
 import Control.Monad.Trans.Except
+import Control.DeepSeq
 
 import DDC.Data.Pretty
 import qualified DDC.Data.SourcePos                     as SP
@@ -73,7 +74,7 @@ saltSimplify config _source mm
 ---------------------------------------------------------------------------------------------------
 -- | Convert a Salt module to a LLVM module.
 saltToLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => D.Config             -- ^ Driver config.
         -> D.Source             -- ^ Source file meta data.
         -> Bool                 -- ^ Whether to introduce stack slots.
@@ -94,7 +95,7 @@ saltToLlvm config source bAddSlots mm
 ---------------------------------------------------------------------------------------------------
 -- | Compile a Core Salt module using the system Llvm compiler.
 saltCompileViaLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => D.Config             -- ^ Driver config.
         -> D.Source             -- ^ Source file meta data.
         -> Maybe [FilePath]     -- ^ Link with these other .o files.
