@@ -54,6 +54,7 @@ ddcInfoInitStatic (_: Unit): Unit
         write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.Unit"#) 0# iUnit
 
         -- 2 Base.TextLit
+        -- CAREFUL: ddcPrimMakeTextLit in Text.dcs uses the info table index 2 as a magic number.
         iTxLit  = ddcInfoFrameAddData aFrame 0w16# 0w16# (convert# "Base"#) (convert# "TextLit"#)
         write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Base.TextLit"#) 0# iTxLit
 

@@ -3,6 +3,7 @@ module Runtime.Prim.Reflect
 
 export foreign c value
  ddcPrimReifyValue      : [r: Region]. Ptr# r Obj -> Ptr# r Obj
+ ddcPrimReflectUnsafe   : [r: Region]. Ptr# r Obj -> Ptr# r Obj
 
  ddcPrimReflectUnit     : [r: Region]. Ptr# r Obj -> Unit
  ddcPrimReflectBool     : [r: Region]. Ptr# r Obj -> Bool#
@@ -27,7 +28,14 @@ with letrec
 
 -- | Reifying a value is a no-op operationally,
 --   but is seen as a type cast to the source language.
-ddcPrimReifyValue [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
+ddcPrimReifyValue [r: Region]    (obj: Ptr# r Obj): Ptr# r Obj
+ = obj
+
+
+-- | Assert that this value is of the given type.
+--   We don't have a way to dynamically check that the Discus level types match
+--   so this safety needs to be guaranteed by the context the caller has.
+ddcPrimReflectUnsafe [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
  = obj
 
 

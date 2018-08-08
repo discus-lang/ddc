@@ -105,7 +105,7 @@ export foreign c value
  ddcBoxedSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
 
  -- Objects containing raw non-pointer data.
- ddcRawAlloc            : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcRawAlloc            : [r1:    Region]. Word32# -> Nat# -> Ptr# r1 Obj
  ddcRawPayload          : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
  ddcRawPayloadSize      : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
@@ -582,7 +582,7 @@ ddcBoxedSetField
 --
 ddcRawAlloc
         [r: Region]
-        (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
+        (info: Word32#) (bytesPayload: Nat#): Ptr# r Obj
  = do
         -- The requested object size, using the payload length
         -- provided by the caller.
@@ -615,7 +615,8 @@ ddcRawAlloc
         -- Write the header word.
         write# addr 0#
             (bor# (shl# (promote# [Word64#] bytesObj) 32w64#)
-                  0b00110001w64#)
+            (bor# (shl# (promote# [Word64#] info)   8w64#)
+                  0b00110001w64#))
 
         -- Return pointer to the new oject.
         makePtr# addr

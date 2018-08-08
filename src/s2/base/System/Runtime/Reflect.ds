@@ -33,11 +33,17 @@ import foreign c value
  --   compile. This name changes depending on what other anonymous functions
  --   are in the surrounding code, so the form of the result 'Value'
  --   depends on context it was defined in.
- ddcPrimReifyValue      : {@a: Data} -> a -> S Reify Value
+ ddcPrimReifyValue      : {@a: Data} -> a     -> S Reify Value
+
 
  -- Reflection (cast a generic representation into a specific value)
- --   These functions will all fail# at runtime if the value does not have
- --   the appropriate type.
+
+ -- The unsafe version is used on boxed objects where we know from the
+ -- info table that the value really has the desired type.
+ ddcPrimReflectUnsafe   : {@a: Data} -> Value -> a
+
+ -- These functions will all fail# at runtime if the value does not have
+ -- the appropriate type.
  ddcPrimReflectUnit     : Value -> Unit
  ddcPrimReflectTextLit  : Value -> TextLit
  ddcPrimReflectBool     : Value -> Bool
@@ -211,6 +217,7 @@ show_Value: Show Value
 reflect_showValue (v: Value): Text
  = let fmt = reflect_formatOfValue v
    in  case fmt of
+        -- Thunks -----------------------------------------
         -- TODO: wrong number of args not detected,
         -- during dev had left off txModule, txName and got segfault.
         ValueFormatThunk txModuleName txName nParams nBoxes nArgs nRuns
@@ -225,6 +232,7 @@ reflect_showValue (v: Value): Text
                      (generate nArgs id))
 
 
+        -- Boxed ------------------------------------------
         -- Boxed algebraic data values.
         ValueFormatBoxed txModuleName txName nTag nFields
          | nFields == 0
@@ -233,14 +241,35 @@ reflect_showValue (v: Value): Text
                 _       -> txModuleName % "." % txName
 
          -- Pretty print text literals as plain strings.
-         |  txModuleName == "Data.Text.Base"
-         ,  txName       == "TextLit"
-         ,  nTag         == 0
-         ,  nFields      == 1
-         -> "TEXT "
-          % foldl pastes ""
-                (map (\n -> reflect_showValue (ddcBoxedGetField_value v n))
-                     (generate nFields id))
+         --   The match against the tag depends on the constructors in the Text
+         --   data type definition being in the correct order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextLit"
+         , nTag          == 0
+         , nFields       == 1
+         -> show $ TextLit (ddcPrimReflectTextLit (ddcBoxedGetField_value v 0))
+
+         -- Pretty print text vectors as plain strings,
+         --   Not revealing the vector constructor as we usually don't want it.
+         --   If you want to see it then show the ValueFormat directly.
+         --   CAREFUL: The match against the tag depends on the constructors in
+         --   the Text data type definition being their specific order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextVec"
+         , nTag          == 1
+         , nFields       == 1
+         -> show $ ddcPrimReflectUnsafe {@Text} v
+
+         -- Pretty print text applications as plain strings,
+         --   Not revealing the application constructor as we usually don't want it.
+         --   If you want to see it then show the ValueFormat directly.
+         --   CAREFUL: The match against the tag depends on the constructors in
+         --   the Text data type definition being their specific order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextApp"
+         , nTag          == 2
+         , nFields       == 2
+         -> show $ ddcPrimReflectUnsafe {@Text} v
 
          |  otherwise
          -> parens
@@ -249,12 +278,15 @@ reflect_showValue (v: Value): Text
                 (map (\n -> reflect_showValue (ddcBoxedGetField_value v n))
                      (generate nFields id))
 
+        -- Raw --------------------------------------------
         ValueFormatRaw
          -> "RAW"
 
+        -- Array ------------------------------------------
         ValueFormatArray
          -> "ARRAY"
 
+        -- Small ------------------------------------------
         -- Reflect a generic value back into a object level one
         -- so that we can use the normal show function. The info table
         -- indices used here are defined by 'ddcInfoInitStatic' in the

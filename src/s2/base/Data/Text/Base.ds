@@ -83,6 +83,10 @@ type TextVec    = Vector# RegionText Word8
 
 
 -- Text -----------------------------------------------------------------------
+-- CAREFUL: Don't change the order of these constructors.
+--   Reflection of text values in the System.Runtime.Reflect depends on them
+--   being in this specific order, so that we know what the tags of the
+--   runtime objects are.
 data Text where
         -- | Wrap a text literal into a text object.
         --   The character data is stored in static memory.
