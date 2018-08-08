@@ -1,0 +1,28 @@
+
+module Main
+import System.IO.Console
+import Class.Show
+import Data.List
+
+import Debug.Trace
+where
+
+
+-- Test tracing of concrete values.
+fac : Nat -> Nat
+fac 0   = 1
+fac x   = x * trace (fac (x - 1))
+
+
+-- Test tracing of abstract values.
+--   The implementation of 'trace' shows the abstract 'a' values
+--   using generic reification.
+length' : {@a: Data} -> List a -> Nat
+length' Nil         = 0
+length' (Cons x xs) = trace (1 + length' (trace xs))
+
+
+main ()
+ = do   printl $ fac 10
+        printl $ length' (Cons "a" (Cons "b" (Cons "c" Nil)))
+

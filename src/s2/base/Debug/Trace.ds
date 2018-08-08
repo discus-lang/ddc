@@ -1,0 +1,40 @@
+
+module Debug.Trace
+export traceS;  trace
+export traceS'; trace'
+import System.IO.Console
+import System.Runtime.Reflect
+
+
+import foreign c value
+ -- Import the run function from the runtime system,
+ -- and set the result type so it ignores any released effect.
+ ddcRunThunk_trace "ddcRunThunk"
+  : {@a: Data} -> {@e: Effect} -> S e a -> a
+
+where
+
+
+-- | Print a generic value to a console, using a '* trace:' line header.
+traceS (x: a): S (Reify + Console) a
+ = do   writel $ "* trace:" %% show (reflect_toValue x)
+        x
+
+
+-- | Like `traceS` but ignore the fact that this function performs
+--   Reify and Console effects.
+trace (x: a): a
+ = ddcRunThunk_trace (box traceS x)
+
+
+-- | Print a generic value to a console, using the given line header.
+traceS' (header: Text) (x: a): S (Reify + Console) a
+ = do   writel $ header %% show (reflect_toValue x)
+        x
+
+
+-- | Like `traceS'` but ignore the fact that this function performs
+--   Reify and Console effects.
+trace' (x: a): a
+ = ddcRunThunk_trace (box traceS x)
+
