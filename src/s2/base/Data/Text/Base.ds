@@ -40,6 +40,7 @@ import Class.Numeric
 import Class.Ord
 import Class.Eq
 
+
 -- | A TextLit is a boxed object that contains a pointer to literal
 --   UTF-8 data in static memory.
 import foreign boxed type

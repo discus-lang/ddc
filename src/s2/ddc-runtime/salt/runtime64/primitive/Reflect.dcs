@@ -10,6 +10,13 @@ export foreign c value
  ddcPrimReflectInt      : [r: Region]. Ptr# r Obj -> Int#
  ddcPrimReflectFloat32  : [r: Region]. Ptr# r Obj -> Float32#
  ddcPrimReflectFloat64  : [r: Region]. Ptr# r Obj -> Float64#
+ ddcPrimReflectWord8    : [r: Region]. Ptr# r Obj -> Word8#
+ ddcPrimReflectWord16   : [r: Region]. Ptr# r Obj -> Word16#
+ ddcPrimReflectWord32   : [r: Region]. Ptr# r Obj -> Word32#
+ ddcPrimReflectWord64   : [r: Region]. Ptr# r Obj -> Word64#
+ ddcPrimReflectAddr     : [r: Region]. Ptr# r Obj -> Addr#
+
+ ddcPrimReflectTextLit  : [r: Region]. Ptr# r Obj -> Ptr# r Obj
 
 
 import foreign c value
@@ -33,13 +40,16 @@ ddcPrimReflectUnit [r: Region] (obj: Ptr# r Obj): Unit
          True#  -> ()
 
 
--- | Unbox a boxed TextLit, or fail if it isn't one of those.
-ddcPrimReflectTextLit [r: Region] (obj: Ptr# r Obj): TextLit#
+-- | Check that this is a boxed text literal.
+--   Text literals are boxed Raw objects that contain a length and pointer
+--   to statically allocated data. They're defined by the runtime system
+--   in primitive/Text.dcs and don't have a completely unboxed representation.
+ddcPrimReflectTextLit [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
  = do   iObj = ddcObjectInfoIndex obj
         iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.TextLit"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
-         True#  -> peek# (castPtr# (ddcRawPayload obj))
+         True#  -> obj
 
 
 -- | Unbox a boxed Bool, or fail if it isn't one of those.
@@ -82,6 +92,51 @@ ddcPrimReflectFloat32 [r: Region] (obj: Ptr# r Obj): Float32#
 ddcPrimReflectFloat64 [r: Region] (obj: Ptr# r Obj): Float64#
  = do   iObj = ddcObjectInfoIndex obj
         iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Float64"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word8, or fail if it isn't one of those.
+ddcPrimReflectWord8 [r: Region] (obj: Ptr# r Obj): Word8#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word8"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word16, or fail if it isn't one of those.
+ddcPrimReflectWord16 [r: Region] (obj: Ptr# r Obj): Word16#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word16"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word32, or fail if it isn't one of those.
+ddcPrimReflectWord32 [r: Region] (obj: Ptr# r Obj): Word32#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word32"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word64, or fail if it isn't one of those.
+ddcPrimReflectWord64 [r: Region] (obj: Ptr# r Obj): Word64#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word64"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Addr, or fail if it isn't one of those.
+ddcPrimReflectAddr [r: Region] (obj: Ptr# r Obj): Addr#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Addr"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))

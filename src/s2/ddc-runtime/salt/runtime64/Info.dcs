@@ -29,7 +29,6 @@ import foreign c value
 
 with letrec
 
-
 ---------------------------------------------------------------------------------------------------
 -- | Initialize the static portion of the info table.
 --

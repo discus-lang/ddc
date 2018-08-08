@@ -119,7 +119,6 @@ mconvAtom ctx xx
                  -> Just $ do
                         return $ XLit (LitInt (TInt 32) (fromIntegral $ Char.ord c))
 
-
                 -- A text literal.
                 A.PrimLitTextLit tx
                  -> Just $ do

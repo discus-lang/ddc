@@ -9,6 +9,10 @@ export
         showHexNat;     digitHex;
         showBaseNat;
         showAddr;
+        showWord8;
+        showWord16;
+        showWord32;
+        showWord64;
         showFloat32;
         showFloat64;
 }
@@ -45,8 +49,8 @@ showNat (x: Nat): Text
 -- | Show an integer number.
 showInt (x: Int): Text
  = if x >= 0i
-        then       showBaseNat 10 digitDecimal 0 'X' (truncate# x)
-        else "-" % showBaseNat 10 digitDecimal 0 'X' (truncate# (neg# x))
+    then "+" % showBaseNat 10 digitDecimal 0 'X' (truncate# x)
+    else "-" % showBaseNat 10 digitDecimal 0 'X' (truncate# (neg# x))
 
 
 -------------------------------------------------------------------------------
@@ -139,17 +143,37 @@ showBaseNat' base digit width pad first x
 
 
 -------------------------------------------------------------------------------
--- | Show an address.
-showAddr (a: Addr#): Text
- = TextVec (ddcPrimShowAddr a)
+-- | Show a Word8
+showWord8 (w: Word8): Text
+ = showBaseNat 10 digitDecimal 0 'X' (promote# w) % "'w8"
+
+
+-- | Show a Word16
+showWord16 (w: Word16): Text
+ = showBaseNat 10 digitDecimal 0 'X' (promote# w) % "'w16"
+
+
+-- | Show a Word32
+showWord32 (w: Word32): Text
+ = showBaseNat 10 digitDecimal 0 'X' (promote# w) % "'w32"
+
+
+-- | Show a Word64
+showWord64 (w: Word64): Text
+ = showBaseNat 10 digitDecimal 0 'X' (promote# w) % "'w64"
 
 
 -- | Show a Float32.
 showFloat32 (f: Float32): Text
- = TextVec (ddcPrimShowFloat32 f)
+ = TextVec (ddcPrimShowFloat32 f) % "'f32"
 
 
 -- | Show a Float64.
 showFloat64 (f: Float64): Text
- = TextVec (ddcPrimShowFloat64 f)
+ = TextVec (ddcPrimShowFloat64 f) % "'f64"
+
+
+-- | Show an address.
+showAddr (a: Addr#): Text
+ = TextVec (ddcPrimShowAddr a) % "'a"
 
