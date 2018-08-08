@@ -1,0 +1,18 @@
+* trace: 1
+* trace: 1
+* trace: 2
+* trace: 6
+* trace: 24
+* trace: 120
+* trace: 720
+* trace: 5040
+* trace: 40320
+* trace: 362880
+3628800
+* trace: (Data.List.Cons "b" (Data.List.Cons "c" Data.List.Nil))
+* trace: (Data.List.Cons "c" Data.List.Nil)
+* trace: Data.List.Nil
+* trace: 1
+* trace: 2
+* trace: 3
+3

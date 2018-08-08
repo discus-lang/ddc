@@ -15,7 +15,7 @@ export foreign c value
 
 import foreign c value
  ddcRawPayload          : [r: Region]. Ptr# r Obj -> Ptr# r Word8#
- ddcRawAlloc            : [r: Region]. Tag# -> Nat# -> Ptr# r Obj
+ ddcRawAlloc            : [r: Region]. Word32# -> Nat# -> Ptr# r Obj
 
 with letrec
 
@@ -42,7 +42,6 @@ ddcPrimVectorAlloc8 [r: Region] (len: Nat#): Ptr# r Obj
 -- | Get a pointer to the vector payload bytes.
 ddcPrimVectorPayload8 [r: Region] (pVec: Ptr# r Obj): Addr#
  =      takePtr# (plusPtr# (ddcRawPayload pVec) 4#)
-
 
 
 -- | Get a pointer to the payload data of a vector.

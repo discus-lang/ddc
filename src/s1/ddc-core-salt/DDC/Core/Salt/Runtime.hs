@@ -374,15 +374,15 @@ utSetFieldOfBoxed
 
 -- Raw --------------------------------------------------------------------------------------------
 -- | Allocate a Raw object.
-xAllocRaw :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
-xAllocRaw a tR tag x2
+xAllocRaw :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
+xAllocRaw a tR xInfo xLength
  = xApps a (XVar a $ fst utAllocRaw)
-        [ RType tR, RTerm $ xTag a tag, RTerm x2]
+        [ RType tR, RTerm xInfo, RTerm xLength]
 
 utAllocRaw :: (Bound Name, Type Name)
 utAllocRaw
  =      ( UName (NameVar "ddcRawAlloc")
-        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
+        , tForall kRegion $ \r -> (tWord 32 `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the payload of a Raw object.

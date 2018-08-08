@@ -30,7 +30,7 @@ where
 
 -------------------------------------------------------------------------------
 -- | Take a list of characters from a text string.
-text_toList (tx: Text): List Char
+text_toList (tx: Text): List Text
  = mutable r in
    do   source  = textSource_fromText {@r} tx
         list    = textSource_pullList source
@@ -281,12 +281,12 @@ textSource_matchChar
 -- | Pull the entire list of characters from a text source.
 textSource_pullList
         (source: TextSource r)
-        : S (Read r + Write r) (List Char)
+        : S (Read r + Write r) (List Text)
  = go ()
- where  go (_: Unit): S (Read r + Write r) (List Char)
+ where  go (_: Unit): S (Read r + Write r) (List Text)
          = case textSource_pullChar source of
                 Nothing -> Nil
-                Just c  -> Cons c (go ())
+                Just c  -> Cons (textOfChar c) (go ())
 
 
 -------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ escapedTextDisciple: one\ntwo\b\tthree\rfour\f
 
 Data.Text.List
 textOfCharList: abc
-charListOfText: (Cons 'a' (Cons 'b' (Cons 'c' (Cons 'd' (Cons 'e' (Cons 'f' Nil))))))
+charListOfText: (Cons 97'w32 (Cons 98'w32 (Cons 99'w32 (Cons 100'w32 (Cons 101'w32 (Cons 102'w32 Nil))))))
 text_unlines: derp
 snerp
 
@@ -39,7 +39,7 @@ showBool: True False
 showBinaryNat: 1100100 1010110110011
 showDecimalNat: 100 5555
 showHexNat: 64 15b3
-showFloat64 123.456789
+showFloat64 123.456789'f64
 
 Data.Text.Parse
 parseBool: True True True
@@ -47,7 +47,7 @@ parseNat: True True
 parseFloat64: True True
 
 Data.Text.Stream
-text_toList: (Cons 't' (Cons 'e' (Cons 's' (Cons 't' (Cons 'i' (Cons 'n' (Cons 'g' Nil)))))))
+text_toList: (Cons "t" (Cons "e" (Cons "s" (Cons "t" (Cons "i" (Cons "n" (Cons "g" Nil)))))))
 text_words: (Cons "one" (Cons "two" (Cons "three" Nil)))
 text_words: (Cons "one" (Cons "two" (Cons "three" Nil)))
 text_lines: (Cons "one" (Cons "two" (Cons "" (Cons "three" Nil))))

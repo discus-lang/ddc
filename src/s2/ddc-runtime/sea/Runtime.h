@@ -22,7 +22,7 @@ _ddcBoxedTag (Obj* obj)
 {       return obj ->tagFormat >> 8;
 }
 
-Obj*    ddcBoxedAlloc           (uint32_t tag, nat_t arity);
+Obj*    ddcBoxedAlloc           (uint32_t tag, uint32_t info, nat_t arity);
 nat_t   ddcBoxedSize            (Obj* obj);
 nat_t   ddcBoxedSizeFromArity   (nat_t arity);
 tag_t   ddcBoxedTag             (Obj* obj);
@@ -32,7 +32,7 @@ void    ddcBoxedSetField        (Obj* obj, nat_t ix, Obj* x);
 
 
 // ----------------------------------------------------------------------------
-Obj*     ddcRawAlloc            (uint32_t tag, nat_t bytesPayload);
+Obj*     ddcRawAlloc            (uint32_t info, nat_t bytesPayload);
 nat_t    ddcRawSize             (Obj* obj);
 uint8_t* ddcRawPayload          (Obj* obj);
 nat_t    ddcRawPayloadSize      (Obj* obj);

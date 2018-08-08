@@ -54,7 +54,7 @@ convertPrimVector _ectx ctx xxExp
                         $ A.xPayloadOfRaw a' A.rTop xVec
 
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
-                                         (A.xAllocRaw a' A.rTop 0 xLengthBytes'))
+                                         (A.xAllocRaw a' A.rTop (A.xWord a' 0 32) xLengthBytes'))
                         $ XLet a' (LLet  (BNone A.tVoid)
                                          (A.xPoke a' A.rTop (A.tWord 32)
                                                 (xPayloadLength' (XVar a' (UIx 0)))

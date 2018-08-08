@@ -153,6 +153,8 @@ convPrimPromote ctx tDst vDst tSrc xSrc
           | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
           | otherwise           -> throw  $ ErrorInvalidPromotion  tSrc tDst
 
+         (TDouble, TFloat)      -> return $ IConv vDst ConvFpext xSrc
+
          -- Promotion is not valid on this platform.
          _ -> throw $ ErrorInvalidPromotion tSrc tDst
 
@@ -190,18 +192,32 @@ convPrimTruncate ctx tDst vDst tSrc xSrc
           , isUnsignedT tSrc,   isSignedT tDst
           -> return $ IConv vDst ConvZext xSrc
 
+         -- Float -------------------------------
          (TFloat, TInt bitsSrc)
           | bitsSrc <= 23       -> throw  $ ErrorInvalidTruncation tSrc tDst
           | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
           | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
           | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
 
+         (TInt _bits, TFloat)
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvFptoui  xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvFptosi  xSrc
+          | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
+
+         (TFloat, TDouble)      -> return $ IConv vDst ConvFptrunc xSrc
+
+         -- Double ------------------------------
          (TDouble, TInt bitsSrc)
           | bitsSrc <= 52       -> throw  $ ErrorInvalidTruncation tSrc tDst
           | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
           | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
           | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
 
+         (TInt _bits, TDouble)
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvFptoui  xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvFptosi  xSrc
+          | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
+
          -- Truncation is not valid on this platform.
-         _ -> error $ show (tDst', tSrc') -- throw $ ErrorInvalidTruncation tSrc tDst
+         _ -> throw $ ErrorInvalidTruncation tSrc tDst
 
