@@ -236,7 +236,6 @@ takeGlobalV ctx xx
         mm      = contextModule      ctx
         kenv    = contextKindEnvTop  ctx
         tenv    = contextTypeEnvTop  ctx
-
    in case xx of
         A.XVar u@(C.UName nSuper)
          | Just t   <- Env.lookup u tenv
@@ -248,9 +247,9 @@ takeGlobalV ctx xx
                 let result   = liftM renderPlain
                              $ A.seaNameOfSuper mImport mExport nSuper
 
-                let str      = case result of
-                                 Just str'      -> str'
-                                 Nothing        -> error "ddc-core-llvm: takeGlobalV"
+                let str = case result of
+                           Just str' -> str'
+                           Nothing   -> error "ddc-core-llvm: takeGlobalV"
 
 
                 t'      <- convertType pp kenv t

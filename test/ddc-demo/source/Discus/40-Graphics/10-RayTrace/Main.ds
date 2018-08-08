@@ -64,7 +64,10 @@ draw    (world:  World)         -- ^ World to draw.
                  = do   r'      = float64_floor (r * 255.0)
                         g'      = float64_floor (g * 255.0)
                         b'      = float64_floor (b * 255.0)
-                        write $ show r' %% show g' %% show b' %% " "
+                        write   $  show (truncate# [Nat] r')
+                                %% show (truncate# [Nat] g')
+                                %% show (truncate# [Nat] b')
+                                %% " "
 
                 go (posX + stepX) posY
 
