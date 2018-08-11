@@ -110,7 +110,7 @@ Data Type Declarations
 .. code-block:: none
 
  DataDef                                                (data type declarations)
-  ::= '%d-alg' Name List[Bind] Maybe[List[Ctor]]        (algebraic data type)
+  ::= '%data-alg' Name List[Bind] Maybe[List[Ctor]]     (algebraic data type)
 
 
 Types
@@ -120,13 +120,13 @@ Types
 
  Type                                                   (type declarations)
   ::= Bound                                             (bound type variable)
-   |  TypeCon                                           (type constructor)
-   |  '%tb' Bind Type                                   (type abstraction)
    |  '%ta' Type Type+                                  (type application)
+   |  '%tb' Bind Type                                   (type abstraction)
    |  '%tl' Bind Type                                   (forall type)
    |  '%ts' Type Type*                                  (sum type)
-   |  '%tf' TypeParam+ Type                             (flat function type)
-   |  '%tu' Bound Type+                                 (flat constructor application)
+   |  '%tf' TypeParam+ Type                             (function type)
+   |  '%tu' Bound Type+                                 (type constructor application)
+   |  TypeCon                                           (type atom)
 
  TypeParam
   ::= Type                                              (type of explicit function parameter)
@@ -139,62 +139,57 @@ Primitive Type Constructors
 .. code-block:: none
 
  TypeCon
-  ::= '%tsp'                                            (sort of property types)
-   |  '%tsc'                                            (sort of computation types)
+  ::= '%tcn' NAME                                       (named type constructor)
 
-   |  '%tkf'                                            (arrow kind)
-   |  '%tkd'                                            (kind of data types)
-   |  '%tkr'                                            (kind of region types)
-   |  '%tke'                                            (kind of effect types)
+   |  '%ts-prop'                                        (sort of property types)
+   |  '%ts-comp'                                        (sort of computation types)
 
-   |  '%tcu'                                            (type of unit values)
-   |  '%tcf'                                            (type constructor for functions with explicit parameter)
-   |  '%tci'                                            (type constructor for functions with implicit parameter)
-   |  '%tcs'                                            (type constructor for suspended computations)
-   |  '%tcr'                                            (type constructor for read effects)
-   |  '%tcw'                                            (type constructor for write effects)
-   |  '%tca'                                            (type constructor for alloc effects)
+   |  '%tk-arr'                                         (arrow kind)
+   |  '%tk-data'                                        (kind of data types)
+   |  '%tk-region'                                      (kind of region types)
+   |  '%tk-effect'                                      (kind of effect types)
 
-   |  '%dt-Tuple'                                       (tuple type constructor)
-   |  '%dt-Vector'                                      (vector type constructor)
+   |  '%tc-void'                                        (void type)
+   |  '%tc-unit'                                        (type of unit values)
+   |  '%tc-fun'                                         (type constructor for functions with explicit parameter)
+   |  '%tc-funi'                                        (type constructor for functions with implicit parameter)
+   |  '%tc-susp'                                        (type constructor for suspended computations)
+   |  '%tc-read'                                        (type constructor for read effects)
+   |  '%tc-write'                                       (type constructor for write effects)
+   |  '%tc-alloc'                                       (type constructor for alloc effects)
 
-   |  '%pt-void'                                        (primitive Void type constructor)
-   |  '%pt-bool'                                        (primitive Bool type constructor)
-   |  '%pt-nat'                                         (primitive Nat  type constructor)
-   |  '%pt-int'                                         (primitive Int  type constructor)
-   |  '%pt-size'                                        (primitive Size type constructor)
-   |  '%pt-addr'                                        (primitive Addr type constructor)
-   |  '%pt-ptr'                                         (primitive Ptr  type constructor)
-   |  '%pt-textlit'                                     (primitive TextLit type constructor)
-   |  '%pt-word'  NAT                                   (primitive WordN type constructor of given width)
-   |  '%pt-float' NAT                                   (primitive FloatN type constructor of given width)
+   |  '%tc-tuple'                                       (tuple type constructor)
+   |  '%tc-vector'                                      (vector type constructor)
+
+   |  '%tc-void'                                        (primitive Void type constructor)
+   |  '%tc-bool'                                        (primitive Bool type constructor)
+   |  '%tc-nat'                                         (primitive Nat  type constructor)
+   |  '%tc-int'                                         (primitive Int  type constructor)
+   |  '%tc-size'                                        (primitive Size type constructor)
+   |  '%tc-addr'                                        (primitive Addr type constructor)
+   |  '%tc-ptr'                                         (primitive Ptr  type constructor)
+   |  '%tc-textlit'                                     (primitive TextLit type constructor)
+   |  '%tc-word'  NAT                                   (primitive WordN type constructor of given width)
+   |  '%tc-float' NAT                                   (primitive FloatN type constructor of given width)
 
 Terms
 -----
 
 .. code-block:: none
 
- Term                                                   (term declarations)
+ Term
   ::= Bound                                             (bound variable)
-   |  DataCon                                           (bound data constructor)
-   |  TermLit                                           (primitive value)
-   |  TermOp                                            (primitive operator)
-
-   |  '%xdu'                                            (primitive unit data constructor)
-
-   |  '%xb'  TermParam+ Term                            (abstraction)
    |  '%xa'  Term TermArg+                              (application)
-
+   |  '%xb'  TermParam+ Term                            (abstraction)
+   |  '%xc'  Term Alt+                                  (case expression)
    |  '%xll' Bind Term Term                             (non-recursive let-binding)
    |  '%xlr' Pair[Bind,Term]+ Term                      (recursive let-binding)
    |  '%xlp' Bind       Maybe[Type] Bind+ Term          (private region binding)
    |  '%xlp' List[Bind] Maybe[Type] Bind+ Term          (private region bindings)
-
-   |  '%xc'  Term Alt+                                  (case expression)
-
-   |  '%xcw' Type Term                                  (cast to weaken effect)
-   |  '%xcb' Term                                       (cast to box term)
-   |  '%xcr' Term                                       (cast to run computation)
+   |  '%xtw' Type Term                                  (weaken effect)
+   |  '%xtb' Term                                       (box computation)
+   |  '%xtr' Term                                       (run computation)
+   |  TermAtom                                          (atomic term)
 
  TermParam
   ::= '%mto' Type                                       (dummy type parameter)
@@ -214,6 +209,11 @@ Terms
    |  '%rt'  Type                                       (type argument)
    |  '%ri'  Term                                       (implicit term argument)
 
+ TermAtom
+  ::= DataCon                                           (bound data constructor)
+   |  TermLit                                           (primitive term literal)
+   |  TermOp                                            (primitive term operator)
+
  Alt
   ::= '%ae'  Term                                       (alternative with default pattern)
    |  '%au'  Term                                       (alternative with unit pattern)
@@ -221,8 +221,9 @@ Terms
    |  '%ab'  DataCon Bind+ Term                         (alternative with data constructor pattern)
 
  DataCon
-  ::= '%dcn' Maybe[ModuleName] Maybe[Type] Ref          (data constructor name)
-   |  '%dd-Tuple' NAT                                   (tuple type constructor)
+  ::= '%dcn' Maybe[ModuleName] Maybe[Type] Ref          (named data constructor)
+   |  '%dc-unit'                                        (unit data constructor)
+   |  '%dc-tuple' NAT                                   (tuple type constructor)
 
 
 Primitive Term Literals
@@ -245,42 +246,42 @@ Primitive Term Literals
    |  '#f32\'FLOAT'                                     (primitive 32-bit float)
    |  '#f64\'FLOAT'                                     (primitive 64-bit float)
 
-   |  '%l-s' NAT                                        (primitive size literal)
-   |  '%l-c' TEXT                                       (primitive char literal)
-   |  '%l-t' TEXT                                       (primitive text literal)
+   |  '%lt-size' NAT                                         (primitive size literal)
+   |  '%lt-char' TEXT                                        (primitive char literal)
+   |  '%lt-text' TEXT                                        (primitive text literal)
 
  TermOp
-  ::= '%pa-neg-u'                                       (primitive negation)
-   |  '%pa-add-u'                                       (primitive addition)
-   |  '%pa-sub-u'                                       (primitive subtraction)
-   |  '%pa-mul-u'                                       (primitive multiplication)
-   |  '%pa-div-u'                                       (primitive division)
-   |  '%pa-mod-u'                                       (primitive modulus)
-   |  '%pa-rem-u'                                       (primitive remainder)
-   |  '%pa-eq-u'                                        (primitive equality)
-   |  '%pa-neq-u'                                       (primitive negated equality)
-   |  '%pa-gt-u'                                        (primitive greater-than)
-   |  '%pa-ge-u'                                        (primitive greater-than or equal)
-   |  '%pa-lt-u'                                        (primitive less-than)
-   |  '%pa-le-u'                                        (primitive less-than or equal)
-   |  '%pa-and-u'                                       (primitive boolean and)
-   |  '%pa-or-u'                                        (primitive boolean or)
-   |  '%pa-shl-u'                                       (primitive shift left)
-   |  '%pa-shr-u'                                       (primitive shift right)
-   |  '%pa-band-u'                                      (primitive bitwise and)
-   |  '%pa-bor-u'                                       (primitive bitwise or)
-   |  '%pa-bxor-u'                                      (primitive bitwise exclusive or)
+  ::= '%op-neg'                                         (primitive negation)
+   |  '%op-add'                                         (primitive addition)
+   |  '%op-sub'                                         (primitive subtraction)
+   |  '%op-mul'                                         (primitive multiplication)
+   |  '%op-div'                                         (primitive division)
+   |  '%op-mod'                                         (primitive modulus)
+   |  '%op-rem'                                         (primitive remainder)
+   |  '%op-eq'                                          (primitive equality)
+   |  '%op-neq'                                         (primitive negated equality)
+   |  '%op-gt'                                          (primitive greater-than)
+   |  '%op-ge'                                          (primitive greater-than or equal)
+   |  '%op-lt'                                          (primitive less-than)
+   |  '%op-le'                                          (primitive less-than or equal)
+   |  '%op-and'                                         (primitive boolean and)
+   |  '%op-or'                                          (primitive boolean or)
+   |  '%op-shl'                                         (primitive shift left)
+   |  '%op-shr'                                         (primitive shift right)
+   |  '%op-band'                                        (primitive bitwise and)
+   |  '%op-bor'                                         (primitive bitwise or)
+   |  '%op-bxor'                                        (primitive bitwise exclusive or)
 
-   |  '%pc-convert-u'                                   (primitive value conversion)
-   |  '%pc-promote-u'                                   (primitive value promotion)
-   |  '%pc-truncate-u'                                  (primitive value truncation)
+   |  '%op-convert'                                     (primitive value conversion)
+   |  '%op-promote'                                     (primitive value promotion)
+   |  '%op-truncate'                                    (primitive value truncation)
 
-   |  '%ov-alloc-u'                                     (primitive vector allocation)
-   |  '%ov-length-u'                                    (primitive vector length)
-   |  '%ov-read-u'                                      (primitive vector read)
-   |  '%ov-write-u'                                     (primitive vector write)
+   |  '%op-alloc'                                       (primitive vector allocation)
+   |  '%op-length'                                      (primitive vector length)
+   |  '%op-read'                                        (primitive vector read)
+   |  '%op-write'                                       (primitive vector write)
 
-   |  '%oe-error-u'                                     (primitive case inexhaustive error)
+   |  '%op-error-case'                                  (primitive case inexhaustive error)
 
 
 .. _`binary format`:    https://hackage.haskell.org/package/shimmer-0.1.2/docs/SMR-Core-Codec.html

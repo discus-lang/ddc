@@ -450,7 +450,7 @@ fromType c ss
         -- Applications of a data type constructor.
         -- TODO: elim intermediate Bound
         XAps "tu" (ssBound : ssArgs)
-         -> let C.UName n       = fromBound c ssBound
+         -> let C.UName n = fromBound c ssBound
             in  C.tApps (C.TCon $ C.TyConBound n)
                         (map (fromType c) ssArgs)
 
@@ -559,48 +559,48 @@ takeTyCon c ss
          -> Just $ C.TyConExists (fromIntegral n) $ fromType c ssType
 
         -- TyConSort
-        XSym "tsp"      -> Just $ C.TyConSort    C.SoConProp
-        XSym "tsc"      -> Just $ C.TyConSort    C.SoConComp
+        XSym "ts-prop"          -> Just $ C.TyConSort    C.SoConProp
+        XSym "ts-comp"          -> Just $ C.TyConSort    C.SoConComp
 
         -- TyConKind
-        XSym "tkf"      -> Just $ C.TyConKind    C.KiConFun
-        XSym "tkw"      -> Just $ C.TyConKind    C.KiConWitness
-        XSym "tkd"      -> Just $ C.TyConKind    C.KiConData
-        XSym "tkr"      -> Just $ C.TyConKind    C.KiConRegion
-        XSym "tke"      -> Just $ C.TyConKind    C.KiConEffect
-        XSym "tkc"      -> Just $ C.TyConKind    C.KiConClosure
+        XSym "tk-arr"           -> Just $ C.TyConKind    C.KiConFun
+        XSym "tk-witness"       -> Just $ C.TyConKind    C.KiConWitness
+        XSym "tk-data"          -> Just $ C.TyConKind    C.KiConData
+        XSym "tk-region"        -> Just $ C.TyConKind    C.KiConRegion
+        XSym "tk-effect"        -> Just $ C.TyConKind    C.KiConEffect
+        XSym "tk-closure"       -> Just $ C.TyConKind    C.KiConClosure
 
         -- TyConWitness
-        XSym "twl"      -> Just $ C.TyConWitness C.TwConImpl
-        XSym "twp"      -> Just $ C.TyConWitness C.TwConPure
-        XSym "twc"      -> Just $ C.TyConWitness C.TwConConst
-        XSym "twd"      -> Just $ C.TyConWitness C.TwConDeepConst
-        XSym "twm"      -> Just $ C.TyConWitness C.TwConMutable
-        XSym "twv"      -> Just $ C.TyConWitness C.TwConDeepMutable
-        XApp (XSym "twt") [XNat n]
-                        -> Just $ C.TyConWitness $ C.TwConDistinct $ fromIntegral n
-        XSym "twj"      -> Just $ C.TyConWitness $ C.TwConDisjoint
+        XSym "tw-impl"          -> Just $ C.TyConWitness C.TwConImpl
+        XSym "tw-pure"          -> Just $ C.TyConWitness C.TwConPure
+        XSym "tw-const"         -> Just $ C.TyConWitness C.TwConConst
+        XSym "tw-deepconst"     -> Just $ C.TyConWitness C.TwConDeepConst
+        XSym "tw-mutable"       -> Just $ C.TyConWitness C.TwConMutable
+        XSym "tw-deepmutable"   -> Just $ C.TyConWitness C.TwConDeepMutable
+        XApp (XSym "tw-distinct") [XNat n]
+                                -> Just $ C.TyConWitness $ C.TwConDistinct $ fromIntegral n
+        XSym "tw-disjoint"      -> Just $ C.TyConWitness $ C.TwConDisjoint
 
         -- TyConSpec
-        XSym "tcu"      -> Just $ C.TyConSpec    C.TcConUnit
-        XSym "tcf"      -> Just $ C.TyConSpec    C.TcConFunExplicit
-        XSym "tci"      -> Just $ C.TyConSpec    C.TcConFunImplicit
-        XSym "tcs"      -> Just $ C.TyConSpec    C.TcConSusp
+        XSym "tc-unit"          -> Just $ C.TyConSpec    C.TcConUnit
+        XSym "tc-fun"           -> Just $ C.TyConSpec    C.TcConFunExplicit
+        XSym "tc-funi"          -> Just $ C.TyConSpec    C.TcConFunImplicit
+        XSym "tc-susp"          -> Just $ C.TyConSpec    C.TcConSusp
 
-        XApp (XSym "tco") sfs
+        XApp (XSym "tc-record") sfs
          | Just ts <- sequence $ map takeXSym sfs
          -> Just $ C.TyConSpec $ C.TcConRecord ts
 
-        XSym "tcr"      -> Just $ C.TyConSpec    C.TcConRead
-        XSym "tch"      -> Just $ C.TyConSpec    C.TcConHeadRead
-        XSym "tce"      -> Just $ C.TyConSpec    C.TcConDeepRead
-        XSym "tcw"      -> Just $ C.TyConSpec    C.TcConWrite
-        XSym "tcq"      -> Just $ C.TyConSpec    C.TcConDeepWrite
-        XSym "tca"      -> Just $ C.TyConSpec    C.TcConAlloc
-        XSym "tcb"      -> Just $ C.TyConSpec    C.TcConDeepAlloc
+        XSym "tc-read"          -> Just $ C.TyConSpec    C.TcConRead
+        XSym "tc-headread"      -> Just $ C.TyConSpec    C.TcConHeadRead
+        XSym "tc-deepread"      -> Just $ C.TyConSpec    C.TcConDeepRead
+        XSym "tc-write"         -> Just $ C.TyConSpec    C.TcConWrite
+        XSym "tc-deepwrite"     -> Just $ C.TyConSpec    C.TcConDeepWrite
+        XSym "tc-alloc"         -> Just $ C.TyConSpec    C.TcConAlloc
+        XSym "tc-deepalloc"     -> Just $ C.TyConSpec    C.TcConDeepAlloc
 
         -- Soz.
-        _               -> Nothing
+        _                       -> Nothing
 
 
 -- Utils ------------------------------------------------------------------------------------------

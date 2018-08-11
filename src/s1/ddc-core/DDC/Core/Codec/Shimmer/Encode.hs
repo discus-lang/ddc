@@ -306,8 +306,8 @@ takeExp c xx
         -- Con ----
         C.XCon  _ dc
          -> case dc of
-                C.DaConUnit      -> xSym "xdu"
-                C.DaConRecord fs -> xAps "xdr" (map xSym fs)
+                C.DaConUnit      -> xSym "dc-unit"
+                C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
                 C.DaConPrim n    -> configTakeRef c n
                 C.DaConBound n   -> takeDaConBoundName c n
 
@@ -359,10 +359,10 @@ takeExp c xx
         C.XCast _ cc x
          -> case cc of
                 C.CastWeakenEffect eff
-                                -> xAps "xcw" [takeType c eff,  takeExp c x]
-                C.CastPurify w  -> xAps "xcp" [takeWitness c w, takeExp c x]
-                C.CastBox       -> xAps "xcb" [takeExp c x]
-                C.CastRun       -> xAps "xcr" [takeExp c x]
+                                -> xAps "xtw" [takeType c eff,  takeExp c x]
+                C.CastPurify w  -> xAps "xtp" [takeWitness c w, takeExp c x]
+                C.CastBox       -> xAps "xtb" [takeExp c x]
+                C.CastRun       -> xAps "xtr" [takeExp c x]
 
 
 -- Param ------------------------------------------------------------------------------------------
@@ -529,49 +529,49 @@ takeTyCon c tc
 takeSoCon :: C.SoCon -> SExp
 takeSoCon c
  = case c of
-        C.SoConProp             -> xSym "tsp"
-        C.SoConComp             -> xSym "tsc"
+        C.SoConProp             -> xSym "ts-prop"
+        C.SoConComp             -> xSym "ts-comp"
 
 
 takeKiCon :: C.KiCon -> SExp
 takeKiCon c
  = case c of
-        C.KiConFun              -> xSym "tkf"
-        C.KiConWitness          -> xSym "tkw"
-        C.KiConData             -> xSym "tkd"
-        C.KiConRegion           -> xSym "tkr"
-        C.KiConEffect           -> xSym "tke"
-        C.KiConClosure          -> xSym "tkc"
+        C.KiConFun              -> xSym "tk-arr"
+        C.KiConWitness          -> xSym "tk-witness"
+        C.KiConData             -> xSym "tk-data"
+        C.KiConRegion           -> xSym "tk-region"
+        C.KiConEffect           -> xSym "tk-effect"
+        C.KiConClosure          -> xSym "tk-closure"
 
 
 takeTwCon :: C.TwCon -> SExp
 takeTwCon c
  = case c of
-        C.TwConImpl             -> xSym "twl"
-        C.TwConPure             -> xSym "twp"
-        C.TwConConst            -> xSym "twc"
-        C.TwConDeepConst        -> xSym "twd"
-        C.TwConMutable          -> xSym "twm"
-        C.TwConDeepMutable      -> xSym "twv"
-        C.TwConDistinct n       -> xAps "twt" [xNat n]
-        C.TwConDisjoint         -> xSym "twj"
+        C.TwConImpl             -> xSym "tw-impl"
+        C.TwConPure             -> xSym "tw-pure"
+        C.TwConConst            -> xSym "tw-const"
+        C.TwConDeepConst        -> xSym "tw-deepconst"
+        C.TwConMutable          -> xSym "tw-mutable"
+        C.TwConDeepMutable      -> xSym "tw-deepmutable"
+        C.TwConDistinct n       -> xAps "tw-distinct" [xNat n]
+        C.TwConDisjoint         -> xSym "tw-disjoint"
 
 
 takeTcCon :: C.TcCon -> SExp
 takeTcCon c
  = case c of
-        C.TcConUnit             -> xSym "tcu"
-        C.TcConFunExplicit      -> xSym "tcf"
-        C.TcConFunImplicit      -> xSym "tci"
-        C.TcConSusp             -> xSym "tcs"
-        C.TcConRecord ts        -> xAps "tco" (map xSym ts)
-        C.TcConRead             -> xSym "tcr"
-        C.TcConHeadRead         -> xSym "tch"
-        C.TcConDeepRead         -> xSym "tce"
-        C.TcConWrite            -> xSym "tcw"
-        C.TcConDeepWrite        -> xSym "tcq"
-        C.TcConAlloc            -> xSym "tca"
-        C.TcConDeepAlloc        -> xSym "tcb"
+        C.TcConUnit             -> xSym "tc-unit"
+        C.TcConFunExplicit      -> xSym "tc-fun"
+        C.TcConFunImplicit      -> xSym "tc-funi"
+        C.TcConSusp             -> xSym "tc-susp"
+        C.TcConRecord ts        -> xAps "tc-record" (map xSym ts)
+        C.TcConRead             -> xSym "tc-read"
+        C.TcConHeadRead         -> xSym "tc-headread"
+        C.TcConDeepRead         -> xSym "tc-deepread"
+        C.TcConWrite            -> xSym "tc-write"
+        C.TcConDeepWrite        -> xSym "tc-deepwrite"
+        C.TcConAlloc            -> xSym "tc-alloc"
+        C.TcConDeepAlloc        -> xSym "tc-deepalloc"
 
 
 -- Utils ------------------------------------------------------------------------------------------

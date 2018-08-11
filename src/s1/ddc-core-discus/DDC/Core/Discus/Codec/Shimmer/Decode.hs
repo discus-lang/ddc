@@ -37,110 +37,110 @@ takeName ss
         XAps "de" [ssName, XTxt tx]     -> Just $ D.NameExt (fromName ssName) tx
 
         -- TyConDiscus
-        XAps "dt-Tuple" [XNat n]        -> Just $ D.NameTyConDiscus $ D.TyConDiscusTuple (fromI n)
-        XSym "dt-Vector"                -> Just $ D.NameTyConDiscus $ D.TyConDiscusVector
-        XSym "dt-U"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusU
-        XSym "dt-F"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusF
+        XAps "dc-tuple" [XNat n]        -> Just $ D.NameTyConDiscus $ D.TyConDiscusTuple (fromI n)
+        XSym "dc-vector"                -> Just $ D.NameTyConDiscus $ D.TyConDiscusVector
+        XSym "dc-u"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusU
+        XSym "dc-f"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusF
 
         -- DaConDiscus
-        XAps "dd-Tuple" [XNat n]        -> Just $ D.NameDaConDiscus $ D.DaConDiscusTuple $ fromI n
+        XAps "dc-tuple" [XNat n]        -> Just $ D.NameDaConDiscus $ D.DaConDiscusTuple $ fromI n
 
         -- OpError
-        XSym "oe-error-u"               -> Just $ D.NameOpError     D.OpErrorDefault   True
-        XSym "oe-error-b"               -> Just $ D.NameOpError     D.OpErrorDefault   False
+        XSym "op-error-case"            -> Just $ D.NameOpError     D.OpErrorDefault   True
+        XSym "op-error-case-b"          -> Just $ D.NameOpError     D.OpErrorDefault   False
 
         -- OpFun
-        XAps "of-curry"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCurry     $ fromI n
-        XAps "of-apply"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunApply     $ fromI n
-        XSym "of-reify"                 -> Just $ D.NameOpFun       D.OpFunReify
+        XAps "op-curry"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCurry     $ fromI n
+        XAps "op-apply"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunApply     $ fromI n
+        XSym "op-reify"                 -> Just $ D.NameOpFun       D.OpFunReify
 
         -- OpVector
-        XSym "ov-alloc-u"               -> Just $ D.NameOpVector    D.OpVectorAlloc    True
-        XSym "ov-length-u"              -> Just $ D.NameOpVector    D.OpVectorAlloc    True
-        XSym "ov-read-u"                -> Just $ D.NameOpVector    D.OpVectorAlloc    True
-        XSym "ov-write-u"               -> Just $ D.NameOpVector    D.OpVectorAlloc    True
+        XSym "op-alloc"                 -> Just $ D.NameOpVector    D.OpVectorAlloc    True
+        XSym "op-length"                -> Just $ D.NameOpVector    D.OpVectorAlloc    True
+        XSym "op-read"                  -> Just $ D.NameOpVector    D.OpVectorAlloc    True
+        XSym "op-write"                 -> Just $ D.NameOpVector    D.OpVectorAlloc    True
 
-        XSym "ov-alloc-b"               -> Just $ D.NameOpVector    D.OpVectorAlloc    False
-        XSym "ov-length-b"              -> Just $ D.NameOpVector    D.OpVectorAlloc    False
-        XSym "ov-read-b"                -> Just $ D.NameOpVector    D.OpVectorAlloc    False
-        XSym "ov-write-b"               -> Just $ D.NameOpVector    D.OpVectorAlloc    False
+        XSym "op-alloc-b"               -> Just $ D.NameOpVector    D.OpVectorAlloc    False
+        XSym "op-length-b"              -> Just $ D.NameOpVector    D.OpVectorAlloc    False
+        XSym "op-read-b"                -> Just $ D.NameOpVector    D.OpVectorAlloc    False
+        XSym "op-write-b"               -> Just $ D.NameOpVector    D.OpVectorAlloc    False
 
         -- OpInfo
-        XSym "oi-frame-new-u"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew      True
-        XSym "oi-frame-push-u"          -> Just $ D.NameOpInfo      D.OpInfoFramePush     True
-        XSym "oi-frame-add-data-u"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  True
-        XSym "oi-frame-add-super-u"     -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper True
+        XSym "op-frame-new"             -> Just $ D.NameOpInfo      D.OpInfoFrameNew      True
+        XSym "op-frame-push"            -> Just $ D.NameOpInfo      D.OpInfoFramePush     True
+        XSym "op-frame-add-data"        -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  True
+        XSym "op-frame-add-super"       -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper True
 
-        XSym "oi-frame-new-b"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew      False
-        XSym "oi-frame-push-b"          -> Just $ D.NameOpInfo      D.OpInfoFramePush     False
-        XSym "oi-frame-add-data-b"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  False
-        XSym "oi-frame-add-super-b"     -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper False
+        XSym "op-frame-new-b"           -> Just $ D.NameOpInfo      D.OpInfoFrameNew      False
+        XSym "op-frame-push-b"          -> Just $ D.NameOpInfo      D.OpInfoFramePush     False
+        XSym "op-frame-add-data-b"      -> Just $ D.NameOpInfo      D.OpInfoFrameAddData  False
+        XSym "op-frame-add-super-b"     -> Just $ D.NameOpInfo      D.OpInfoFrameAddSuper False
 
         -- PrimTyCon
-        XSym "pt-void"                  -> Just $ D.NamePrimTyCon   D.PrimTyConVoid
-        XSym "pt-bool"                  -> Just $ D.NamePrimTyCon   D.PrimTyConBool
-        XSym "pt-nat"                   -> Just $ D.NamePrimTyCon   D.PrimTyConNat
-        XSym "pt-int"                   -> Just $ D.NamePrimTyCon   D.PrimTyConInt
-        XSym "pt-size"                  -> Just $ D.NamePrimTyCon   D.PrimTyConSize
-        XAps "pt-word"  [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConWord  $ fromI n
-        XAps "pt-float" [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConFloat $ fromI n
-        XAps "pt-vec"   [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConVec   $ fromI n
-        XSym "pt-addr"                  -> Just $ D.NamePrimTyCon   D.PrimTyConAddr
-        XSym "pt-ptr"                   -> Just $ D.NamePrimTyCon   D.PrimTyConPtr
-        XSym "pt-textlit"               -> Just $ D.NamePrimTyCon   D.PrimTyConTextLit
-        XSym "pt-tag"                   -> Just $ D.NamePrimTyCon   D.PrimTyConTag
+        XSym "tc-void"                  -> Just $ D.NamePrimTyCon   D.PrimTyConVoid
+        XSym "tc-bool"                  -> Just $ D.NamePrimTyCon   D.PrimTyConBool
+        XSym "tc-nat"                   -> Just $ D.NamePrimTyCon   D.PrimTyConNat
+        XSym "tc-int"                   -> Just $ D.NamePrimTyCon   D.PrimTyConInt
+        XSym "tc-size"                  -> Just $ D.NamePrimTyCon   D.PrimTyConSize
+        XAps "tc-word"  [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConWord  $ fromI n
+        XAps "tc-float" [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConFloat $ fromI n
+        XAps "tc-vec"   [XNat n]        -> Just $ D.NamePrimTyCon $ D.PrimTyConVec   $ fromI n
+        XSym "tc-addr"                  -> Just $ D.NamePrimTyCon   D.PrimTyConAddr
+        XSym "tc-ptr"                   -> Just $ D.NamePrimTyCon   D.PrimTyConPtr
+        XSym "tc-textlit"               -> Just $ D.NamePrimTyCon   D.PrimTyConTextLit
+        XSym "tc-tag"                   -> Just $ D.NamePrimTyCon   D.PrimTyConTag
 
         -- PrimArith
-        XSym "pa-neg-u"                 -> Just $ D.NamePrimArith   D.PrimArithNeg     True
-        XSym "pa-add-u"                 -> Just $ D.NamePrimArith   D.PrimArithAdd     True
-        XSym "pa-sub-u"                 -> Just $ D.NamePrimArith   D.PrimArithSub     True
-        XSym "pa-mul-u"                 -> Just $ D.NamePrimArith   D.PrimArithMul     True
-        XSym "pa-div-u"                 -> Just $ D.NamePrimArith   D.PrimArithDiv     True
-        XSym "pa-mod-u"                 -> Just $ D.NamePrimArith   D.PrimArithMod     True
-        XSym "pa-rem-u"                 -> Just $ D.NamePrimArith   D.PrimArithRem     True
-        XSym "pa-eq-u"                  -> Just $ D.NamePrimArith   D.PrimArithEq      True
-        XSym "pa-neq-u"                 -> Just $ D.NamePrimArith   D.PrimArithNeq     True
-        XSym "pa-gt-u"                  -> Just $ D.NamePrimArith   D.PrimArithGt      True
-        XSym "pa-ge-u"                  -> Just $ D.NamePrimArith   D.PrimArithGe      True
-        XSym "pa-lt-u"                  -> Just $ D.NamePrimArith   D.PrimArithLt      True
-        XSym "pa-le-u"                  -> Just $ D.NamePrimArith   D.PrimArithLe      True
-        XSym "pa-and-u"                 -> Just $ D.NamePrimArith   D.PrimArithAnd     True
-        XSym "pa-or-u"                  -> Just $ D.NamePrimArith   D.PrimArithOr      True
-        XSym "pa-shl-u"                 -> Just $ D.NamePrimArith   D.PrimArithShl     True
-        XSym "pa-shr-u"                 -> Just $ D.NamePrimArith   D.PrimArithShr     True
-        XSym "pa-band-u"                -> Just $ D.NamePrimArith   D.PrimArithBAnd    True
-        XSym "pa-bor-u"                 -> Just $ D.NamePrimArith   D.PrimArithBOr     True
-        XSym "pa-bxor-u"                -> Just $ D.NamePrimArith   D.PrimArithBXOr    True
+        XSym "op-neg"                   -> Just $ D.NamePrimArith   D.PrimArithNeg     True
+        XSym "op-add"                   -> Just $ D.NamePrimArith   D.PrimArithAdd     True
+        XSym "op-sub"                   -> Just $ D.NamePrimArith   D.PrimArithSub     True
+        XSym "op-mul"                   -> Just $ D.NamePrimArith   D.PrimArithMul     True
+        XSym "op-div"                   -> Just $ D.NamePrimArith   D.PrimArithDiv     True
+        XSym "op-mod"                   -> Just $ D.NamePrimArith   D.PrimArithMod     True
+        XSym "op-rem"                   -> Just $ D.NamePrimArith   D.PrimArithRem     True
+        XSym "op-eq"                    -> Just $ D.NamePrimArith   D.PrimArithEq      True
+        XSym "op-neq"                   -> Just $ D.NamePrimArith   D.PrimArithNeq     True
+        XSym "op-gt"                    -> Just $ D.NamePrimArith   D.PrimArithGt      True
+        XSym "op-ge"                    -> Just $ D.NamePrimArith   D.PrimArithGe      True
+        XSym "op-lt"                    -> Just $ D.NamePrimArith   D.PrimArithLt      True
+        XSym "op-le"                    -> Just $ D.NamePrimArith   D.PrimArithLe      True
+        XSym "op-and"                   -> Just $ D.NamePrimArith   D.PrimArithAnd     True
+        XSym "op-or"                    -> Just $ D.NamePrimArith   D.PrimArithOr      True
+        XSym "op-shl"                   -> Just $ D.NamePrimArith   D.PrimArithShl     True
+        XSym "op-shr"                   -> Just $ D.NamePrimArith   D.PrimArithShr     True
+        XSym "op-band"                  -> Just $ D.NamePrimArith   D.PrimArithBAnd    True
+        XSym "op-bor"                   -> Just $ D.NamePrimArith   D.PrimArithBOr     True
+        XSym "op-bxor"                  -> Just $ D.NamePrimArith   D.PrimArithBXOr    True
 
-        XSym "pa-neg-b"                 -> Just $ D.NamePrimArith   D.PrimArithNeg     False
-        XSym "pa-add-b"                 -> Just $ D.NamePrimArith   D.PrimArithAdd     False
-        XSym "pa-sub-b"                 -> Just $ D.NamePrimArith   D.PrimArithSub     False
-        XSym "pa-mul-b"                 -> Just $ D.NamePrimArith   D.PrimArithMul     False
-        XSym "pa-div-b"                 -> Just $ D.NamePrimArith   D.PrimArithDiv     False
-        XSym "pa-mod-b"                 -> Just $ D.NamePrimArith   D.PrimArithMod     False
-        XSym "pa-rem-b"                 -> Just $ D.NamePrimArith   D.PrimArithRem     False
-        XSym "pa-eq-b"                  -> Just $ D.NamePrimArith   D.PrimArithEq      False
-        XSym "pa-neq-b"                 -> Just $ D.NamePrimArith   D.PrimArithNeq     False
-        XSym "pa-gt-b"                  -> Just $ D.NamePrimArith   D.PrimArithGt      False
-        XSym "pa-ge-b"                  -> Just $ D.NamePrimArith   D.PrimArithGe      False
-        XSym "pa-lt-b"                  -> Just $ D.NamePrimArith   D.PrimArithLt      False
-        XSym "pa-le-b"                  -> Just $ D.NamePrimArith   D.PrimArithLe      False
-        XSym "pa-and-b"                 -> Just $ D.NamePrimArith   D.PrimArithAnd     False
-        XSym "pa-or-b"                  -> Just $ D.NamePrimArith   D.PrimArithOr      False
-        XSym "pa-shl-b"                 -> Just $ D.NamePrimArith   D.PrimArithShl     False
-        XSym "pa-shr-b"                 -> Just $ D.NamePrimArith   D.PrimArithShr     False
-        XSym "pa-band-b"                -> Just $ D.NamePrimArith   D.PrimArithBAnd    False
-        XSym "pa-bor-b"                 -> Just $ D.NamePrimArith   D.PrimArithBOr     False
-        XSym "pa-bxor-b"                -> Just $ D.NamePrimArith   D.PrimArithBXOr    False
+        XSym "op-neg-b"                 -> Just $ D.NamePrimArith   D.PrimArithNeg     False
+        XSym "op-add-b"                 -> Just $ D.NamePrimArith   D.PrimArithAdd     False
+        XSym "op-sub-b"                 -> Just $ D.NamePrimArith   D.PrimArithSub     False
+        XSym "op-mul-b"                 -> Just $ D.NamePrimArith   D.PrimArithMul     False
+        XSym "op-div-b"                 -> Just $ D.NamePrimArith   D.PrimArithDiv     False
+        XSym "op-mod-b"                 -> Just $ D.NamePrimArith   D.PrimArithMod     False
+        XSym "op-rem-b"                 -> Just $ D.NamePrimArith   D.PrimArithRem     False
+        XSym "op-eq-b"                  -> Just $ D.NamePrimArith   D.PrimArithEq      False
+        XSym "op-neq-b"                 -> Just $ D.NamePrimArith   D.PrimArithNeq     False
+        XSym "op-gt-b"                  -> Just $ D.NamePrimArith   D.PrimArithGt      False
+        XSym "op-ge-b"                  -> Just $ D.NamePrimArith   D.PrimArithGe      False
+        XSym "op-lt-b"                  -> Just $ D.NamePrimArith   D.PrimArithLt      False
+        XSym "op-le-b"                  -> Just $ D.NamePrimArith   D.PrimArithLe      False
+        XSym "op-and-b"                 -> Just $ D.NamePrimArith   D.PrimArithAnd     False
+        XSym "op-or-b"                  -> Just $ D.NamePrimArith   D.PrimArithOr      False
+        XSym "op-shl-b"                 -> Just $ D.NamePrimArith   D.PrimArithShl     False
+        XSym "op-shr-b"                 -> Just $ D.NamePrimArith   D.PrimArithShr     False
+        XSym "op-band-b"                -> Just $ D.NamePrimArith   D.PrimArithBAnd    False
+        XSym "op-bor-b"                 -> Just $ D.NamePrimArith   D.PrimArithBOr     False
+        XSym "op-bxor-b"                -> Just $ D.NamePrimArith   D.PrimArithBXOr    False
 
         -- PrimCast
-        XSym "pc-convert-u"             -> Just $ D.NamePrimCast    D.PrimCastConvert  True
-        XSym "pc-promote-u"             -> Just $ D.NamePrimCast    D.PrimCastPromote  True
-        XSym "pc-truncate-u"            -> Just $ D.NamePrimCast    D.PrimCastTruncate True
+        XSym "op-convert"               -> Just $ D.NamePrimCast    D.PrimCastConvert  True
+        XSym "op-promote"               -> Just $ D.NamePrimCast    D.PrimCastPromote  True
+        XSym "op-truncate"              -> Just $ D.NamePrimCast    D.PrimCastTruncate True
 
-        XSym "pc-convert-b"             -> Just $ D.NamePrimCast    D.PrimCastConvert  False
-        XSym "pc-promote-b"             -> Just $ D.NamePrimCast    D.PrimCastPromote  False
-        XSym "pc-truncate-b"            -> Just $ D.NamePrimCast    D.PrimCastTruncate False
+        XSym "op-convert-b"             -> Just $ D.NamePrimCast    D.PrimCastConvert  False
+        XSym "op-promote-b"             -> Just $ D.NamePrimCast    D.PrimCastPromote  False
+        XSym "op-truncate-b"            -> Just $ D.NamePrimCast    D.PrimCastTruncate False
 
         -- PrimLit
         XPrm (S.PrimLitBool b)          -> Just $ D.NameLitBool b
@@ -155,21 +155,21 @@ takeName ss
         XPrm (S.PrimLitFloat32 d)       -> Just $ D.NameLitFloat (realToFrac d) 32
         XPrm (S.PrimLitFloat64 d)       -> Just $ D.NameLitFloat d 64
 
-        XAps "l-s" [XPrm (S.PrimLitNat n)]
+        XAps "lt-size" [XPrm (S.PrimLitNat n)]
                                         -> Just $ D.NameLitSize n
 
-        XAps "l-c" [XTxt tx]
+        XAps "lt-char" [XTxt tx]
          | not $ T.null tx              -> Just $ D.NameLitChar (T.head tx)
 
-        XAps "l-t" [XTxt tx]            -> Just $ D.NameLitTextLit tx
+        XAps "lt-text" [XTxt tx]        -> Just $ D.NameLitTextLit tx
 
-        XAps "l-u" [ssName]
+        XAps "lt-unboxed" [ssName]
          | Just n <- takeName ssName    -> Just $ D.NameLitUnboxed n
 
         -- Hole
-        XSym "dh"                       -> Just $ D.NameHole
+        XSym "hole"                     -> Just $ D.NameHole
 
-        _ -> error "ddc-core-discus.Codec.Shimmer.takeName failed"
+        _ -> error $ "ddc-core-discus.Codec.Shimmer.takeName failed for " ++ show ss
 
 
 pattern XTxt tx    = S.XRef (S.RTxt tx)
