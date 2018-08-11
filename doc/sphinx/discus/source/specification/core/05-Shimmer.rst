@@ -246,9 +246,9 @@ Primitive Term Literals
    |  '#f32\'FLOAT'                                     (primitive 32-bit float)
    |  '#f64\'FLOAT'                                     (primitive 64-bit float)
 
-   |  '%lt-size' NAT                                         (primitive size literal)
-   |  '%lt-char' TEXT                                        (primitive char literal)
-   |  '%lt-text' TEXT                                        (primitive text literal)
+   |  '%lt-size' NAT                                    (primitive size literal)
+   |  '%lt-char' TEXT                                   (primitive char literal)
+   |  '%lt-text' TEXT                                   (primitive text literal)
 
  TermOp
   ::= '%op-neg'                                         (primitive negation)
