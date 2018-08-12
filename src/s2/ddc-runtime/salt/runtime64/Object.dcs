@@ -46,6 +46,8 @@
 --           -- size --  X  X  1  1  -- Small
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
+--           X  X  X  X  X  c  X  X  -- Ref by obj in Compact region flag
+
 --
 --   Compact Region
 --     The 7th bit of the flag is used for the compact region
@@ -78,6 +80,8 @@ export foreign c value
  ddcObjectSizeMinimum   : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectIsAnchored    : [r: Region].     Ptr# r Obj -> Bool#
  ddcObjectInfoIndex     : [r: Region].     Ptr# r Obj -> Word32#
+ ddcObjectRefToCompactRegion : [r: Region]. Ptr# r Obj -> Bool#
+
 
  ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
  ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
@@ -170,6 +174,13 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
           -- Some unknown object.
           _                   -> 0# -- Unknown
 
+ddcObjectRefToCompactRegion [r: Region] (obj: Ptr# r Obj) : Bool#
+ = do -- get the format byte
+        fmt8 = truncate# [Word8#] (peek# [r] [Word64#] (castPtr# obj))
+        case band# fmt8 0b00000100w8# of
+          0b10000100w8# -> True#
+          _             -> False#
+        
 
 --| Get the size of an object.
 ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#

@@ -120,12 +120,13 @@ compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
             ddcPrimStdoutPutTextLit "pass\n"#
             ()
         False#-> do compactRegionTableMax [r1] x2 (add# acc 1#)
+        _ -> do ddcPrimStdoutPutTextLit "try\n"#
 
 
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 1024000#
+        ddcInit 1024#
 
         original = boxWord32 [r1] 0w32#
         

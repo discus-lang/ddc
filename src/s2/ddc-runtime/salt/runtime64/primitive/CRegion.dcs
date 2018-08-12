@@ -3,7 +3,7 @@ module Runtime.Prim.CRegion
 export foreign c value
  ddcPrimCompactRegionAlloc    : Nat# -> Nat#
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- ddcPrimCompactRegionMarkDead : Nat# -> Void#
+ ddcPrimCompactRegionMarkDead : Nat# -> Unit
 
  ddcCompactRegionIsLive: Addr# -> Bool#
 
@@ -40,14 +40,10 @@ ddcPrimCompactRegionAlloc (initSize : Nat#) : Nat#
 -- insert the CRTable
 ddcCompactRegionInsertTable (rawBase : Addr#): Nat#
  = do
+      -- read the address of the CR Table
       tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
       tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
       freeAddr = ddcCompactRegionFindFreeRegionTableSlot tableBase tableMax
-
-      -- ddcPrimStdoutPutTextLit "freeAddr: "#
-      -- ddcPrimStdoutPutNat (truncate# [Nat#] freeAddr)
-
-      -- ddcPrimStdoutPutTextLit "\n"#
 
       case eq# (truncate# [Nat#] freeAddr) 0# of
         True#  -> do  
@@ -56,7 +52,6 @@ ddcCompactRegionInsertTable (rawBase : Addr#): Nat#
         False# -> do  handle = sub# freeAddr tableBase
                       write# freeAddr 0# rawBase 
                       handleNat = (truncate# [Nat#] handle)
-                      -- ddcPrimStdoutPutNat handleNat
                       handleNat
 
 -- extends the CRTable
@@ -65,10 +60,8 @@ ddcCompactRegionExtendsTable (u : Unit): Void#
       tableBaseOld = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
       tableMaxOld = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
       oldSize = truncate# [Nat#] (sub# tableMaxOld tableBaseOld)
+
       newSize = add# oldSize (read# (global# [Nat#] "ddcCRTableSize"#) 0#)
-      -- ddcPrimStdoutPutTextLit "newSize:"#
-      -- ddcPrimStdoutPutNat newSize
-      -- ddcPrimStdoutPutTextLit "\n"#
       tableBaseNew = malloc newSize
       tableMaxNew = plusAddr# tableBaseNew (sub# newSize 1#)
  
@@ -79,7 +72,7 @@ ddcCompactRegionExtendsTable (u : Unit): Void#
       
       
 
--- return -1 when table is full
+-- return 0# when table is full
 -- otherwise return the address of the slot
 ddcCompactRegionFindFreeRegionTableSlot (acc : Addr#) (max : Addr#) : Addr#
  = do 
@@ -110,7 +103,7 @@ ddcPrimCompactRegionStore [r1 r2: Region] (handle : Nat#) (pVal : Ptr# r1 Obj) :
                                   makePtr# (ddcCompactRegionResizeStore handle regionRawBase regionMax regionTop pVal)
 
 -- set the flag to mark compact region dead
-ddcPrimCompactRegionMarkDead (handle : Nat#) : Void#
+ddcPrimCompactRegionMarkDead (handle : Nat#) : Unit
  = do handleValid = ddcCompactRegionHandleValidation handle
       case handleValid of
         False# 
@@ -120,8 +113,8 @@ ddcPrimCompactRegionMarkDead (handle : Nat#) : Void#
                 regionRawBase = read# [Addr#] tableBase handle
                 flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 0#)
                 write# regionRawBase 0# (band# flag8 0b01111111w8#) 
+                ()
                 
-
 
 ddcCompactRegionResizeStore [r1 : Region] 
                               (handle : Nat#)
