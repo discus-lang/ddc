@@ -1,0 +1,18 @@
+
+module Main
+import System.IO.Console
+import Class.Show
+import Data.Numeric.Nat
+import Data.Function
+import Data.CompactRegion
+where
+
+
+main ()
+ = private r with { Alloc r; Read r; Write r } in
+   do   
+      cr = allocCR [r] 1024
+      myVal = storeCR cr 2048
+      writel $ "value  = " % (show myVal)
+      deleteCR cr
+
