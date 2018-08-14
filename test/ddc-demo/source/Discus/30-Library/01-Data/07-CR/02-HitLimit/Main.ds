@@ -7,20 +7,20 @@ import Data.Function
 import Data.CompactRegion
 where
 
--- try to hit the limit of compact region
--- to test if the cr will extend it self.
 
-hitLimit [r : Region] (handle : CR r Nat) (acc : Nat) : Unit
- = do 
-      case (acc < 2048) of
-        True  -> storeCR handle 1
-                 hitLimit cr (acc + 1)
-        False -> ()
+hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat 
+  = case (acc < 10) of
+      True  ->  do 
+                  val = storeCR cr acc
+                  writel (show val)
+                  hitLimit cr (acc + 1)
+      False ->  acc
+       
 
 main ()
  = private r with { Alloc r; Read r; Write r } in
    do   
-      cr = allocCR [r] 1024
-      hitLimit [r] cr 0
+      cr = allocCR {@r} 1024
+      acc = hitLimit cr 0
       deleteCR cr
 
