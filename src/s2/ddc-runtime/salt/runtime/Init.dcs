@@ -38,9 +38,7 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
  = do
         -- Initialize the heap.
         ddcAllocInit   defaultHeapSize
-        -- Initialize statistics module
-        ddcStatsInit ()
-
+       
         -- Create refs for the object info table, and initialize the static portion.
         --   The allocatable info table indices start from 1,
         --   reserving 0 as a sentinal value to mean "no index available".
@@ -56,7 +54,8 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionFile"#)    0# (promote# 0#)
         write# [Addr#]   (globali# [Addr#]   "ddcRuntimeHookExceptionNetwork"#) 0# (promote# 0#)
 
-
+        -- Initialize statistics module
+        ddcStatsInit ()
         ()
 
 

@@ -46,7 +46,7 @@ import foreign c value
 with letrec
 
 -- macro to read from global
-ddcStatsIsEnable (u: Unit) : Bool#
+ddcReadStatsEnableGlobal (u: Unit) : Bool#
  = do
       read# (global# [Bool#] "ddcStatsEnable"#) 0#
 
@@ -57,7 +57,7 @@ ddcStatsAllocationOnChange (allocSize : Nat#) : Unit
 
 ddcStatsOnGCStart (u : Unit) : Unit
  = do 
-      case ddcStatsIsEnable () of
+      case ddcReadStatsEnableGlobal () of
         True# -> do
           diff = sub# [Nat#] (read# (global# [Addr#] "ddcHeapTop"#) 0# )  (read# (global# [Addr#] "ddcHeapLastTop"#) 0# )
           aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
@@ -70,7 +70,7 @@ ddcStatsOnGCStart (u : Unit) : Unit
 ddcStatsOnGCEnd (u : Unit) : Unit
  = do
        -- increment the GC counter
-      case ddcStatsIsEnable () of
+      case ddcReadStatsEnableGlobal () of
         True# -> do
           aCurrSize = add# ( read# (global# [Nat#] "ddcStatsGCCycles"#) 0# ) 1#
           write# (global# [Nat#] "ddcStatsGCCycles"#)      0# aCurrSize
@@ -83,7 +83,7 @@ ddcStatsOnGCEnd (u : Unit) : Unit
 
 ddcStatsOnTerminate( u : Unit) : Unit
  = do 
-      case ddcStatsIsEnable () of
+      case ddcReadStatsEnableGlobal () of
         True# -> do
           diff = sub# (global# [Addr#] "ddcHeapTop"#) (global# [Addr#] "ddcHeapBase"#)
           aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
@@ -94,7 +94,10 @@ ddcStatsOnTerminate( u : Unit) : Unit
 
 ddcIsStatsEnable (u: Unit): Bool#
  = do
-      ddcCheckStatsArgs (ddcPrimEnvGetRuntimeArgCount ())
+      -- ddcPrimStdoutPutNat (1#)
+      -- False#
+      argc = ddcPrimEnvGetRuntimeArgCount ()
+      ddcCheckStatsArgs argc
 
 
 ddcCheckStatsArgs (argc : Nat#) :  Bool#
@@ -115,7 +118,7 @@ ddcCheckStatsArgs (argc : Nat#) :  Bool#
 
 ddcStatsPrint (u : Unit) : Unit
  = do
-      case ddcStatsIsEnable () of
+      case ddcReadStatsEnableGlobal () of
         True#
           -> do
                 ddcPrimStderrPutTextLit "* DDC-Runtime Statistics \n"#
