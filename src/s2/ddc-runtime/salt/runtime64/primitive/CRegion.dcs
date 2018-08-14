@@ -14,10 +14,12 @@ import foreign c value
  ddcBoxedGetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
  ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
  ddcObjectSize    : [r1    : Region]. Ptr# r1 Obj  -> Nat#
+ ddcObjectSetCompactRegionFlag : [r: Region]. Ptr# r Obj -> Bool# -> Unit
+
+
  ddcPrimStdoutPutNat : Nat# -> Void#
  ddcPrimStdoutPutAddr : Addr# -> Void#
  ddcPrimStdoutPutTextLit : TextLit#   -> Void#
- ddcPerformGC : Unit -> Unit
 
 with letrec
 
@@ -160,8 +162,11 @@ ddcCompactRegionUnsafeDirectStore [r1 : Region]
       top = read# rawBase 0#
       -- do the copy
       copy# top rawObjAddr (ddcObjectSize pVal)
+      -- set the CR flag
+      ddcObjectSetCompactRegionFlag [r1] (makePtr# top) True#
       -- update top
       write# rawBase 0# (plusAddr# top (ddcObjectSize pVal))
+      
       top
 
 -- macro to write a header

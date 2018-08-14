@@ -43,8 +43,9 @@ import foreign c value
   ddcLlvmRootIsEnd      : Addr# -> Bool#
   ddcLlvmRootGetStart   : Nat#  -> Addr#
 
-  ddcCompactRegionIsLive: Addr# -> Bool#
-
+  ddcObjectIsInCompactRegion:  Addr# -> Bool#
+  ddcCompactRegionIsLive : Addr# -> Bool#
+  
   ddcPrimStdoutPutString : TextLit# -> Void#
   ddcPrimStdoutPutAddr : Addr# -> Void#
 
@@ -236,7 +237,9 @@ ddcEvacuateObject
 
                 -- This is a real object in the from-space,
                 -- so evacuate it to the to-space.
-                False#  -> ddcEvacuateCopy aaBackTop aObj
+                False#  -> case ddcObjectIsInCompactRegion aObj of
+                              True#  -> aObj 
+                              False# -> ddcEvacuateCopy aaBackTop aObj
 
 
 -- | Copy a single object from the from-space to the to-space.
