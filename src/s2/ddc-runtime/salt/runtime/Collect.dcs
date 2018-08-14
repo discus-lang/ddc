@@ -284,22 +284,23 @@ ddcCollectCompactRegionTableIter
       case gt# (plusAddr# tableBase acc) tableMax of
         True# -> ()
         False# -> do
-          ddcCollectCompactRegion rawBase
+          ddcCollectCompactRegion rawBase (plusAddr# tableBase acc)
           ddcCollectCompactRegionTableIter tableBase tableMax (add# acc 8#)
           ()
 
       
 ddcCollectCompactRegion
-        ( rawBase   :   Addr# )
-                    :   Unit
+        ( rawBase        :   Addr# )
+        ( tableEntryAddr : Addr#)
+                         :   Unit
  = do
-      -- ddcPrimStdoutPutString " * GC Free Base CR :"#
-      -- ddcPrimStdoutPutAddr rawBase
-      -- ddcPrimStdoutPutString "\n"#
       case (ddcCompactRegionIsLive rawBase) of
-        True# -> do free rawBase -- TODO: refs
+        True# -> do ()
+        False#-> do -- free the actual memory
+                    free rawBase
+                    -- delete it from the table
+                    write# tableEntryAddr 0# 0#
                     ()
-        False#-> do ()
 
 -- Scan functions ---------------------------------------------------------------------------------
 --   "Scanning" means to look at the other objects this one points to and also

@@ -9,7 +9,7 @@ where
 
 
 hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat 
-  = case (acc < 10) of
+  = case (acc < 2048) of
       True  ->  do 
                   val = storeCR cr acc
                   writel (show val)

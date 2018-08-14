@@ -28,7 +28,7 @@ with letrec
 
 ddcCompactRegionDebug (u : Unit) : Bool#
  = do 
-      True#
+      False#
 
 ddcCompactRegionDebugPrint (msg : TextLit#) : Unit
   = do
@@ -161,7 +161,7 @@ ddcCompactRegionResizeStore [r1 : Region]
                               (pVal : Ptr# r1 Obj )
                               : Addr#
   = do  freeSize = sub# max top
-        case lt# (ddcObjectSize pVal) (truncate# [Nat#] freeSize) of
+        case lt# (ddcObjectSize pVal) (promote# [Nat#] freeSize) of
           False# 
             -> do newSize = mul# (truncate# [Nat#] (sub# max rawBase)) 2# --TODO: a better strategy
                   rawBaseNew = malloc newSize
@@ -226,8 +226,7 @@ ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
 -- otherwise false
 ddcCompactRegionIsLive (regionBase : Addr#) : Bool#
  = do   case eq# (truncate# [Nat#] regionBase) 0# of
-          True#  -> do ddcCompactRegionDebugPrint "live: addr eq0 \n"#
-                       False#
+          True#  -> do False#
           False# -> do
                 flag8  = truncate# [Word8#] (read# [Addr#] regionBase 16#)
                 case band# flag8 0b0000001w8# of
