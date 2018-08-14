@@ -77,7 +77,7 @@ void ddcSeaStatsShowTimeDiff(){
   Node* node = timeList;
   while(node != NULL){
     TimeDiff* diff = (TimeDiff*)(node->data);
-    fprintf(stderr,",%d", diff->end.tv_usec - diff->start.tv_usec);
+    fprintf(stderr,",%lu", (unsigned long)(diff->end.tv_usec - diff->start.tv_usec));
     node = node->next;
   }
   fprintf(stderr, "\n");
