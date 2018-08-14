@@ -1,0 +1,29 @@
+module Data.CompactRegion
+export { allocCR; storeCR; deleteCR }
+
+import foreign boxed type
+ CR       : Region -> Data
+
+import foreign c value
+
+ ddcPrimCompactRegionAlloc    : {@r : Region} -> Nat -> S (Alloc r) (CR r)
+ ddcPrimCompactRegionStore    : {@r : Region} -> {@a: Data} -> CR r-> a -> S (Write r) a
+ ddcPrimCompactRegionMarkDead : {@r : Region} -> CR r -> S (Write r) Unit
+
+where
+
+
+allocCR {@r : Region}
+        (x  : Nat)
+        : S (Alloc r) (CR r)
+ =      ddcPrimCompactRegionAlloc {@r} x
+
+storeCR {@r : Region} {@a: Data} 
+        (cr : CR r) (x: a)
+        : S (Write r) a
+ =      ddcPrimCompactRegionStore {@r} cr x
+
+deleteCR {@r : Region} 
+         (x : CR r) 
+         :  S (Write r) Unit
+ =       ddcPrimCompactRegionMarkDead {@r} x

@@ -51,7 +51,8 @@ baseSeaFiles _builder
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Parse.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Show.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Text.c"
-        , "ddc-runtime" </> "sea" </> "runtime" </> "Collect.c" ]
+        , "ddc-runtime" </> "sea" </> "runtime" </> "Collect.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "Stats.c" ]
 
 
 -- Buid the base libraries and runtime system.
