@@ -10,7 +10,7 @@ where
 main ()
  = private r with { Alloc r; Read r; Write r } in
    do   
-      cr = allocCR 1024
+      cr = allocCR {@r} 1024
       myVal = storeCR cr 2048
       writel $ "value  = " % (show myVal)
 

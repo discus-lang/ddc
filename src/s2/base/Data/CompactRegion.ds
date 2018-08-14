@@ -2,43 +2,28 @@ module Data.CompactRegion
 export { allocCR; storeCR; deleteCR }
 
 import foreign boxed type
- CR       :  Data
+ CR       : Region -> Data
 
 import foreign c value
 
- ddcPrimCompactRegionAlloc    : Nat# -> CR
- ddcPrimCompactRegionStore    : {@a: Data} -> CR -> a -> a
- ddcPrimCompactRegionMarkDead : CR -> Unit
+ ddcPrimCompactRegionAlloc    : {@r : Region} -> Nat# -> S (Alloc r) (CR r)
+ ddcPrimCompactRegionStore    : {@r : Region} -> {@a: Data} -> CR r-> a -> S (Write r) a
+ ddcPrimCompactRegionMarkDead : {@r : Region} -> CR r -> S (Write r) Unit
 
 where
 
 
-allocCR 
-        (x: Nat#)
-        : CR
- =      ddcPrimCompactRegionAlloc x
+allocCR {@r : Region}
+        (x  : Nat#)
+        : S (Alloc r) (CR r)
+ =      ddcPrimCompactRegionAlloc {@r} x
 
-storeCR {@a: Data} 
-        (cr: CR) (x: a)
-        : a
- =      ddcPrimCompactRegionStore cr x
+storeCR {@r : Region} {@a: Data} 
+        (cr : CR r) (x: a)
+        : S (Write r) a
+ =      ddcPrimCompactRegionStore {@r} cr x
 
-deleteCR (x : CR) 
-         : Unit
- =       ddcPrimCompactRegionMarkDead x
-
-
--- allocCR {@r: Region} 
---         (x: Nat#)
---         : S (Alloc r) (CR r Nat#)
---  =      ddcPrimCompactRegionAlloc {@r} x
-
--- storeCR {@r: Region} {@a: Data} 
---         (cr: CR r Nat#) (x: a)
---         : S (Write r) a
---  =      ddcPrimCompactRegionStore cr x
-
--- deleteCR {@r: Region} 
---          (x : CR r Nat# ) 
---          : S (Write r) Unit
---  =       ddcPrimCompactRegionMarkDead x
+deleteCR {@r : Region} 
+         (x : CR r) 
+         :  S (Write r) Unit
+ =       ddcPrimCompactRegionMarkDead {@r} x
