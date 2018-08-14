@@ -7,7 +7,9 @@ import Data.Function
 import Data.CompactRegion
 where
 
-
+-- The compact region will automatically 
+-- extends itself when no sufficient memory left in that compact region
+-- This demos a region with 1024 bytes avaliable, then self-extends to a larger chunk of memory
 hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat 
   = case (acc < 2048) of
       True  ->  do 
