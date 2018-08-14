@@ -5,7 +5,7 @@ export foreign c value
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
  ddcPrimCompactRegionMarkDead : Nat# -> Unit
 
- ddcCompactRegionIsLive: Addr# -> Bool#
+ ddcCompactRegionIsLive       : Addr# -> Bool#
 
 import foreign c value
  malloc           : Nat#  -> Addr#
@@ -18,22 +18,54 @@ import foreign c value
 
 
  ddcPrimStdoutPutNat : Nat# -> Void#
+ ddcPrimStderrPutNat : Nat# -> Void#
  ddcPrimStdoutPutAddr : Addr# -> Void#
+ ddcPrimStderrPutAddr : Addr# -> Void#
  ddcPrimStdoutPutTextLit : TextLit#   -> Void#
+ ddcPrimStderrPutTextLit : TextLit#   -> Void#
 
 with letrec
+
+ddcCompactRegionDebug (u : Unit) : Bool#
+ = do 
+      True#
+
+ddcCompactRegionDebugPrint (msg : TextLit#) : Unit
+  = do
+      case ddcCompactRegionDebug () of
+        True# -> do ddcPrimStderrPutTextLit msg
+                    ()
+        False# -> ()
+
+ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
+  = do 
+      case ddcCompactRegionDebug () of
+        True# -> do ddcPrimStderrPutTextLit "CR-> Base: "#
+                    ddcPrimStderrPutAddr rawBase
+                    ddcPrimStderrPutTextLit "| Top: "#
+                    ddcPrimStderrPutAddr (read# [Addr#] rawBase 0#)
+                    ddcPrimStderrPutTextLit "| Max: "#
+                    ddcPrimStderrPutAddr (read# [Addr#] rawBase 8#)
+                    ddcPrimStderrPutTextLit "| Size: "#
+                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) (read# [Addr#] rawBase 0#)))
+                    ddcPrimStderrPutTextLit "| Flag: "#
+                    ddcPrimStderrPutAddr (read# [Addr#] rawBase 16#)
+                    ddcPrimStderrPutTextLit "\n"#
+
+                    ()
+        _ -> ()
+        
 
 -- return a region handle
 ddcPrimCompactRegionAlloc (initSize : Nat#) : Nat#
  = do   
       -- create CR and header
       rawBase = malloc initSize
-      -- HEADER SIZE
       ddcCompactRegionConstructHeader 
                         rawBase 
-                        (plusAddr# rawBase 17#)  -- top
+                        (plusAddr# rawBase 32#)  -- top
                         (plusAddr# rawBase initSize) -- max
-                        0b10000000w8# -- flags
+                        0b0000001w8# -- flags
 
 
       -- insert into the table
@@ -93,16 +125,19 @@ ddcPrimCompactRegionStore [r1 r2: Region] (handle : Nat#) (pVal : Ptr# r1 Obj) :
         handleValid = ddcCompactRegionHandleValidation handle
         case handleValid of
           False# 
-            -> do fail# --invalid handle
+            ->  do ddcCompactRegionDebugPrint "Invalid Region handle!"#
+                   fail# --invalid handle
           True#
             -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
                   regionRawBase = read# [Addr#] tableBase handle
-                  isDead = ddcCompactRegionIsLive regionRawBase
-                  case isDead of
-                    True#  -> fail# 
-                    False# -> do  regionMax = read# [Addr#] regionRawBase 8#
-                                  regionTop = read# [Addr#] regionRawBase 0#
-                                  makePtr# (ddcCompactRegionResizeStore handle regionRawBase regionMax regionTop pVal)
+                  ddcPrintCompactRegionHeader regionRawBase
+                  isLive = ddcCompactRegionIsLive regionRawBase
+                  case isLive of
+                    False# -> do ddcCompactRegionDebugPrint "Access dead region\n"#
+                                 fail# 
+                    True# -> do regionMax = read# [Addr#] regionRawBase 8#
+                                regionTop = read# [Addr#] regionRawBase 0#
+                                makePtr# (ddcCompactRegionResizeStore handle regionRawBase regionMax regionTop pVal)
 
 -- set the flag to mark compact region dead
 ddcPrimCompactRegionMarkDead (handle : Nat#) : Unit
@@ -184,18 +219,19 @@ ddcCompactRegionConstructHeader
 ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
   = do 
       -- HEADER SIZE
-      plusAddr# rawBase 17#
+      plusAddr# rawBase 32#
 
 
 -- return true if the compact region is live
 -- otherwise false
 ddcCompactRegionIsLive (regionBase : Addr#) : Bool#
  = do   case eq# (truncate# [Nat#] regionBase) 0# of
-          True#  -> False#
+          True#  -> do ddcCompactRegionDebugPrint "live: addr eq0 \n"#
+                       False#
           False# -> do
-                flag8  = truncate# [Word8#] (read# [Addr#] regionBase 0#)
-                case band# flag8 0b10000000w8# of
-                  0b10000000w8# -> True#
+                flag8  = truncate# [Word8#] (read# [Addr#] regionBase 16#)
+                case band# flag8 0b0000001w8# of
+                  0b00000001w8# -> True#
                   _             -> False#
 
 -- return true if handle is valid
@@ -206,25 +242,3 @@ ddcCompactRegionHandleValidation (handle : Nat#) : Bool#
         tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
         tableSize = truncate# [Nat#] (sub# tableMax tableBase)
         lt# handle tableSize
-
-
--- iteratingOverRegionList (base : Addr#) (max : Addr#) (target : Addr#) : Unit
---  = do    
---         case ge# base max of 
---           True#
---             -> ()
---           False#
---             -> do 
---                   offset = read# [Nat#] base 8# 
---                   case gt# target base  of
---                     True#
---                       -> do
---                             case le# target (plusAddr# base offset) of
---                               True#
---                                 -> do
---                                       write# [Word8#] base 16# (bor# 0b10000000w8# (read# [Word8#] base 16#))
---                                       ()
---                               False#
---                                 -> iteratingOverRegionList (plusAddr# base 17#) max target
---                     False#
---                       -> do iteratingOverRegionList (plusAddr# base 17#) max target
