@@ -61,11 +61,28 @@ Obj*            ddcPrimShowWord64               (uint64_t  val);
 Obj*            ddcPrimShowFloat32              (float32_t val);
 Obj*            ddcPrimShowFloat64              (float64_t val);
 
+// -- Sha256 --------------------------------------------------------------------------------------
+struct sha256_state;
+struct sha256_state *ddcPrimSha256Begin         ();
+void            ddcPrimSha256PushWord8          (struct sha256_state *state, uint8_t  w8);
+void            ddcPrimSha256PushWord64         (struct sha256_state *state, uint64_t w64);
+void            ddcPrimSha256PushTextLit        (struct sha256_state *state, Obj* obj);
+void            ddcPrimSha256PushVector8        (struct sha256_state *state, Obj* obj);
+void            ddcPrimSha256ProcessChunk       (struct sha256_state *state);
+Obj*            ddcPrimSha256Eject              (struct sha256_state *state);
+
+
 // -- Text ----------------------------------------------------------------------------------------
-Obj*            ddcTextVecVPrintf               (const char* fmt, va_list ap);
-Obj*            ddcTextVecPrintf                (const char* fmt, ...);
+Obj*            ddcTextVecVPrintf               (const char *fmt, va_list ap);
+Obj*            ddcTextVecPrintf                (const char *fmt, ...);
+
+Obj*            ddcPrimMakeTextLit              (uint8_t *str);
+uint8_t*        ddcPrimTakeTextLit              (Obj* obj);
+nat_t           ddcPrimSizeOfTextLit            (Obj* obj);
+
 
 // -- Vector --------------------------------------------------------------------------------------
+nat_t           ddcPrimVectorLength             (Obj*  vec);
 Obj*            ddcPrimVectorAlloc8             (nat_t len);
 uint8_t*        ddcPrimVectorPayload8           (Obj*  vec);
 

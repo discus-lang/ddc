@@ -1,0 +1,100 @@
+
+module Math.Crypto.Sha256
+export sha256_hashText
+       sha256_begin
+       sha256_pushWord8; sha256_pushWord64; sha256_pushText
+       sha256_eject
+
+import Control.Exception
+import Data.Numeric.Word8
+import Data.Maybe
+import Data.Text
+import Data.Ref
+
+-- TODO: Assign effects to these on import, rather than weakeff in the wrappers.
+import foreign c value
+ ddcPrimSha256Begin             : Unit  -> Addr#
+ ddcPrimSha256PushWord8         : Addr# -> Word8#  -> Void#
+ ddcPrimSha256PushWord64        : Addr# -> Word64# -> Void#
+ ddcPrimSha256PushTextLit       : Addr# -> TextLit -> Void#
+ ddcPrimSha256PushVector8       : {@r: Region} -> Addr# -> Vector# r Word8# -> Void#
+ ddcPrimSha256Eject             : {@r: Region} -> Addr# -> Vector# r Word8#
+
+where
+
+
+-- | Wrapper for the hasher state.
+--   Once the stream is ejected the contained value is set to Nothing,
+--   as pushing more data will not produce a valid hash.
+data Sha256State (r: Region)
+        = Sha256State (Ref r (Maybe Addr#))
+
+
+-- | Allocate a new hasher state.
+sha256_begin: S (Alloc r) (Sha256State r)
+ = box weakeff Alloc r in
+   do   addr    = ddcPrimSha256Begin ()
+        ref     = allocRef {@r} (Just addr)
+        Sha256State ref
+
+
+-- | Push a Word8 into a hash stream.
+sha256_pushWord8 (state: Sha256State r) (w8: Word8): S (Read r + Write r) Unit
+ = box weakeff Write r in
+   match
+        | Sha256State ref <- state
+        , Just addr       <- readRef ref
+        = do ddcPrimSha256PushWord8 addr w8; ()
+
+        | otherwise
+        = fail "sha256_pushWord8: hash stream is closed."
+
+
+-- | Push a Word64 into a hash stream.
+sha256_pushWord64 (state: Sha256State r) (w64: Word64): S (Read r + Write r) Unit
+ = box weakeff Write r in
+   match
+        | Sha256State ref <- state
+        , Just addr       <- readRef ref
+        = do ddcPrimSha256PushWord64 addr w64; ()
+
+        | otherwise
+        = fail "sha256_pushWord64: hash stream is closed."
+
+
+-- | Push a text value into a hash stream.
+--
+--   This hashes the flat text data, ignoring the structure of append constructors.
+sha256_pushText (state: Sha256State r) (tx: Text): S (Read r + Write r) Unit
+ = box weakeff Write r in
+   match
+        | Sha256State ref <- state
+        , Just addr       <- readRef ref
+        = case tx of
+                TextLit lit     -> do ddcPrimSha256PushTextLit addr lit; ()
+                TextVec vec     -> do ddcPrimSha256PushVector8 addr vec; ()
+                TextApp t1 t2   -> do sha256_pushText state t1; sha256_pushText state t2
+
+
+-- | Eject the completed hash value and deallocate the hasher state.
+--   After the state has been ejected, further push or eject actions will fail.
+sha256_eject (state: Sha256State r): S (Read r + Write r) (Vector# r Word8#)
+ = box weakeff Write r in
+   match
+        | Sha256State ref <- state
+        , Just addr       <- readRef ref
+        = ddcPrimSha256Eject addr
+
+        | otherwise
+        = fail "sha256_eject: hash stream is closed."
+
+
+-- | Hash the flat data in a text value.
+sha256_hashText (tx: Text): S (Alloc r) (Vector# r Word8#)
+ = extend r using mutable r2 in
+   do   state   = sha256_begin {@r2}
+        sha256_pushText state tx
+        sha256_eject state
+
+
+

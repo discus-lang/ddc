@@ -1,0 +1,64 @@
+
+module Main
+import Math.Crypto.Sha256
+import System.IO.Console
+import Data.Text.Numeric
+import Data.Numeric
+import Class.Show
+where
+
+vector8_forS (vec: Vector# r Word8) (f: Word8 -> S e Unit) : S (Read r + e) Unit
+ = vector8_forS_loop vec f 0 (vectorLength# vec)
+
+-- TODO: should be able to inline this into the above in a 'where' binding.
+vector8_forS_loop
+        (vec: Vector# r Word8)
+        (f: Word8 -> S e Unit)
+        (ix: Nat) (len: Nat): S (Read r + e) Unit
+ | ix >= len    = ()
+ | otherwise
+ = do   x       = vectorRead# vec ix
+        f x
+        vector8_forS_loop vec f (ix + 1) len
+
+
+writeHash (tx: Text): S Console Unit
+ = constant r in
+   do   hash    = sha256_hashText {@r} tx
+
+        vector8_forS hash $ λx
+         -> do  write (showBaseNat 16 digitHex 2 '0' $ promote# x)
+                write " "
+
+        writel $ ": " % (show tx)
+
+main ()
+ = do
+        -- Hash the first few NESSIE test vectors.
+        --
+        -- https://www.cosic.esat.kuleuven.be/
+        --     nessie/testvectors/hash/sha/Sha-2-256.unverified.test-vectors
+        --
+
+        -- e3 b0 .. b8 55
+        writeHash ""
+
+        -- ca 97 .. 48 bb
+        writeHash "a"
+
+        -- ba 78 .. 15 ad
+        writeHash "abc"
+
+        -- f7 84 .. b6 50
+        writeHash "message digest"
+
+        -- 7a c4 .. 8b 73
+        writeHash "abcdefghijklmnopqrstuvwxyz"
+
+        -- TODO: this is broken, we get a chunk assertion failure.
+        -- the code to go to the next chunk will be broken.
+--         writeHash "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+
+
+
+
