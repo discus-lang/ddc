@@ -218,13 +218,13 @@ ddcPrimCompactRegionMarkDead [r1 : Region]  (handle : Nat#) : Unit
                 ()
 
 ddcCompactRegionMarkObjectFree [r1 : Region] (curr : Addr#) (max : Addr#) : Unit
- = do case le# curr max of 
+ = do case ge# curr max of 
         True#  -> ()
         False# -> do -- mark current obj free
                      size = ddcObjectSize [r1] (makePtr# curr)
                      ddcObjectSetCompactRegionFlag [r1] (makePtr# curr) False#
                      -- set next object free
-                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr size) max      
+                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr (add# size 1#)) max      
                 
 
 -- inline function to write a header
