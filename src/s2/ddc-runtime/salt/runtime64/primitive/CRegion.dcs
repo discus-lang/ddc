@@ -3,7 +3,7 @@ module Runtime.Prim.CRegion
 export foreign c value
  ddcPrimCompactRegionAlloc    : Nat# -> Nat#
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- ddcPrimCompactRegionMarkDead : Nat# -> Unit
+ ddcPrimCompactRegionMarkDead : [r1 : Region]. Nat# -> Unit
 
  ddcCompactRegionIsLive       : Addr# -> Bool#
 
@@ -201,7 +201,7 @@ ddcCompactRegionUnsafeDirectStore [r1 : Region]
       top
 
 --| set the flag to mark compact region dead
-ddcPrimCompactRegionMarkDead (handle : Nat#) : Unit
+ddcPrimCompactRegionMarkDead [r1 : Region]  (handle : Nat#) : Unit
  = do handleValid = ddcCompactRegionHandleValidation handle
       case handleValid of
         False# 
@@ -209,11 +209,22 @@ ddcPrimCompactRegionMarkDead (handle : Nat#) : Unit
         True#
           -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
                 regionRawBase = read# [Addr#] tableBase handle
-
+                
                 flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 0#)
                 -- mark compact region dead by set the flag
                 write# regionRawBase 0# (band# flag8 0b11111110w8#) 
+                -- mark each object 'free' from life cycle constraints
+                ddcCompactRegionMarkObjectFree [r1] (ddcCompactRegionRawBaseToBase regionRawBase) (read# [Addr#] regionRawBase 0#)
                 ()
+
+ddcCompactRegionMarkObjectFree [r1 : Region] (curr : Addr#) (max : Addr#) : Unit
+ = do case le# curr max of 
+        True#  -> ()
+        False# -> do -- mark current obj free
+                     size = ddcObjectSize [r1] (makePtr# curr)
+                     ddcObjectSetCompactRegionFlag [r1] (makePtr# curr) False#
+                     -- set next object free
+                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr size) max      
                 
 
 -- inline function to write a header
