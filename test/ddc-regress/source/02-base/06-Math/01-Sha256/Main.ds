@@ -7,6 +7,28 @@ import Data.Numeric
 import Class.Show
 where
 
+
+loop (vec: Vector# r Word8): S (Read r + e) Word8
+ = go (vectorLength# vec) 0w8 0
+ where
+        go len acc ix
+         | ix >= len    = box weakeff Read r + e in acc
+         | otherwise    = go len (acc + vectorRead# vec ix) (ix + 1)
+
+{-
+ where
+
+        go ix len
+         | ix >= len
+         = box weakeff Read r + e in ()
+
+         | otherwise
+         = do   x       = vectorRead# vec ix
+                f x
+                go (ix + 1) len
+-}
+
+
 vector8_forS
   (vec: Vector# r Word8) (f: Word8 -> S e Unit) : S (Read r + e) Unit
  = vector8_forS_loop vec f 0 (vectorLength# vec)
