@@ -7,7 +7,8 @@ import Data.Numeric
 import Class.Show
 where
 
-vector8_forS (vec: Vector# r Word8) (f: Word8 -> S e Unit) : S (Read r + e) Unit
+vector8_forS
+  (vec: Vector# r Word8) (f: Word8 -> S e Unit) : S (Read r + e) Unit
  = vector8_forS_loop vec f 0 (vectorLength# vec)
 
 -- TODO: should be able to inline this into the above in a 'where' binding.
@@ -51,14 +52,12 @@ main ()
 
         -- f7 84 .. b6 50
         writeHash "message digest"
+        writeHash $ "message" %% "digest"
+        writeHash $ "mes" % "sage" %% "dig" % "est"
 
         -- 7a c4 .. 8b 73
         writeHash "abcdefghijklmnopqrstuvwxyz"
 
-        -- TODO: this is broken, we get a chunk assertion failure.
-        -- the code to go to the next chunk will be broken.
---         writeHash "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
-
-
-
+        -- 24 8d .. 06 c1
+        writeHash "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
 

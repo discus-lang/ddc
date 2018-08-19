@@ -86,7 +86,7 @@ void ddcPrimSha256PushWord8
 {
         // If we don't have space in the current chunk then compress
         // the existing data into the hash.
-        if (state->ixChunk + 1 >= CHUNK_LENGTH)
+        if (state->ixChunk >= CHUNK_LENGTH)
                 ddcPrimSha256ProcessChunk(state);
 
         // Add the new byte to the chunk.
@@ -227,7 +227,7 @@ Obj* ddcPrimSha256Eject
         uint64_t lenUserMessage = state->lenMessage;
 
         // Append a single 1 bit.
-        ddcPrimSha256PushWord8(state, 0x80);
+        ddcPrimSha256PushWord8_inline(state, 0x80);
 
         // Number of bytes of space remaining in the chunk.
         size_t lenSpace = CHUNK_LENGTH - state->ixChunk;
@@ -243,7 +243,7 @@ Obj* ddcPrimSha256Eject
 
         // Push the padding on to the end of the chunk.
         for (size_t i = 0; i < lenPad; i++)
-                ddcPrimSha256PushWord8(state, 0);
+                ddcPrimSha256PushWord8_inline(state, 0);
 
         // Push the length field.
         ddcPrimSha256PushWord64(state, lenUserMessage * 8);
