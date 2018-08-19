@@ -1,0 +1,59 @@
+
+module Runtime.Hash
+
+export foreign c value
+ ddcHashObject                  : [r: Region]. Addr# -> Ptr# r Obj -> Unit
+ ddcPrimSha256PushWord64        : Addr# -> Word64# -> Unit
+
+import foreign c value
+ ddcObjectFormat                : [r: Region]. Ptr# r Obj -> Nat#
+
+ ddcBoxedTag                    : [r: Region]. Ptr# r Obj -> Tag#
+ ddcBoxedFields                 : [r: Region]. Ptr# r Obj -> Nat#
+ ddcBoxedGetField               : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+ ddcPrimSha256PushWord64        : Addr# -> Word64# -> Void#
+
+
+with letrec
+
+
+-- | Hash an arbitrary heap object.
+--   This examines the tag of the object to determine what sort it is,
+--   then calls the scan function specific to that object.
+ddcHashObject
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = case ddcObjectFormat pObj of
+          0# -> fail#   -- unknown object.
+          1# -> fail#   -- broken heart.
+          2# -> fail#   -- thunk
+          3# -> ddcHashBoxed aHashState pObj
+          4# -> fail#   -- raw
+          5# -> fail#   -- mixed
+          6# -> fail#   -- small
+          _  -> fail#   -- invalid format
+
+
+-- | Hash a boxed object.
+ddcHashBoxed
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = do   tag     = ddcBoxedTag pObj
+        nFields = ddcBoxedFields pObj
+
+        ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff03w64#)
+        ddcPrimSha256PushWord64 aHashState (promote# tag)
+        ddcPrimSha256PushWord64 aHashState (promote# nFields)
+        ddcHashBoxed_fields aHashState pObj nFields 0#
+
+ddcHashBoxed_fields
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj)
+        (nFields ix: Nat#): Unit
+ = case ge# ix nFields of
+        True#   -> ()
+        False#  -> do
+                ddcHashObject [r] aHashState (ddcBoxedGetField pObj ix)
+                ddcHashBoxed_fields aHashState pObj nFields (add# ix 1#)
+

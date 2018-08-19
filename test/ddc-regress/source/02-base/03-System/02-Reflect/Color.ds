@@ -1,0 +1,10 @@
+
+module Color where
+
+data Color where
+        Red     : Color
+        Green   : Color
+        Blue    : Color
+        Light   : Color -> Color
+        Dark    : Color -> Color
+        Blend   : Color -> Color -> Color
