@@ -1,0 +1,48 @@
+
+module Main
+import Math.Crypto.Sha256
+import System.IO.Console
+import System.Runtime.Reflect
+import Data.Text.Numeric
+import Data.Numeric
+import Data.Vector
+import Class.Show
+where
+
+
+main ()
+ = do
+        -- Hash the primitive types.
+        writeHash ()
+        writeHash "i am text"
+        writeHash True
+        writeHash 5
+        writeHash 5i
+        writeHash 0x12w8
+        writeHash 0x1234w16
+        writeHash 0x12345678w32
+        writeHash 0x1234567887654321w64
+        writeHash $ promote# {@Addr#} 1234
+
+        -- Hash boxed data.
+        writeHash $ ()
+        writeHash $ Cons 1 (Cons 2 (Cons 3 Nil))
+        writeHash $ (1, 2, 3, 4)
+
+        -- The generic object hasher sees the internal structure of text objects.
+        writeHash $ "split message"
+        writeHash $ "split" %% "message"
+
+        -- TODO: Hash a thunk
+        -- writeHash $ box fac 5
+
+
+writeHash {@a: Data} (x: a): S (Reify + Console) Unit
+ = constant r in
+   do   writel  $ (vector8_show $ sha256_hashObject {@r} x)
+        writell $ (show $ reflect_toValue x)
+
+
+fac : Nat -> Nat
+fac 0 = 1
+fac n = n * fac (n - 1)
