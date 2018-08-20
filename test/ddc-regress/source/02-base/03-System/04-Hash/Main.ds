@@ -46,3 +46,4 @@ writeHash {@a: Data} (x: a): S (Reify + Console) Unit
 fac : Nat -> Nat
 fac 0 = 1
 fac n = n * fac (n - 1)
+
