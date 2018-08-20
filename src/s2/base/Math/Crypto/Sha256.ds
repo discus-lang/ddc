@@ -1,10 +1,12 @@
 
 module Math.Crypto.Sha256
-export sha256_hashText
+export sha256_hashText;  sha256_hashObject
        sha256_begin
        sha256_pushWord8; sha256_pushWord64; sha256_pushText
+       sha256_pushObject
        sha256_eject
 
+import System.Runtime.Reflect
 import Control.Exception
 import Data.Numeric.Word8
 import Data.Maybe
@@ -19,6 +21,8 @@ import foreign c value
  ddcPrimSha256PushTextLit       : Addr# -> TextLit -> Void#
  ddcPrimSha256PushVector8       : {@r: Region} -> Addr# -> Vector# r Word8# -> Void#
  ddcPrimSha256Eject             : {@r: Region} -> Addr# -> Vector# r Word8#
+
+ ddcPrimHashObject              : {@a: Data} -> Addr# -> a -> Void#
 
 where
 
@@ -95,6 +99,37 @@ sha256_hashText (tx: Text): S (Alloc r) (Vector# r Word8#)
    do   state   = sha256_begin {@r2}
         sha256_pushText state tx
         sha256_eject state
+
+
+-- | Push an arbitrary object into a hash stream.
+--
+--   Doing this directly inspects the runtime object representation,
+--   and thus has a Reify effect.
+sha256_pushObject (state: Sha256State r) (x: a)
+        : S (Reify + Read r + Write r) Unit
+ = box weakeff Reify + Read r + Write r in
+   match
+        | Sha256State ref <- state
+        , Just addr       <- readRef ref
+        = do    ddcPrimHashObject addr x
+                ()
+
+        | otherwise
+        = fail "sha256_pushObject: hash stream is closed."
+
+
+-- | Hash an arbitrary object.
+--
+--   Doing this directly inspects the runtime object representation,
+--   and thus has a Reify effect.
+sha256_hashObject
+        {@r: Region} {@a: Data}
+        (x: a): S (Reify + Alloc r) (Vector# r Word8#)
+ = extend r using mutable r2 in
+   do   state   = sha256_begin {@r2}
+        sha256_pushObject state x
+        sha256_eject state
+
 
 
 

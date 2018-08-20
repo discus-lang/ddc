@@ -1,0 +1,43 @@
+
+module Data.Vector
+export vector8_forS
+       vector8_show
+import Class.Show
+import Data.Text.Numeric
+import Data.Numeric
+import Data.Ref
+where
+
+
+vector8_forS
+        (vec: Vector# r Word8) (f: Word8 -> S e Unit) : S (Read r + e) Unit
+ = vector8_forS_loop vec f 0 (vectorLength# vec)
+
+-- TODO: should be able to inline this into the above in a 'where' binding.
+vector8_forS_loop
+        (vec: Vector# r Word8)
+        (f: Word8 -> S e Unit)
+        (ix: Nat) (len: Nat): S (Read r + e) Unit
+ | ix >= len    = ()
+ | otherwise
+ = do   x       = vectorRead# vec ix
+        f x
+        vector8_forS_loop vec f (ix + 1) len
+
+
+-- | Show a vector of Word8s.
+vector8_show (vec: Vector# r Word8): S (Read r) Text
+ = mutable rr in
+   do   ref     = allocRef {@rr} ""
+        refIx   = allocRef {@rr} 0
+
+        vector8_forS vec $ λx
+         -> do  tx      = showBaseNat 16 digitHex 2 '0' $ promote# x
+
+                if readRef refIx == 0
+                 then modifyRef ref (\tx' -> tx' %  tx)
+                 else modifyRef ref (\tx' -> tx' %% tx)
+
+                modifyRef refIx (\i -> i + 1)
+
+        "[v8|" % readRef ref % "]"
