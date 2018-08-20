@@ -22,7 +22,9 @@ war.failed
 war-std
 war-opt
 Main.dump*
-doc
+doc/haddock-core
+doc/sphinx/discus/build
+doc/sphinx/shimmer/build
 log
 tmp
 bin

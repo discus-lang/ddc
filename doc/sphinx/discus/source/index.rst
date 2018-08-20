@@ -47,8 +47,9 @@ Documentation
    :maxdepth: 1
 
    section/01-GettingStarted.rst
-   section/02-Specification.rst
-   section/03-Release.rst
+   section/02-Tutorial.rst
+   section/03-Specification.rst
+   section/04-Release.rst
 
 
 More Information
