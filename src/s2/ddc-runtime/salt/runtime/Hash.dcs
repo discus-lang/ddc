@@ -1,0 +1,132 @@
+
+module Runtime.Hash
+
+export foreign c value
+ ddcPrimHashObject              : [r: Region]. Addr# -> Ptr# r Obj -> Unit
+ ddcPrimSha256PushWord64        : Addr# -> Word64# -> Unit
+
+import foreign c value
+ ddcObjectFormat                : [r: Region]. Ptr# r Obj -> Nat#
+ ddcObjectInfoIndex             : [r: Region]. Ptr# r Obj -> Word32#
+
+ ddcBoxedTag                    : [r: Region]. Ptr# r Obj -> Tag#
+ ddcBoxedFields                 : [r: Region]. Ptr# r Obj -> Nat#
+ ddcBoxedGetField               : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+ ddcSmallPayload                : [r: Region]. Ptr# r Obj -> Ptr# r Word8#
+ ddcSmallPayloadSize            : [r: Region]. Ptr# r Obj -> Nat#
+
+ ddcPrimSha256PushWord8         : Addr# -> Word8# -> Void#
+ ddcPrimSha256PushWord64        : Addr# -> Word64# -> Void#
+ ddcPrimSha256PushTextLit       : [r: Region]. Addr# -> Ptr# r Obj -> Void#
+
+ ddcPrimStderrPutString         : TextLit# -> Void#
+ ddcPrimStderrPutNat            : Nat# -> Void#
+
+with letrec
+
+
+-------------------------------------------------------------------------------
+-- | Hash an arbitrary heap object.
+--   This examines the tag of the object to determine what sort it is,
+--   then calls the scan function specific to that object.
+ddcPrimHashObject
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = case ddcObjectFormat pObj of
+          0# -> fail#   -- unknown object.
+          1# -> fail#   -- broken heart.
+          2# -> ddcPrimHashThunk aHashState pObj
+          3# -> ddcPrimHashBoxed aHashState pObj
+          4# -> ddcPrimHashRaw   aHashState pObj
+          5# -> fail#   -- mixed
+          6# -> ddcPrimHashSmall aHashState pObj
+
+          _ -> do
+                ddcPrimStderrPutString "ddcPrimHashObject: invalid format "#
+                ddcPrimStderrPutNat    (ddcObjectFormat pObj)
+                ddcPrimStderrPutString "\n"#
+                fail#   -- invalid format
+
+
+-------------------------------------------------------------------------------
+-- | Hash a thunk.
+ddcPrimHashThunk
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = do
+        fail#
+
+
+-------------------------------------------------------------------------------
+-- | Hash a boxed object.
+ddcPrimHashBoxed
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = do
+        tag     = ddcBoxedTag pObj
+        nFields = ddcBoxedFields pObj
+
+        -- TODO: we need to add the hash of the data constructor,
+        -- from the info table, as we don't want all ctor that are first
+        -- in the data type definition to be hashed the same way.
+        ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff03w64#)
+        ddcPrimSha256PushWord64 aHashState (promote# tag)
+        ddcPrimSha256PushWord64 aHashState (promote# nFields)
+        ddcPrimHashBoxed_fields aHashState pObj nFields 0#
+
+ddcPrimHashBoxed_fields
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj)
+        (nFields ix: Nat#): Unit
+ = case ge# ix nFields of
+        True#   -> ()
+        False#  -> do
+                ddcPrimHashObject [r] aHashState (ddcBoxedGetField pObj ix)
+                ddcPrimHashBoxed_fields aHashState pObj nFields (add# ix 1#)
+
+
+-------------------------------------------------------------------------------
+-- | Hash a raw object.
+ddcPrimHashRaw
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = do
+        wInfo   = ddcObjectInfoIndex pObj
+        ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff04w64#)
+        ddcPrimSha256PushWord64 aHashState (promote# wInfo)
+
+        case wInfo of
+         2w32#  -> do ddcPrimSha256PushTextLit aHashState pObj; ()
+         _      -> fail#
+
+
+-------------------------------------------------------------------------------
+-- | Hash a small object.
+ddcPrimHashSmall
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
+ = do
+        wInfo   = ddcObjectInfoIndex pObj
+        ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff06w64#)
+        ddcPrimSha256PushWord64 aHashState (promote# wInfo)
+
+        ddcPrimHashSmallGeneric_loop
+                aHashState (ddcSmallPayload pObj)
+                (ddcSmallPayloadSize pObj) 0#
+
+
+ddcPrimHashSmallGeneric_loop
+        [r: Region]
+        (aHashState: Addr#) (pPayload: Ptr# r Word8#)
+        (nLength:    Nat#)  (ix: Nat#): Unit
+ = case ge# ix nLength of
+        True#   -> ()
+        False#  -> do
+                ddcPrimSha256PushWord8
+                        aHashState
+                        (peek# (plusPtr# pPayload ix))
+
+                ddcPrimHashSmallGeneric_loop
+                        aHashState pPayload nLength (add# ix 1#)
+

@@ -25,7 +25,7 @@ with letrec
 
 -- | Allocate a boxed object to hold a raw unboxed value.
 allocRawLocal [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
- = do 
+ = do
         -- Size of the heap object.
         -- For general objects we use a 64-bit header so that a 64-bit
         -- payload will still be aligned.
@@ -116,11 +116,9 @@ compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
 
       ddcPrimCompactRegionMarkDead handle
       case gt# acc 1024# of
-        True# -> do
-            ddcPrimStdoutPutTextLit "pass\n"#
-            ()
-        False#-> do compactRegionTableMax [r1] x2 (add# acc 1#)
-        _ -> do ddcPrimStdoutPutTextLit "try\n"#
+        True#   -> do ddcPrimStdoutPutTextLit "pass\n"#; ()
+        False#  -> do compactRegionTableMax [r1] x2 (add# acc 1#)
+        _       -> do ddcPrimStdoutPutTextLit "try\n"#; ()
 
 
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
@@ -129,9 +127,9 @@ main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 1024# 0#
 
         original = boxWord32 [r1] 0w32#
-        
+
         compactRegionTableMax [r1] original 0#
-        
+
         -- Return success.
         0i#
 

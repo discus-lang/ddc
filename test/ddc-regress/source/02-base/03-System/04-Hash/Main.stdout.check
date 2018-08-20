@@ -1,0 +1,45 @@
+[v8|5f 57 7a 7d ea 18 9c e1 34 91 f4 dd 66 de 4e f6 55 3f 42 50 d7 d1 82 92 25 d3 2d 81 9e 12 e6 2a]
+()
+
+[v8|22 a2 01 e3 97 e1 cb c2 b5 a7 f9 d6 e7 e0 c3 80 13 d7 6d 95 0e 4e fd 48 51 23 ef 87 57 45 4b fe]
+"i am text"
+
+[v8|6a c9 a9 a9 db 10 a6 34 de 3e 9e 69 33 35 40 95 c6 34 0e fb 31 d1 78 fd dd 24 8f 9a 52 74 4f 29]
+True
+
+[v8|f9 69 b8 bf ff 9f 48 d2 c2 97 fc ee ca ff 46 8f 00 2e c4 7d 79 35 65 6e 16 28 87 dc 2e 2a b3 bb]
+5
+
+[v8|d1 e1 1c 97 e5 b2 bf 5a de 83 27 0d 4a 08 be 24 2a 53 12 89 4b 9c b2 7b d6 09 31 9b 9c 18 58 0f]
++5
+
+[v8|4f d8 15 5e 63 8b 92 e4 79 92 7b 00 d0 50 99 3f f2 52 03 8b d8 b1 78 cf 78 e8 a3 b0 3f 99 31 2a]
+18'w8
+
+[v8|78 4d 5b 72 90 65 35 02 ce 39 22 d7 48 91 5d 91 ae a0 85 39 f3 54 55 b7 82 1f 99 66 46 df fd 99]
+4660'w16
+
+[v8|a3 f6 b2 51 32 a1 f0 31 ae bc 24 bf 1c 2d 39 61 48 e9 86 45 45 80 36 fc 4b cf 30 8a 4c 34 38 24]
+305419896'w32
+
+[v8|e5 88 21 ff c4 17 76 e4 56 9e 5b 7e 98 c5 8b d4 a7 53 69 64 ed 5d fa db 88 ee ef e3 a0 8b 64 e9]
+1311768467139281697'w64
+
+[v8|4b 5a f3 bb da 8c 91 a9 7d 8e 20 5d 17 34 41 49 c2 66 e5 33 58 74 c2 68 99 16 ea ac 1b 12 30 a0]
+0x4d2'a
+
+[v8|5f 57 7a 7d ea 18 9c e1 34 91 f4 dd 66 de 4e f6 55 3f 42 50 d7 d1 82 92 25 d3 2d 81 9e 12 e6 2a]
+()
+
+[v8|0d 7d a4 fd 87 21 e6 7d 07 4c c5 2d 42 6e 82 35 03 76 b0 d8 43 c5 1b af b3 2e b3 65 19 33 be 73]
+(Data.List.Cons 1 (Data.List.Cons 2 (Data.List.Cons 3 Data.List.Nil)))
+
+[v8|ae 77 87 fa 65 58 d3 1c 00 58 c0 bc 47 50 bf 9a 67 ce c0 bb 3f a5 26 1c 59 ca 68 07 cd 85 f9 a3]
+(Data.Tuple.T4 1 2 3 4)
+
+[v8|e2 b5 80 bf bd 0c 0c 4f ad dd 8f 75 a0 16 56 be bb 5f 2b 51 8c c2 3b e8 32 71 87 63 0b 03 1c 96]
+"split message"
+
+[v8|76 17 f4 0c 89 ce 58 59 b2 e4 3b cb a0 01 43 fd d3 54 6b e2 f6 ae 48 ba 05 32 e1 10 b0 65 ea 8c]
+"split message"
+
