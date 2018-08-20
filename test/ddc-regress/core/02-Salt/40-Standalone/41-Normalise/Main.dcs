@@ -63,7 +63,7 @@ fac [r : Region] (x: Ptr# r Obj) : Ptr# r Obj
 
 
 main [r : Region] (argc : Nat#) (argv : Ptr# r (Ptr# r Word8#)) : Int#
- = do { ddcInit 4096# 1024#;
+ = do { ddcInit 4096# 0#;
         x       = boxWord32 [r] 10w32#;
         str     = ddcPrimShowInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));
         ddcPrimStdoutPutVector [r] str;

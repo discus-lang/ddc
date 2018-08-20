@@ -10,7 +10,7 @@ export foreign c value
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
-        ddcInit                 : Nat# -> Unit
+        ddcInit                 : Nat# -> Nat# -> Unit
         ddcPrimStdoutPutTextLit : TextLit#     -> Void#
 
 with letrec
@@ -19,7 +19,7 @@ with letrec
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit     4096#
+        ddcInit     4096# 0#
 
         -- Print the greeting.
         ddcPrimStdoutPutTextLit "Hello World\n"#

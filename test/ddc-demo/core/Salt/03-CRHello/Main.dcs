@@ -11,7 +11,7 @@ export foreign c value
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
-        ddcInit                 : Nat# -> Unit
+        ddcInit                 : Nat# -> Nat# -> Unit
         ddcPrimShowInt          : [r: Region]. Int# -> Ptr# r Obj
         ddcPrimStdoutPutVector  : [r: Region]. Ptr# r Obj -> Void#
         ddcPrimStdoutPutTextLit : TextLit#   -> Void#
@@ -104,7 +104,7 @@ fac [r1: Region] (x: Ptr# r1 Obj): Ptr# r1 Obj
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 4096#
+        ddcInit 4096# 0#
 
         original = boxWord32 [r1] 10w32#
         

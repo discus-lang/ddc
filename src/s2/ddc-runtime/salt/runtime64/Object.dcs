@@ -46,9 +46,11 @@
 --           -- size --  X  X  1  1  -- Small
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
+--           X  X  X  X  X  c  X  X  -- Ref by obj in Compact region flag
+
 --
 --   Compact Region
---     The 7th bit of the flag is used for the compact region
+--     The 2nd bit of the flag is used for the compact region
 --     if the flag is set, the garbage collector will stop tracing the object
 --     and assume any reference from it will keep live.
 --   Data GC Forwarding / Broken-Heart pointers.
@@ -77,7 +79,9 @@ export foreign c value
  ddcObjectSize          : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectSizeMinimum   : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectIsAnchored    : [r: Region].     Ptr# r Obj -> Bool#
+ ddcObjectIsInCompactRegion : [r: Region]. Ptr# r Obj -> Bool#
  ddcObjectInfoIndex     : [r: Region].     Ptr# r Obj -> Word32#
+ ddcObjectSetCompactRegionFlag : [r: Region]. Ptr# r Obj -> Bool# -> Unit
 
  ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
  ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
@@ -173,6 +177,28 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
           -- Some unknown object.
           _                   -> 0# -- Unknown
 
+
+-- | Check if an object is in the Compact Region. CR objects are allocated outside of
+--   the DDC heap and will be left alone by the garbage collector if the compact region is live.
+ddcObjectIsInCompactRegion [r: Region] (obj: Ptr# r Obj): Bool#
+ = do   -- Get the format byte from the header.
+        fmt8    = truncate# [Word8#] [Word64#] (peek# (castPtr# obj))
+
+        -- Bit 2 tells us if the object is in the compact region.
+        case band# fmt8 0b0100w8# of
+          0b0100w8# -> True#
+          _         -> False#
+
+ddcObjectSetCompactRegionFlag [r: Region] (obj : Ptr# r Obj) (flag: Bool#) : Unit
+ = do
+        fmt =  peek# (castPtr# obj)
+        case flag of
+          True#  -> do 
+                      write# (takePtr# obj) 0# (bor# fmt (promote# [Word64#] 0b0100w8#))
+                      ()
+          False# -> do 
+                      write# (takePtr# obj) 0# (band# fmt (promote# [Word64#] 0b1011w8#))
+                      ()
 
 --| Get the size of an object.
 ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#

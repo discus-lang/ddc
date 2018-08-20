@@ -112,19 +112,19 @@ void ddcPrimStderrPutVector (Obj* obj)
 
 // Print a pointer.
 void ddcPrimStderrPutAddr (void* ptr)
-{       printf("%p", ptr);
+{       fprintf(stderr,"%p", ptr);
         fflush(stderr);
 }
 
 // Print a Word32 to stdout.
 void ddcPrimStderrPutWord32 (uint32_t val)
-{       printf("%#04" PRIx32, val);
+{       fprintf(stderr,"%#04" PRIx32, val);
         fflush(stderr);
 }
 
 // Print a Word64 to stdout.
 void ddcPrimStderrPutWord64 (uint64_t val)
-{       printf("%#08" PRIx64, val);
+{       fprintf(stderr,"%#08" PRIx64, val);
         fflush(stderr);
 }
 

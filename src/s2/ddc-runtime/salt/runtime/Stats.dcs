@@ -8,10 +8,12 @@ export foreign c value
     ddcStatsOnGCEnd : Unit -> Unit
     -- | call on ddc before GC Cycle 
     ddcStatsOnGCStart : Unit -> Unit
-    -- | ddc print stats
+    -- | ddc stats print result
     ddcStatsPrint : Unit -> Unit
-    -- | ddc rutnime terminination
+    -- | ddc stats terminination
     ddcStatsOnTerminate : Unit -> Unit
+    --| check runtime args if the stats is enable
+    ddcIsStatsEnable : Unit -> Bool#
 
 import foreign abstract type
         RegionText      : Region
@@ -31,10 +33,22 @@ import foreign c value
         ddcPrimEnvGetRuntimeArgVal     : Nat# -> TextLit#
         ddcPrimTakeTextLit     : TextLit# -> Addr#
         ddcPrimSizeOfTextLit   : TextLit# -> Nat#
+        
+        ddcPrimEnvGetRuntimeArgCount   : Unit -> Nat#
+        
+        -- for the time
+        ddcSeaStatsGCStart : Unit -> Void#
+        ddcSeaStatsGCEnd : Unit -> Void#
+        ddcSeaStatsShowTimeDiff : Unit -> Void#
+
 
 
 with letrec
 
+-- macro to read from global
+ddcReadStatsEnableGlobal (u: Unit) : Bool#
+ = do
+      read# (global# [Bool#] "ddcStatsEnable"#) 0#
 
 ddcStatsAllocationOnChange (allocSize : Nat#) : Unit
  = do
@@ -43,29 +57,50 @@ ddcStatsAllocationOnChange (allocSize : Nat#) : Unit
 
 ddcStatsOnGCStart (u : Unit) : Unit
  = do 
-       diff = sub# [Nat#] (read# (global# [Addr#] "ddcHeapTop"#) 0# )  (read# (global# [Addr#] "ddcHeapLastTop"#) 0# )
-       aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
-      -- increment the Total allocated counter
-       write# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# aCurrSize
-       u
+      case ddcReadStatsEnableGlobal () of
+        True# -> do
+          diff = sub# [Nat#] (read# (global# [Addr#] "ddcHeapTop"#) 0# )  (read# (global# [Addr#] "ddcHeapLastTop"#) 0# )
+          aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
+          -- increment the Total allocated counter
+          write# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# aCurrSize
+          ddcSeaStatsGCStart ()
+          u
+        False# -> u
 
 ddcStatsOnGCEnd (u : Unit) : Unit
  = do
        -- increment the GC counter
-       aCurrSize = add# ( read# (global# [Nat#] "ddcStatsGCCycles"#) 0# ) 1#
-       write# (global# [Nat#] "ddcStatsGCCycles"#)      0# aCurrSize
-       heapTop = read# (global# [Addr#] "ddcHeapTop"# )   0#
-       write# [Addr#] (global# [Addr#] "ddcHeapLastTop"#)  0#  heapTop
-       u
+      case ddcReadStatsEnableGlobal () of
+        True# -> do
+          aCurrSize = add# ( read# (global# [Nat#] "ddcStatsGCCycles"#) 0# ) 1#
+          write# (global# [Nat#] "ddcStatsGCCycles"#)      0# aCurrSize
+          heapTop = read# (global# [Addr#] "ddcHeapTop"# )   0#
+          write# [Addr#] (global# [Addr#] "ddcHeapLastTop"#)  0#  heapTop
+          ddcSeaStatsGCEnd ()
+          u
+        False# -> do
+          u
 
 ddcStatsOnTerminate( u : Unit) : Unit
  = do 
-       diff = sub# (global# [Addr#] "ddcHeapTop"#) (global# [Addr#] "ddcHeapBase"#)
-       aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
-       write# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# aCurrSize
-       u
+      case ddcReadStatsEnableGlobal () of
+        True# -> do
+          diff = sub# (global# [Addr#] "ddcHeapTop"#) (global# [Addr#] "ddcHeapBase"#)
+          aCurrSize = add# ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# ) diff
+          write# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# aCurrSize
+          u
+        False# -> u
 
-ddcShouldPrintStats (argc : Nat#) :  Bool#
+
+ddcIsStatsEnable (u: Unit): Bool#
+ = do
+      -- ddcPrimStdoutPutNat (1#)
+      -- False#
+      argc = ddcPrimEnvGetRuntimeArgCount ()
+      ddcCheckStatsArgs argc
+
+
+ddcCheckStatsArgs (argc : Nat#) :  Bool#
  = do 
       case eq# argc 0# of
         True#
@@ -73,48 +108,47 @@ ddcShouldPrintStats (argc : Nat#) :  Bool#
         False#
           -> do 
                 val = ddcPrimEnvGetRuntimeArgVal (sub# argc 1#)
-                -- ddcPrimStderrPutTextLit val
-                -- ddcPrimStderrPutTextLit "\n"#
                 case eq# (ddcTextVecCompare val "enableStats"#) 0# of
                   True#
                     -> do True#
                   False#
-                    -> do ddcShouldPrintStats (sub# argc 1#)
+                    -> do ddcCheckStatsArgs (sub# argc 1#)
                 
 
 
 ddcStatsPrint (u : Unit) : Unit
  = do
-        argc = read# [Nat#]  (global# [Nat#]  "ddcGlobalEnvArgCount"#)      0# 
-        case ddcShouldPrintStats argc of
-          True#
-            -> do
-                  ddcPrimStderrPutTextLit "* DDC-Runtime Statistics \n"#
+      case ddcReadStatsEnableGlobal () of
+        True#
+          -> do
+                ddcPrimStderrPutTextLit "* DDC-Runtime Statistics \n"#
 
-                  -- total bytes allocated not working atm bc not hooking into runtime allocation functions right now.
-                  ddcPrimStderrPutTextLit "  - Total Bytes Allocated : "#
-                  strTotalBytesAllocated    =  ddcPrimShowNat ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# )
-                  ddcPrimStderrPutVector strTotalBytesAllocated
-                  ddcPrimStderrPutTextLit "\n"#
+                -- total bytes allocated not working atm bc not hooking into runtime allocation functions right now.
+                ddcPrimStderrPutTextLit "  - Total Bytes Allocated : "#
+                strTotalBytesAllocated    =  ddcPrimShowNat ( read# (global# [Nat#] "ddcStatsTotalAllocated"#) 0# )
+                ddcPrimStderrPutVector strTotalBytesAllocated
+                ddcPrimStderrPutTextLit "\n"#
 
-                  ddcPrimStderrPutTextLit "  - Front Memory Usage : "#
-                  ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapTop"#) 0#) (read# (global# [Addr#] "ddcHeapBase"#) 0#) ) )
-                  ddcPrimStderrPutTextLit "/"#
-                  ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapMax"#) 0#) (read# (global# [Addr#] "ddcHeapBase"#) 0#) ) )
-                  ddcPrimStderrPutTextLit "\n"#
+                ddcPrimStderrPutTextLit "  - Front Memory Usage : "#
+                ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapTop"#) 0#) (read# (global# [Addr#] "ddcHeapBase"#) 0#) ) )
+                ddcPrimStderrPutTextLit "/"#
+                ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapMax"#) 0#) (read# (global# [Addr#] "ddcHeapBase"#) 0#) ) )
+                ddcPrimStderrPutTextLit "\n"#
 
-                  ddcPrimStderrPutTextLit "  - Back Memory Usage  : "#
-                  ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapBackTop"#) 0#) (read# (global# [Addr#] "ddcHeapBackBase"#) 0#) ) )
-                  ddcPrimStderrPutTextLit "/"#
-                  ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapBackMax"#) 0#) (read# (global# [Addr#] "ddcHeapBackBase"#) 0#) ) )
-                  ddcPrimStderrPutTextLit "\n"#
+                ddcPrimStderrPutTextLit "  - Back Memory Usage  : "#
+                ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapBackTop"#) 0#) (read# (global# [Addr#] "ddcHeapBackBase"#) 0#) ) )
+                ddcPrimStderrPutTextLit "/"#
+                ddcPrimStderrPutVector (ddcPrimShowNat ( sub# (read# (global# [Addr#] "ddcHeapBackMax"#) 0#) (read# (global# [Addr#] "ddcHeapBackBase"#) 0#) ) )
+                ddcPrimStderrPutTextLit "\n"#
 
 
-                  ddcPrimStderrPutTextLit "  - Total GC Cycle(s) : "#
-                  strTotalGCCycle = ddcPrimShowNat ( read# (global# [Nat#] "ddcStatsGCCycles"#) 0# )
-                  ddcPrimStderrPutVector strTotalGCCycle
-                  ddcPrimStderrPutTextLit "\n"#
-                  u
-          False#
-            -> do 
-                  u
+                ddcPrimStderrPutTextLit "  - Total GC Cycle(s) : "#
+                strTotalGCCycle = ddcPrimShowNat ( read# (global# [Nat#] "ddcStatsGCCycles"#) 0# )
+                ddcPrimStderrPutVector strTotalGCCycle
+                ddcPrimStderrPutTextLit "\n"#
+
+                ddcSeaStatsShowTimeDiff ()
+                u
+        False#
+          -> do 
+                u
