@@ -5,34 +5,47 @@ import Class.Show
 import Data.Numeric.Nat
 import Data.Function
 import Data.CompactRegion
+
+import foreign c value
+ ddcPerformGC : Unit -> Unit
+
 where
 
 -- basic demo of how compact region works.
+-- Compact Region is a "region" provides safe manually memory management 
+-- Object in the compact region never gets freed by GC, until deleteCR is called.
+-- The implementation of compact region eliminates dangling pointers, you may safely
+-- having references to compact region and mark it dead and still be able to use it.
+-- A typical use case is to store long-live objects and avoid tracking/copying costs
 main ()
  = mutable r in
    do   
       -- create compact region at @r with size 1024 bytes
       cr = allocCR {@r} 1024
-
       -- store a number 2048 at compact region, the myVal is the value
       -- on the compact region. It won't be garbage collected until the region is dead.
       writel $ "- Store one value"
       myVal = storeCR cr 2048
+      ddcPerformGC ()
       writel $ "value  = " % show myVal
       -- append another value to the CR
       writel $ "- Store two value"
       myVal2 = storeCR cr 4096
+      ddcPerformGC ()
       writel $ "value  = " % show myVal
       writel $ "value  = " % show myVal2
       -- the CR is polymorphic, i.e. it does not care what is in the CR
       -- however, the return value is typed.
       writel $ "- Store three value and being polymorphic"
       myVal3 = storeCR cr "poly"
+      ddcPerformGC ()
       writel $ "value  = " % show myVal
       writel $ "value  = " % show myVal2
       writel $ "value  = " % show myVal3
 
-      deleteCR cr
       -- declear CR is dead, it will be GC in next GC cycle.
+      deleteCR cr
+
+      ddcPerformGC ()
       ()
 

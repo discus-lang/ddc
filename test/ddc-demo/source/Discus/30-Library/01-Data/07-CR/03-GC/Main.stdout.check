@@ -1,0 +1,9 @@
+- Store one value
+value  = 2048
+- Store two value
+value  = 2048
+value  = 4096
+- Store three value and being polymorphic
+value  = 2048
+value  = 4096
+value  = "poly"

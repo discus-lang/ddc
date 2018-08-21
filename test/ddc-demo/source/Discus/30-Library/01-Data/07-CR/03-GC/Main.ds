@@ -1,0 +1,20 @@
+
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.CompactRegion
+
+where
+
+-- basic demo of how compact region works.
+main ()
+ = do writel (show (1+1))
+      case 3 < 2 of 
+        True-> writel $ show 1
+        False-> writel $ show 2
+      ()
+

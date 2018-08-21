@@ -124,6 +124,7 @@ export foreign c value
 import foreign c value
  ddcAllocCollect        : Nat# -> Unit
 
+ ddcPrimStderrPutAddr : Addr# -> Void#
  ddcPrimStderrPutString : TextLit# -> Void#
  ddcPrimStderrPutNat    : Nat# -> Void#
  ddcPrimShowNat         : Nat#  -> TextLit#
@@ -197,18 +198,18 @@ ddcObjectSetCompactRegionFlag [r: Region] (obj : Ptr# r Obj) (flag: Bool#) : Uni
                       write# (takePtr# obj) 0# (bor# fmt (promote# [Word64#] 0b0100w8#))
                       ()
           False# -> do 
-                      write# (takePtr# obj) 0# (band# fmt (promote# [Word64#] 0b1011w8#))
+                      write# (takePtr# obj) 0# (bxor# (bor# fmt (promote# [Word64#] 0b0100w8#)) (promote# [Word64#] 0b0100w8#))
                       ()
 
 --| Get the size of an object.
 ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcObjectFormat obj of
-    2# -> ddcThunkSize  obj
-    3# -> ddcBoxedSize  obj
-    4# -> ddcRawSize    obj
-    6# -> ddcSmallSize  obj
-    _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
-             0#
+      2# -> ddcThunkSize  obj
+      3# -> ddcBoxedSize  obj
+      4# -> ddcRawSize    obj
+      6# -> ddcSmallSize  obj
+      _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"# 
+               0#
 
 
 -- | Get the header size of an object, in bytes.
