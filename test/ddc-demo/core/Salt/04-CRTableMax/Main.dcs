@@ -1,0 +1,133 @@
+
+-- Demostration of how to write low level heap management code in
+-- Disciple Core Salt. We define boxed versions of arithmetic
+-- operations, and a version of the factorial function that uses
+-- boxed arithmetic.
+--
+module Main
+
+export foreign c value
+        main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
+
+-- Primitive show functions are defined in the runtime system.
+import foreign c value
+        ddcInit                 : Nat# -> Nat# -> Unit
+        ddcPrimShowInt          : [r: Region]. Int# -> Ptr# r Obj
+        ddcPrimStdoutPutNat     : [r: Region]. Nat# -> Void#
+        ddcPrimStdoutPutVector  : [r: Region]. Ptr# r Obj -> Void#
+        ddcPrimStdoutPutTextLit : TextLit#   -> Void#
+        ddcPrimCompactRegionAlloc    : Nat# -> Nat#
+        ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
+        ddcPrimCompactRegionMarkDead : Nat# -> Void#
+        ddcPerformGC                 : Unit -> Unit
+with letrec
+
+
+-- | Allocate a boxed object to hold a raw unboxed value.
+allocRawLocal [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
+ = do
+        -- Size of the heap object.
+        -- For general objects we use a 64-bit header so that a 64-bit
+        -- payload will still be aligned.
+        bytesObj        = add# (size# [Word64#]) bytesPayload
+
+        -- Check there is enough space available on the heap.
+        -- If not, invoke fail# which will abort the program.
+        case check# bytesObj of
+         True#  -> allocRawLocal_ok tag bytesObj
+         False# -> fail#
+
+allocRawLocal_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
+ = do
+        -- Allocate the object.
+        --  This returns a raw Addr#.
+        addr            = alloc# bytesObj
+
+        -- Write the header word.
+        tag32           = truncate# [Word32#] [Tag#] tag
+        format          = 0b00110001w32#
+        tagShift        = shl# tag32 8w32#
+        header          = bor# tagShift format
+        write# addr 0# header
+
+        -- Truncate the provided Nat to 32bit and write it into the object.
+        bytesObj32      = truncate# [Word32#] [Nat#] bytesObj
+        write# addr 4# bytesObj32
+
+        -- Return a pointer to the new object.
+        ptr             = makePtr# addr
+        ptr
+
+
+-- | Box a Word32.
+boxWord32 [r: Region] (x: Word32#): Ptr# r Obj
+ = do   obj     = allocRawLocal TAG0# 4#
+        addr    = takePtr# obj
+        write#  addr 8# x
+        obj
+
+
+-- | Unbox a Word32.
+unboxWord32 [r: Region] (obj: Ptr# r Obj): Word32#
+ =      read# (takePtr# obj) 8#
+
+
+-- | Boxed Word32 addition.
+addWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
+ =      boxWord32 (add# (unboxWord32 x) (unboxWord32 y))
+
+
+-- | Boxed Word32 subtraction.
+subWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
+ =      boxWord32 (sub# (unboxWord32 x) (unboxWord32 y))
+
+
+-- | Boxed Word32 multiplication.
+mulWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
+ =      boxWord32 (mul# (unboxWord32 x) (unboxWord32 y))
+
+
+-- | Boxed factorial function.
+fac [r1: Region] (x: Ptr# r1 Obj): Ptr# r1 Obj
+ = do   x2      = unboxWord32 x
+        cc      = eq# x2 0w32#
+        case cc of
+         True#
+          -> do boxWord32 1w32#
+
+         False#
+          -> do n2      = boxWord32 [r1] 1w32#
+                n3      = subWord32 [r1] [r1] [r1] x n2
+                n4      = fac n3
+                mulWord32 x n4
+
+compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
+ = do
+      handle = ddcPrimCompactRegionAlloc 16#
+      r = (ddcPrimCompactRegionStore [r1] [r1] handle original)
+      one =  boxWord32 [r1] 1w32#
+      x2      = addWord32 [r1] [r1] [r1] r one
+
+      -- Print out the result.
+      x2u     = unboxWord32 x2
+      str     = ddcPrimShowInt [r1] (truncate# [Int#] [Word32#] x2u)
+      ddcPrimStdoutPutVector str
+      ddcPrimStdoutPutTextLit "\n"#
+
+      case gt# acc 1024# of
+        True#   -> do ddcPrimStdoutPutTextLit "pass\n"#; ()
+        False#  -> do compactRegionTableMax [r1] x2 (add# acc 1#)
+
+
+main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
+ = do
+        -- Initialize the runtime system.
+        ddcInit 409600# 0#
+
+        original = boxWord32 [r1] 0w32#
+
+        compactRegionTableMax [r1] original 0#
+
+        -- Return success.
+        0i#
+

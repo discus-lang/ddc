@@ -5,24 +5,27 @@ import Class.Show
 import Data.Numeric.Nat
 import Data.Function
 import Data.CompactRegion
+
 where
 
 -- The compact region will automatically 
 -- extends itself when no sufficient memory left in that compact region
 -- This demos a region with 1024 bytes avaliable, then self-extends to a larger chunk of memory
+
 hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat 
   = case (acc < 2048) of
       True  ->  do 
                   val = storeCR cr acc
-                  writel (show val)
+                  writel $ show val
                   hitLimit cr (acc + 1)
       False ->  acc
        
 
 main ()
- = private r with { Alloc r; Read r; Write r } in
+ = mutable r in
    do   
-      cr = allocCR {@r} 1024
-      acc = hitLimit cr 0
+      cr = allocCR {@r} 1
+      hitLimit cr 0
       deleteCR cr
+      writel "124"
 
