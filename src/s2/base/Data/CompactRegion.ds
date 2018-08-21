@@ -6,7 +6,7 @@ import foreign boxed type
 
 import foreign c value
 
- ddcPrimCompactRegionAlloc    : {@r : Region} -> Nat -> S (Alloc r) (CR r)
+ ddcPrimCompactRegionAlloc    : {@r : Region} -> Nat# -> S (Alloc r) (CR r)
  ddcPrimCompactRegionStore    : {@r : Region} -> {@a: Data} -> CR r-> a -> S (Write r) a
  ddcPrimCompactRegionMarkDead : {@r : Region} -> CR r -> S (Write r) Unit
 
@@ -14,7 +14,7 @@ where
 
 
 allocCR {@r : Region}
-        (x  : Nat)
+        (x  : Nat#)
         : S (Alloc r) (CR r)
  =      ddcPrimCompactRegionAlloc {@r} x
 

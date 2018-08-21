@@ -209,10 +209,11 @@ ddcPrimCompactRegionMarkDead [r1 : Region]  (handle : Nat#) : Unit
           -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
                 regionRawBase = read# [Addr#] tableBase handle
                 
-                flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 0#)
+                flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 16#)
                 -- mark compact region dead by set the flag
-                write# regionRawBase 0# (band# flag8 0b11111110w8#) 
+                write# regionRawBase 16# (band# flag8 0b11111110w8#) 
                 -- mark each object 'free' from life cycle constraints
+                ddcPrintCompactRegionHeader regionRawBase
                 ddcCompactRegionMarkObjectFree [r1] (ddcCompactRegionRawBaseToBase regionRawBase) (read# [Addr#] regionRawBase 0#)
                 ()
 
@@ -223,7 +224,7 @@ ddcCompactRegionMarkObjectFree [r1 : Region] (curr : Addr#) (max : Addr#) : Unit
                      size = ddcObjectSize [r1] (makePtr# curr)
                      ddcObjectSetCompactRegionFlag [r1] (makePtr# curr) False#
                      -- set next object free
-                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr (add# size 1#)) max      
+                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr size) max      
                 
 
 -- inline function to write a header
