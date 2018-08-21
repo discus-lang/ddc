@@ -30,8 +30,8 @@ pModule
  = do
         _sp      <- pTokSP (KKeyword EModule)
         name     <- pModuleName <?> "a module name"
-        tExports <- liftM concat $ P.many pExportSpecs
-        tImports <- liftM concat $ P.many pImportSpecs
+        tExports <- liftM concat $ P.many (pExportSpecs name)
+        tImports <- liftM concat $ P.many (pImportSpecs name)
 
         tops
          <- P.choice
@@ -62,8 +62,8 @@ data ExportSpec
         = ExportValue Bound     (ExportValue Bound Type)
         deriving Show
 
-pExportSpecs :: Parser [ExportSpec]
-pExportSpecs
+pExportSpecs :: ModuleName -> Parser [ExportSpec]
+pExportSpecs mn
  = do   pTok (KKeyword EExport)
 
         P.choice
@@ -75,7 +75,7 @@ pExportSpecs
                  [      -- export foreign X value (NAME :: TYPE)+
                    do   pKey EValue
                         pSym SBraceBra
-                        sigs <- P.sepEndBy1 (pExportValue src)  (pSym SSemiColon)
+                        sigs <- P.sepEndBy1 (pExportValue mn src)  (pSym SSemiColon)
                         pSym SBraceKet
                         return sigs
                  ]
@@ -89,8 +89,8 @@ pExportSpecs
 
 
 -- | Parse a value export spec.
-pExportValue :: String -> Parser ExportSpec
-pExportValue src
+pExportValue :: ModuleName -> String -> Parser ExportSpec
+pExportValue mn src
  | elem src ["c", "C"]
  = do   (b@(UName n), _)  <- pBoundNameSP
 
@@ -98,13 +98,13 @@ pExportValue src
          [ do   (txSymbol, _) <- pTextSP
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ExportValue b (ExportValueSea b txSymbol k))
+                return  (ExportValue b (ExportValueSea mn b txSymbol k))
 
 
          , do   let txSymbol = Text.pack $ renderIndent (text n)
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ExportValue b (ExportValueSea b txSymbol k)) ]
+                return  (ExportValue b (ExportValueSea mn b txSymbol k)) ]
 
         | otherwise
         = P.unexpected "export mode for foreign value"
@@ -121,8 +121,8 @@ data ImportSpec
 
 
 -- | Parse some import specs.
-pImportSpecs :: Parser [ImportSpec]
-pImportSpecs
+pImportSpecs :: ModuleName -> Parser [ImportSpec]
+pImportSpecs mn
  = do   pTok (KKeyword EImport)
 
         P.choice
@@ -148,7 +148,7 @@ pImportSpecs
                         -- import foreign X value (NAME :: TYPE)+
                  , do   pKey EValue
                         pSym SBraceBra
-                        sigs <- P.sepEndBy1 (pImportValue src)      (pSym SSemiColon)
+                        sigs <- P.sepEndBy1 (pImportValue mn src)   (pSym SSemiColon)
                         pSym SBraceKet
                         return sigs
                  ]
@@ -194,8 +194,8 @@ pImportCapability src
 
 
 -- | Parse a value import spec.
-pImportValue :: String -> Parser ImportSpec
-pImportValue src
+pImportValue :: ModuleName -> String -> Parser ImportSpec
+pImportValue mn src
  | elem src ["c", "C"]
  = do   (b@(BName n), _)  <- pBindNameSP
 
@@ -203,12 +203,12 @@ pImportValue src
          [ do   (txSymbol, _) <- pTextSP
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ImportValue b (ImportValueSea b txSymbol k))
+                return  (ImportValue b (ImportValueSea mn b txSymbol k))
 
          , do   let txSymbol = Text.pack $ renderIndent (text n)
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ImportValue b (ImportValueSea b txSymbol k))
+                return  (ImportValue b (ImportValueSea mn b txSymbol k))
          ]
 
  | otherwise
@@ -267,8 +267,17 @@ pDeclData
          [ -- Data declaration with constructors that have explicit types.
            do   pKey EWhere
                 pSym SBraceBra
-                ctors   <- P.sepEndBy1 pDeclDataCtor (pSym SSemiColon)
+                ctors   <- P.sepEndBy1 pDeclDataCtorType (pSym SSemiColon)
                 pSym SBraceKet
+                return  $ TopData sp (DataDef b ps ctors)
+
+           -- Data declaration with just data ctor names and params listed.
+         , do   pSym SEquals
+                let TyConBindName tx = b
+                let tResult = makeTApps (TCon (TyConBound (TyConBoundName tx)))
+                            $ [ TVar (let Just u = takeBoundOfBind p in u)
+                              | (p, _k) <- ps ]
+                ctors   <- P.sepEndBy1 (pDeclDataCtorParams tResult) (pSym SBar)
                 return  $ TopData sp (DataDef b ps ctors)
 
            -- Data declaration with no data constructors.
@@ -276,16 +285,28 @@ pDeclData
          ]
 
 
--- | Parse a data constructor declaration.
-pDeclDataCtor :: Parser (DataCtor SourcePos)
-pDeclDataCtor
+-- | Parse a data constructor declaration,
+--   where the data constructor is given a full type signature.
+pDeclDataCtorType :: Parser (DataCtor SourcePos)
+pDeclDataCtorType
  = do   n       <- pDaConBindName
         pTokSP (KOp ":")
         t       <- pType
-        let (tsArg, tResult) = takeTFuns t
-
+        let (tsFields, tResult) = takeTFuns t
         return  $ DataCtor
                 { dataCtorName          = n
-                , dataCtorFieldTypes    = tsArg
+                , dataCtorFieldTypes    = tsFields
+                , dataCtorResultType    = tResult }
+
+
+-- | Parse a data constructor declaration,
+--   where the data constructor is only given its parameter types.
+pDeclDataCtorParams :: Type -> Parser (DataCtor SourcePos)
+pDeclDataCtorParams tResult
+ = do   n         <- pDaConBindName
+        tspFields <- P.many pTypeArgSP
+        return  $ DataCtor
+                { dataCtorName          = n
+                , dataCtorFieldTypes    = map fst $ tspFields
                 , dataCtorResultType    = tResult }
 

@@ -22,6 +22,7 @@ baseSaltFiles builder
         runtime = "ddc-runtime" </> "salt" </> "runtime"
    in   [ runtime         </> "Alloc.dcs"
         , runtime         </> "Collect.dcs"
+        , runtime         </> "Hash.dcs"
         , runtime         </> "Stats.dcs"
         , runtime         </> "Hook.dcs"
         , runtime         </> "Init.dcs"
@@ -49,6 +50,7 @@ baseSeaFiles _builder
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Exception.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "File.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Parse.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Sha256.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Show.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Text.c"
         , "ddc-runtime" </> "sea" </> "runtime" </> "Collect.c"
@@ -71,7 +73,7 @@ cmdBaseBuild config store
         let config'      = config { configInferTypes = True }
         let srcSaltFiles = map (buildBaseSrcDir builder </>) (baseSaltFiles builder)
         let objSaltFiles = map (flip replaceExtension "o")   srcSaltFiles
-        mapM_ (cmdCompile config' False [] store) srcSaltFiles
+        cmdCompileRecursive config' False store srcSaltFiles
 
         -- Build all the .c files.
         let srcSeaFiles  = map (buildBaseSrcDir builder </>) (baseSeaFiles builder)

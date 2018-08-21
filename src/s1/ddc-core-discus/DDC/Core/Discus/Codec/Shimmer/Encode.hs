@@ -56,10 +56,10 @@ takeName nn
                 64              -> S.XRef $ S.RPrm $ S.PrimLitFloat64 d
                 _               -> error "ddc-core-discus.takeName: shimmer invalid float size"
 
-        D.NameLitSize  n        -> xAps "l-s" [xNat n]
-        D.NameLitChar  c        -> xAps "l-c" [xText $ T.pack [c]]
-        D.NameLitTextLit tx     -> xAps "l-t" [xText tx]
-        D.NameLitUnboxed n      -> xAps "l-u" [takeName n]
+        D.NameLitSize  n        -> xAps "lt-size"    [xNat n]
+        D.NameLitChar  c        -> xAps "lt-char"    [xText $ T.pack [c]]
+        D.NameLitTextLit tx     -> xAps "lt-text"    [xText tx]
+        D.NameLitUnboxed n      -> xAps "lt-unboxed" [takeName n]
 
         -- Hole
         D.NameHole              -> xSym "dh"
@@ -86,10 +86,10 @@ takeConName nn
 takeTyConDiscus :: D.TyConDiscus -> SExp
 takeTyConDiscus tc
  = case tc of
-        D.TyConDiscusTuple n    -> xAps "dt-Tuple" [xNat' n]
-        D.TyConDiscusVector     -> xSym "dt-Vector"
-        D.TyConDiscusU          -> xSym "dt-U"
-        D.TyConDiscusF          -> xSym "dt-F"
+        D.TyConDiscusTuple n    -> xAps "dc-tuple" [xNat' n]
+        D.TyConDiscusVector     -> xSym "dc-vector"
+        D.TyConDiscusU          -> xSym "dc-u"
+        D.TyConDiscusF          -> xSym "dc-f"
 
 
 -- DaConDiscus ------------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ takeTyConDiscus tc
 takeDaConDiscus :: D.DaConDiscus -> SExp
 takeDaConDiscus dc
  = case dc of
-        D.DaConDiscusTuple n    -> xAps "dd-Tuple" [xNat' n]
+        D.DaConDiscusTuple n    -> xAps "dc-tuple" [xNat' n]
 
 
 -- Ops --------------------------------------------------------------------------------------------
@@ -107,17 +107,17 @@ takeOpError op b
  = case op of
         D.OpErrorDefault
          -> case b of
-                False           -> xSym "oe-error-u"
-                True            -> xSym "oe-error-b"
+                False           -> xSym "op-error-case"
+                True            -> xSym "op-error-case-b"
 
 
 -- | Take the Shimmer encoding of a function operator.
 takeOpFun :: D.OpFun -> SExp
 takeOpFun op
  = case op of
-        D.OpFunCurry n          -> xAps "of-curry"   [xNat' n]
-        D.OpFunApply n          -> xAps "of-apply"   [xNat' n]
-        D.OpFunReify            -> xSym "of-reify"
+        D.OpFunCurry n          -> xAps "op-curry"   [xNat' n]
+        D.OpFunApply n          -> xAps "op-apply"   [xNat' n]
+        D.OpFunReify            -> xSym "op-reify"
 
 
 -- | Take the Shimmer encoding of a vector operator.
@@ -127,14 +127,14 @@ takeOpVector op b
  where
   nop
    = case op of
-        D.OpVectorAlloc         -> "ov-alloc"
-        D.OpVectorLength        -> "ov-length"
-        D.OpVectorRead          -> "ov-read"
-        D.OpVectorWrite         -> "ov-write"
+        D.OpVectorAlloc         -> "op-vector-alloc"
+        D.OpVectorLength        -> "op-vector-length"
+        D.OpVectorRead          -> "op-vector-read"
+        D.OpVectorWrite         -> "op-vector-write"
 
   nbx
    = case b of
-        True                    -> "-u"
+        True                    -> ""
         False                   -> "-b"
 
 
@@ -145,13 +145,14 @@ takeOpInfo pm bx
  where
    npm
     = case pm of
-        D.OpInfoFrameNew        -> "oi-frame-new"
-        D.OpInfoFramePush       -> "oi-frame-push"
-        D.OpInfoFrameAddData    -> "oi-frame-add-data"
+        D.OpInfoFrameNew        -> "op-info-frame-new"
+        D.OpInfoFramePush       -> "op-info-frame-push"
+        D.OpInfoFrameAddData    -> "op-info-frame-add-data"
+        D.OpInfoFrameAddSuper   -> "op-info-frame-add-super"
 
    nbx
     = case bx of
-        True                    -> "-u"
+        True                    -> ""
         False                   -> "-b"
 
 
@@ -160,18 +161,18 @@ takeOpInfo pm bx
 takePrimTyCon :: D.PrimTyCon -> SExp
 takePrimTyCon tc
  = case tc of
-        D.PrimTyConVoid         -> xSym "pt-void"
-        D.PrimTyConBool         -> xSym "pt-bool"
-        D.PrimTyConNat          -> xSym "pt-nat"
-        D.PrimTyConInt          -> xSym "pt-int"
-        D.PrimTyConSize         -> xSym "pt-size"
-        D.PrimTyConWord n       -> xAps "pt-word"  [xNat' n]
-        D.PrimTyConFloat n      -> xAps "pt-float" [xNat' n]
-        D.PrimTyConVec n        -> xAps "pt-vec"   [xNat' n]
-        D.PrimTyConAddr         -> xSym "pt-addr"
-        D.PrimTyConPtr          -> xSym "pt-ptr"
-        D.PrimTyConTextLit      -> xSym "pt-textlit"
-        D.PrimTyConTag          -> xSym "pt-tag"
+        D.PrimTyConVoid         -> xSym "tc-void"
+        D.PrimTyConBool         -> xSym "tc-bool"
+        D.PrimTyConNat          -> xSym "tc-nat"
+        D.PrimTyConInt          -> xSym "tc-int"
+        D.PrimTyConSize         -> xSym "tc-size"
+        D.PrimTyConWord n       -> xAps "tc-word"  [xNat' n]
+        D.PrimTyConFloat n      -> xAps "tc-float" [xNat' n]
+        D.PrimTyConVec n        -> xAps "tc-vec"   [xNat' n]
+        D.PrimTyConAddr         -> xSym "tc-addr"
+        D.PrimTyConPtr          -> xSym "tc-ptr"
+        D.PrimTyConTextLit      -> xSym "tc-textlit"
+        D.PrimTyConTag          -> xSym "tc-tag"
 
 
 -- | Take the Shimmer encoding of a primitive arithmetic operator.
@@ -181,30 +182,30 @@ takePrimArith pm bx
  where
    npm
     = case pm of
-        D.PrimArithNeg          -> "pa-neg"
-        D.PrimArithAdd          -> "pa-add"
-        D.PrimArithSub          -> "pa-sub"
-        D.PrimArithMul          -> "pa-mul"
-        D.PrimArithDiv          -> "pa-div"
-        D.PrimArithMod          -> "pa-mod"
-        D.PrimArithRem          -> "pa-rem"
-        D.PrimArithEq           -> "pa-eq"
-        D.PrimArithNeq          -> "pa-neq"
-        D.PrimArithGt           -> "pa-gt"
-        D.PrimArithGe           -> "pa-ge"
-        D.PrimArithLt           -> "pa-lt"
-        D.PrimArithLe           -> "pa-le"
-        D.PrimArithAnd          -> "pa-and"
-        D.PrimArithOr           -> "pa-or"
-        D.PrimArithShl          -> "pa-shl"
-        D.PrimArithShr          -> "pa-shr"
-        D.PrimArithBAnd         -> "pa-band"
-        D.PrimArithBOr          -> "pa-bor"
-        D.PrimArithBXOr         -> "pa-bxor"
+        D.PrimArithNeg          -> "op-neg"
+        D.PrimArithAdd          -> "op-add"
+        D.PrimArithSub          -> "op-sub"
+        D.PrimArithMul          -> "op-mul"
+        D.PrimArithDiv          -> "op-div"
+        D.PrimArithMod          -> "op-mod"
+        D.PrimArithRem          -> "op-rem"
+        D.PrimArithEq           -> "op-eq"
+        D.PrimArithNeq          -> "op-neq"
+        D.PrimArithGt           -> "op-gt"
+        D.PrimArithGe           -> "op-ge"
+        D.PrimArithLt           -> "op-lt"
+        D.PrimArithLe           -> "op-le"
+        D.PrimArithAnd          -> "op-and"
+        D.PrimArithOr           -> "op-or"
+        D.PrimArithShl          -> "op-shl"
+        D.PrimArithShr          -> "op-shr"
+        D.PrimArithBAnd         -> "op-band"
+        D.PrimArithBOr          -> "op-bor"
+        D.PrimArithBXOr         -> "op-bxor"
 
    nbx
     = case bx of
-        True                    -> "-u"
+        True                    -> ""
         False                   -> "-b"
 
 
@@ -215,13 +216,13 @@ takePrimCast pc bx
  where
   npm
    = case pc of
-        D.PrimCastConvert       -> "pc-convert"
-        D.PrimCastPromote       -> "pc-promote"
-        D.PrimCastTruncate      -> "pc-truncate"
+        D.PrimCastConvert       -> "op-convert"
+        D.PrimCastPromote       -> "op-promote"
+        D.PrimCastTruncate      -> "op-truncate"
 
   nbx
    = case bx of
-       True                     -> "-u"
+       True                     -> ""
        False                    -> "-b"
 
 

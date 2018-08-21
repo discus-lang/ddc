@@ -13,7 +13,7 @@ import qualified Data.Set       as Set
 
 
 -- | Collect the free type variables in a type.
-freeVarsT 
+freeVarsT
         :: Ord n
         => KindEnv n -> Type n
         -> Set (Bound n)
@@ -35,28 +35,28 @@ instance BindStruct (Type n) n where
 instance BindStruct (TyCon n) n where
  slurpBindTree tc
   = case tc of
-        TyConBound u k  -> [BindCon BoundSpec u (Just k)]
+        TyConBound n    -> [BindCon BoundSpec (UName n) Nothing]
         _               -> []
 
 
 class FreeVarConT (c :: * -> *) where
   -- | Collect the free type variables and constructors used in a thing.
-  freeVarConT 
-        :: Ord n 
-        => KindEnv n -> c n 
+  freeVarConT
+        :: Ord n
+        => KindEnv n -> c n
         -> (Set (Bound n), Set (Bound n))
 
 
 instance FreeVarConT Type where
  freeVarConT kenv tt
   = case tt of
-        TVar u  
+        TVar u
          -> if Env.member u kenv
                 then (Set.empty, Set.empty)
                 else (Set.singleton u, Set.empty)
 
         TCon tc
-         | TyConBound u _ <- tc -> (Set.empty, Set.singleton u)
+         | TyConBound n <- tc   -> (Set.empty, Set.singleton (UName n))
          | otherwise            -> (Set.empty, Set.empty)
 
         TAbs b t
@@ -72,7 +72,7 @@ instance FreeVarConT Type where
          -> freeVarConT (Env.extend b kenv) t
 
         TSum ts
-         -> let (vss, css)      = unzip $ map (freeVarConT kenv) 
+         -> let (vss, css)      = unzip $ map (freeVarConT kenv)
                                 $ Sum.toList ts
             in  (Set.unions vss, Set.unions css)
 

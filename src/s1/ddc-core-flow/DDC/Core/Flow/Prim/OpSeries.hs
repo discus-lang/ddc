@@ -465,5 +465,5 @@ xSeriesOfRateVec tP tK tA xV
 -- Utils -----------------------------------------------------------------------
 xVarOpSeries   :: OpSeries -> Exp () Name
 xVarOpSeries   op
-        = XVar  (UPrim (NameOpSeries   op))
+        = XVar  (UName (NameOpSeries   op))
 

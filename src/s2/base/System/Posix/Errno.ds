@@ -4,6 +4,7 @@ export errno_get
 export errno_showMessage
 
 import Data.Numeric.Int
+import Data.Function
 import Data.Text
 
 import foreign abstract type

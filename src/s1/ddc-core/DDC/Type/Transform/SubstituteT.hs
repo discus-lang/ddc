@@ -4,6 +4,7 @@ module DDC.Type.Transform.SubstituteT
         ( substituteT
         , substituteTs
         , substituteBoundT
+        , substituteExistsT
         , SubstituteT(..)
 
         , BindStack(..)
@@ -42,13 +43,38 @@ substituteBoundT u t x
  = let -- Determine the free names in the type we're subsituting.
        -- We'll need to rename binders with the same names as these
        freeNames       = Set.fromList
-                       $ mapMaybe takeNameOfBound 
-                       $ Set.toList 
+                       $ mapMaybe takeNameOfBound
+                       $ Set.toList
                        $ freeT Env.empty t
 
        stack           = BindStack [] [] 0 0
- 
+
   in   substituteWithT u t freeNames stack x
+
+
+-- | Substitute types for existential variables in a type.
+substituteExistsT
+        :: Ord n
+        => [(Int, Type n)] -> Type n -> Type n
+
+substituteExistsT cs tt
+ = let down = substituteExistsT cs
+   in case tt of
+        TCon (TyConExists i _)
+         -> case lookup i cs of
+                Just t  -> t
+                Nothing -> tt
+
+        TCon{}          -> tt
+        TVar{}          -> tt
+        TAbs b t        -> TAbs b $ down t
+        TApp t1 t2      -> TApp (down t1) (down t2)
+        TForall b t     -> TForall b (down t)
+
+        TSum ts
+         -> TSum
+         $  Sum.fromList (Sum.kindOfSum ts)
+         $  map down $ Sum.toList ts
 
 
 -- SubstituteT ----------------------------------------------------------------
@@ -72,8 +98,8 @@ instance SubstituteT Bind where
  substituteWithT u fvs t stack bb
   = let k'      = substituteWithT u fvs t stack $ typeOfBind bb
     in  replaceTypeOfBind k' bb
- 
- 
+
+
 instance SubstituteT Type where
  substituteWithT u t fns stack tt
   = let down    = substituteWithT u t fns stack
@@ -93,7 +119,7 @@ instance SubstituteT Type where
 
                  -- Push bind onto stack, and anonymise to avoid capture.
                  (stack', b')    = pushBind fns stack bSub
-                
+
                  -- Substitute into body.
                  tBody'          = substituteWithT u t fns stack' tBody
 
@@ -110,20 +136,20 @@ instance SubstituteT Type where
 
                  -- Push bind onto stack, and anonymise to avoid capture.
                  (stack', b')    = pushBind fns stack bSub
-                
+
                  -- Substitute into body.
                  tBody'          = substituteWithT u t fns stack' tBody
 
              in  TForall b' tBody'
 
          TSum ss        -> TSum (down ss)
-                
+
 
 instance SubstituteT TypeSum where
  substituteWithT u n fns stack ss
   = let k       = substituteWithT u n fns stack
                 $ Sum.kindOfSum ss
-    in  Sum.fromList k 
+    in  Sum.fromList k
                 $ map (substituteWithT u n fns stack)
                 $ Sum.toList ss
 

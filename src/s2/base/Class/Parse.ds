@@ -8,6 +8,7 @@ export
         parse_Float64
 }
 import Data.Text
+import Data.Text.Parse
 import Data.Maybe
 where
 

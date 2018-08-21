@@ -14,6 +14,14 @@ import Data.Text.Base
 import Data.Text.Char
 import Data.Text.Operator
 import Data.List
+import Class.Numeric
+
+-- | Capabilities to allocate and read top-level text vectors.
+--   TODO: expose these via module interface.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
 where
 
 

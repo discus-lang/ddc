@@ -190,5 +190,5 @@ xTail n tP tK tE xRN xS
 -- Utils -----------------------------------------------------------------------
 xVarOpConcrete :: OpConcrete -> Exp () Name
 xVarOpConcrete op
-        = XVar  (UPrim (NameOpConcrete op))
+        = XVar  (UName (NameOpConcrete op))
 

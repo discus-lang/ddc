@@ -72,8 +72,8 @@ initRuntimeTopX config xx
  , bxs_cut                       <- filter (not . isMainBind . fst) bxs
  , BName _ tMainOrig             <- bMainOrig
  = let
-        -- Rename the old main function to '_main'
-        bMainOrig'      = BName (NameVar "_main") $ tMainOrig
+        -- Rename the old main function to '_main$discus'
+        bMainOrig'      = BName (NameVar "_main$discus") $ tMainOrig
 
         -- The new entry point of the program is called 'main'.
         bMainEntry      = BName (NameVar "main")  $ tPosixMain
@@ -118,7 +118,7 @@ makeMainEntryX config a
 
         -- Call the user level main function.
         $ XLLet a (BNone (tBot kData))
-                  (xApps a (XVar a (UName (NameVar "_main"))) [RTerm xU])
+                  (xApps a (XVar a (UName (NameVar "_main$discus"))) [RTerm xU])
 
         -- Shut down the runtime system.
         $ XLLet a (BNone tVoid)

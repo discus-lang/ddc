@@ -204,7 +204,6 @@ module DDC.Source.Discus.Exp
         , dcUnit
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
-        , takeTypeOfDaCon
 
           -- *** Patterns
         , bindsOfPat

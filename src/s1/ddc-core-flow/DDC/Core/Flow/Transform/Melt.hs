@@ -75,7 +75,7 @@ instance Melt (Exp () Name) where
   , Just ( NameOpStore OpStoreNew
          , [XType tElem, xInit])               <- takeXPrimApps x1
   , Just ( NameTyConFlow (TyConFlowTuple n)
-         , tAs)                                <- takePrimTyConApps tElem
+         , tAs)                                <- takeNameTyConApps tElem
   , length tAs == n
   = do
         let ltsNew
@@ -101,7 +101,7 @@ instance Melt (Exp () Name) where
   , Just ( NameOpStore OpStoreRead
          , [XType tElem, XVar (UName nRef)])    <- takeXPrimApps x1
   , Just ( NameTyConFlow (TyConFlowTuple n)
-         , tsA)                                 <- takePrimTyConApps tElem
+         , tsA)                                 <- takeNameTyConApps tElem
   , length tsA == n
   = do
         -- read all the components
@@ -138,7 +138,7 @@ instance Melt (Exp () Name) where
   , Just ( NameOpStore OpStoreWrite
          , [XType tElem, XVar (UName nRef), xV]) <- takeXPrimApps x1
   , Just ( NameTyConFlow (TyConFlowTuple n)
-         , tsA)                                  <- takePrimTyConApps tElem
+         , tsA)                                  <- takeNameTyConApps tElem
   , length tsA == n
   = do
         let ltsWrite

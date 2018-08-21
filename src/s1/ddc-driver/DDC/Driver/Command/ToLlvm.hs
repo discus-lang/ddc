@@ -7,8 +7,8 @@ module DDC.Driver.Command.ToLlvm
         , cmdToLlvmCoreFromString)
 where
 import DDC.Driver.Command.Compile
-import DDC.Driver.Stage
 import DDC.Driver.Interface.Source
+import DDC.Driver.Stage
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment
@@ -23,7 +23,8 @@ import qualified DDC.Core.Interface.Store       as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Driver.Stage.Salt          as DA
 import qualified DDC.Core.Discus                as D
-
+import qualified DDC.Llvm.Write                 as Llvm
+import qualified System.IO                      as S
 
 -------------------------------------------------------------------------------
 -- | Convert a module to LLVM.
@@ -95,10 +96,10 @@ cmdToLlvmSourceTetraFromString config store source str
         modLlvm'
          <-  DA.saltToLlvm     config source True
          =<< DA.saltSimplify   config source
-         =<< DE.discusToSalt   config source []
+         =<< DE.discusToSalt   config source
          =<< DE.sourceLoadText config store  source str
 
-        liftIO $ putStrLn (renderIndent $ ppr modLlvm')
+        liftIO $ Llvm.write (Llvm.configOfHandle S.stdout) modLlvm'
 
 
 -------------------------------------------------------------------------------
@@ -152,7 +153,7 @@ cmdToLlvmCoreFromString config language source str
         let makeSalt
                 |   fragName == "Tetra"
                 =   DA.saltSimplify   config source
-                =<< DE.discusToSalt   config source []
+                =<< DE.discusToSalt   config source
                 =<< DE.discusLoadText config store source str
 
                 |   fragName == "Salt"
@@ -170,6 +171,6 @@ cmdToLlvmCoreFromString config language source str
         modLlvm <- DA.saltToLlvm config source bSlotify modSalt
 
         -- Print LLVM code to stdout.
-        liftIO $ putStrLn (renderIndent $ ppr modLlvm)
+        liftIO $ Llvm.write (Llvm.configOfHandle S.stdout) modLlvm
 
 

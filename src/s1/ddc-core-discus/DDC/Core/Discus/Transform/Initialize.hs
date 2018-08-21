@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 -- | Add code to initialize the module.
 module DDC.Core.Discus.Transform.Initialize
         (initializeModule)
@@ -8,46 +8,47 @@ import qualified DDC.Type.DataDef               as C
 import qualified DDC.Core.Exp.Annot             as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Salt.Runtime          as A
+import qualified DDC.Core.Call                  as Call
 import qualified DDC.Core.Discus                as D
 import qualified DDC.Core.Discus.Compounds      as D
 import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
+import Data.Monoid
 import Data.List
+import Data.Maybe
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert inititialization code into the module.
 initializeModule
         :: A.Config             -- ^ Runtime system configuration.
-        -> [C.ModuleName]       -- ^ Names of modules transitively imported by this one.
         -> C.Module a D.Name
         -> C.Module a D.Name
 
-initializeModule config mnsImport mm
+initializeModule config mm
  | C.isMainModuleName $ C.moduleName mm
- = initializeMain config
- $ initializeInfo mnsImport mm
+ = initializeInfo $ initializeMain config mm
 
  | otherwise
- = initializeInfo [] mm
+ = initializeInfo mm
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert initialization code into a module.
-initializeInfo
-        :: [C.ModuleName]       -- ^ Also call infotable init functions for these modules.
-        -> C.Module a D.Name    -- ^ Module to add initialization code to.
-        -> C.Module a D.Name
+initializeInfo :: C.Module a D.Name -> C.Module a D.Name
+initializeInfo mm
+ = let  modName   = C.moduleName mm
 
-initializeInfo mnsImport mm
- = let  modName  = C.moduleName mm
-        dataDefs = map snd $ C.moduleLocalDataDefs mm
+        mnsImport = if C.isMainModuleName $ C.moduleName mm
+                        then Set.toList $ C.moduleTransitiveDeps mm
+                        else []
 
---        importValueSea n t
---         = (D.NameVar n, C.ImportValueSea (D.NameVar n) n t)
+        dataDefs  = map snd $ C.moduleLocalDataDefs mm
+        superDefs = slurpSuperDefs modName $ C.moduleBody mm
 
    in mm
         { C.moduleBody
-            = injectInfoInit modName mnsImport dataDefs
+            = injectInfoInit modName mnsImport dataDefs superDefs
             $ C.moduleBody   mm
 
         , C.moduleExportValues
@@ -62,11 +63,6 @@ initializeInfo mnsImport mm
         , C.moduleImportValues
             =  C.moduleImportValues mm
 
-{-
-            ++ [ importValueSea "ddcInfoFrameNew"     D.tInfoFrameNew
-               , importValueSea "ddcInfoFramePush"    D.tInfoFramePush
-               , importValueSea "ddcInfoFrameAddData" D.tInfoFrameAddData ]
--}
                -- Import the initialization functions for transitively imported modules.
             ++ [ ( initNameOfModule mn
                  , C.ImportValueModule
@@ -95,15 +91,67 @@ initBoundOfModule :: C.ModuleName -> C.Bound D.Name
 initBoundOfModule mn = C.UName $ initNameOfModule mn
 
 
+---------------------------------------------------------------------------------------------------
+data SuperDef
+        = SuperDef
+        { superDefModuleName    :: C.ModuleName
+        , superDefName          :: T.Text
+        , superDefParams        :: Int
+        , superDefBoxes         :: Int }
+        deriving Show
+
+
+-- | Slurp super definitions from the top-level of the module.
+slurpSuperDefs
+        :: C.ModuleName
+        -> C.Exp a D.Name
+        -> [SuperDef]
+
+slurpSuperDefs _modName xx
+ = downTop xx
+ where
+        downTop x
+         = case x of
+                C.XLLet _a b x1 x2 -> maybeToList (slurpSuperDef b x1) ++ downTop x2
+                C.XLRec _a bxs x2  -> mapMaybe (uncurry slurpSuperDef) bxs ++ downTop x2
+                _                  -> []
+
+        -- Some top level thing that looks like a super we can
+        -- make an info table entry for.
+        slurpSuperDef (D.BName n _t) x
+         | Just (_csType, csValue, csBox)
+                <-  Call.splitStdCallCons
+                $   Call.takeCallConsFromExp x
+         = let  txName = squashName n
+           in   Just $ SuperDef
+                 { superDefModuleName   = C.ModuleName ["DDC"]
+                        -- TODO: we don't have module names at use sites for the reify# prim,
+                        -- for now all supers are tagged with the same dummy module name.
+                 , superDefName         = txName
+                 , superDefParams       = length csValue
+                 , superDefBoxes        = length csBox }
+
+        -- Some top level thing that doesn't look like a super.
+        -- This is probably a CAF.
+        slurpSuperDef _ _ = Nothing
+
+        -- TODO: this is a copy-pasto from PrimCall. Put it somewhere shared.
+        squashName (D.NameVar tx)   = tx
+        squashName (D.NameExt n tx) = squashName n <> "$" <> tx
+        squashName nSuper
+         = error $ "ddc-core-discus.slurpSuperDefs: invalid super name " ++ show nSuper
+
+
 -- | Inject the info table initialization function into the end of the module.
 injectInfoInit
         :: C.ModuleName         -- ^ Name of the module we're making the table for.
         -> [C.ModuleName]       -- ^ Also call the init function for these other modules.
-        -> [C.DataDef D.Name]   -- ^ Data type declarations defined locally in the module.
+        -> [C.DataDef D.Name]   -- ^ Descriptions of data types defined locally in the module.
+        -> [SuperDef]           -- ^ Descriptions of supers defined locally in the module.
         -> C.Exp a D.Name       -- ^ Body expression of the module to inject into.
         -> C.Exp a D.Name
 
-injectInfoInit modName mnsImport dataDefs xx
+injectInfoInit modName mnsImport dataDefs superDefs xx
  = downTop xx
  where
         downTop x
@@ -118,8 +166,11 @@ injectInfoInit modName mnsImport dataDefs xx
         xInit'  = C.XAbs a' (C.MTerm (C.BNone D.tUnit))
                 $ makeInfoInitImport      a' mnsImport
                 $ makeInfoInitForDataDefs a' modName dataDefs
+                $ makeInfoInitForSupers   a' superDefs
+                $ D.xUnit a'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Call the info table initialization functions for transitively imported modules.
 makeInfoInitImport
         :: a -> [C.ModuleName]
@@ -134,16 +185,17 @@ makeInfoInitImport a mnsImport xx
            in   C.LLet (C.BNone D.tUnit) (C.XApp a (C.XVar a u') (C.RTerm (C.xUnit a)))
 
 
+---------------------------------------------------------------------------------------------------
 -- | Create a new frame to hold info about the given data type definitions,
 --   and push it on the frame stack.
 makeInfoInitForDataDefs
-        :: a
-        -> C.ModuleName         -- ^ Name of module the data types are defined in.
-        -> [C.DataDef D.Name]   -- ^ Data type definitions to create info table frames for.
-        -> C.Exp a D.Name
+        :: a -> C.ModuleName -> [C.DataDef D.Name]
+        -> C.Exp a D.Name -> C.Exp a D.Name
 
-makeInfoInitForDataDefs a modName dataDefs
- = foldr (C.XLet a) (D.xUnit a)
+makeInfoInitForDataDefs a modName dataDefs xBase
+ | null dataDefs = xBase
+ | otherwise
+ = foldr (C.XLet a) xBase
  $ concatMap (makeInfoInitForDataDef a modName) dataDefs
 
 
@@ -165,7 +217,7 @@ makeInfoInitForDataDef a modName dataDef
                 _ -> error "ddc-core-discus.makeInfoInitForDataDef: invalid ctor name"
 
         C.ModuleName parts = modName
-        flatName = intercalate "." parts
+        flatName           = intercalate "." parts
 
         makeFrame ctors
          =  [ C.LLet (C.BAnon D.tAddr)
@@ -175,15 +227,47 @@ makeInfoInitForDataDef a modName dataDef
                 $  D.xInfoFrameAddData a
                         (C.XVar a (C.UIx 0))
                         iTag (length $ C.dataCtorFieldTypes ctor)
-                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))
-                                               (D.tTextLit)))
-                        (C.XCon a (C.DaConPrim (textLitOfConName $ C.dataCtorName ctor)
-                                               (D.tTextLit)))
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))))
+                        (C.XCon a (C.DaConPrim (textLitOfConName $ C.dataCtorName ctor)))
                 | ctor  <- ctors
                 | iTag  <- [0..]]
 
          ++ [ C.LLet (C.BNone D.tUnit)
                 $ D.xInfoFramePush a (C.XVar a (C.UIx 0)) ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Create a new frame to hold info about the given supers,
+--   and push it on the frame stack.
+makeInfoInitForSupers
+        :: a -> [SuperDef]
+        -> C.Exp a D.Name -> C.Exp a D.Name
+
+makeInfoInitForSupers a superDefs xBase
+ | null superDefs = xBase
+ | otherwise
+ = let
+        lFrameNew
+         = C.LLet (C.BAnon D.tAddr)
+         $ D.xInfoFrameNew a (length superDefs)
+
+        lsAddSuper
+         = [ let C.ModuleName parts = superDefModuleName super
+                 flatName = intercalate "." parts
+             in  C.LLet (C.BNone (D.tWord 32))
+                  $ D.xInfoFrameAddSuper a
+                        (C.XVar a (C.UIx 0))
+                        (superDefParams super) (superDefBoxes super)
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))))
+                        (C.XCon a (C.DaConPrim (D.NameLitTextLit (superDefName super))))
+           | super <- superDefs ]
+
+        lFramePush
+         = C.LLet (C.BNone D.tUnit)
+         $ D.xInfoFramePush a (C.XVar a (C.UIx 0))
+
+   in   foldr (C.XLet a) xBase
+         $ lFrameNew : lsAddSuper ++ [lFramePush]
 
 
 ---------------------------------------------------------------------------------------------------
@@ -204,7 +288,8 @@ initializeMain
         ivHookHandleTopLevel
          = ( nHookHandleTopLevel
            , C.ImportValueSea
-                { C.importValueSeaNameInternal  = nHookHandleTopLevel
+                { C.importValueSeaModuleName    = C.ModuleName ["DDC", "Internal", "Runtime"]
+                , C.importValueSeaNameInternal  = nHookHandleTopLevel
                 , C.importValueSeaNameExternal  = txHookHandleTopLevel
                 , C.importValueSeaType          = tHookHandleTopLevel })
 
@@ -228,11 +313,10 @@ initializeMainExp nHookHandleTopLevel xx
         downTop x
          = case x of
                 C.XLLet a b x1 x2 -> C.XLLet a b x1 (downTop x2)
-                C.XLRec a bxs x2  -> C.XLRec a (map downBind bxs) (downTop x2)
+                C.XLRec a bxs x2  -> C.XLRec a (concatMap downBind bxs) (downTop x2)
                 _                 -> x
 
         -- Insert the handler into the main binding.
-
         -- TODO: We do an inner box run to preserve the arity of the main function,
         --       so that the runtime system can call it directly.
         --       Make sure the main function can be bound directly to a closure value
@@ -241,21 +325,28 @@ initializeMainExp nHookHandleTopLevel xx
         downBind (C.BName n@(D.NameVar "main") tMain, x)
          | Just (_tParam, tSusp)              <- C.takeTFun tMain
          , Just (tEff,   _tResult)            <- C.takeTSusp tSusp
-         , C.XAbs a p@(C.MTerm _bParam) xBody <- x
-         = ( C.BName n tMain
-           , C.XAbs a p
-              $ C.XBox a
-              $ C.XLet a (C.LLet  (C.BNone D.tUnit)
+         , C.XAbs a p@(C.MTerm bParam) xBody <- x
+         = [ ( C.BName n tMain
+             , C.XAbs a p
+                $ C.XBox a
+                $ C.XLet a (C.LLet  (C.BNone D.tUnit)
                                   (C.xApps a
                                         (C.XVar a (C.UName (D.NameVar "_init$Main")))
                                         [C.RTerm $ D.xUnit a]))
-              $ C.XRun a
-              $ C.xApps a (C.xApps a (C.XVar a (C.UName nHookHandleTopLevel)) [C.RType tEff])
-                          [C.RTerm xBody])
+                $ C.XRun a
+                $ C.xApps a (C.xApps a (C.XVar a (C.UName nHookHandleTopLevel)) [C.RType tEff])
+                          [C.RTerm (C.XApp a (C.XVar a (C.UName nMainUser)) (C.RTerm (D.xUnit a)))])
+
+           , ( C.BName nMainUser tMain
+             , C.XAbs a (C.MTerm bParam) xBody)
+           ]
 
          | otherwise
          = error "ddc-core-discus.initializeModule: invalid type for main binding"
 
         downBind (b, x)
-         = (b, x)
+         = [(b, x)]
+
+        nMainUser = D.NameVar "_main$start"
+
 

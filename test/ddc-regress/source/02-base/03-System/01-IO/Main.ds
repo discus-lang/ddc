@@ -1,5 +1,6 @@
 
 module Main
+import Data.Text.Base
 import System.IO.File
 import System.IO.Console
 where

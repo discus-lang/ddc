@@ -10,75 +10,64 @@ ok
 --
 ok
 %s.Obj = type <{i64}>
-@ddcHeapMax = external global  i64
-@ddcHeapTop = external global  i64
+@ddcHeapMax = external global i64
+@ddcHeapTop = external global i64
 declare external ccc void @abort() align 8
-declare external void @llvm.gcroot(i8** , i8* )
-declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
-declare external void @llvm.memset.p0i8.i64(i8* , i8 , i64 , i32 , i1 )
-
-define internal fastcc i64 @x_plus_y_square(i64*  %_v1.x, i64*  %_v2.y, i64*  %_v3.z) align 8 gc "shadow-stack"  
-{
-l9.init:
-        br label %l10.body
-l10.body:
-        %_v11.xval1  = load i64, i64* %_v1.x,    !tbaa !7
-        %_v12.yval1  = load i64, i64* %_v2.y,    !tbaa !6
-        %_v13.a      = add i64 %_v11.xval1, %_v12.yval1
-        store i64 %_v13.a, i64* %_v3.z,    !tbaa !8
-        %_v15.xval2  = load i64, i64* %_v1.x,    !tbaa !7
-        %_v16.yval2  = load i64, i64* %_v2.y,    !tbaa !6
-        %_v17.b      = add i64 %_v15.xval2, %_v16.yval2
-        %_v18        = mul i64 %_v13.a, %_v17.b
-        ret i64 %_v18
+declare external  void @llvm.gcroot(i8**, i8*)
+declare external  void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i32, i1)
+declare external  void @llvm.memset.p0i8.i64(i8*, i8, i64, i32, i1)
+define internal fastcc i64 @x_plus_y_square(i64* %_v1.x, i64* %_v2.y, i64* %_v3.z) align 8 gc "shadow-stack"   {
+l9.init: 
+    br label %l10.body
+l10.body: 
+    %_v11.xval1 = load i64, i64* %_v1.x, !tbaa !7
+    %_v12.yval1 = load i64, i64* %_v2.y, !tbaa !6
+    %_v13.a = add i64 %_v11.xval1, %_v12.yval1
+    store i64 %_v13.a, i64* %_v3.z, !tbaa !8
+    %_v15.xval2 = load i64, i64* %_v1.x, !tbaa !7
+    %_v16.yval2 = load i64, i64* %_v2.y, !tbaa !6
+    %_v17.b = add i64 %_v15.xval2, %_v16.yval2
+    %_v18 = mul i64 %_v13.a, %_v17.b
+    ret i64 %_v18
 }
 
-
-
-!8 = !{!"x_plus_y_square_rz",  !5, i64 0}
-!7 = !{!"x_plus_y_square_rx",  !6, i64 0}
-!6 = !{!"x_plus_y_square_ry",  !5, i64 0}
+!8 = !{!"x_plus_y_square_rz", !5,i64 0}
+!7 = !{!"x_plus_y_square_rx", !6,i64 0}
+!6 = !{!"x_plus_y_square_ry", !5,i64 0}
 !5 = !{!"x_plus_y_square_ROOT_4"}
-
 
 -- Observable optimisations: GVN - constprop behaviour
 ok
 %s.Obj = type <{i64}>
-@ddcHeapMax = external global  i64
-@ddcHeapTop = external global  i64
+@ddcHeapMax = external global i64
+@ddcHeapTop = external global i64
 declare external ccc void @abort() align 8
-declare external void @llvm.gcroot(i8** , i8* )
-declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
-declare external void @llvm.memset.p0i8.i64(i8* , i8 , i64 , i32 , i1 )
-
-define internal fastcc i64 @nothing(i64*  %_v1.x) align 8 gc "shadow-stack"  
-{
-l5.init:
-        br label %l6.body
-l6.body:
-        ret i64 42
+declare external  void @llvm.gcroot(i8**, i8*)
+declare external  void @llvm.memcpy.p0i8.p0i8.i64(i8*, i8*, i64, i32, i1)
+declare external  void @llvm.memset.p0i8.i64(i8*, i8, i64, i32, i1)
+define internal fastcc i64 @nothing(i64* %_v1.x) align 8 gc "shadow-stack"   {
+l5.init: 
+    br label %l6.body
+l6.body: 
+    ret i64 42
 }
 
-define internal fastcc i64 @three_x_plus_one(i64*  %_v8.x) align 8 gc "shadow-stack"  
-{
-l12.init:
-        br label %l13.body
-l13.body:
-        %_v14.a      = load i64, i64* %_v8.x,    !tbaa !11
-        %_v15.b      = add i64 %_v14.a, 1
-        %_v16.x0     = call fastcc i64 @nothing (i64* %_v8.x) 
-        %_v17.c      = load i64, i64* %_v8.x,    !tbaa !11
-        %_v18.d      = mul i64 %_v17.c, 2
-        %_v19        = add i64 %_v15.b, %_v18.d
-        ret i64 %_v19
+define internal fastcc i64 @three_x_plus_one(i64* %_v8.x) align 8 gc "shadow-stack"   {
+l12.init: 
+    br label %l13.body
+l13.body: 
+    %_v14.a = load i64, i64* %_v8.x, !tbaa !11
+    %_v15.b = add i64 %_v14.a, 1
+    %_v16.x0 = call fastcc i64 @nothing(i64* %_v8.x) 
+    %_v17.c = load i64, i64* %_v8.x, !tbaa !11
+    %_v18.d = mul i64 %_v17.c, 2
+    %_v19 = add i64 %_v15.b, %_v18.d
+    ret i64 %_v19
 }
 
-
-
-!4 = !{!"nothing_rx",  !3, i64 0}
+!4 = !{!"nothing_rx", !3,i64 0}
 !3 = !{!"nothing_ROOT_2"}
-!11 = !{!"three_x_plus_one_rx",  !10, i64 1}
+!11 = !{!"three_x_plus_one_rx", !10,i64 1}
 !10 = !{!"three_x_plus_one_ROOT_9"}
-
 
 

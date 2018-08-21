@@ -206,9 +206,9 @@ matchT t1 t2 vs subst
          | UIx i == v2
          -> Just subst
 
-        (TVar (UPrim n), TVar v2)
-         | UPrim n == v2
-         -> Just subst
+--         (TVar (UPrim n), TVar v2)
+--          | UPrim n == v2
+--          -> Just subst
 
         -- Otherwise the two are different
         (_, _)  -> Nothing

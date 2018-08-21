@@ -7,6 +7,7 @@ module DDC.Driver.Stage.Salt
         , saltCompileViaLlvm)
 where
 import Control.Monad.Trans.Except
+import Control.DeepSeq
 
 import DDC.Data.Pretty
 import qualified DDC.Data.SourcePos                     as SP
@@ -42,7 +43,7 @@ saltLoadText
 saltLoadText config source str
  = B.coreLoad
         "SaltLoad"
-        BA.fragment
+        BA.fragment Nothing
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
@@ -73,7 +74,7 @@ saltSimplify config _source mm
 ---------------------------------------------------------------------------------------------------
 -- | Convert a Salt module to a LLVM module.
 saltToLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => D.Config             -- ^ Driver config.
         -> D.Source             -- ^ Source file meta data.
         -> Bool                 -- ^ Whether to introduce stack slots.
@@ -94,7 +95,7 @@ saltToLlvm config source bAddSlots mm
 ---------------------------------------------------------------------------------------------------
 -- | Compile a Core Salt module using the system Llvm compiler.
 saltCompileViaLlvm
-        :: (Show a, Pretty a)
+        :: (NFData a, Show a, Pretty a)
         => D.Config             -- ^ Driver config.
         -> D.Source             -- ^ Source file meta data.
         -> Maybe [FilePath]     -- ^ Link with these other .o files.
@@ -106,10 +107,13 @@ saltCompileViaLlvm
 saltCompileViaLlvm config source mOtherExeObjs
         bSlotify bShouldLinkExe mm
  = do
-        let (oPath, _)  = D.objectPathsOfConfig config (D.nameOfSource source)
-        let mExePath    = if bShouldLinkExe
-                                then Just $ D.exePathOfConfig config oPath
-                                else Nothing
+        let (oPath, _)
+                = D.objectPathsOfConfig config (D.nameOfSource source)
+
+        let mExePath
+                = if bShouldLinkExe
+                        then Just $ D.exePathOfConfig config (D.nameOfSource source)
+                        else Nothing
 
         BA.saltCompileViaLlvm
                 (D.nameOfSource source)

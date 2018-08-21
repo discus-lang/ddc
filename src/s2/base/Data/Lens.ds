@@ -5,6 +5,8 @@ export  { lens_Category
         ; lens_get;  lens_set; lens_mod
         ; lens_fst;  lens_snd }
 import Data.Tuple
+import Data.List
+import Class.Category
 where
 
 

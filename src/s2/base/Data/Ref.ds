@@ -1,6 +1,7 @@
 
 module Data.Ref
-export { allocRef; readRef; writeRef }
+export  allocRef; readRef; writeRef
+        modifyRef
 
 import foreign boxed type
  Ref       : Region -> Data -> Data
@@ -27,3 +28,12 @@ writeRef {@r: Region} {@a: Data}
          (ref: Ref r a) (x: a): S (Write r) Unit
   = do   ddcPrimRefWrite ref x
          ()
+
+
+-- | Modify the contents of a Ref by applying the given function.
+modifyRef {@r: Region} {@a: Data}
+          (ref: Ref r a) (f: a -> a): S (Read r + Write r) Unit
+ = do   x = ddcPrimRefRead ref
+        ddcPrimRefWrite ref (f x)
+        ()
+

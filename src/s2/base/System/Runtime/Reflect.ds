@@ -8,18 +8,17 @@ export  show_ValueFormat
 import Control.Exception
 import System.IO.Console
 import System.Runtime.Info
+import Class.Show
 import Data.Numeric
+import Data.List
+import Data.Text
 
 import foreign abstract type
- -- Effect of computations that use the Reflection system.
- -- This includes both the
- --        *reification* of objects into generic values (a -> Value)
- --    and *reflection*  of generic values back into objects (Value -> a)
- Reflect : Effect
+ -- Effect of reifying a pure value.
+ Reify   : Effect
 
 import foreign boxed type
  Value   : Data
-
 
 -- Import primitive object functions from the runtime system.
 --
@@ -29,17 +28,34 @@ import foreign boxed type
 --
 import foreign c value
  -- Reification (cast a value to its generic representation)
- ddcPrimReifyValue      : {@a: Data} -> a -> S Reflect Value
+ --   This has a Reify effect because reifying an anonymous functional
+ --   value reveals the name of the supercombinator which was created at
+ --   compile. This name changes depending on what other anonymous functions
+ --   are in the surrounding code, so the form of the result 'Value'
+ --   depends on context it was defined in.
+ ddcPrimReifyValue      : {@a: Data} -> a     -> S Reify Value
+
 
  -- Reflection (cast a generic representation into a specific value)
- --   These functions will all call fail# at runtime if the value does
- --   not have the appropriate type.
+
+ -- The unsafe version is used on boxed objects where we know from the
+ -- info table that the value really has the desired type.
+ ddcPrimReflectUnsafe   : {@a: Data} -> Value -> a
+
+ -- These functions will all fail# at runtime if the value does not have
+ -- the appropriate type.
  ddcPrimReflectUnit     : Value -> Unit
+ ddcPrimReflectTextLit  : Value -> TextLit
  ddcPrimReflectBool     : Value -> Bool
  ddcPrimReflectNat      : Value -> Nat
  ddcPrimReflectInt      : Value -> Int
  ddcPrimReflectFloat32  : Value -> Float32
  ddcPrimReflectFloat64  : Value -> Float64
+ ddcPrimReflectWord8    : Value -> Word8
+ ddcPrimReflectWord16   : Value -> Word16
+ ddcPrimReflectWord32   : Value -> Word32
+ ddcPrimReflectWord64   : Value -> Word64
+ ddcPrimReflectAddr     : Value -> Addr
 
  -- Raw Object Access.
  --   The generic 'Object' functions are safe to use on any sort of value,
@@ -72,14 +88,20 @@ where
 data ValueFormat where
         -- | Format of a Thunk heap object.
         ValueFormatThunk
-         : Nat -> Nat -> Nat -> Nat -> ValueFormat
+         :  Text        -- ^ Module name of super
+         -> Text        -- ^ Name of super
+         -> Nat         -- ^ Number of params.
+         -> Nat         -- ^ Number of boxes.
+         -> Nat         -- ^ Number of args.
+         -> Nat         -- ^ Number of runs.
+         -> ValueFormat
 
         -- | Format of a Boxed heap object.
         ValueFormatBoxed
-         :  Text   -- ^ Module name of definition.
-         -> Text   -- ^ Constructor name.
-         -> Nat    -- ^ Data contructor tag.
-         -> Nat    -- ^ Number of fields in object.
+         :  Text        -- ^ Module name of definition.
+         -> Text        -- ^ Constructor name.
+         -> Nat         -- ^ Data contructor tag.
+         -> Nat         -- ^ Number of fields in object.
          -> ValueFormat
 
         -- | Format of an Array heap object.
@@ -103,10 +125,11 @@ show_ValueFormat: Show ValueFormat
 
 reflect_showValueFormat (f: ValueFormat): Text
  = case f of
-        ValueFormatThunk nParams nBoxes nArgs nRuns
+        ValueFormatThunk txModule txName nParams nBoxes nArgs nRuns
          -> parens $ "THUNK"
-         %%  "{params =" %% show nParams % ", boxes ="  %% show nBoxes
-          % ", args ="   %% show nArgs   % ", runs ="   %% show nRuns %  "}"
+         %%  "{ module =" %% show txModule % ", name ="  %% show txName
+          %  ", params =" %% show nParams  % ", boxes =" %% show nBoxes
+          %  ", args ="   %% show nArgs    % ", runs ="  %% show nRuns %  "}"
 
         ValueFormatBoxed txModule txCtor nTag nFields
          -> parens $ "BOXED"
@@ -128,8 +151,7 @@ reflect_showValueFormat (f: ValueFormat): Text
 -------------------------------------------------------------------------------
 -- | Throw a reflection failure exception.
 reflect_fail (tx: Text): a
- = ddcPrimExceptionThrow {@Pure}
- $ ExceptionSystemReflect tx
+ = ddcPrimExceptionThrow {@Pure} (ExceptionSystemReflect tx)
 
 
 -------------------------------------------------------------------------------
@@ -143,7 +165,7 @@ reflect_fail (tx: Text): a
 --   but it will not change at runtime after we have casted it to a generic
 --   value.
 --
-reflect_toValue (x: a): S Reflect Value
+reflect_toValue (x: a): S Reify Value
  = ddcPrimReifyValue x
 
 
@@ -154,14 +176,16 @@ reflect_formatOfValue (v: Value): ValueFormat
                 nBoxes   = ddcThunkBoxes_value  v
                 nArgs    = ddcThunkArgs_value   v
                 nRuns    = ddcThunkRuns_value   v
-                ValueFormatThunk nParams nBoxes nArgs nRuns
+                aEntry   = info_lookup (ddcObjectInfoIndex_value v)
+                txModule = info_getSuperModuleName aEntry
+                txName   = info_getSuperName aEntry
+                ValueFormatThunk txModule txName nParams nBoxes nArgs nRuns
 
         3 -> do nTag     = ddcBoxedTag_value v
                 nFields  = ddcBoxedFields v
-                infoIdx  = ddcObjectInfoIndex_value v
-                aEntry   = info_lookup infoIdx
-                txModule = info_getModuleName aEntry
-                txCtor   = info_getCtorName aEntry
+                aEntry   = info_lookup (ddcObjectInfoIndex_value v)
+                txModule = info_getDataModuleName aEntry
+                txCtor   = info_getDataName aEntry
                 ValueFormatBoxed txModule txCtor nTag nFields
 
         4 -> ValueFormatRaw
@@ -171,8 +195,8 @@ reflect_formatOfValue (v: Value): ValueFormat
         6 -> do nSize    = ddcSmallPayloadSize_value v
                 infoIdx  = ddcObjectInfoIndex_value v
                 aEntry   = info_lookup infoIdx
-                txModule = info_getModuleName aEntry
-                txCtor   = info_getCtorName aEntry
+                txModule = info_getDataModuleName aEntry
+                txCtor   = info_getDataName aEntry
                 ValueFormatSmall txModule txCtor nSize
 
         _ -> reflect_fail "formatOfValue"
@@ -193,38 +217,92 @@ show_Value: Show Value
 reflect_showValue (v: Value): Text
  = let fmt = reflect_formatOfValue v
    in  case fmt of
-        ValueFormatThunk nParams nBoxes nArgs nRuns
-         -> parens $ show fmt
-         %  foldl pastes ""
-                (map (\n -> reflect_showValue (ddcThunkGetField_value v n))
-                     (generate nArgs id))
-
-        ValueFormatBoxed txModuleName txCtorName nTag nFields
-         |  nFields == 0
-         -> case ddcObjectInfoIndex_value v of
-                1w32    -> show (ddcPrimReflectUnit v)
-                _       -> txModuleName % "." % txCtorName
+        -- Thunks -----------------------------------------
+        -- TODO: wrong number of args not detected,
+        -- during dev had left off txModule, txName and got segfault.
+        ValueFormatThunk txModuleName txName nParams nBoxes nArgs nRuns
+         | nArgs == 0
+         -> txModuleName % "." % txName
 
          | otherwise
          -> parens
-          $ txModuleName % "." % txCtorName
+          $ txModuleName % "." % txName
+          % foldl pastes ""
+                (map (\n -> reflect_showValue (ddcThunkGetField_value v n))
+                     (generate nArgs id))
+
+
+        -- Boxed ------------------------------------------
+        -- Boxed algebraic data values.
+        ValueFormatBoxed txModuleName txName nTag nFields
+         | nFields == 0
+         -> case ddcObjectInfoIndex_value v of
+                1w32    -> show (ddcPrimReflectUnit v)
+                _       -> txModuleName % "." % txName
+
+         -- Pretty print text literals as plain strings.
+         --   The match against the tag depends on the constructors in the Text
+         --   data type definition being in the correct order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextLit"
+         , nTag          == 0
+         , nFields       == 1
+         -> show $ TextLit (ddcPrimReflectTextLit (ddcBoxedGetField_value v 0))
+
+         -- Pretty print text vectors as plain strings,
+         --   Not revealing the vector constructor as we usually don't want it.
+         --   If you want to see it then show the ValueFormat directly.
+         --   CAREFUL: The match against the tag depends on the constructors in
+         --   the Text data type definition being their specific order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextVec"
+         , nTag          == 1
+         , nFields       == 1
+         -> show $ ddcPrimReflectUnsafe {@Text} v
+
+         -- Pretty print text applications as plain strings,
+         --   Not revealing the application constructor as we usually don't want it.
+         --   If you want to see it then show the ValueFormat directly.
+         --   CAREFUL: The match against the tag depends on the constructors in
+         --   the Text data type definition being their specific order.
+         | txModuleName  == "Data.Text.Base"
+         , txName        == "TextApp"
+         , nTag          == 2
+         , nFields       == 2
+         -> show $ ddcPrimReflectUnsafe {@Text} v
+
+         |  otherwise
+         -> parens
+          $ txModuleName % "." % txName
           % foldl pastes ""
                 (map (\n -> reflect_showValue (ddcBoxedGetField_value v n))
                      (generate nFields id))
 
+        -- Raw --------------------------------------------
         ValueFormatRaw
          -> "RAW"
 
+        -- Array ------------------------------------------
         ValueFormatArray
          -> "ARRAY"
 
+        -- Small ------------------------------------------
+        -- Reflect a generic value back into a object level one
+        -- so that we can use the normal show function. The info table
+        -- indices used here are defined by 'ddcInfoInitStatic' in the
+        -- runtime system.
         ValueFormatSmall nModule nCtor nSize
          -> case ddcObjectInfoIndex_value v of
                 1w32    -> show (ddcPrimReflectUnit    v)
                 3w32    -> show (ddcPrimReflectBool    v)
                 4w32    -> show (ddcPrimReflectNat     v)
                 5w32    -> show (ddcPrimReflectInt     v)
+                7w32    -> show (ddcPrimReflectWord8   v)
+                8w32    -> show (ddcPrimReflectWord16  v)
+                9w32    -> show (ddcPrimReflectWord32  v)
+                10w32   -> show (ddcPrimReflectWord64  v)
                 11w32   -> show (ddcPrimReflectFloat32 v)
                 12w32   -> show (ddcPrimReflectFloat64 v)
+                13w32   -> show (ddcPrimReflectAddr    v)
                 _       -> show fmt
 

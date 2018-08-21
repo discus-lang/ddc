@@ -4,6 +4,11 @@ export
 {       parseJson; parseJsonPrefix }
 import Codec.Json.Base
 import Codec.Json.State
+import Data.List
+import Data.Text.Parse
+import Data.Text.List
+import Data.Text.Stream
+import Data.Text.Base
 import Data.Text
 import Data.Numeric
 where

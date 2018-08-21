@@ -5,107 +5,121 @@ module DDC.Core.Transform.Resolve
         , Error (..))
 where
 import DDC.Core.Transform.Resolve.Context
+import DDC.Core.Transform.Resolve.Build
 import DDC.Core.Transform.Resolve.Base
+import DDC.Core.Interface.Oracle                (Oracle)
 import DDC.Core.Fragment                        (Profile (..))
 import DDC.Core.Codec.Text.Pretty               hiding ((<$>))
 import Control.Monad.IO.Class
+import qualified DDC.Core.Module                as C
+import qualified Data.Map.Strict                as Map
+import qualified DDC.Core.Interface.Oracle      as Oracle
 import Data.IORef
-import qualified Data.Map                       as Map
 
 
+-------------------------------------------------------------------------------
 -- | Resolve elaborations in a module.
 resolveModule
         :: (Ord n, Pretty n, Show n)
-        => Profile n                      -- ^ Language profile.
-        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
-        -> Module a n                     -- ^ Module to resolve elaborations in.
+        => Profile n -> Oracle n -> Module a n
         -> IO (Either (Error a n) (Module a n))
 
-resolveModule profile ntsTop mm
- = runExceptT
- $ resolveModuleM profile ntsTop mm
+resolveModule profile oracle mm
+ = runExceptT $ resolveModuleM profile oracle mm
 
 
 -- | Resolve elaborations in a module.
 resolveModuleM
         :: (Ord n, Pretty n, Show n)
-        => Profile n                      -- ^ Language profile.
-        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
-        -> Module a n                     -- ^ Module to resolve elaborations in.
+        => Profile n -> Oracle n -> Module a n
         -> S a n (Module a n)
 
-resolveModuleM profile ntsTop mm
+resolveModuleM profile oracle mm
  = do
-        -- Build the initial context,
-        --   which also gathers up the set of top-level declarations
-        --   available in other modules.
-        ctx     <- makeContextOfModule profile ntsTop mm
+        -- Make the imported modules visible to the resolver.
+        -- TODO: promote missing interface file error to proper exception.
+        oracle'
+         <-  (liftIO $ Oracle.importModules oracle $  moduleImportModules mm)
+         >>= \case
+                Left mnsMissing
+                 -> error $ "Cannot find interfaces for "  ++ show mnsMissing
+                Right oracle'
+                 -> return oracle'
+
+        -- Build the initial context.
+        ctx     <- makeContextOfModule profile oracle' mm
 
         -- Decend into the expression.
+        --  We push local bindings onto the context as we go,
+        --  and resolve elaborations using all bindings currently in scope.
         xBody'  <- resolveExp ctx (moduleBody mm)
 
-        -- Read back the list of bindings that we've used from other modules.
-        --   The module that we've processed may not have import declarations
-        --   for all of these bindings, so we add and de-duplicate them here.
-        topUsed <- liftIO $ readIORef (contextTopUsed ctx)
-        let importValues'
-                = Map.toList
-                $ Map.union (Map.fromList (moduleImportValues mm))
-                            (Map.fromList topUsed)
+        -- Read back imports for external values that we've used
+        -- in elaborated expressions.
+        ivs     <- liftIO $ readIORef (contextImports ctx)
 
         -- Return the resolved module.
         return  $ mm
                 { moduleBody            = xBody'
-                , moduleImportValues    = importValues' }
+                , moduleImportValues
+                        =  (moduleImportValues mm)
+                        ++ [ (n, iv) | ((_, n), iv) <- Map.toList ivs ] }
 
 
+-------------------------------------------------------------------------------
 -- | Resolve elaborations in an expression.
 resolveExp
         :: (Ord n, Pretty n, Show n)
-        => Context n
-        -> Exp a n -> S a n (Exp a n)
-
+        => Context n -> Exp a n -> S a n (Exp a n)
 resolveExp !ctx xx
  = case xx of
         -- Try to resolve an elaboration.
         XApp a (XPrim _ PElaborate) (RType tWant)
-         -> contextResolve a ctx tWant
+         -> (liftIO $ buildFromContext a ctx tWant)
+         >>= \case
+                -- soz.
+                Nothing -> throwE $ ErrorCannotResolve tWant
+
+                -- If we've managed to build a value of the required type
+                -- then also record what extra values we need to import
+                -- from other modules.
+                Just (xResult, ivsImport)
+                 -> do  liftIO $ modifyIORef' (contextImports ctx) $ \ivs
+                         -> Map.union ivs $ Map.fromList
+                                [ ( ( C.importValueModuleName iv
+                                    , C.importValueModuleVar  iv), iv)
+                                | iv <- ivsImport]
+
+                        return xResult
 
         -- Boilerplate traversal.
-        XPrim{}         -> return xx
-        XCon{}          -> return xx
-        XVar{}          -> return xx
+        XPrim{} -> return xx
+        XCon{}  -> return xx
+        XVar{}  -> return xx
 
         XAbs  a p x
-         -> XAbs  a p
-                <$> resolveExp (contextPushParam p ctx) x
+         -> XAbs  a p <$> resolveExp (contextPushParam p ctx) x
 
         XApp  a x1 a2
-         -> XApp  a
-                <$> resolveExp ctx x1
-                <*> resolveArg ctx a2
+         -> XApp  a   <$> resolveExp ctx x1
+                      <*> resolveArg ctx a2
 
         XLet  a lts x
-         -> XLet  a
-                <$> resolveLts ctx lts
-                <*> resolveExp (contextPushLets lts ctx) x
+         -> XLet  a   <$> resolveLts ctx lts
+                      <*> resolveExp (contextPushLets lts ctx) x
 
         XCase a x alts
-         -> XCase a
-                <$> resolveExp ctx x
-                <*> mapM (resolveAlt ctx) alts
+         -> XCase a   <$> resolveExp ctx x
+                      <*> mapM (resolveAlt ctx) alts
 
         XCast a c x
-         -> XCast a c
-                <$> resolveExp ctx x
+         -> XCast a c <$> resolveExp ctx x
 
 
 -- | Resolve elaborations in an argument.
 resolveArg
         :: (Ord n, Pretty n, Show n)
-        => Context n
-        -> Arg a n -> S a n (Arg a n)
-
+        => Context n -> Arg a n -> S a n (Arg a n)
 resolveArg !ctx arg
  = case arg of
         RType{}         -> return arg
@@ -117,13 +131,10 @@ resolveArg !ctx arg
 -- | Resolve elaborations in some let bindings.
 resolveLts
         :: (Ord n, Pretty n, Show n)
-        => Context n
-        -> Lets a n -> S a n (Lets a n)
-
+        => Context n -> Lets a n -> S a n (Lets a n)
 resolveLts !ctx lts
  = case lts of
-        LLet b x
-         -> LLet b <$> resolveExp ctx x
+        LLet b x        -> LLet b <$> resolveExp ctx x
 
         LRec bxs
          -> do  let (bs, xs)    = unzip bxs
@@ -138,9 +149,7 @@ resolveLts !ctx lts
 -- | Resolve elaborations in an alternative.
 resolveAlt
         :: (Ord n, Pretty n, Show n)
-        => Context n
-        -> Alt a n -> S a n (Alt a n)
-
+        => Context n -> Alt a n -> S a n (Alt a n)
 resolveAlt !ctx alt
  = case alt of
         AAlt w x        -> AAlt w <$> resolveExp (contextPushPat w ctx) x

@@ -19,10 +19,7 @@ where
 import DDC.Source.Discus.Convert.Prim
 import DDC.Source.Discus.Convert.Base
 import DDC.Type.Universe                        (Universe (..), universeUp)
-
 import qualified DDC.Source.Discus.Exp          as S
-import qualified DDC.Source.Discus.Env          as S
-
 import qualified DDC.Core.Discus.Compounds      as C
 import qualified DDC.Core.Discus.Prim           as C
 import qualified DDC.Type.Sum                   as CSum
@@ -36,8 +33,7 @@ toCoreTypeDef
 toCoreTypeDef (b, t)
  = do   n       <- toCoreTBCN b
         t'      <- toCoreT UniverseSpec t
-        let hole = C.TVar (C.UName C.NameHole)
-        return  (n, (hole, t'))
+        return  (n, (C.kData, t'))
 
 
 -- Type -------------------------------------------------------------------------------------------
@@ -83,7 +79,6 @@ toCoreT uu tt
          -> C.TApp      <$> toCoreT uu t1 <*> toCoreT uu t2
 
 
-
 -- TyCon ------------------------------------------------------------------------------------------
 -- | Convert a Source TyCon to Core, or Nothing if it cannot be converted in isolation.
 toCoreTC :: Universe -> S.TyCon -> ConvertM a (Maybe (C.TyCon C.Name))
@@ -121,20 +116,17 @@ toCoreTC uu tc
 
                 -- Primitive TyCons
                 S.TyConPrimTyCon tcy
-                 -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyCon tcy
-                        return  $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy)) k
+                 ->     return  $ Just $ C.TyConBound (C.NamePrimTyCon tcy)
 
                 S.TyConPrimDiscus tct
-                 -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyConDiscus tct
-                        let tct' =  toCoreTyConDiscus tct
-                        return  $ Just $ C.TyConBound (C.UPrim (C.NameTyConDiscus tct')) k
+                 -> do  let tct' =  toCoreTyConDiscus tct
+                        return  $ Just $ C.TyConBound (C.NameTyConDiscus tct')
 
         -- Bound type constructors.
         --   The embedded kind is set to Bot. We rely on the spreader
         --   to fill in the real kind before type checking.
         S.TyConBound (S.TyConBoundName tx)
-         -> return $ Just
-         $  C.TyConBound (C.UName (C.NameCon tx)) (C.TVar (C.UName C.NameHole))
+         -> return $ Just $ C.TyConBound (C.NameCon tx)
 
 
 -- Bind -------------------------------------------------------------------------------------------

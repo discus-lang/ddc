@@ -9,6 +9,7 @@ import SMR.Source.Token
 import SMR.Source.Parser
 import SMR.Core.Exp
 import SMR.Core.Step
+import SMR.Prim.Op.Base
 import SMR.Prim.Op
 import SMR.Prim.Name
 import System.IO.Console
@@ -16,6 +17,8 @@ import System.IO.File
 import System.Posix.Stdlib
 import Main.Args
 import Data.Maybe
+import Data.List
+import Data.Lens
 import Data.Function
 import Data.Text.Location
 where

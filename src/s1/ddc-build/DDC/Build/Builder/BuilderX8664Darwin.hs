@@ -1,3 +1,5 @@
+{-# OPTIONS_HADDOCK hide #-}
+
 module DDC.Build.Builder.BuilderX8664Darwin where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm
@@ -19,11 +21,10 @@ builder_X8664_Darwin config host mVersion
            = \llFile sFile
            -> doCmd "LLVM compiler"     [(2, BuilderCanceled)]
                 [ builderHostLlvmBinPath host </> "opt"
-                , "-O3"
                 , llFile
                 , "|"
                 , builderHostLlvmBinPath host </> "llc"
-                , "-O3 -march=x86-64 -relocation-model=pic"
+                , "-O1 -march=x86-64 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC

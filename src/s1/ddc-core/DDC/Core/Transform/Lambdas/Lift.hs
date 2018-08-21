@@ -19,7 +19,6 @@ import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
 
-
 ---------------------------------------------------------------------------------------------------
 -- | Construct the call site, and new lifted binding for a lambda lifted
 --   abstraction.
@@ -34,7 +33,7 @@ liftLambda
         -> S ( Exp a n
              , Bind n, Exp a n)
 
-liftLambda p c fusFree a bfsParam xBody
+liftLambda profile c fusFree a bfsParam xBody
  = do
         -- Name of the enclosing top-level binding.
         let Just nTop       = takeTopNameOfCtx        (contextCtx c)
@@ -49,9 +48,8 @@ liftLambda p c fusFree a bfsParam xBody
         -- These bind all the variables that were free in the abstraction
         -- group that we're lifting out.
         let fusFree_filtered
-                = filter (needParamForFreeBound nsSuper bfsParam)
+                = filter (needParamForFreeBound profile nsSuper bfsParam)
                 $ Set.toList fusFree
-
 
         -- Lookup the types of those variables from the context,
         -- so we can add the correct types for the parameters of the new super.
@@ -85,7 +83,7 @@ liftLambda p c fusFree a bfsParam xBody
 
         let fusFree_body
                 =  [(True, ut) | ut  <- Set.toList
-                                     $  freeVarsT Env.empty $ typeOfExp p c xLambda]
+                                     $  freeVarsT Env.empty $ typeOfExp profile c xLambda]
 
         let futsFree_expandFree
                 =  map joinType
@@ -115,7 +113,7 @@ liftLambda p c fusFree a bfsParam xBody
         -- Make a binder for the new super.
         (bLifted, uLifted)
                   <- newVarExtend nTop "L"
-                  $  typeOfExp p c xLifted
+                  $  typeOfExp profile c xLifted
 
         -- At the point where the original abstraction group was,
         -- call our new lifted super instead.
@@ -134,22 +132,25 @@ liftLambda p c fusFree a bfsParam xBody
 -- | Decide whether we need to bind the given variable as a new parameter
 --   on the lifted super.
 needParamForFreeBound
-        :: (Ord n)
-        => Set n                -- ^ Names of supers at top level.
+        :: (Ord n, Show n)
+        => Profile n
+        -> Set n                -- ^ Names of supers at top level.
         -> [(Bool, Bind n)]     -- ^ Parameters of the current lambda abstraction.
         -> (Bool,  Bound n)     -- ^ Bound variable, and whether it is a type (True) or not.
         -> Bool
 
-needParamForFreeBound nsSuper bfsParam (bType, u)
+needParamForFreeBound profile nsSuper bfsParam (bType, u)
+        -- We don't need new parameters for primitives,
+        -- as we can reference those directly.
+        | UName n  <- u
+        , Just _   <- Env.lookupName n (profilePrimTypes profile)
+        = False
+
         -- We don't need new parameters for supers that are already
         -- at top level, as we can reference those directly.
         | not bType
         , UName n  <- u
-        = not $ Set.member n nsSuper
-
-        -- We don't need new parameters for primitives,
-        -- as we can reference those directly.
-        | UPrim{}  <- u
+        , Set.member n nsSuper
         = False
 
         -- We don't need new paramters for variables that
@@ -177,7 +178,8 @@ typeOfExp p c x
     of  Left err
          -> error $ renderIndent $ vcat
             [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
-            , ppr err]
+            , ppr err
+            , ppr x]
 
         Right t
          -> t

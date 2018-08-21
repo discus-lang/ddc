@@ -8,16 +8,21 @@ export
         nameOfPrimEval;
         primEvalOp1; primEvalOp2
 }
-import  SMR.Core.Exp
+import SMR.Core.Exp
+import Class.Show
+import Class.Eq
+import Data.Text
+import Data.Function
+import Data.Numeric
 where
 
 
 -------------------------------------------------------------------------------
 -- | Primitive values and operators.
-data Prim where
-        PrimOp          : Text          -> Prim
-        PrimLitBool     : Bool          -> Prim
-        PrimLitNat      : Nat           -> Prim
+data Prim
+        = PrimOp      Text
+        | PrimLitBool Bool
+        | PrimLitNat  Nat
 
 
 prim_Show: Show Prim
@@ -96,20 +101,19 @@ takeArgNat
 
 -------------------------------------------------------------------------------
 -- | Argument passing method.
-data PrimArg where
-        Val     : PrimArg       -- ^ Call-by-value.
-        Exp     : PrimArg       -- ^ Call-by-name / unevaluated expression.
+data PrimArg
+        = Val   -- ^ Call-by-value.
+        | Exp   -- ^ Call-by-name / unevaluated expression.
 
 
 -- | Primitive evaluator.
-data PrimEval (s p: Data) where
-        PrimEval
-         :  p                   -- ^ Op name.
-         -> Text                -- ^ Op description.
-         -> List PrimArg        -- ^ Argument passing method.
-         -> (List (Exp s p) -> Maybe (Exp s p))
+data PrimEval (s p: Data)
+ = PrimEval
+        p                   -- ^ Op name.
+        Text                -- ^ Op description.
+        (List PrimArg)      -- ^ Argument passing method.
+        (List (Exp s p) -> Maybe (Exp s p))
                                 -- ^ Evaluation function.
-         -> PrimEval s p
 
 
 -- | Get the name of a `PrimEval`.

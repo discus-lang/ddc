@@ -35,9 +35,6 @@ convertTypeU uu
         UName (E.NameVar tx)
          -> return $ UName (A.NameVar tx)
 
-        UPrim (E.NameVar tx)
-         -> return $ UPrim (A.NameVar tx)
-
         _ -> throw $ ErrorMalformed
                    $ "Invalid type bound " ++ (renderIndent $ ppr uu)
 

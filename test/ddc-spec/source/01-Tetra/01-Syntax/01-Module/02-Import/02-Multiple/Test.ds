@@ -11,6 +11,7 @@ export  baz;
 import
 {       Data.Numeric.Nat;
         Data.Numeric.Bool;
+        Class.Numeric
 }
 where
 

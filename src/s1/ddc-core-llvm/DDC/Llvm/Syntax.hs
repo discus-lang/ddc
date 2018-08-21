@@ -97,3 +97,4 @@ import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Syntax.Module
 import DDC.Llvm.Syntax.Prim
 import DDC.Llvm.Syntax.Type
+import DDC.Llvm.Syntax.NFData   ()

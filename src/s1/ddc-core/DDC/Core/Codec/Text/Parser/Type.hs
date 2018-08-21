@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Parser for type expressions.
 module DDC.Core.Codec.Text.Parser.Type
@@ -310,6 +311,6 @@ pTyConNamed :: Parser n (TyCon n)
 pTyConNamed
         =   P.pTokMaybe f
         <?> "a type constructor"
- where  f (KN (KCon n))          = Just (TyConBound (UName n) (tBot kData))
+ where  f (KN (KCon n))          = Just (TyConBound n)
         f _                      = Nothing
 

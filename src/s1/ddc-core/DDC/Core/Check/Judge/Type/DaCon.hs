@@ -3,8 +3,9 @@ module DDC.Core.Check.Judge.Type.DaCon
         (checkDaConM)
 where
 import DDC.Core.Check.Judge.Type.Base
-import qualified Data.Map       as Map
-import Prelude                  as L
+import qualified DDC.Core.Env.EnvX       as EnvX
+import qualified Data.Map               as Map
+import Prelude                          as L
 
 -- | Check a data constructor, returning its type.
 checkDaConM
@@ -14,17 +15,18 @@ checkDaConM
         -> Exp a n              -- ^ The full expression for error messages.
         -> a                    -- ^ Annotation for error messages.
         -> DaCon n (Type n)     -- ^ Data constructor to check.
-        -> CheckM a n (Type n)
+        -> CheckM a n (DaCon n (Type n), Type n)
 
 checkDaConM _config ctx xx a dc
  = case dc of
     -- Type type of the unit data constructor is baked-in.
     DaConUnit
-     -> return tUnit
+     -> return (dc, tUnit)
 
-    DaConRecord{}
-     -> do let Just t   = takeTypeOfDaCon dc
-           return t
+    DaConRecord ns
+     -> return (dc, tForalls (map (const kData) ns)
+        $ \tsArg -> tFunOfParamResult tsArg
+                 $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg)
 
     -- Primitive data constructors need to have a corresponding data type,
     -- but there may be too many constructors to list, like with Int literals.
@@ -35,29 +37,34 @@ checkDaConM _config ctx xx a dc
     --
     -- The type of the constructor needs to be attached so we can determine
     --  what data type it belongs to.
-    DaConPrim { daConName        = nCtor
-              , daConType        = t }
-     -> let  tResult = snd $ takeTFunArgResult $ eraseTForalls t
-        in case liftM fst $ takeTyConApps tResult of
-            Just (TyConBound u _)
-                | Just nType     <- takeNameOfBound u
-                , Just dataType  <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
-                -> case dataTypeMode dataType of
-                    DataModeSingle  -> return t
+    DaConPrim nCtor
+     | Just tPrim       <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
+     , tResult          <- snd $ takeTFunArgResult $ eraseTForalls tPrim
+     , Just (TyConBound nType)
+                        <- fmap fst $ takeTyConApps tResult
+     , Just dataType    <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
+     -> case dataTypeMode dataType of
+         DataModeSingle -> return (dc, tPrim)
 
-                    DataModeSmall nsCtors
-                        | L.elem nCtor nsCtors -> return t
-                        | otherwise            -> throw $ ErrorUndefinedCtor a xx
+         DataModeSmall nsCtors
+          | L.elem nCtor nsCtors -> return (dc, tPrim)
+          | otherwise            -> throw $ ErrorUndefinedCtor a xx
 
-                    DataModeLarge   -> return t
+         DataModeLarge  -> return (dc, tPrim)
 
-            _ -> throw $ ErrorUndefinedCtor a xx
+     | otherwise        -> throw $ ErrorUndefinedCtor a xx
 
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
-    -- FIXME: use the module and type names.
-    DaConBound (DaConBoundName _ _ nCtor)
-     -> case Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx) of
-         Just ctor       -> return $ typeOfDataCtor ctor
-         Nothing         -> throw $ ErrorUndefinedCtor a xx
 
+    -- TODO: use the module and type names.
+    -- Convert primitive data constructors to `DaConPrim` form.
+    DaConBound (DaConBoundName Nothing Nothing nCtor)
+     |  Just tPrim <- EnvX.envxPrimFun (contextEnvX ctx) nCtor
+     -> return (DaConPrim nCtor, tPrim)
+
+    DaConBound (DaConBoundName _ _ nCtor)
+     -> lookupDataCtor ctx nCtor
+     >>= \case
+        Nothing         -> throw $ ErrorUndefinedCtor a xx
+        Just dataCtor   -> return (dc, typeOfDataCtor dataCtor)

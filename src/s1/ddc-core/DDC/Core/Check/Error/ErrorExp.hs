@@ -10,9 +10,20 @@ import DDC.Type.Universe
 -- | All the things that can go wrong when type checking an expression
 --   or witness.
 data Error a n
+        -- Context ----------------------------------------
+        -- | Error in a data type declaration of the given name.
+        = ErrorCtxData
+        { errorName             :: n
+        , errorTail             :: Error a n }
+
+        -- | Error in a top-level binding.
+        | ErrorCtxBind
+        { errorName             :: n
+        , errorTail             :: Error a n }
+
         -- Type -------------------------------------------
         -- | Found a kind error when checking a type.
-        = ErrorType
+        | ErrorType
         { errorTypeError        :: ErrorType n }
 
         -- | Found an error in the data type definitions.

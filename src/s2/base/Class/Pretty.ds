@@ -2,6 +2,7 @@
 module Class.Pretty
 export {ppr; pretty_Unit; pretty_Text; pretty_Tuple }
 import Data.Text
+import Data.Function
 
 where
 

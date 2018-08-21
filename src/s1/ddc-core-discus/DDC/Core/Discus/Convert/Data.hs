@@ -21,10 +21,11 @@ import Data.Maybe
 
 
 -- Env --------------------------------------------------------------------------------------------
+-- TODO: reuse this at the construction site.
 nameOfInfoIndexCtorRef :: ModuleName -> Text -> Text
 nameOfInfoIndexCtorRef (ModuleName parts) txCtorName
  = let  mn' = T.intercalate (T.pack ".") $ map T.pack parts
-   in   "ddcInfoIndex." % mn' % "." % txCtorName
+   in   "ddcInfoIndex.data." % mn' % "." % txCtorName
 
 
 -- Construct --------------------------------------------------------------------------------------

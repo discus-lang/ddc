@@ -109,7 +109,7 @@ getBind :: (Name,(TypeF,ExpF)) -> ([Name], [Name]) -> CNF.Bind Name Name
 getBind (nm,(t,x)) env
  -- Try to match against a known vector combinator.
  | Just (f, args) <- takeXApps x
- , XVar (UPrim (NameOpVector ov)) <- f
+ , XVar (UName (NameOpVector ov)) <- f
  -- throw away that pesky type information
  , args' <- filter ((==Nothing) . takeXType) args
  = case (ov, args') of

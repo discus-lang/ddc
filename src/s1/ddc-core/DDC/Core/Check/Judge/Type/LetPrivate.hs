@@ -177,9 +177,9 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
                 | EnvT.member u' (contextEnvT ctx) -> True
                 | memberKind u' ctx                -> True
 
-             TCon (TyConBound u' _)
-                | EnvT.member u' (contextEnvT ctx) -> True
-                | memberKind u' ctx                -> True
+             TCon (TyConBound n')
+                | EnvT.member (UName n') (contextEnvT ctx) -> True
+                | memberKind  (UName n') ctx       -> True
              _                                     -> False
 
 
@@ -192,8 +192,8 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
              -> throw $ ErrorPrivateWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
-            TCon (TyConBound u' _)
-             | all (/= u') uRegions
+            TCon (TyConBound n')
+             | all (/= UName n') uRegions
              -> throw $ ErrorPrivateWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 

@@ -34,8 +34,8 @@ import qualified DDC.Core.Discus.Transform.Initialize   as DInitialize
 data ConfigDiscusToSalt
         = ConfigDiscusToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
-        , configSinkInitialize  :: B.Sink       -- ^ Sink after initialize transform.
         , configSinkLambdas     :: B.Sink       -- ^ Sink after lambda lifting.
+        , configSinkInitialize  :: B.Sink       -- ^ Sink after initialize transform.
         , configSinkUnshare     :: B.Sink       -- ^ Sink after unsharing.
         , configSinkCurry       :: B.Sink       -- ^ Sink after curry transform.
         , configSinkBoxing      :: B.Sink       -- ^ Sink after boxing transform.
@@ -49,41 +49,30 @@ data ConfigDiscusToSalt
 discusToSalt
         :: A.Platform           -- ^ Platform configuation.
         -> A.Config             -- ^ Runtime config.
-        -> [C.ModuleName]       -- ^ Names of modules transitively imported by the current one.
         -> C.Module () D.Name   -- ^ Core tetra module.
         -> ConfigDiscusToSalt   -- ^ Sinker config.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-discusToSalt platform runtimeConfig mnsInit mm config
+discusToSalt platform runtimeConfig mm config
  = do
         -- Expliciate the core module.
         --   This converts implicit function parameters and arguments to explicit ones
         --   as well as substituting in all type equations.
         mm_explicit
          <- B.coreSimplify
-                BD.fragment (0 :: Int) C.expliciate
-                mm
+                BD.fragment (0 :: Int)
+                C.expliciate mm
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit)
                             (configSinkExplicit config)
-
-        -- Perform the initialize transform.
-        --   This wraps the main function with the default exception handler.
-        let mm_initialize
-                = DInitialize.initializeModule
-                        runtimeConfig
-                        mnsInit mm_explicit
-
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_initialize)
-                            (configSinkInitialize config)
 
         -- Re-check the module before lambda lifting.
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck
-                "DiscusToSalt/lambdas" BD.fragment C.Recon
+                "DiscusToSalt/lambdas" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_initialize
+                mm_explicit
 
         -- Perform lambda lifting.
         --   This hoists out nested lambda abstractions to top-level,
@@ -95,13 +84,25 @@ discusToSalt platform runtimeConfig mnsInit mm config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_lambdas)
                             (configSinkLambdas config)
 
+        -- Perform the initialize transform.
+        --   This wraps the main function with the default exception handler,
+        --   and adds code to initialize the info table. This needs to go after
+        --   the lambda lifter so we also get info table entries for supers
+        --   created during lifting.
+        let mm_initialize
+                = DInitialize.initializeModule
+                        runtimeConfig mm_lambdas
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_initialize)
+                            (configSinkInitialize config)
+
         -- Re-check the module before performing unsharing.
         --   The unsharing transform needs every node annotated with its type.
         mm_checked_unshare
          <- B.coreCheck
-                "DiscusToSalt/unshare" BD.fragment C.Recon
+                "DiscusToSalt/unshare" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_lambdas
+                mm_initialize
 
         -- Perform the unsharing transform.
         --   This adds extra unit parameters to all top-level bindings
@@ -157,7 +158,7 @@ discusToSalt platform runtimeConfig mnsInit mm config
         --   The to-salt conversion needs every node annotated with its type.
         mm_checked_salt
          <- B.coreCheck
-                "DiscusToSalt/toSalt" BD.fragment C.Recon
+                "DiscusToSalt/toSalt" BD.fragment Nothing C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_prep_salt
 

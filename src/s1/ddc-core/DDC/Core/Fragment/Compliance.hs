@@ -102,10 +102,6 @@ instance Complies Exp where
          | otherwise
          ->     return (Set.empty, Set.singleton n)
 
-        XVar _ u@(UPrim n)
-         |  not $ Env.member u (profilePrimTypes profile)
-         -> throw $ ErrorUndefinedPrim n
-
 {- TODO: Partial prim app no longer being checked.
          |  args        <- fromMaybe 0 $ contextFunArgs context
          ,  arity       <- arityOfType t

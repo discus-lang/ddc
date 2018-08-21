@@ -7,9 +7,6 @@ import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
-import qualified DDC.Core.Check.Context as Context
-import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified Data.Map.Strict        as Map
 import qualified DDC.Type.Sum           as Sum
 
 
@@ -41,63 +38,77 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 --       For example, we do something different when both sides are
 --       existentials, vs the case when only one side is an existential.
 makeSub config a ctx0 x0 xL tL tR err
+ = goSynL
+ where
+  ----------------------------------------------------------------
+  -- Sub_SynL
+  --   Expand type synonym on the left.
+  goSynL
+    |  TCon (TyConBound n) <- tL
+    =  lookupTypeSyn ctx0 n
+    >>= \case
+        Nothing  -> goSynR
+        Just tL'
+         -> do  ctrace  $ vcat
+                        [ text "**  Sub_SynL"
+                        , text "    tL:  " <> ppr tL
+                        , text "    tL': " <> ppr tL'
+                        , text "    tR:  " <> ppr tR
+                        , mempty ]
 
- -- Sub_SynL
- --   Expand type synonym on the left.
- | TCon (TyConBound (UName n) _) <- tL
- , Just tL'  <- Map.lookup n $ EnvT.envtEquations
-                             $ Context.contextEnvT ctx0
- = do
+                makeSub config a ctx0 x0 xL tL' tR err
+
+    | otherwise
+    = goSynR
+
+  ----------------------------------------------------------------
+  goSynR
+    -- Sub_SynR
+    --   Expand type synonym on the right.
+    |  TCon (TyConBound n) <- tR
+    =  lookupTypeSyn ctx0 n
+    >>= \case
+        Nothing -> goSub
+        Just tR'
+         -> do  ctrace  $ vcat
+                        [ text "**  Sub_SynR"
+                        , text "    tL:  " <> ppr tL
+                        , text "    tR:  " <> ppr tR
+                        , text "    tR': " <> ppr tR'
+                        , mempty ]
+
+                makeSub config a ctx0 x0 xL tL tR' err
+
+    | otherwise
+    = goSub
+
+  ----------------------------------------------------------------
+  goSub
+    -- Sub_ExVar
+    --   Both sides are already the same existential,
+    --   so we don't need to do anything further.
+    | Just iL <- takeExists tL
+    , Just iR <- takeExists tR
+    , iL == iR
+    = do
         ctrace  $ vcat
-                [ text "**  Sub_SynL"
-                , text "    tL:  " <> ppr tL
-                , text "    tL': " <> ppr tL'
-                , text "    tR:  " <> ppr tR
-                , mempty ]
-
-        makeSub config a ctx0 x0 xL tL' tR err
-
-
- -- Sub_SynR
- --   Expand type synonym on the right.
- | TCon (TyConBound (UName n) _) <- tR
- , Just tR'  <- Map.lookup n $ EnvT.envtEquations
-                             $ Context.contextEnvT ctx0
- = do
-        ctrace  $ vcat
-                [ text "**  Sub_SynR"
-                , text "    tL:  " <> ppr tL
-                , text "    tR:  " <> ppr tR
-                , text "    tR': " <> ppr tR
-                , mempty ]
-
-        makeSub config a ctx0 x0 xL tL tR' err
-
-
- -- Sub_ExVar
- --   Both sides are already the same existential,
- --   so we don't need to do anything further.
- | Just iL <- takeExists tL
- , Just iR <- takeExists tR
- , iL == iR
- = do
-        ctrace  $ vcat
-                [ text "**  Sub_ExVar"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
-                , text "    xL: " <> ppr xL
-                , indent 4 $ ppr ctx0
-                , mempty ]
+                  [ text "**  Sub_ExVar"
+                  , text "    tL: " <> ppr tL
+                  , text "    tR: " <> ppr tR
+                  , text "    xL: " <> ppr xL
+                  , indent 4 $ ppr ctx0
+                  , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
                 , ctx0)
 
 
- -- SubInstL
- --   Left is an existential.
- | Just iL      <- takeExists tL
- = do   ctx1    <- makeInstL config a ctx0 iL tR err
+    -- SubInstL
+    --   Left is an existential.
+    | Just iL      <- takeExists tL
+    = do
+        ctx1    <- makeInstL config a ctx0 iL tR err
 
         ctrace  $ vcat
                 [ text "**  Sub_InstL"
@@ -113,10 +124,11 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx1)
 
 
- -- SubInstR
- --   Right is an existential.
- | Just iR      <- takeExists tR
- = do   ctx1    <- makeInstR config a ctx0 tL iR err
+    -- SubInstR
+    --   Right is an existential.
+    | Just iR      <- takeExists tR
+    = do
+        ctx1    <- makeInstR config a ctx0 tL iR err
 
         ctrace  $ vcat
                 [ text "**  Sub_InstR"
@@ -132,17 +144,17 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx1)
 
 
- -- Sub_Con
- --   Both sides are type constructors which are equivalent.
- --
- --   ISSUE #378: Complete merging (~>) and (->) type constructors.
- --   The equivTyCon function already treats these equivalent,
- --   but we should just use (->) at all levels and ditch (~>).
- --
- | TCon tc1     <- tL
- , TCon tc2     <- tR
- , equivTyCon tc1 tc2
- = do
+    -- Sub_Con
+    --   Both sides are type constructors which are equivalent.
+    --
+    --   ISSUE #378: Complete merging (~>) and (->) type constructors.
+    --   The equivTyCon function already treats these equivalent,
+    --   but we should just use (->) at all levels and ditch (~>).
+    --
+    | TCon tc1     <- tL
+    , TCon tc2     <- tR
+    , equivTyCon tc1 tc2
+    = do
         -- Only trace rule if it's done something interesting.
         when (not $ tc1 == tc2)
          $ ctrace  $ vcat
@@ -157,13 +169,13 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx0)
 
 
- -- Sub_Var
- --   Both sides are the same (rigid) type variable,
- --   so we don't need to do anything further.
- | TVar u1      <- tL
- , TVar u2      <- tR
- , u1 == u2
- = do
+    -- Sub_Var
+    --   Both sides are the same (rigid) type variable,
+    --   so we don't need to do anything further.
+    | TVar u1      <- tL
+    , TVar u2      <- tR
+    , u1 == u2
+    = do
         -- Suppress tracing of noisy rule.
         -- ctrace  $ vcat
         --         [ text "**  Sub_Var"
@@ -176,13 +188,13 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.empty kEffect
                 , ctx0)
 
- -- Sub_Equiv
- --   Both sides are equivalent.
- --   The `equivT` function will also crush any effect types,
- --   and handle comparing type sums for equivalence.
- --
- | equivT (contextEnvT ctx0) tL tR
- = do
+    -- Sub_Equiv
+    --   Both sides are equivalent.
+    --   The `equivT` function will also crush any effect types,
+    --   and handle comparing type sums for equivalence.
+    --
+    | equivT (contextEnvT ctx0) tL tR
+    = do
         ctrace  $ vcat
                 [ text "**  Sub_Equiv"
                 , text "    tL: " <> ppr tL
@@ -196,13 +208,13 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx0)
 
 
- -- Sub_Arr
- --   Both sides are arrow types.
- --   Make sure to check the parameter type contravariantly.
- --
- | Just (tL1, tL2)  <- takeTFun tL
- , Just (tR1, tR2)  <- takeTFun tR
- = do
+    -- Sub_Arr
+    --   Both sides are arrow types.
+    --   Make sure to check the parameter type contravariantly.
+    --
+    | Just (tL1, tL2)  <- takeTFun tL
+    , Just (tR1, tR2)  <- takeTFun tR
+    = do
         ctrace  $ vcat
                 [ text "*>  Sub_Arr"
                 , text "    tL: " <> ppr tL
@@ -226,20 +238,20 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.union effs1 effs2
                 , ctx2)
 
- -- Sub_Implicit
- --
- --   The inferred type  is   (A ~> B)
- --   while expected type is  (D t1'..tn')
- --   where D is not (~>) and not a type synonym.
- --
- --   We'll inject a new implicit argument that tries to elaborate a value
- --   of type 'A', then hope that B can be made a subtype of (D t1'..tn').
- --
- | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
- , case takeTFunCon tR of
-        Just (TcConFunImplicit, _, _)   -> False
-        _                               -> True
- = do
+    -- Sub_Implicit
+    --
+    --   The inferred type  is   (A ~> B)
+    --   while expected type is  (D t1'..tn')
+    --   where D is not (~>) and not a type synonym.
+    --
+    --   We'll inject a new implicit argument that tries to elaborate a value
+    --   of type 'A', then hope that B can be made a subtype of (D t1'..tn').
+    --
+    | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
+    , case takeTFunCon tR of
+           Just (TcConFunImplicit, _, _)   -> False
+           _                               -> True
+    = do
         ctrace  $ vcat
                 [ text "*>  Sub_Implicit_Right"
                 , text "    tL:      " <> ppr tL
@@ -272,15 +284,15 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx1)
 
 
- -- Sub_Run
- --   The left (inferred) type is a suspension, but the right it not.
- --   We run the suspension to get the result value and check if the
- --   result has the expected type. Running the suspension causes some more
- --   effects which we pass pack to the caller.
- --
- | Just    (tEffect, tResult)   <- takeTSusp tL
- , Nothing                      <- takeTSusp tR
- = do
+    -- Sub_Run
+    --   The left (inferred) type is a suspension, but the right it not.
+    --   We run the suspension to get the result value and check if the
+    --   result has the expected type. Running the suspension causes some more
+    --   effects which we pass pack to the caller.
+    --
+    | Just    (tEffect, tResult)   <- takeTSusp tL
+    , Nothing                      <- takeTSusp tR
+    = do
         ctrace  $ vcat
                 [ text "**  Sub_Run"
                 , text "    tL:      " <> ppr tL
@@ -305,14 +317,14 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx2)
 
 
- -- Sub_App
- --   ISSUE #379: Track variance information in type synonyms.
- --   We're treating all non-function types as invariant, so use makeEqT
- --   rather than checking for subsumption.
- --
- | TApp tL1 tL2 <- tL
- , TApp tR1 tR2 <- tR
- = do
+    -- Sub_App
+    --   ISSUE #379: Track variance information in type synonyms.
+    --   We're treating all non-function types as invariant, so use makeEqT
+    --   rather than checking for subsumption.
+    --
+    | TApp tL1 tL2 <- tL
+    , TApp tR1 tR2 <- tR
+    = do
         ctrace  $ vcat
                 [ text "*>  Sub_App"
                 , text "    tL: " <> ppr tL
@@ -337,13 +349,13 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx2)
 
 
- -- Sub_ForallL
- --   Left (inferred) type is a forall type.
- --   Apply the expression to a new existential to instantiate it,
- --   then check the new instantiated type against the expected one.
- --
- | TForall b t1 <- tL
- = do
+    -- Sub_ForallL
+    --   Left (inferred) type is a forall type.
+    --   Apply the expression to a new existential to instantiate it,
+    --   then check the new instantiated type against the expected one.
+    --
+    | TForall b t1 <- tL
+    = do
         -- Make a new existential to instantiate the quantified
         -- variable and substitute it into the body.
         iA        <- newExists (typeOfBind b)
@@ -395,11 +407,11 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx4)
 
 
- -- Sub_ForallR
- --   The right (expected) type is a forall type.
- --
- | TForall bParamR tBodyR  <- tR
- = do
+    -- Sub_ForallR
+    --   The right (expected) type is a forall type.
+    --
+    | TForall bParamR tBodyR  <- tR
+    = do
         ctrace  $ vcat
                 [ text "*>  Sub_ForallR"
                 , text "    tL: " <> ppr tL
@@ -446,10 +458,10 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx4)
 
 
- -- Sub_Fail
- --   No other rule matched, so this expression is ill-typed.
- | otherwise
- = do
+    -- Sub_Fail
+    --   No other rule matched, so this expression is ill-typed.
+    | otherwise
+    = do
         ctrace  $ vcat
                 [ text "**  Sub_Fail"
                 , text "    tL: " % string (show tL)

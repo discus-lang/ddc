@@ -1,25 +1,72 @@
 
--- | Test info table and reflective show.
 module Main
-import Data.List
+import System.IO.Console
+import System.Runtime.Info
 import System.Runtime.Reflect
+import Data.Text.Base
+import Data.Text
+import Data.Numeric
+import Debug.Trace
+import Color
+
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
 
 where
 
-data Thing where
-        ThingOne        : Thing
-        ThingWrap       : Thing -> Thing
-        ThingUnit       : Unit -> Thing
+data X where
+        XOne    : X
+        XWrap   : X -> X
+        XUnit   : Unit -> X
+        XBool   : Bool -> X
+
+
+-- | Print a reified value to the console, with a label.
+printr (tx: Text) (x: a): S (Reify + Console) Unit
+ = writel $ tx %% show (reflect_toValue x)
+
 
 main ()
- = do   -- Check reflection of user defined data types,
-        --   as well as the static info table entry for unit.
-        printl (reflect_toValue ThingOne)
-        printl (reflect_toValue (ThingWrap ThingOne))
-        printl (reflect_toValue (ThingWrap (ThingUnit ())))
+ = do
+        -- Reify primitive data types.
+        --  This exercises each of the static info table elements
+        --  added when the runtime system starts up.
+        printr "Unit:      "    ()
+        printr "True:      "    True
+        printr "False:     "    False
+        printr "Nat:       "    5
+        printr "Int:       "    -5i
+        printr "Word8:     "    42w8
+        printr "Word16:    "    42w16
+        printr "Word32:    "    42w32
+        printr "Word64:    "    42w64
 
-        -- Check reflection of data type defined in another module.
-        printl (reflect_toValue (Cons 3 Nil))
+        -- TODO: 32bit float constants don't work
+--        printr "Float32" 123.456f32
+        printr "Float32:   "    (truncate# [Float32#] 321.123)
 
-        -- Check reflection of functional value.
-        printl (reflect_toValue ((\y z -> writel $ "derp" % z) 5))
+        printr "Float64:   "    123.456f64
+        printr "Addr:      "    (promote# [Addr#] [Nat#] 1234)
+
+        -- Various text constructors.
+        printr "Text Lit:  "    "foo"
+        printr "Text Vec:  "    (TextVec (vectorOfText {@RegionText} "bar"))
+        printr "Text App:  "    ("foo" %% "bar")
+
+        -- Reify a user defined data type.
+        printr "X:         "    XOne
+        printr "X:         "    (XWrap XOne)
+        printr "X:         "    (XWrap (XUnit ()))
+
+        -- Reify a data type defined in another module.
+        printr "List:      "    (Cons 2 (Cons 3 (Cons 4 Nil)))
+
+        -- Reify a named functional value.
+        printr "Thunk:     "    (printr {@Int})
+
+        -- Reify an anonymous functional value.
+        -- TODO: the names of lambda lifted fns come out z-encoded.
+        -- tidy up the names, we prob want to reserve a special char
+        -- to denote internally generated symbol names.
+        printr "Thunk:     "    ((\y z -> writel $ "derp" % z) 5)
+

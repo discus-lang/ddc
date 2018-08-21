@@ -35,19 +35,21 @@ convertM mm
         tsImportT' <- mapM convertImportNameTypeM  $ moduleImportTypes  mm
         tsImportV' <- mapM convertImportNameValueM $ moduleImportValues mm
 
+        let mn  = ModuleName ["DDC", "Internal", "Runtime"]
+
         let tsImportV'rest =
               [ ( T.NameVar       "getFieldOfBoxed"
-                , ImportValueSea  (T.NameVar "getFieldOfBoxed") "getFieldOfBoxed"
+                , ImportValueSea  mn (T.NameVar "getFieldOfBoxed") "getFieldOfBoxed"
                    $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d)
 
               , ( T.NameVar       "setFieldOfBoxed"
-                , ImportValueSea  (T.NameVar "setFieldOfBoxed") "setFieldOfBoxed"
+                , ImportValueSea  mn (T.NameVar "setFieldOfBoxed") "setFieldOfBoxed"
                    $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d `tFun` T.tVoid)
 
               , ( T.NameVar       "allocBoxed"
-                , ImportValueSea  (T.NameVar "allocBoxed") "allocBoxed"
+                , ImportValueSea  mn (T.NameVar "allocBoxed") "allocBoxed"
                    $ tForalls [kRegion       ]
                    $ \[r  ] -> T.tTag          `tFun` T.tNat `tFun` T.tPtr r T.tObj)
               ]
@@ -67,10 +69,12 @@ convertM mm
                 = ModuleCore
                 { moduleName            = moduleName mm
                 , moduleIsHeader        = moduleIsHeader mm
+                , moduleTransitiveDeps  = S.empty
 
                 , moduleExportTypes     = tsExportT'
                 , moduleExportValues    = tsExportV'
 
+                , moduleImportModules   = []
                 , moduleImportTypes     = tsImportT'
                 , moduleImportCaps      = []
                 , moduleImportValues    = tsImportV' ++ tsImportV'rest
@@ -133,10 +137,10 @@ convertExportValueM (_, esrc)
          -> do  n'      <- convertName n
                 return  $ (n', ExportValueLocalNoType n')
 
-        ExportValueSea n x t
+        ExportValueSea mn n x t
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ (n', ExportValueSea n' x t')
+                return  $ (n', ExportValueSea mn n' x t')
 
 
 ---------------------------------------------------------------------------------------------------
@@ -201,8 +205,8 @@ convertImportValueM isrc
                 t'      <- convertType t
                 return  $ ImportValueModule mn n' t' Nothing
 
-        ImportValueSea n str t
+        ImportValueSea mn n str t
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ ImportValueSea n' str t'
+                return  $ ImportValueSea mn n' str t'
 

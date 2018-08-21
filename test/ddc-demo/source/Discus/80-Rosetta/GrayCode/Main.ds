@@ -15,6 +15,8 @@ module Main
 import Data.List
 import Data.Text
 import Data.Function
+import Data.Numeric
+import Data.Text.Numeric
 import System.IO.Console
 where
 
@@ -31,12 +33,12 @@ binToGray (b: Nat): Nat
 
 
 main ()
- = do   
+ = do
         showBinary = showBaseNat 2 digitBinary 5 '0'
 
         writel $ "   x " %% " grey" %% "   x'"
 
-        forS (enumFromTo 0 31) $ λx 
+        forS (enumFromTo 0 31) $ λx
          ->     writel  $  showBinary x
                         %% showBinary (binToGray x)
                         %% showBinary (grayToBin (binToGray x))

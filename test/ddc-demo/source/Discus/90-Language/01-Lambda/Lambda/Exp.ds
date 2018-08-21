@@ -7,6 +7,7 @@ export
 }
 import Lambda.Exp.Base
 import Class.Show
+import Data.List
 import Data.Text
 where
 
@@ -14,7 +15,7 @@ where
 -- | Make an application of a function to the given list of arguments.
 makeXApps (xFun: Exp) (xsArgs: List Exp): Exp
  = build (reverse xsArgs)
- where  
+ where
         build xs
          = case xs of
                 Nil             -> xFun

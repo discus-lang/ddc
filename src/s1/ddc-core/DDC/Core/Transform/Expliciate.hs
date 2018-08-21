@@ -74,13 +74,13 @@ expliciateType eqns tt
    in case tt of
         TCon tc
          -> case tc of
-                TyConBound (UName n) _
-                 -> case Map.lookup n eqns of
+                TyConBound n
+                  -> case Map.lookup n eqns of
                         Nothing -> tt
                         Just t  -> expliciateType eqns t
 
                 TyConSpec TcConFunImplicit
-                 -> TCon $ TyConSpec $ TcConFunExplicit
+                  -> TCon $ TyConSpec $ TcConFunExplicit
 
                 _ -> tt
 

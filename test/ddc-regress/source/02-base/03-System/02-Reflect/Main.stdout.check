@@ -1,5 +1,21 @@
-Main.ThingOne
-(Main.ThingWrap Main.ThingOne)
-(Main.ThingWrap (Main.ThingUnit ()))
-(Data.List.Cons 3 Data.List.Nil)
-((THUNK {params = 2, boxes = 1, args = 1, runs = 0}) 5)
+Unit:       ()
+True:       True
+False:      False
+Nat:        5
+Int:        -5
+Word8:      42'w8
+Word16:     42'w16
+Word32:     42'w32
+Word64:     42'w64
+Float32:    321.122986'f32
+Float64:    123.456'f64
+Addr:       0x4d2'a
+Text Lit:   "foo"
+Text Vec:   "bar"
+Text App:   "foo bar"
+X:          Main.XOne
+X:          (Main.XWrap Main.XOne)
+X:          (Main.XWrap (Main.XUnit ()))
+List:       (Data.List.Cons 2 (Data.List.Cons 3 (Data.List.Cons 4 Data.List.Nil)))
+Thunk:      DDC.printr
+Thunk:      (DDC.mainZdllZdlLZdl0 5)

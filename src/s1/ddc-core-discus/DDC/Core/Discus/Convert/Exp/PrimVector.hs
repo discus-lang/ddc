@@ -30,7 +30,7 @@ convertPrimVector _ectx ctx xxExp
         XCast _ CastRun xxApp@(XApp a _ _)
          | Just ( E.NameOpVector E.OpVectorAlloc True
                 , [RType _rPrime, RType tElem, RTerm xLength])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          ,  isNumericType tElem
          -> Just $ do
                 let a'   =  annotTail a
@@ -54,7 +54,7 @@ convertPrimVector _ectx ctx xxExp
                         $ A.xPayloadOfRaw a' A.rTop xVec
 
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
-                                         (A.xAllocRaw a' A.rTop 0 xLengthBytes'))
+                                         (A.xAllocRaw a' A.rTop (A.xWord a' 0 32) xLengthBytes'))
                         $ XLet a' (LLet  (BNone A.tVoid)
                                          (A.xPoke a' A.rTop (A.tWord 32)
                                                 (xPayloadLength' (XVar a' (UIx 0)))
@@ -66,7 +66,7 @@ convertPrimVector _ectx ctx xxExp
         XApp a _ _
          | Just ( E.NameOpVector E.OpVectorLength True
                 , [RType _tPrime, RType tElem, RTerm xVec])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          , isNumericType tElem
          -> Just $ do
                 let a'  =  annotTail a
@@ -88,7 +88,7 @@ convertPrimVector _ectx ctx xxExp
          | Just ( E.NameOpVector E.OpVectorRead True
                 , [ RType _rPrime, RType tElem
                   , RTerm xVec,    RTerm xIndex])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          , isNumericType tElem
          -> Just $ do
                 let a'  =  annotTail a
@@ -133,7 +133,7 @@ convertPrimVector _ectx ctx xxExp
          | Just ( E.NameOpVector E.OpVectorWrite True
                 , [ RType _rPrime, RType tElem
                   , RTerm xVec, RTerm xIndex, RTerm xValue])
-                <- takeXFragApps xxApp
+                <- takeXNameApps xxApp
          , isNumericType tElem
          -> Just $ do
                 let a'          = annotTail a

@@ -2,19 +2,20 @@
 module Class.Show
 export
 {       show;
-        show_Unit;
-        show_Bool;
-        show_Nat;
-        show_Addr;
-        show_Int;
+        show_Unit;      show_Bool;
+        show_Nat;       show_Int;
+        show_Word8;     show_Word16;    show_Word32;    show_Word64;
         show_Float32;   show_Float64;
-        show_Char;      show_Text;
+        show_Addr;
+        show_Text;
         show_Tup2;
         show_Maybe;
         show_Either;
         show_List;
 }
 import Data.Text
+import Data.Text.Show
+import Data.Text.Numeric
 import Data.Maybe
 import Data.Either
 import Data.List
@@ -33,46 +34,17 @@ show {(Show sh): Show a} (x: a): Text
 
 -------------------------------------------------------------------------------
 -- Dictionaries for primitive types.
-
--- | Show dictionary for Unit.
-show_Unit: Show Unit
- = Show   $ λxx -> "()"
-
-
--- | Show dictionary for Bool.
-show_Bool: Show Bool
-  = Show showBool
-
-
--- | Show dictionary for Nat.
-show_Nat: Show Nat
- = Show showNat
-
-
--- | Show dictionary for Addr.
-show_Addr: Show Addr
- = Show showAddr
-
-
--- | Show dictionary for Int.
-show_Int: Show Int
- = Show showInt
-
-
--- | Show dictionary for Float32.
-show_Float32: Show Float32
- = Show showFloat32
-
-
--- | Show dictinoary for Float64.
-show_Float64: Show Float64
- = Show showFloat64
-
-
--- | Show dictionary for Char.
-show_Char: Show Char
- = Show sh
- where  sh c            = "'" % textOfChar c % "'"
+show_Unit:      Show Unit       = Show $ λxx -> "()"
+show_Bool:      Show Bool       = Show showBool
+show_Nat:       Show Nat        = Show showNat
+show_Int:       Show Int        = Show showInt
+show_Word8:     Show Word8      = Show showWord8
+show_Word16:    Show Word16     = Show showWord16
+show_Word32:    Show Word32     = Show showWord32
+show_Word64:    Show Word64     = Show showWord64
+show_Float32:   Show Float32    = Show showFloat32
+show_Float64:   Show Float64    = Show showFloat64
+show_Addr:      Show Addr       = Show showAddr
 
 
 -- | Show dictionary for Text.

@@ -12,27 +12,18 @@ module DDC.Core.Salt.Runtime
 
           -- * Runtime Functions
           -- ** Boxed Objects
-        , xAllocBoxed
-        , xBoxedTag
-        , xGetFieldOfBoxed
-        , xSetFieldOfBoxed
+        , xAllocBoxed, xBoxedTag
+        , xGetFieldOfBoxed, xSetFieldOfBoxed
 
           -- ** Raw Objects
-        , xAllocRaw
-        , xPayloadOfRaw
+        , xAllocRaw, xPayloadOfRaw
 
           -- ** Raw Small Objects
-        , xAllocSmall
-        , xPayloadOfSmall
+        , xAllocSmall, xPayloadOfSmall
 
           -- ** Thunk Objects
-        , xAllocThunk
-        , xArgsOfThunk
-        , xSetFieldOfThunk
-        , xExtendThunk
-        , xCopyArgsOfThunk
-        , xApplyThunk
-        , xRunThunk
+        , xAllocThunk, xArgsOfThunk, xSetFieldOfThunk, xExtendThunk, xCopyArgsOfThunk
+        , xApplyThunk, xRunThunk
 
           -- ** Allocator
         , xddcInit, xddcExit
@@ -46,9 +37,7 @@ module DDC.Core.Salt.Runtime
         , xAllocSlotVal
         , xRead, xWrite
         , xPeek, xPoke
-        , xCast
-        , xFail
-        , xReturn)
+        , xCast, xFail, xReturn)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
@@ -126,12 +115,14 @@ runtimeImportTypes
     , rn utInfoFrameNew
     , rn utInfoFramePush
     , rn utInfoFrameAddData
+    , rn utInfoFrameAddSuper
 
     , rn utErrorDefault]
 
- where   rn (UName n, t)  = (n, ImportValueSea n (T.pack $ renderPlain $ ppr n) t)
+ where   rn (UName n, t) = (n, ImportValueSea mn n (T.pack $ renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
+         mn     = ModuleName ["DDC", "Internal", "Runtime"]
 
 -- Thunk ------------------------------------------------------------------------------------------
 -- | Allocate a Thunk object.
@@ -139,23 +130,25 @@ xAllocThunk
         :: a
         -> Type Name
         -> Exp a Name   -- ^ Function
+        -> Exp a Name   -- ^ Infotable index.
         -> Exp a Name   -- ^ Value paramters.
         -> Exp a Name   -- ^ Times boxed.
         -> Exp a Name   -- ^ Value args.
         -> Exp a Name   -- ^ Times run.
         -> Exp a Name
 
-xAllocThunk a tR xFun xParam xBoxes xArgs xRun
+xAllocThunk a tR xFun xInfo xParam xBoxes xArgs xRun
  = xApps a (XVar a $ fst utAllocThunk)
         [ RType tR
-        , RTerm xFun, RTerm xParam, RTerm xBoxes, RTerm xArgs, RTerm xRun]
+        , RTerm xFun, RTerm xInfo, RTerm xParam, RTerm xBoxes, RTerm xArgs, RTerm xRun]
 
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
  =      ( UName (NameVar "ddcThunkAlloc")
         , tForall kRegion
-           $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat
-                           `tFun` tNat `tFun` tPtr tR tObj))
+           $ \tR -> (tAddr `tFun` tWord 32
+                           `tFun` tNat `tFun` tNat `tFun` tNat `tFun` tNat
+                           `tFun` tPtr tR tObj))
 
 
 -- | Copy the available arguments from one thunk to another.
@@ -304,7 +297,7 @@ xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name -> Exp a Na
 xAllocBoxed a tR tag xInfo x2
  = xApps a (XVar a $ fst utAllocBoxed)
         [ RType tR
-        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag))  tTag)
+        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)))
         , RTerm xInfo
         , RTerm x2]
 
@@ -381,15 +374,15 @@ utSetFieldOfBoxed
 
 -- Raw --------------------------------------------------------------------------------------------
 -- | Allocate a Raw object.
-xAllocRaw :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
-xAllocRaw a tR tag x2
+xAllocRaw :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
+xAllocRaw a tR xInfo xLength
  = xApps a (XVar a $ fst utAllocRaw)
-        [ RType tR, RTerm $ xTag a tag, RTerm x2]
+        [ RType tR, RTerm xInfo, RTerm xLength]
 
 utAllocRaw :: (Bound Name, Type Name)
 utAllocRaw
  =      ( UName (NameVar "ddcRawAlloc")
-        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
+        , tForall kRegion $ \r -> (tWord 32 `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the payload of a Raw object.
@@ -412,7 +405,7 @@ xAllocSlot a tR
 
 uAllocSlot :: Bound Name
 uAllocSlot
- = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
+ = UName (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
 
 
 -- | Allocate a pointer on the stack for a GC root.
@@ -422,7 +415,7 @@ xAllocSlotVal a tR xVal
 
 uAllocSlotVal :: Bound Name
 uAllocSlotVal
- = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
+ = UName (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
 
 
 -- Small ------------------------------------------------------------------------------------------
@@ -519,6 +512,12 @@ utInfoFrameAddData
                 `tFun` tTextLit `tFun` tTextLit
                 `tFun` tWord 32)
 
+utInfoFrameAddSuper :: (Bound Name, Type Name)
+utInfoFrameAddSuper
+ =      ( UName (NameVar "ddcInfoFrameAddSuper")
+        , tAddr `tFun` tWord 16 `tFun` tWord 16
+                `tFun` tTextLit `tFun` tTextLit
+                `tFun` tWord 32)
 
 -- Primops ----------------------------------------------------------------------------------------
 -- | Cast a pointer
@@ -531,5 +530,5 @@ xCast a r toType fromType xPtr
               (RTerm xPtr)
 
 uCast :: Bound Name
-uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
+uCast = UName (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
 

@@ -5,6 +5,7 @@ export
         step
 }
 import Lambda.Exp
+import Class.Show
 import Data.Text
 where
 

@@ -2,6 +2,8 @@
 module Trace
 export trace_pixel; trace_ray
 import World; Light; Object
+import Math.Vec3
+import Data.Numeric
 where
 
 

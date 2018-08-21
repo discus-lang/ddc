@@ -1,6 +1,9 @@
 
 -- Demo of the Data.Text library.
 module Main
+import Data.Text.Numeric
+import Data.Text.List
+import Data.Text.Base
 import Data.Text
 import Data.List
 import Class.Show
@@ -10,7 +13,7 @@ where
 
 main ()
  = do   writel  "-- Printing ------------------------------"
-        
+
         -- Print text with 'writel'.
         writel  "Hello"
 

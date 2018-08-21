@@ -31,12 +31,15 @@ export
 
 import Data.Text.Char
 import Data.Numeric.Nat
+import Data.Numeric.Bool
 import Data.Numeric.Word8
 import Data.Numeric.Word32
 import Data.Function
 import Data.Maybe
+import Class.Numeric
 import Class.Ord
 import Class.Eq
+
 
 -- | A TextLit is a boxed object that contains a pointer to literal
 --   UTF-8 data in static memory.
@@ -80,17 +83,21 @@ type TextVec    = Vector# RegionText Word8
 
 
 -- Text -----------------------------------------------------------------------
-data Text where
+-- CAREFUL: Don't change the order of these constructors.
+--   Reflection of text values in the System.Runtime.Reflect depends on them
+--   being in this specific order, so that we know what the tags of the
+--   runtime objects are.
+data Text
         -- | Wrap a text literal into a text object.
         --   The character data is stored in static memory.
-        TextLit : TextLit       -> Text
+        = TextLit TextLit
 
         -- | Wrap some character data into a text object.
         --   The character data is stored on the heap.
-        TextVec : Vector# RegionText Word8       -> Text
+        | TextVec (Vector# RegionText Word8)
 
         -- | Append two text objects.
-        TextApp : Text -> Text  -> Text
+        | TextApp Text Text
 
 
 -- Construction ---------------------------------------------------------------

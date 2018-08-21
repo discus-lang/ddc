@@ -1,7 +1,11 @@
 
 module DDC.Core.Module.Import
-        ( -- * Imported types
-          ImportType    (..)
+        ( -- * Imported things
+          ImportThing (..)
+        , nameOfImportThing
+
+          -- * Imported types
+        , ImportType (..)
         , kindOfImportType
         , mapKindOfImportType
 
@@ -12,12 +16,40 @@ module DDC.Core.Module.Import
 
           -- * Imported values
         , ImportValue   (..)
+        , moduleNameOfImportValue
         , typeOfImportValue
         , mapTypeOfImportValue)
 where
 import DDC.Core.Module.Name
+import DDC.Type.DataDef
+import DDC.Type.Exp
 import Control.DeepSeq
 import Data.Text        (Text)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Things that can be imported into a module.
+--   This wraps the other declarations, and is used in several core transforms.
+data ImportThing n
+        = ImportThingDataType n (DataType n)
+        | ImportThingDataCtor n (DataCtor n)
+        | ImportThingSyn      n (Kind n) (Type n)
+        | ImportThingType     n (ImportType  n (Kind n))
+        | ImportThingCap      n (ImportCap   n (Type n))
+        | ImportThingValue    n (ImportValue n (Type n))
+        deriving Show
+
+
+-- | Take the name of an `ImportThing`.
+nameOfImportThing :: ImportThing n -> n
+nameOfImportThing it
+ = case it of
+        ImportThingDataType n _   -> n
+        ImportThingDataCtor n _   -> n
+        ImportThingSyn      n _ _ -> n
+        ImportThingType     n _   -> n
+        ImportThingCap      n _   -> n
+        ImportThingValue    n _   -> n
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -44,7 +76,7 @@ data ImportType n t
         --
         | ImportTypeBoxed
         { importTypeBoxed        :: !t }
-        deriving Show
+        deriving (Show, Eq)
 
 
 instance (NFData n, NFData t) => NFData (ImportType n t) where
@@ -102,11 +134,13 @@ mapTypeOfImportCap f ii
 
 
 -- ImportValue ------------------------------------------------------------------------------------
--- | Define a foreign value being imported into a module.
+-- | Describes a value being imported into a module.
 data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
-        { -- | Name of the module that we're importing from.
+        { -- | Name of the module the original value is defined in.
+          --   As we have transitive imports this is not necessarily the module
+          --   via which we learned about the name.
           importValueModuleName         :: !ModuleName
 
           -- | Name of the the value that we're importing.
@@ -121,10 +155,15 @@ data ImportValue n t
 
         -- | Value imported via the C calling convention.
         | ImportValueSea
-        { -- Name we use to refer to the value internally to the module.
-          importValueSeaNameInternal    :: !n
+        { -- | Name of the module in which the original value was imported into.
+          --   As we have transitive imports this is not necessarily the module
+          --   via which we learned about the name.
+          importValueSeaModuleName      :: !ModuleName
 
-          -- Name of the value in the external C namespace.
+          -- | Name we use to refer to the value internally in source code.
+        , importValueSeaNameInternal    :: !n
+
+          -- | Name of the value in the external C name space.
         , importValueSeaNameExternal    :: !Text
 
           -- | Type of the value that we're importing.
@@ -138,8 +177,16 @@ instance (NFData n, NFData t) => NFData (ImportValue n t) where
         ImportValueModule mn n t mAV
          -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
 
-        ImportValueSea ni nx t
-         -> rnf ni `seq` rnf nx `seq` rnf t
+        ImportValueSea mn ni nx t
+         -> rnf mn `seq` rnf ni `seq` rnf nx `seq` rnf t
+
+
+-- | Take the source module name of an imported value.
+moduleNameOfImportValue :: ImportValue n t -> ModuleName
+moduleNameOfImportValue iv
+ = case iv of
+        ImportValueModule{}     -> importValueModuleName iv
+        ImportValueSea{}        -> importValueSeaModuleName iv
 
 
 -- | Take the type of an imported thing.
@@ -147,7 +194,7 @@ typeOfImportValue :: ImportValue n t -> t
 typeOfImportValue src
  = case src of
         ImportValueModule _ _ t _       -> t
-        ImportValueSea    _ _ t         -> t
+        ImportValueSea    _ _ _ t       -> t
 
 
 -- | Apply a function to the type in an ImportValue.
@@ -155,5 +202,5 @@ mapTypeOfImportValue :: (t -> t) -> ImportValue n t -> ImportValue n t
 mapTypeOfImportValue f isrc
  = case isrc of
         ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a
-        ImportValueSea ni nx t          -> ImportValueSea ni nx (f t)
+        ImportValueSea mn ni nx t       -> ImportValueSea mn ni nx (f t)
 

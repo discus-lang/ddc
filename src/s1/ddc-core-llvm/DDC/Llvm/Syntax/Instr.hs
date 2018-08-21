@@ -30,28 +30,28 @@ import qualified Data.Foldable  as Seq
 -- Block ----------------------------------------------------------------------
 -- | Block labels.
 data Label
-        = Label String
+        = Label !String
         deriving (Eq, Ord, Show)
 
 
 -- | A block of LLVM code with an optional annotation.
 data Block
-        = Block 
+        = Block
         { -- | The code label for this block
-          blockLabel    :: Label
+          blockLabel    :: !Label
 
           -- | A list of LlvmStatement's representing the code for this block.
           --   This list must end with a control flow statement.
-        , blockInstrs   :: Seq AnnotInstr
+        , blockInstrs   :: !(Seq AnnotInstr)
         }
 
 
 -- Instructions ---------------------------------------------------------------
 -- | Instructions annotated with metadata.
-data AnnotInstr 
-        = AnnotInstr 
-        { annotInstr    :: Instr
-        , annotMDecl    :: [MDecl] }
+data AnnotInstr
+        = AnnotInstr
+        { annotInstr    :: !Instr
+        , annotMDecl    :: ![MDecl] }
         deriving Show
 
 
@@ -65,16 +65,16 @@ annotWith :: Instr -> [MDecl] -> AnnotInstr
 annotWith ins mds = AnnotInstr ins mds
 
 
--------------------------------------------------------------------------------                    
+-------------------------------------------------------------------------------
 -- | Instructions
 data Instr
         -- | Comment meta-instruction.
-        = IComment      [String]
+        = IComment      ![String]
 
         -- | Set meta instruction v1 = value.
         --   This isn't accepted by the real LLVM compiler.
         --   ISet instructions are erased by the 'Clean' transform.
-        | ISet          Var     Exp
+        | ISet          !Var    !Exp
 
         -- | No operation.
         --   This isn't accepted by the real LLVM compiler.
@@ -82,56 +82,56 @@ data Instr
         | INop
 
         -- Phi nodes --------------------------------------
-        | IPhi          Var     [(Exp, Label)]
+        | IPhi          !Var    ![(Exp, Label)]
 
         -- Terminator Instructions ------------------------
         -- | Return a result.
-        | IReturn       (Maybe Exp)
+        | IReturn       !(Maybe Exp)
 
         -- | Unconditional branch to the target label.
-        | IBranch       Label
+        | IBranch       !Label
 
         -- | Conditional branch.
-        | IBranchIf     Exp     Label   Label
+        | IBranchIf     !Exp    !Label  !Label
 
         -- | Mutliway branch.
         --   If scruitniee matches one of the literals in the list then jump
         --   to the corresponding label, otherwise jump to the default.
-        | ISwitch       Exp     Label   [(Lit, Label)]
+        | ISwitch       !Exp    !Label  ![(Lit, Label)]
 
         -- | Informs the optimizer that instructions after this point are unreachable.
         | IUnreachable
 
         -- Binary Operations ------------------------------
-        | IOp           Var     Op      Exp     Exp
+        | IOp           !Var    !Op     !Exp    !Exp
 
         -- Conversion Operations --------------------------
         -- | Cast the variable from to the to type. This is an abstraction of three
         --   cast operators in Llvm, inttoptr, prttoint and bitcast.
-        | IConv         Var     Conv    Exp
+        | IConv         !Var    !Conv   !Exp
 
         -- | Get element pointer.
-        | IGet          Var     Exp     [Exp]
+        | IGet          !Var    !Exp    ![Exp]
 
         -- Memory Access and Addressing -------------------
         -- | Allocate space for a value of the given type on the stack.
-        | IAlloca       Var     Type
+        | IAlloca       !Var    !Type
 
         -- | Load a value from memory.
-        | ILoad         Var     Exp
+        | ILoad         !Var    !Exp
 
         -- | Store a value to memory.
         --   First expression gives the destination pointer.
-        | IStore        Exp     Exp
+        | IStore        !Exp    !Exp
 
         -- Other Operations -------------------------------
         -- | Comparisons
-        | ICmp          Var     Cond    Exp     Exp
+        | ICmp          !Var    !Cond   !Exp    !Exp
 
-        -- | Call a function. 
+        -- | Call a function.
         --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
-        | ICall         (Maybe Var) CallType (Maybe CallConv)
-                        Type Name [Exp] [FuncAttr]
+        | ICall         !(Maybe Var) !CallType !(Maybe CallConv)
+                        !Type !Name ![Exp] ![FuncAttr]
         deriving (Show, Eq)
 
 
@@ -139,19 +139,19 @@ data Instr
 branchTargetsOfInstr :: Instr -> Maybe (Set Label)
 branchTargetsOfInstr instr
  = case instr of
-        IBranch l               
+        IBranch l
          -> Just $ Set.singleton l
 
         IBranchIf _ l1 l2
          -> Just $ Set.fromList [l1, l2]
 
-        ISwitch _ lDef ls       
-         -> Just $ Set.fromList (lDef : map snd ls) 
+        ISwitch _ lDef ls
+         -> Just $ Set.fromList (lDef : map snd ls)
 
         _ -> Nothing
 
 
--- | Get the LLVM variable that this instruction assigns to, 
+-- | Get the LLVM variable that this instruction assigns to,
 --   or `Nothing` if there isn't one.
 defVarOfInstr :: Instr -> Maybe Var
 defVarOfInstr instr

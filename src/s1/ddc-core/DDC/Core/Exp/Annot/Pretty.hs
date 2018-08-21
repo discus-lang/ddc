@@ -42,16 +42,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         pprAlt  = pprModePrec (modeExpAlt  mode) { modeAltExp  = mode } 0
     in case xx of
 
-        XVar  _ u -> ppr u
-        XPrim _ p -> ppr p
-
-        XCon  _ dc
-         | modeExpConTypes mode
-         , Just t       <- takeTypeOfDaCon dc
-         -> parens $ ppr dc % text ":" %% ppr t
-
-         | otherwise
-         -> ppr dc
+        XVar  _ u  -> ppr u
+        XPrim _ p  -> ppr p
+        XCon  _ dc -> ppr dc
 
         XAbs _ (MType _) _
          -> let Just (bs, xBody) = takeXLAMs xx
@@ -224,7 +217,7 @@ instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
          <> (hcat $ punctuate (text ",") $ map text ns)
          <> text ")#"
 
-        DaConPrim  n _  -> ppr n
+        DaConPrim  n    -> ppr n
         DaConBound n    -> ppr n
 
 

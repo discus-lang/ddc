@@ -8,8 +8,12 @@ export
         stepWorld;
         showWorld
 }
+import Cell
 import Data.List
 import Data.Array
+import Data.Array.Store
+import Data.Text
+import Data.Text.Operator
 where
 
 

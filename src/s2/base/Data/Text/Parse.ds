@@ -7,6 +7,8 @@ export
 }
 import Data.Text.Base
 import Data.Text.Operator
+import Data.Numeric
+import Data.Numeric.Float64     -- TODO: Float64 synonym not re-exported through Data.Numeric
 import Data.Maybe
 
 import foreign c value

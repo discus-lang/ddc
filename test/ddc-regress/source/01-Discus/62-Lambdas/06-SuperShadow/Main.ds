@@ -3,7 +3,8 @@
 -- with the same name. During Tetra -> Salt conversion the curry transform
 -- needs to call the right one.
 module Main
-import Data.Numeric.Nat
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

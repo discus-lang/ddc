@@ -3,6 +3,7 @@
 module Main
 import System.IO.Console
 import Class.Show
+import Data.Numeric
 where
 
 -- Data type declaration where the constructors have arguments.
@@ -171,7 +172,7 @@ twice3 f x = f (f x)
 
 
 -- Multiple parameters can be specified which share the same kind.
-compose {@a b c: Data} (f: a -> b) (g: b -> c) (x: a): c
+compose' {@a b c: Data} (f: a -> b) (g: b -> c) (x: a): c
  = g (f x)
 
 
@@ -183,7 +184,7 @@ twiceNat6 (f: Nat -> Nat) (x: Nat): Nat
 
 -- .. with multiple type arguments.
 composeNat (f: Nat -> Nat) (g: Nat -> Nat) (x: Nat): Nat
- = compose {@Nat} {@Nat} {@Nat} f g x
+ = compose' {@Nat} {@Nat} {@Nat} f g x
 
 
 -- Putting it together.

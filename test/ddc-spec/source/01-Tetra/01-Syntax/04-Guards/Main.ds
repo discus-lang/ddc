@@ -3,6 +3,7 @@
 -- Demonstrate the various guarded expression forms.
 module Main
 import System.IO.Console
+import Data.Numeric
 import Class.Show
 where
 

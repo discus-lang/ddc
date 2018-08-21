@@ -50,31 +50,31 @@ convertType tt
  = removeForall b <$> convertType t
 
  -- Convert @Vector a@ to @Tuple2# (Ptr# a) (Ref# Nat#)@
- | Just (F.NameTyConFlow F.TyConFlowVector, [tA])   <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow F.TyConFlowVector, [tA])   <- takeNameTyConApps tt
  = do   _tA' <- convertType tA
         return $ tVec -- T.tTupleN [T.tPtr rTop tA', T.tRef rTop T.tNat]
 
  -- Convert @Buffer a@ to @Ptr# a@
- | Just (F.NameTyConFlow F.TyConFlowBuffer, [tA])   <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow F.TyConFlowBuffer, [tA])   <- takeNameTyConApps tt
  = do   tA' <- convertType tA
         return $ T.tPtr rTop tA'
 
  -- Convert @TupleN#@ to @Ptr# rTop Obj@
- | Just (F.NameTyConFlow (F.TyConFlowTuple _), ts)   <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow (F.TyConFlowTuple _), ts)   <- takeNameTyConApps tt
  = do   -- Might as well attempt to convert the types, just so we know they're valid
         mapM_ convertType ts
         return $ tVec
 
  -- Convert @Series k a@ to just @Ptr# a@
- | Just (F.NameTyConFlow F.TyConFlowSeries, [_K, tA])   <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow F.TyConFlowSeries, [_K, tA])   <- takeNameTyConApps tt
  = T.tPtr rTop <$> convertType tA
 
  -- Convert @RateNat  k@ to @Nat#@
- | Just (F.NameTyConFlow F.TyConFlowRateNat, [_K])      <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow F.TyConFlowRateNat, [_K])      <- takeNameTyConApps tt
  = return  $  T.tNat
 
  -- Convert Refs
- | Just (F.NameTyConFlow F.TyConFlowRef, [tA])          <- takePrimTyConApps tt
+ | Just (F.NameTyConFlow F.TyConFlowRef, [tA])          <- takeNameTyConApps tt
  = tRef rTop <$> convertType tA
 
  -- Convert normal TFuns to TFunECs with pure and empty. why?
@@ -119,9 +119,6 @@ convertBound b
  = case b of
    UIx   i -> return $  UIx i
    UName n -> UName <$> convertName n
-   UPrim n -> UPrim <$> convertName n
-
-
 
 
 convertName :: F.Name -> ConvertM T.Name
@@ -180,18 +177,12 @@ convertName nn
 convertTyCon :: TyCon F.Name -> ConvertM (TyCon T.Name)
 convertTyCon tc
  = case tc of
-   TyConSort s
-    -> return $ TyConSort s
-   TyConKind k
-    -> return $ TyConKind k
-   TyConWitness w
-    -> return $ TyConWitness w
-   TyConSpec s
-    -> return $ TyConSpec s
-   TyConBound b k
-    -> TyConBound <$> convertBound b <*> convertType k
-   TyConExists i k
-    -> TyConExists    i              <$> convertType k
+   TyConSort s     -> return $ TyConSort s
+   TyConKind k     -> return $ TyConKind k
+   TyConWitness w  -> return $ TyConWitness w
+   TyConSpec s     -> return $ TyConSpec s
+   TyConBound n    -> TyConBound    <$> convertName n
+   TyConExists i k -> TyConExists i <$> convertType k
 
 
 -- | When replacing @Forall b t@ with @t@, if @b@ is a de bruijn

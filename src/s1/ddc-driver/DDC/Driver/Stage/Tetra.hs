@@ -11,7 +11,6 @@ import qualified DDC.Driver.Dump                as D
 import qualified DDC.Driver.Config              as D
 import qualified DDC.Driver.Interface.Source    as D
 
-import qualified DDC.Core.Interface.Store       as B
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Build.Stage.Core           as B
@@ -19,6 +18,7 @@ import qualified DDC.Build.Language.Discus      as BE
 import qualified DDC.Build.Stage.Source.Discus  as BSD
 import qualified DDC.Build.Stage.Core.Discus    as BCD
 
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Discus                as CE
@@ -32,7 +32,7 @@ import qualified DDC.Data.SourcePos             as SP
 -- | Load and type-check a source Discus module.
 sourceLoadText
         :: D.Config             -- ^ Driver config.
-        -> B.Store CE.Name      -- ^ Interface store.
+        -> C.Store CE.Name      -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO
@@ -42,8 +42,7 @@ sourceLoadText config store source str
  = BSD.sourceLoad
         (D.nameOfSource source)
         (D.lineStartOfSource source)
-        str
-        store
+        str store
  $ BSD.ConfigLoadSourceTetra
         { BSD.configSinkTokens          = D.dump config source "dump.0-source-01-tokens.txt"
         , BSD.configSinkParsed          = D.dump config source "dump.0-source-02-parsed.ds"
@@ -68,7 +67,7 @@ sourceLoadText config store source str
 -- | Load and type-check a Core Discus module.
 discusLoadText
         :: D.Config             -- ^ Driver config.
-        -> B.Store CE.Name      -- ^ Interface store.
+        -> C.Store CE.Name      -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO
@@ -77,7 +76,7 @@ discusLoadText
 discusLoadText config _store source str
  = B.coreLoad
         "DiscusLoad"
-        BE.fragment
+        BE.fragment Nothing
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
@@ -95,20 +94,18 @@ discusLoadText config _store source str
 discusToSalt
         :: D.Config
         -> D.Source
-        -> [C.ModuleName]
         -> C.Module a CE.Name
         -> ExceptT [B.Error] IO (C.Module () CA.Name)
 
-discusToSalt config source mnsInit mm
+discusToSalt config source mm
  = BCD.discusToSalt
         (B.buildSpec $ D.configBuilder config)
         (D.configRuntime config)
-        mnsInit
         (CReannotate.reannotate (const ()) mm)
  $ BCD.ConfigDiscusToSalt
         { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"
-        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-03.initialize.dcd"
-        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-04-lambdas.dcd"
+        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-03-lambdas.dcd"
+        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-04.initialize.dcd"
         , BCD.configSinkUnshare         = D.dump config source "dump.1-discus-05-unshare.dcd"
         , BCD.configSinkCurry           = D.dump config source "dump.1-discus-06-curry.dcd"
         , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-07-boxing.dcd"

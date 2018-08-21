@@ -62,7 +62,7 @@ just _ (Just r) = Right r
 slurpNetworkX :: (Bind Name, Exp () Name) -> Either SlurpError (Bind Name, Network)
 slurpNetworkX (networkBind,xx)
  = do   let err str = just $ SlurpErrorOther (text str) xx
-        (NameOpMachine proc, nestArgs) <- err "takeXFragApps" $ takeXFragApps xx
+        (NameOpMachine proc, nestArgs) <- err "takeXFragApps" $ takeXNameApps xx
         -- NOTE: currently assuming process# prim is unapplied
         nest <- case takeExpsFromArgs nestArgs of
             [nest] -> return nest
@@ -84,7 +84,7 @@ slurpNetworkBody xx
  = case xx of
     XCase _ processX [AAlt (PData dacon streamOutBinds) xrest]
      | Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaConPrim dacon
-     , Just (NameOpMachine (OpStream{}), streamArgs) <- takeXFragApps processX
+     , Just (NameOpMachine (OpStream{}), streamArgs) <- takeXNameApps processX
      , processBody : streamInExps <- takeExpsFromArgs streamArgs
      , Just streamInNames  <- mapM takeNameOfExp  streamInExps
      , Just streamOutNames <- mapM takeNameOfBind streamOutBinds
@@ -147,7 +147,9 @@ takeBlockNext largs xx
 
 takeBlock :: Map.Map Label [Variable] -> Exp () Name -> Either SlurpError Block
 takeBlock largs block
- = do   (prim,args) <- just (SlurpErrorOther (text "takeBlock takeXNameApps " <> ppr block) block) $ takeXNameApps block
+ = do   (prim,args)
+          <- just (SlurpErrorOther (text "takeBlock takeXNameApps " <> ppr block) block)
+          $  takeXNameApps block
         case prim of
          NameOpMachine OpPull
           | [chan, next] <- takeExpsFromArgs args
@@ -198,12 +200,6 @@ takeXLams' xx
  = case takeXLams xx of
    Nothing  -> ([],xx)
    Just ret -> ret
-
-takeXNameApps :: Exp a n -> Maybe (n, [Arg a n])
-takeXNameApps xx
- = do (f,as)    <- takeXApps xx
-      n         <- takeNameOfExp f
-      return (n, as)
 
 
 substNames :: [(Bind Name, Name)] -> Exp () Name -> Exp () Name

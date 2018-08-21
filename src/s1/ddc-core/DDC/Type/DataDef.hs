@@ -11,8 +11,8 @@ module DDC.Type.DataDef
 
         -- * Data type definition table
         , DataDefs   (..)
-
         , DataMode   (..)
+        , dataDefOfDataType
         , emptyDataDefs
         , insertDataDef
         , unionDataDefs
@@ -86,9 +86,7 @@ kindOfDataDef def
 dataTypeOfDataDef :: DataDef n -> Type n
 dataTypeOfDataDef def
  = let  usParam = takeSubstBoundsOfBinds $ dataDefParams def
-        ksParam = map typeOfBind $ dataDefParams def
-        tc      = TyConBound (UName (dataDefTypeName def))
-                             (kFuns ksParam kData)
+        tc      = TyConBound (dataDefTypeName def)
    in   tApps (TCon tc) (map TVar usParam)
 
 
@@ -123,10 +121,7 @@ makeDataDefAlg modName nData bsParam Nothing
 
 makeDataDefAlg modName nData bsParam (Just ntsField)
  = let  usParam = takeSubstBoundsOfBinds bsParam
-        ksParam = map typeOfBind bsParam
-        tc      = TyConBound (UName nData)
-                             (kFuns ksParam kData)
-
+        tc      = TyConBound nData
         tResult = tApps (TCon tc) (map TVar usParam)
 
         ctors   = [ DataCtor modName n tag tsField tResult nData bsParam
@@ -186,6 +181,9 @@ data DataType n
           -- | Kinds of type parameters to constructor.
         , dataTypeParams        :: ![Bind n]
 
+          -- | Data constructors of this data type.
+        , dataTypeCtors         :: !(Maybe [DataCtor n])
+
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
         , dataTypeMode          :: !(DataMode n)
@@ -193,6 +191,7 @@ data DataType n
           -- | Whether the data type is algebraic.
         , dataTypeIsAlgebraic   :: Bool }
         deriving Show
+
 
 
 -- | Describes a data constructor, used in the `DataDefs` table.
@@ -219,6 +218,18 @@ data DataCtor n
           -- | Parameters of data type
         , dataCtorTypeParams    :: ![Bind n] }
         deriving Show
+
+
+-- TODO: The 'DataType' and 'DataDef' types have become almost identical
+-- during refactoring. Eliminate this redundancy.
+dataDefOfDataType :: DataType n -> DataDef n
+dataDefOfDataType dt
+        = DataDef
+        { dataDefModuleName     = dataTypeModuleName dt
+        , dataDefTypeName       = dataTypeName dt
+        , dataDefParams         = dataTypeParams dt
+        , dataDefCtors          = dataTypeCtors dt
+        , dataDefIsAlgebraic    = dataTypeIsAlgebraic dt }
 
 
 -- | Apply a function to all types in a data ctor.
@@ -262,11 +273,12 @@ unionDataDefs defs1 defs2
 insertDataDef  :: Ord n => DataDef  n -> DataDefs n -> DataDefs n
 insertDataDef (DataDef modName nType bsParam mCtors isAlg) dataDefs
  = let  defType = DataType
-                { dataTypeModuleName  = modName
-                , dataTypeName        = nType
-                , dataTypeParams      = bsParam
-                , dataTypeMode        = defMode
-                , dataTypeIsAlgebraic = isAlg }
+                { dataTypeModuleName    = modName
+                , dataTypeName          = nType
+                , dataTypeParams        = bsParam
+                , dataTypeCtors         = mCtors
+                , dataTypeMode          = defMode
+                , dataTypeIsAlgebraic   = isAlg }
 
         defMode = case mCtors of
                    Nothing    -> DataModeLarge

@@ -8,39 +8,40 @@ letrec {
   map: [a b: Data].(a -> b) -> Stream# a -> Tuple1# (Stream# b)
     = Λ(a b: Data).
       λ(f: a -> b).λ(as: Stream# a).
-      let x4      = λ(inp: Source# a).λ(out: Sink# b).
-                    letrec {
-                      p1: Process#
-                        = let x0      = pull# [a] in
-                          x0 inp p2;
-                      
-                      p2: a -> Process#
-                        = λ(v: a).
-                          let x1      = f v in
-                          let x2      = push# [b] in
-                          x2 out x1 p3;
-                      
-                      p3: Process#
-                        = let x3      = drop# [a] in
-                          x3 inp p1
-                    } in
-                    p1 in
-      let x5      = stream_1_1# [a] in
+      let x4       = λ(inp: Source# a).λ(out: Sink# b).
+                     letrec {
+                       p1: Process#
+                         = let x0       = pull# [a] in
+                           x0 inp p2;
+                       
+                       p2: a -> Process#
+                         = λ(v: a).
+                           let x1       = f v in
+                           let x2       = push# [b] in
+                           x2 out x1 p3;
+                       
+                       p3: Process#
+                         = let x3       = drop# [a] in
+                           x3 inp p1
+                     } in
+                     p1 in
+      let x5       = stream_1_1# [a] in
       x5 [b] x4 as;
   
   mapmap: [a b c: Data].(a -> b) -> (b -> c) -> Stream# a -> Tuple1# (Stream# c)
     = Λ(a b c: Data).
       λ(f: a -> b).λ(g: b -> c).λ(xs: Stream# a).
-      let x6      = map [a] [b] f xs in
+      let x6       = map [a] [b] f xs in
       letcase T1# (ys: Stream# b)  = x6 in
-      let x7      = map [b] [c] g ys in
+      let x7       = map [b] [c] g ys in
       letcase T1# (zs: Stream# c)  = x7 in
-      T1# [Stream# c] zs;
+      let x8       = T1# [Stream# c] in
+      x8 zs;
   
   exec: [a b c: Data].(a -> b) -> (b -> c) -> Source# a -> Sink# c -> Process#
     = Λ(a b c: Data).
       λ(f: a -> b).λ(g: b -> c).λ(ins: Source# a).λ(outs: Sink# c).
-      let x8      = mapmap [a] [b] [c] f g in
-      let x9      = process_1_1# [a] in
-      x9 [c] x8 ins outs
+      let x9       = mapmap [a] [b] [c] f g in
+      let x10      = process_1_1# [a] in
+      x10 [c] x9 ins outs
 }

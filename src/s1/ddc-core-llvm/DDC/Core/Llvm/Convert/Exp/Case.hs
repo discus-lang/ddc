@@ -27,9 +27,9 @@ convertCase
         -> ConvertM (Seq Block)
 
 convertCase ctx ectx label instrs xScrut alts
- | Just mVar    <- takeLocalV ctx xScrut
+ | Just mScrut <- mconvAtom ctx xScrut
  = do
-        vScrut' <- mVar
+        xScrut' <- mScrut
 
         -- Convert all the alternatives.
         -- If we're in a nested context we'll also get a block to join the
@@ -57,7 +57,7 @@ convertCase ctx ectx label instrs xScrut alts
         let switchBlock
                 =  Block label
                 $  instrs
-                |> (annotNil $ ISwitch (XVar vScrut') lDefault table)
+                |> (annotNil $ ISwitch xScrut' lDefault table)
 
         return  $  switchBlock
                 <| (blocksTable >< blocksDefault >< blocksJoin)
@@ -137,14 +137,17 @@ convertAlt ctx ectx aa
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-        A.AAlt (A.PData dc []) x
-         | Just n       <- A.takeNameOfDaConPrim dc
-         , Just lit     <- convPatName pp n
+        A.AAlt (A.PData (C.DaConPrim n) []) x
+         | Just lit     <- convPatName pp n
          -> do  label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltCase lit label blocks
 
-        _ -> throw $ ErrorInvalidAlt [aa] Nothing
+        A.AAlt (A.PData dc@(C.DaConBound{}) _) _x
+         ->  throw $ ErrorInvalidAlt [aa] (Just $ "found DaConBound" ++ show dc)
+
+        A.AAlt pat _x
+         -> throw $ ErrorInvalidAlt [aa] (Just $ show pat)
 
 
 -- | Convert a constructor name from a pattern to a LLVM literal.

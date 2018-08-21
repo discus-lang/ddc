@@ -1,0 +1,18 @@
+
+module Test
+import Data.Numeric
+where
+
+-- TODO: This fails with an LLVM code gen issue.
+
+-- PHINode should have one entry for each predecessor of its parent basic block!
+--   %_v61.x53 = phi %s.Obj* [ %_v64.alt, %l65.alt ]
+
+loop (vec: Vector# r Nat#): S (Read r + e) Nat#
+ = go (vectorLength# vec) 0 0
+ where
+        go len acc ix
+         | ix >= len    = box weakeff Read r + e in acc
+         | otherwise    = go len (acc + vectorRead# vec ix) (ix + 1)
+
+

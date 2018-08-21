@@ -22,8 +22,7 @@ module DDC.Core.Exp.Generic.Compounds
         , dcUnit
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
-        , takeBaseCtorNameOfDaCon
-        , takeTypeOfDaCon)
+        , takeBaseCtorNameOfDaCon)
 where
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon

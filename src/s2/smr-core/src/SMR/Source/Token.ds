@@ -9,8 +9,11 @@ export
         takeNatOfToken;
 }
 import SMR.Core.Exp
+import Class.Show
 import Data.Text
 import Data.Maybe
+import Data.Numeric
+import Data.Function
 where
 
 

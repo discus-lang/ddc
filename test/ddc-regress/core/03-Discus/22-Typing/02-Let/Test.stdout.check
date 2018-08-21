@@ -2,6 +2,7 @@ ok
 
 -- Ok: let expression with explicit type annotation.
 When checking expression.
+  In binding 'x'
   <batch>:4:2
   Type mismatch.
     inferred type: Int#
@@ -9,8 +10,8 @@ When checking expression.
 
 
 -- Ok: let expression with no type annotation.
-let x: Nat#
-      = 5# in
+let x: Nat# 
+    = 5# in
 x
 :*: Nat#
 :!: Pure
@@ -18,6 +19,7 @@ x
 
 -- Error: let binder has incorrect type annotation.
 When checking expression.
+  In binding 'x'
   <batch>:12:2
   Type mismatch.
     inferred type: Int#

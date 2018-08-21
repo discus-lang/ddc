@@ -1,8 +1,8 @@
 
-module Things 
-export { defnord
-       ; nat1; text1; fnord1; comp1}
-import Data.Text
+module Things
+export defnord; nat1; text1; fnord1; comp1
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 

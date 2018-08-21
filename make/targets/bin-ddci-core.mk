@@ -3,7 +3,6 @@
 # Find source files for ddci-core.
 ddci-core_packages = \
 	src/s1/ddc-core/DDC \
-	src/s1/ddc-core-babel/DDC \
 	src/s1/ddc-core-salt/DDC \
 	src/s1/ddc-core-llvm/DDC \
 	src/s1/ddc-core-flow/DDC \
@@ -45,7 +44,6 @@ src/s1/ddc-tools/src/ddci-core/%.o : src/s1/ddc-tools/src/ddci-core/%.hs
 		      -isrc/s1/ddc-core-flow \
 		      -isrc/s1/ddc-core-machine \
 		      -isrc/s1/ddc-core-discus \
-		      -isrc/s1/ddc-core-babel \
                       -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver \

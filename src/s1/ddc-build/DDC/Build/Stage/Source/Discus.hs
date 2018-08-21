@@ -18,10 +18,8 @@ import qualified DDC.Control.Parser                     as Parser
 
 import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
-import qualified DDC.Core.Interface.Store               as B
 import qualified DDC.Build.Language.Discus              as BE
 import qualified DDC.Build.Stage.Core                   as BC
-import qualified DDC.Build.Transform.Import             as BImport
 
 import qualified DDC.Source.Discus.Exp                  as S
 import qualified DDC.Source.Discus.Module               as S
@@ -40,14 +38,18 @@ import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
-import qualified DDC.Core.Discus.Env                    as CE
 import qualified DDC.Core.Transform.Resolve             as CResolve
-import qualified DDC.Core.Transform.SpreadX             as CSpread
 import qualified DDC.Core.Transform.Namify              as CNamify
 import qualified DDC.Core.Transform.Expose              as CExpose
+import qualified DDC.Core.Check.Close                   as CClose
+import qualified DDC.Core.Interface.Store               as C
 
+-- import qualified Data.List                              as List
 
 ---------------------------------------------------------------------------------------------------
+-- TODO: Waving this structure is a waste of time as we never use different names.
+--       We should instead use an enumeration to list the things we want,
+--       and base the file name on the constructor name.
 data ConfigLoadSourceTetra
         = ConfigLoadSourceTetra
         { configSinkTokens       :: B.Sink      -- ^ Sink for source tokens.
@@ -75,7 +77,7 @@ sourceLoad
         :: String                       -- ^ Name of source file.
         -> Int                          -- ^ Line number in source file.
         -> String                       -- ^ Text of source file.
-        -> B.Store CE.Name              -- ^ Interface store.
+        -> C.Store CE.Name              -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC Parser.SourcePos CE.Name) CE.Name)
@@ -123,18 +125,21 @@ sourceLoad srcName srcLine str store config
         let kenv    = C.profilePrimKinds profile
         let tenv    = C.profilePrimTypes profile
         let mm_namified
-             = evalState (CNamify.namify (CNamify.makeNamifier (CE.freshT "t$S") kenv)
-                                         (CNamify.makeNamifier (CE.freshX "x$S") tenv)
-                                        mm_core)
+             = evalState (CNamify.namify
+                                (CNamify.makeNamifier (CE.freshT "t$S") kenv)
+                                (CNamify.makeNamifier (CE.freshX "x$S") tenv)
+                                mm_core)
                         (100 :: Int)
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
                             (configSinkNamified config)
 
+        oracle <- liftIO $ C.newOracleOfStore store
+
         mm_checked
          <- BC.coreCheck
                 "SourceLoadText"
-                fragment
+                fragment (Just oracle)
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
@@ -142,13 +147,28 @@ sourceLoad srcName srcLine str store config
 
         -- Resolve elaborations in module.
         mm_elaborated
-         <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
-                res     <- liftIO $ CResolve.resolveModule
-                                (C.fragmentProfile BE.fragment)
-                                ntsTop mm_checked
-                case res of
-                 Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
-                 Right mm' -> return mm'
+         <- do
+                -- FIXME: giving the elaborator everything in the store means
+                -- it doesn't respect visiblity / module imports,
+                -- so single file compilation willl fail when recursive build would not.
+                -- Eg currently for Data.Text.Escape doesn't have enough imports.
+
+                emm_resolved
+                 <- liftIO $ CResolve.resolveModule
+                        (C.fragmentProfile BE.fragment) oracle
+                        mm_checked
+
+                mm_resolved
+                 <- case emm_resolved of
+                        Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
+                        Right mm' -> return mm'
+
+                -- TODO: we only need to close this once after elaboration,
+                -- not after both checking and elaboration.
+                mm_closed
+                 <- liftIO $ CClose.closeModuleWithOracle kenv oracle mm_resolved
+
+                return mm_closed
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_elaborated)
                             (configSinkElaborated config)
@@ -252,41 +272,22 @@ sourceDesugar
 ---------------------------------------------------------------------------------------------------
 -- | Lower desugared source tetra code to core tetra.
 sourceLower
-        :: B.Store CE.Name      -- ^ Interface store.
+        :: C.Store CE.Name      -- ^ Interface store.
         -> B.Sink               -- ^ Sink after conversion to core.
         -> B.Sink               -- ^ Sink after resolving.
         -> B.Sink               -- ^ Sink after spreading.
         -> S.Module S.SourcePos
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
-sourceLower store sinkCore sinkImport sinkSpread mm
+sourceLower _store sinkCore _sinkImport _sinkSpread mm
  = do
         -- Lower source tetra to core tetra.
-        let sp          = SP.SourcePos "<top level>" 1 1
-        mm_core         <- case SConvert.coreOfSourceModule sp mm of
-                            Left err    -> throwE [B.ErrorLoad [err]]
-                            Right mm'   -> return mm'
+        let sp  =  SP.SourcePos "<top level>" 1 1
+        mm_core <- case SConvert.coreOfSourceModule sp mm of
+                        Left err    -> throwE [B.ErrorLoad [err]]
+                        Right mm'   -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkCore
 
-        -- Resolve which module imported names are from,
-        -- and attach arity information to the import statements.
-        --
-        -- We're currently ignoring the resolver errors as they don't come
-        -- with source locations. The type checker will give its own Undefined
-        -- variable errors, but not multiple import errors.
-        --
-        (mm_import, _errs_import)
-         <- liftIO $ BImport.importNamesForModule
-                CE.primKindEnv CE.primTypeEnv
-                store mm_core
-
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_import) sinkImport
-
-        -- Spread types of data constructors into uses.
-        let mm_spread   = CSpread.spreadX CE.primKindEnv CE.primTypeEnv mm_import
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_spread)  sinkSpread
-
-        return mm_spread
-
+        return mm_core
 

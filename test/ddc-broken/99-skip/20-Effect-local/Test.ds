@@ -1,0 +1,14 @@
+
+module Test
+import Data.Numeric
+where
+
+-- TOOD: demonstrates failure of type inference as the first
+-- alternnative does not have any effects.
+
+loop (vec: Vector# r Nat#): S (Read r + e) Nat#
+ = go (vectorLength# vec) 0 0
+ where
+        go len acc ix
+         | ix >= len    = acc
+         | otherwise    = go len (acc + vectorRead# vec ix) (ix + 1)

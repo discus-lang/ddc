@@ -47,7 +47,7 @@ instance AnonymizeX (Module a) where
 
         -- We need to keep exported names,
         -- because the export list can't deal with anonymous binders.
-        keep'   = Set.unions [ keep, nsTop, nsExport ] 
+        keep'   = Set.unions [ keep, nsTop, nsExport ]
 
         x'      = anonymizeWithX keep' kstack tstack (moduleBody mm)
 
@@ -59,7 +59,9 @@ instance AnonymizeX (Exp a) where
   = {-# SCC anonymizeWithX #-}
     let down = anonymizeWithX keep kstack tstack
     in case xx of
-        XVar _ UPrim{}  -> xx
+        -- FIXME: need to fix for prims.
+--        XVar _ UPrim{}  -> xx
+
         XPrim{}         -> xx
         XCon{}          -> xx
 

@@ -63,7 +63,6 @@ module DDC.Core.Salt
         , seaNameOfLocal
         , sanitizeName
 
-          -- * Salt expressions
         , module DDC.Core.Salt.Exp)
 where
 import DDC.Core.Salt.Name

@@ -39,23 +39,23 @@ heapObjectOfDataCtor pp ctor
 
         -- If all the fields are boxed objects then used a Boxed heap object,
         -- as these just contain pointer fields.
-        | tsFields                 <- dataCtorFieldTypes ctor
+        | tsFields      <- dataCtorFieldTypes ctor
         , all isBoxedRepType tsFields
         = Just HeapObjectBoxed
 
         -- All of the primitive numeric types will fit in a RawSmall object.
         --   Each field needs to be non-abstract, and have a real width.
-        | [t1]                                    <- dataCtorFieldTypes ctor
-        , Just (NameTyConDiscus TyConDiscusU, [tp]) <- takePrimTyConApps t1
-        , Just (NamePrimTyCon  ptc,         [])   <- takePrimTyConApps tp
+        | [t1]                                      <- dataCtorFieldTypes ctor
+        , Just (NameTyConDiscus TyConDiscusU, [tp]) <- takeNameTyConApps t1
+        , Just (NamePrimTyCon  ptc,         [])     <- takeNameTyConApps tp
         , isJust $ A.primTyConWidth pp ptc
         = Just HeapObjectSmall
 
         -- Unboxed strings are represented as pointers to static memory.
         -- The pointer will fit in a RawSmall object.
-        | [t1]                                        <- dataCtorFieldTypes ctor
-        , Just (NameTyConDiscus TyConDiscusU, [tp])     <- takePrimTyConApps t1
-        , Just (NamePrimTyCon  PrimTyConTextLit, [])  <- takePrimTyConApps tp
+        | [t1]                                       <- dataCtorFieldTypes ctor
+        , Just (NameTyConDiscus TyConDiscusU, [tp])  <- takeNameTyConApps t1
+        , Just (NamePrimTyCon  PrimTyConTextLit, []) <- takeNameTyConApps tp
         = Just HeapObjectSmall
 
         | otherwise
@@ -104,9 +104,11 @@ fieldSizeOfType platform tt
         -- Type constructor might be a primitive or boxed value type.
         TCon tc
          -> case tc of
-                TyConBound (UPrim n) _ -> fieldSizeOfPrim platform n
-                TyConBound _ _         -> Just $ platformAddrBytes platform
-                _                      -> Nothing
+                TyConBound n
+                 -> case fieldSizeOfPrim platform n of
+                        Just bytes -> Just bytes
+                        _          -> Just $ platformAddrBytes platform
+                _                  -> Nothing
 
         --- Higher kinded types are not value types.
         TAbs{}          -> Nothing
@@ -127,7 +129,7 @@ fieldSizeOfType platform tt
 fieldSizeOfPrim :: Platform -> Name -> Maybe Integer
 fieldSizeOfPrim platform nn
  = case nn of
-        NameDaConDiscus{}        -> Just $ platformAddrBytes platform
+        NameDaConDiscus{}       -> Just $ platformAddrBytes platform
         NamePrimTyCon tc        -> fieldSizeOfPrimTyCon platform tc
         _                       -> Nothing
 

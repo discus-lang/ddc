@@ -21,6 +21,7 @@ import qualified DDC.Core.Discus.Prim           as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Type.DataDef               as C
 import qualified Data.Text                      as Text
+import qualified Data.Set                       as Set
 import Data.Maybe
 
 import DDC.Core.Module
@@ -122,18 +123,20 @@ coreOfSourceModuleM a mm
 
         return
          $ C.ModuleCore
-                { C.moduleName           = S.moduleName mm
-                , C.moduleIsHeader       = False
-                , C.moduleExportTypes    = exportTypes'
-                , C.moduleExportValues   = exportValues_main
-                , C.moduleImportTypes    = importTypes'
-                , C.moduleImportCaps     = importCaps'
-                , C.moduleImportValues   = importValues'
-                , C.moduleImportDataDefs = []
-                , C.moduleImportTypeDefs = []
-                , C.moduleLocalDataDefs  = dataDefsLocal
-                , C.moduleLocalTypeDefs  = typeDefsLocal
-                , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
+         { C.moduleName           = S.moduleName mm
+         , C.moduleTransitiveDeps = Set.empty
+         , C.moduleIsHeader       = False
+         , C.moduleExportTypes    = exportTypes'
+         , C.moduleExportValues   = exportValues_main
+         , C.moduleImportModules  = S.moduleImportModules mm
+         , C.moduleImportTypes    = importTypes'
+         , C.moduleImportCaps     = importCaps'
+         , C.moduleImportValues   = importValues'
+         , C.moduleImportDataDefs = []
+         , C.moduleImportTypeDefs = []
+         , C.moduleLocalDataDefs  = dataDefsLocal
+         , C.moduleLocalTypeDefs  = typeDefsLocal
+         , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 
 -- Tops -------------------------------------------------------------------------------------------
@@ -171,8 +174,8 @@ toCoreExportValue ev
         ExportValueLocal mn n t mArity
          -> ExportValueLocal mn    <$> toCoreXUVN n <*> toCoreT UniverseSpec t <*> pure mArity
 
-        ExportValueSea n tx t
-         -> ExportValueSea         <$> toCoreXUVN n <*> pure tx <*> toCoreT UniverseSpec t
+        ExportValueSea mn n tx t
+         -> ExportValueSea mn      <$> toCoreXUVN n <*> pure tx <*> toCoreT UniverseSpec t
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -213,9 +216,9 @@ toCoreImportValue src
                         <*> toCoreT UniverseSpec t
                         <*> pure mA
 
-        ImportValueSea n v t
+        ImportValueSea mn n v t
          -> ImportValueSea
-                        <$> toCoreXBVN n
+         <$> pure mn    <*> toCoreXBVN n
                         <*> pure v
                         <*> toCoreT UniverseSpec t
 
@@ -292,7 +295,7 @@ toCoreX a xx
 
         S.XPrim p
          -> case toCorePrimVal p of
-                Just p' -> return $ C.XVar a (C.UPrim p')
+                Just p' -> return $ C.XVar a (C.UName p')
                 _       -> error "ddc-source-discus: cannot convert prim"
 
         S.XVar u
@@ -300,7 +303,7 @@ toCoreX a xx
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
-        S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
+        S.XCon dc@(C.DaConBound (C.DaConBoundName _ _ (S.DaConBoundLit (S.PrimLitTextLit{}))))
          -> C.XApp      <$> pure a
                         <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                         <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
@@ -542,8 +545,8 @@ toCoreDC dc
         S.DaConRecord ns
          -> pure $ C.DaConRecord ns
 
-        S.DaConPrim  n t
-         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t
+        S.DaConPrim  n
+         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n)
 
         S.DaConBound (C.DaConBoundName _ _ n)
          -> C.DaConBound <$> (C.DaConBoundName

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Core language parser.
 module DDC.Core.Codec.Text.Parser.Exp
@@ -220,7 +221,7 @@ pExpAtomSP c
  , do   ((lit, bPrim), sp) <- pLitSP
         let Just mkLit  = contextMakeLiteralName c
         case mkLit sp lit bPrim of
-         Just name -> return  (XCon sp (DaConPrim name (T.tBot T.kData)), sp)
+         Just name -> return  (XCon sp (DaConPrim name), sp)
          Nothing   -> P.unexpected "literal"
 
         -- Debruijn indices
@@ -261,7 +262,7 @@ pPat c
         ((lit, bPrim), sp) <- pLitSP
         let Just mkLit  = contextMakeLiteralName c
         case mkLit sp lit bPrim of
-         Just nLit      -> return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
+         Just nLit      -> return  $ PData (DaConPrim nLit) []
          _              -> P.unexpected "literal"
 
         -- Unit

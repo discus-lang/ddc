@@ -21,6 +21,7 @@ Obj* ddcPrimFileRead (string_t* path)
         }
 
         // Payload contains Word32 data size, the data itself, then the null byte.
+        //   The info table index 2 comes from Info.dcs
         Obj* pObj       = ddcRawAlloc (0, 4 + lenBuf + 1);
         uint8_t* p8     = _ddcRawPayload(pObj);
         uint32_t* pLen  = (uint32_t*)p8;

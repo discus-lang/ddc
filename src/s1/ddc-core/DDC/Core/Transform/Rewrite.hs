@@ -234,7 +234,6 @@ goDefHoles rules a l@(LLet let_bind def) e env down
         -- check if it looks like something has already been unfolded
         isUIx x = case x of
                       RTerm (XVar _ (UIx _))   -> True
-                      RTerm (XVar _ (UPrim _)) -> True
                       _                        -> False
 
         already_done

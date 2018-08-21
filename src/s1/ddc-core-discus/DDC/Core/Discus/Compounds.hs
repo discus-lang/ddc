@@ -15,7 +15,8 @@ module DDC.Core.Discus.Compounds
           -- * Info table primitive
         , xInfoFrameNew,        tInfoFrameNew
         , xInfoFramePush,       tInfoFramePush
-        , xInfoFrameAddData,    tInfoFrameAddData)
+        , xInfoFrameAddData,    tInfoFrameAddData
+        , xInfoFrameAddSuper,   tInfoFrameAddSuper)
 where
 import DDC.Core.Discus.Prim.TyConDiscus
 import DDC.Core.Discus.Prim.TyConPrim
@@ -35,7 +36,7 @@ xFunReify
 
 xFunReify a tParam tResult xF
  = xApps a
-        (XVar a (UPrim  (NameOpFun OpFunReify)))
+        (XVar a (UName  (NameOpFun OpFunReify)))
         [RType tParam, RType tResult, RTerm xF]
 
 
@@ -49,7 +50,7 @@ xFunCurry
 
 xFunCurry a tsParam tResult xF
  = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunCurry (length tsParam)))))
+         (XVar a (UName  (NameOpFun (OpFunCurry (length tsParam)))))
          ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
@@ -65,7 +66,7 @@ xFunApply
 
 xFunApply a tsArg tResult xF xsArg
  = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunApply (length xsArg)))))
+         (XVar a (UName  (NameOpFun (OpFunApply (length xsArg)))))
          ((map RType tsArg) ++ [RType tResult] ++ [RTerm xF] ++ (map RTerm xsArg))
 
 
@@ -74,13 +75,13 @@ xCastConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCastConvert a tTo tFrom xx
  | Just ( NamePrimCast PrimCastConvert _
         , [ RType tTo', RType tFrom', RTerm xxOrig ])
-        <- takeXFragApps xx
+        <- takeXNameApps xx
  , tTo == tFrom', tFrom == tTo'
  = xxOrig
 
  | otherwise
  = xApps a
-        (XVar a (UPrim (NamePrimCast PrimCastConvert False)))
+        (XVar a (UName (NamePrimCast PrimCastConvert False)))
         [ RType tTo, RType tFrom
         , RTerm xx ]
 
@@ -91,8 +92,8 @@ xCastConvert a tTo tFrom xx
 xInfoFrameNew :: a -> Int -> Exp a Name
 xInfoFrameNew a iCount
  = xApps a
-        (XVar a (UPrim (NameOpInfo OpInfoFrameNew False)))
-        [ RTerm $ XCon a (DaConPrim (NameLitNat $ fromIntegral iCount) tNat)]
+        (XVar a (UName (NameOpInfo OpInfoFrameNew False)))
+        [ RTerm $ XCon a (DaConPrim (NameLitNat $ fromIntegral iCount))]
 
 
 -- | Type of the ddcInfoFrameNew runtime primitive.
@@ -105,7 +106,7 @@ tInfoFrameNew
 xInfoFramePush :: a -> Exp a Name -> Exp a Name
 xInfoFramePush a xFrame
  = xApps a
-        (XVar a (UPrim (NameOpInfo OpInfoFramePush False)))
+        (XVar a (UName (NameOpInfo OpInfoFramePush False)))
         [ RTerm xFrame ]
 
 
@@ -128,10 +129,10 @@ xInfoFrameAddData
 
 xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
  = xApps a
-        (XVar a (UPrim (NameOpInfo OpInfoFrameAddData False)))
+        (XVar a (UName (NameOpInfo OpInfoFrameAddData False)))
         [ RTerm xPtr
-        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16) (tWord 16))
-        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16) (tWord 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iTag)   16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iArity) 16))
         , RTerm xNameModule
         , RTerm xNameData]
 
@@ -139,6 +140,34 @@ xInfoFrameAddData a xPtr iTag iArity xNameModule xNameData
 -- | Type of the ddcInfoFrameAddData runtime primitive.
 tInfoFrameAddData :: Type Name
 tInfoFrameAddData
+        = tAddr `tFun` tWord 16 `tFun` tWord 16
+        `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
+
+
+-- | Add the name of a super definition to an info-table frame.
+--   This function is defined in the runtime system.
+xInfoFrameAddSuper
+        :: a
+        -> Exp a Name   -- ^ Frame pointer.
+        -> Int          -- ^ Number of parameters of super.
+        -> Int          -- ^ Number of boxes of super.
+        -> Exp a Name   -- ^ Name of defining module.
+        -> Exp a Name   -- ^ Name of super.
+        -> Exp a Name
+
+xInfoFrameAddSuper a xPtr iParams iBoxes xNameModule xNameSuper
+ = xApps a
+        (XVar a (UName (NameOpInfo OpInfoFrameAddSuper False)))
+        [ RTerm xPtr
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iParams) 16))
+        , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iBoxes)  16))
+        , RTerm xNameModule
+        , RTerm xNameSuper]
+
+
+-- | Type of the ddcInfoFrameAddData runtime primitive.
+tInfoFrameAddSuper :: Type Name
+tInfoFrameAddSuper
         = tAddr `tFun` tWord 16 `tFun` tWord 16
         `tFun` tTextLit `tFun` tTextLit `tFun` tWord 32
 

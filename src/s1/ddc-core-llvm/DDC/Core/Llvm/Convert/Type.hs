@@ -65,7 +65,7 @@ convertType pp kenv tt
         -- A pointer to a primitive type.
         C.TApp{}
          | Just (A.NamePrimTyCon A.PrimTyConPtr, [_r, t2])
-                <- takePrimTyConApps tt
+                <- takeNameTyConApps tt
          -> do  t2'     <- convertType pp kenv t2
                 return  $ TPointer t2'
 
@@ -75,14 +75,14 @@ convertType pp kenv tt
                 return
                   $ TPointer $ TFunction
                   $ FunctionDecl
-                  { declName                    = "dummy.function.name"
-                  , declLinkage                 = Internal
-                  , declCallConv                = CC_Ccc
-                  , declReturnType              = tResult
-                  , declParamListType           = FixedArgs
-                  , declParams                  = [Param t [] | t <- tsArgs]
-                  , declAlign                   = AlignBytes (platformAlignBytes pp)
-                  , declGarbageCollector        = Just "shadow-stack" }
+                  { declName             = "dummy.function.name"
+                  , declLinkage          = Internal
+                  , declCallConv         = CC_Ccc
+                  , declReturnType       = tResult
+                  , declParamListType    = FixedArgs
+                  , declParams           = [Param t [] | t <- tsArgs]
+                  , declAlign            = AlignBytes (platformAlignBytes pp)
+                  , declGarbageCollector = Just "shadow-stack" }
 
         C.TForall b t
          -> let kenv'   = Env.extend b kenv
@@ -153,7 +153,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
                 , declAlign             = AlignBytes (platformAlignBytes pp)
                 , declGarbageCollector  = Just "shadow-stack" }
 
- | C.ImportValueSea _ strName _  <- isrc
+ | C.ImportValueSea _ _ strName _  <- isrc
  = Just $ do
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
@@ -176,10 +176,10 @@ convTyCon platform tycon
         C.TyConSpec  C.TcConUnit
          -> return $ TPointer (tObj platform)
 
-        C.TyConBound (C.UPrim A.NameObjTyCon) _
+        C.TyConBound A.NameObjTyCon
          -> return $ tObj platform
 
-        C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _
+        C.TyConBound (A.NamePrimTyCon tc)
          -> case tc of
              A.PrimTyConVoid      -> return $ TVoid
              A.PrimTyConBool      -> return $ TInt 1
@@ -202,8 +202,8 @@ convTyCon platform tycon
              -- Text literals are represented as pointers to the static text data.
              A.PrimTyConTextLit   -> return $ tPtr (TInt 8)
 
-             _            -> throw $ ErrorInvalidTyCon tycon
-                                   $ Just "Not a primitive type constructor."
+             _ -> throw $ ErrorInvalidTyCon tycon
+                        $ Just "Not a primitive type constructor."
 
         _ -> throw $ ErrorInvalidTyCon tycon
                    $ Just "Cannot convert type constructor."
@@ -246,14 +246,14 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 -- Predicates -----------------------------------------------------------------
 -- | Check whether this is the Void# type.
 isVoidT :: C.Type A.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid)) _))
+isVoidT (C.TCon (C.TyConBound (A.NamePrimTyCon A.PrimTyConVoid)))
           = True
 isVoidT _ = False
 
 
 -- | Check whether this is the Bool# type.
 isBoolT :: C.Type A.Name -> Bool
-isBoolT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConBool)) _))
+isBoolT (C.TCon (C.TyConBound (A.NamePrimTyCon A.PrimTyConBool)))
           = True
 isBoolT _ = False
 
@@ -262,7 +262,7 @@ isBoolT _ = False
 isSignedT :: C.Type A.Name -> Bool
 isSignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
+        C.TCon (C.TyConBound (A.NamePrimTyCon tc))
           -> A.primTyConIsSigned tc
         _ -> False
 
@@ -271,7 +271,7 @@ isSignedT tt
 isUnsignedT :: C.Type A.Name -> Bool
 isUnsignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
+        C.TCon (C.TyConBound (A.NamePrimTyCon tc))
           -> A.primTyConIsUnsigned tc
         _ -> False
 
@@ -280,7 +280,7 @@ isUnsignedT tt
 isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
+        C.TCon (C.TyConBound (A.NamePrimTyCon tc))
           -> A.primTyConIsIntegral tc
         _ -> False
 
@@ -289,7 +289,7 @@ isIntegralT tt
 isFloatingT :: C.Type A.Name -> Bool
 isFloatingT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
+        C.TCon (C.TyConBound (A.NamePrimTyCon tc))
           -> A.primTyConIsFloating tc
         _ -> False
 

@@ -10,21 +10,21 @@ import DDC.Llvm.Syntax.Attr
 
 -- | A LLVM Function
 data Function
-        = Function 
+        = Function
         { -- | The signature of this declared function.
-          funDecl          :: FunctionDecl
+          funDecl          :: !FunctionDecl
 
           -- | The function parameter names.
-        , funParams        :: [String]
+        , funParams        :: ![String]
 
           -- | The function attributes.
-        , funAttrs         :: [FuncAttr]
+        , funAttrs         :: ![FuncAttr]
 
           -- | The section to put the function into,
-        , funSection       :: Section
+        , funSection       :: !Section
 
           -- | The body of the functions.
-        , funBlocks        :: [Block]
+        , funBlocks        :: ![Block]
         }
 
 
@@ -34,6 +34,6 @@ data Section
         = SectionAuto
 
         -- | Put it in this specific section.
-        | SectionSpecific String
+        | SectionSpecific !String
         deriving (Eq, Show)
 

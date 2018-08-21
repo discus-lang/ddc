@@ -324,6 +324,6 @@ scheduleOperator _ctx fills op
 -- | Build an expression that increments a natural.
 xIncrement :: Exp a Name -> Exp a Name
 xIncrement xx
-        = xApps (XVar (UPrim (NamePrimArith PrimArithAdd)))
+        = xApps (XVar (UName (NamePrimArith PrimArithAdd)))
                   [ XType tNat, xx, XCon (dcNat 1) ]
 

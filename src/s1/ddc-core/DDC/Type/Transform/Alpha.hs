@@ -40,7 +40,6 @@ instance Alpha Bound where
   = case uu of
         UIx i           -> UIx i
         UName n         -> UName (f n)
-        UPrim n         -> UPrim (f n)
 
 
 instance Alpha TyCon where
@@ -50,6 +49,6 @@ instance Alpha TyCon where
         TyConKind kc    -> TyConKind    kc
         TyConWitness tc -> TyConWitness tc
         TyConSpec tc    -> TyConSpec    tc
-        TyConBound  u k -> TyConBound   (alpha f u) (alpha f k)
-        TyConExists i k -> TyConExists  i           (alpha f k)
+        TyConBound  n   -> TyConBound   (f n)
+        TyConExists i k -> TyConExists  i (alpha f k)
 

@@ -10,19 +10,27 @@ export {
         textSource_matchChar;
         textSource_toText
 }
-
-import Data.Numeric.Word8
+import Data.Numeric.Word32
 import Data.Text.Base
 import Data.Text.Char
 import Data.Text.List
+import Data.Tuple
 import Data.List
 import Data.Ref
+
+
+-- | Capabilities to allocate and read top-level text vectors.
+--   TODO: these aren't getting re-exported via the module system.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
 where
 
 
 -------------------------------------------------------------------------------
 -- | Take a list of characters from a text string.
-text_toList (tx: Text): List Char
+text_toList (tx: Text): List Text
  = mutable r in
    do   source  = textSource_fromText {@r} tx
         list    = textSource_pullList source
@@ -273,12 +281,12 @@ textSource_matchChar
 -- | Pull the entire list of characters from a text source.
 textSource_pullList
         (source: TextSource r)
-        : S (Read r + Write r) (List Char)
+        : S (Read r + Write r) (List Text)
  = go ()
- where  go (_: Unit): S (Read r + Write r) (List Char)
+ where  go (_: Unit): S (Read r + Write r) (List Text)
          = case textSource_pullChar source of
                 Nothing -> Nil
-                Just c  -> Cons c (go ())
+                Just c  -> Cons (textOfChar c) (go ())
 
 
 -------------------------------------------------------------------------------

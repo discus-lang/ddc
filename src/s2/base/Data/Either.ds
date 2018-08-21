@@ -10,9 +10,9 @@ where
 
 
 -- | The Either type represents two possibilities.
-data Either (a b: Data) where
-        Left    : a -> Either a b
-        Right   : b -> Either a b
+data Either (a b: Data)
+        = Left  a
+        | Right b
 
 
 -- | Case analysis on the Either type.

@@ -1,7 +1,9 @@
 
 module Data.Array.Fun
-export  { array_from; array_map; array_map2 }
+export array_from; array_map; array_map2
 import Data.Array.Base
+import Data.Numeric.Nat
+import Class.Ord
 where
 
 
@@ -11,7 +13,7 @@ data Fun where
 
 
 -- | Yield an array from a function that produces the value at each index.
-array_from 
+array_from
         (def: a) (size: Nat) (f: Nat -> a): Array Fun a
  = MkArray
         Fun def size
@@ -23,7 +25,7 @@ array_from
 array_map
         (f: a -> b)
         (arr: Array r a): Array Fun b
- = MkArray 
+ = MkArray
         Fun
         (f (array_def arr))
         (array_size arr)
@@ -32,7 +34,7 @@ array_map
 
 -- | Apply a function to corresponding elements of two arrays,
 --   yielding a new array.
-array_map2 
+array_map2
         (f: a -> b -> c)
         (arr1: Array r1 a) (arr2: Array r2 b): Array Fun c
  = MkArray

@@ -135,7 +135,7 @@ kindTyConFlow tc
 -- | Check if some type is a fully applied type of a RateNat
 isRateNatType :: Type Name -> Bool
 isRateNatType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowRateNat, [_])   -> True
         _                                            -> False
 
@@ -143,7 +143,7 @@ isRateNatType tt
 -- | Check if some type is a fully applied type of a Series.
 isSeriesType :: Type Name -> Bool
 isSeriesType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowSeries, [_, _, _]) -> True
         _                                               -> False
 
@@ -151,7 +151,7 @@ isSeriesType tt
 -- | Check if some type is a fully applied type of a Ref.
 isRefType :: Type Name -> Bool
 isRefType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowRef, [_])       -> True
         _                                            -> False
 
@@ -159,7 +159,7 @@ isRefType tt
 -- | Check if some type is a fully applied type of a Vector.
 isVectorType :: Type Name -> Bool
 isVectorType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowVector, [_])    -> True
         _                                            -> False
 
@@ -167,21 +167,21 @@ isVectorType tt
 -- | Check if some type is a fully applied type of a Buffer.
 isBufferType :: Type Name -> Bool
 isBufferType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowBuffer, [_])    -> True
         _                                            -> False
 
 -- | Check if some type is a fully applied type of a RateVec.
 isRateVecType :: Type Name -> Bool
 isRateVecType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowRateVec, [_, _])-> True
         _                                            -> False
 
 -- | Check if some type is a fully applied Process.
 isProcessType :: Type Name -> Bool
 isProcessType tt
- = case takePrimTyConApps tt of
+ = case takeNameTyConApps tt of
         Just (NameTyConFlow TyConFlowProcess, [_, _]) -> True
         _                                             -> False
 
@@ -208,7 +208,7 @@ tVector ::  Type Name -> Type Name
 tVector tA      = tApps (tConTyConFlow TyConFlowVector)    [tA]
 
 tRateVec :: Type Name -> Type Name -> Type Name
-tRateVec tK tA = tApps (tConTyConFlow TyConFlowRateVec)  [tK, tA]
+tRateVec tK tA  = tApps (tConTyConFlow TyConFlowRateVec)  [tK, tA]
 
 
 tSeries :: Type Name -> Type Name -> Type Name -> Type Name
@@ -216,7 +216,7 @@ tSeries tP tK tA   = tApps (tConTyConFlow TyConFlowSeries)    [tP, tK, tA]
 
 
 tSegd :: Type Name -> Type Name -> Type Name
-tSegd tK1 tK2   = tApps (tConTyConFlow TyConFlowSegd)      [tK1, tK2]
+tSegd tK1 tK2      = tApps (tConTyConFlow TyConFlowSegd)      [tK1, tK2]
 
 
 tSel1 :: Type Name -> Type Name -> Type Name -> Type Name
@@ -266,8 +266,5 @@ tResize  tP tJ tK = (tConTyConFlow TyConFlowResize) `tApps` [tP, tJ, tK]
 -- Utils ----------------------------------------------------------------------
 tConTyConFlow :: TyConFlow -> Type Name
 tConTyConFlow tcf
- = let  k       = kindTyConFlow tcf
-        u       = UPrim (NameTyConFlow tcf)
-        tc      = TyConBound u k
-   in   TCon tc
+ = TCon (TyConBound (NameTyConFlow tcf))
 

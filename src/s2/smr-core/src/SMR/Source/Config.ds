@@ -4,6 +4,8 @@ export
 {       configSym; configPrim; configAttach;
         attachRangeExp; withRangeExp }
 import SMR.Source.Expected
+import Class.Monad
+import Control.Parsec
 import Data.Text.Location
 import Data.Maybe
 import Data.Lens

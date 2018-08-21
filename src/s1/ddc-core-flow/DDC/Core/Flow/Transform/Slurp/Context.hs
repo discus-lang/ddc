@@ -138,7 +138,7 @@ mergeLists lefts (right:rest)
   mergeAny pres (l:ls) r
    = case insertContext l r of
       Right l' -> Just (pres ++ [l'] ++ ls)
-      Left _   -> mergeAny (pres ++ [l]) ls r 
+      Left _   -> mergeAny (pres ++ [l]) ls r
 
 
 
@@ -188,7 +188,7 @@ splitContextIntoApps ctx
                        , contextInner2 ctx )
 
     _
-     -> -- Left (ErrorCannotSplitContext ctx) 
+     -> -- Left (ErrorCannotSplitContext ctx)
         return (ctx, ctx)
 
 
@@ -202,7 +202,7 @@ mergeContexts a b
 resizeContext :: Resize -> Context -> Either Error Context
 resizeContext resize ctx
  = case resize of
-    Id _    
+    Id _
      -> return ctx
     AppL a b
      -> return
@@ -246,8 +246,8 @@ resizeContext resize ctx
     Cross _ k _ r
      -> do  ctx' <- resizeContext r ctx
             return $ wrapCtx k ctx'
-            
-            
+
+
 
 
 emptyCtx :: Type Name -> Context
@@ -269,7 +269,7 @@ wrapCtx k ctx
     , contextRate1 ctx == l
     , contextRate2 ctx == r
     -> ctx
-    
+
    _
     | otherwise
     -> ContextRate
@@ -279,7 +279,7 @@ wrapCtx k ctx
 
 takeAppend ty
  | Just (NameTyConFlow TyConFlowRateAppend, [tK, tL])
-          <- takePrimTyConApps ty
+          <- takeNameTyConApps ty
  = Just (tK, tL)
  | otherwise
  = Nothing

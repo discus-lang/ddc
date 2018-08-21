@@ -35,7 +35,6 @@ import DDC.Core.Codec.Text.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Core.Codec.Text.Pretty
-import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
 import Control.Monad.Trans.Except
@@ -236,12 +235,9 @@ cmdTypeEquiv language source ss
                  then outStrLn $ show $ equivT EnvT.empty t1 t2
                  else return ()
 
-
         config  = C.configOfProfile profile
-        kenv    = profilePrimKinds    profile
-
         checkT t
-         = case C.checkSpec config (spreadT kenv t) of
+         = case C.checkSpec config t  of
                 Left (err :: C.Error () n)
                  -> do  outDocLn $ ppr err
                         return False

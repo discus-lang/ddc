@@ -6,6 +6,7 @@ import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import qualified Data.Monoid             as T
+import qualified Data.Text               as T
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Discus.Prim    as D
 import qualified DDC.Core.Salt.Name      as A
@@ -26,7 +27,7 @@ convertPrimInfo _ectx ctx xxExp
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFrameNew True
                 , [RTerm xLength])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          -> Just $ do
                 let a'   =  annotTail a
                 xLength' <- convertX ExpArg ctx xLength
@@ -36,7 +37,7 @@ convertPrimInfo _ectx ctx xxExp
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFramePush True
                 , [RTerm xAddr])
-                <- takeXFragApps xxExp
+                <- takeXNameApps xxExp
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'   <- convertX ExpArg ctx xAddr
@@ -45,16 +46,12 @@ convertPrimInfo _ectx ctx xxExp
 
         XApp a _xa _xb
          | Just ( D.NameOpInfo D.OpInfoFrameAddData True
-                , [ RTerm xAddr
-                  , RTerm xTag
-                  , RTerm xArity
-                  , RTerm xTxtModule@(XCon _ dcTxtModuleName)
-                  , RTerm xTxtCon   @(XCon _ dcTxtCtorName) ])
-                <- takeXFragApps xxExp
-         , D.NameLitUnboxed (D.NameLitTextLit txModuleName)
-                <- daConName dcTxtModuleName
-         , D.NameLitUnboxed (D.NameLitTextLit txCtorName)
-                <- daConName dcTxtCtorName
+                , [ RTerm xAddr, RTerm xTag, RTerm xArity
+                  , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModuleName))
+                  , RTerm xTxtCon   @(XCon _ (DaConPrim nTxtCtorName)) ])
+                <- takeXNameApps xxExp
+         , D.NameLitUnboxed (D.NameLitTextLit txModuleName) <- nTxtModuleName
+         , D.NameLitUnboxed (D.NameLitTextLit txCtorName)   <- nTxtCtorName
          -> Just $ do
                 let a'   =  annotTail a
                 xAddr'      <- convertX ExpArg ctx xAddr
@@ -64,8 +61,7 @@ convertPrimInfo _ectx ctx xxExp
                 xTxtCon'    <- convertX ExpArg ctx xTxtCon
 
                 let txSymbolInfoIndex
-                        = "ddcInfoIndex." T.<> txModuleName
-                        T.<> "." T.<> txCtorName
+                        = "ddcInfoIndex.data." T.<> txModuleName T.<> "." T.<> txCtorName
 
                 return
                  $ xLets a'
@@ -78,6 +74,44 @@ convertPrimInfo _ectx ctx xxExp
                           $ A.xWrite a'
                                 (A.tWord 32)
                                 (A.xGlobali a' (A.tWord 32) txSymbolInfoIndex)
+                                (A.xNat a' 0)
+                                (XVar a' (UIx 0)) ]
+                 $ XVar a' (UIx 0)
+
+        XApp a _xa _xb
+         | Just ( D.NameOpInfo D.OpInfoFrameAddSuper True
+                , [ RTerm xAddr, RTerm xParams, RTerm xBoxes
+                  , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModule))
+                  , RTerm _xTxtSuper@(XCon _ (DaConPrim nTxtSuper)) ])
+                <- takeXNameApps xxExp
+         , D.NameLitUnboxed (D.NameLitTextLit txModule) <- nTxtModule
+         , D.NameLitUnboxed (D.NameLitTextLit txSuper)  <- nTxtSuper
+         -> Just $ do
+                let a'   =  annotTail a
+                xAddr'      <- convertX ExpArg ctx xAddr
+                xParams'    <- convertX ExpArg ctx xParams
+                xBoxes'     <- convertX ExpArg ctx xBoxes
+                xTxtModule' <- convertX ExpArg ctx xTxtModule
+
+                let txSymbolInfoIndexRaw
+                        = "ddcInfoIndex.super." T.<> txModule T.<> "."
+                        T.<> txSuper
+
+                let txSuperNameSanitized
+                        = T.pack $ A.sanitizeName $ T.unpack txSuper
+
+                return
+                 $ xLets a'
+                        [ LLet  (BAnon $ A.tWord 32)
+                          $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddSuper")))
+                                [ RTerm xAddr', RTerm xParams', RTerm xBoxes'
+                                , RTerm xTxtModule'
+                                , RTerm (A.xTextLit a' txSuperNameSanitized) ]
+
+                        , LLet  (BNone $ A.tVoid)
+                          $ A.xWrite a'
+                                (A.tWord 32)
+                                (A.xGlobali a' (A.tWord 32) txSymbolInfoIndexRaw)
                                 (A.xNat a' 0)
                                 (XVar a' (UIx 0)) ]
                  $ XVar a' (UIx 0)

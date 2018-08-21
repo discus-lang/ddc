@@ -8,6 +8,7 @@ export
         stake; stakeWhile;
         sfilter;
 }
+import Data.Array.Store
 import Data.Numeric.Nat
 import Data.List
 import Data.Maybe
@@ -21,13 +22,13 @@ where
 -------------------------------------------------------------------------------
 -- | Unbounded streams,
 --   wraps a function that produces elements on demand.
-data Stream (s a: Data) where
-        MkStream : (s -> Step s a) -> s -> Stream s a
+data Stream (s a: Data)
+        = MkStream (s -> Step s a) s
 
-data Step (s a: Data) where
-        Yield   : a -> s -> Step s a
-        Skip    : s -> Step s a
-        Done    : Step s a
+data Step (s a: Data)
+        = Yield a s
+        | Skip  s
+        | Done
 
 
 -- Conversions ----------------------------------------------------------------

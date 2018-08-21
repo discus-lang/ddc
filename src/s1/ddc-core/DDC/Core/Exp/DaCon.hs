@@ -7,11 +7,9 @@ module DDC.Core.Exp.DaCon
         , dcUnit
         , takeNameOfDaConPrim
         , takeNameOfDaConBound
-        , takeBaseCtorNameOfDaCon
-        , takeTypeOfDaCon)
+        , takeBaseCtorNameOfDaCon)
 where
 import DDC.Core.Module.Name
-import DDC.Type.Exp.Simple
 import Control.DeepSeq
 import Data.Text                (Text)
 
@@ -27,19 +25,7 @@ data DaCon n t
 
         -- | Primitive data constructor used for literals and baked-in
         --   constructors.
-        --
-        --   The type of the constructor needs to be attached to handle the
-        --   case where there are too many constructors in the data type to
-        --   list, like for Int literals. In this case we determine what data
-        --   type it belongs to from the attached type of the data constructor.
-        --
-        | DaConPrim
-        { -- | Name of the data constructor.
-          daConName     :: !n
-
-          -- | Type of the data constructor.
-        , daConType     :: !t
-        }
+        | DaConPrim     n
 
         -- | Data constructor that has a data type declaration.
         --   These can be user-defined data constructors, as well as
@@ -50,7 +36,8 @@ data DaCon n t
 
 -- | Bound occurrence of data constructor that is associated with a data type
 --   declaration. This includes user defined data types, as well as primitive
---   algebraic data types like 'Tuple'.
+--   algebraic data types like 'Bool'. Once we have noticed a data constructor
+--   is primitive it will be rewritten to a 'DaConPrim' by the type checker.
 --
 --   The module and enclosing type names are optional as we also use this
 --   representation when they have not been resolved yet.
@@ -73,7 +60,7 @@ instance (NFData n, NFData t) => NFData (DaCon n t) where
   = case dc of
         DaConUnit       -> ()
         DaConRecord ns  -> rnf ns
-        DaConPrim  n t  -> rnf n  `seq` rnf t
+        DaConPrim  n    -> rnf n
         DaConBound n    -> rnf n
 
 
@@ -82,7 +69,7 @@ instance (NFData n, NFData t) => NFData (DaCon n t) where
 takeNameOfDaConPrim :: DaCon n t -> Maybe n
 takeNameOfDaConPrim dc
  = case dc of
-        DaConPrim n _   -> Just n
+        DaConPrim n     -> Just n
         _               -> Nothing
 
 
@@ -101,24 +88,8 @@ takeBaseCtorNameOfDaCon dc
  = case dc of
         DaConBound (DaConBoundName _ _ n)
                         -> Just n
-        DaConPrim n _   -> Just n
-        _               ->  Nothing
-
-
--- | Take the type annotation of a data constructor,
---   if we know it locally.
-takeTypeOfDaCon :: DaCon n (Type n) -> Maybe (Type n)
-takeTypeOfDaCon dc
- = case dc of
-        DaConUnit       -> Just $ tUnit
-
-        DaConRecord ns
-         -> Just $  tForalls (map (const kData) ns)
-                 $  \tsArg -> tFunOfParamResult tsArg
-                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
-
-        DaConPrim{}     -> Just $ daConType dc
-        DaConBound{}    -> Nothing
+        DaConPrim n     -> Just n
+        _               -> Nothing
 
 
 -- | The unit data constructor.

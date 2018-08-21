@@ -1,6 +1,8 @@
 
-module Main 
+module Main
 import Things
+import Data.Numeric
+import Class.Show
 import System.IO.Console
 where
 
@@ -26,8 +28,8 @@ doTwice (s: S e a): S e a
 -- Verify that we can pass a suspended computation,
 -- as well as invoking the transformed CAFs.
 main (_: Unit): S Console Unit
- = doTwice (box do writel $ "derp = " 
-                          % showNat 
+ = doTwice (box do writel $ "derp = "
+                          % showNat
                                 ( nat1 + nat2
                                 + defnord (fnord1 [Nat#])
                                 + defnord (fnord2 [Nat#]))

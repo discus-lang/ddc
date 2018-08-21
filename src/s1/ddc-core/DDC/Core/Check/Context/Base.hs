@@ -46,6 +46,7 @@ module DDC.Core.Check.Context.Base
         , lowerTypes)
 where
 import DDC.Core.Check.Context.Elem
+import DDC.Core.Interface.Oracle
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT
@@ -73,8 +74,13 @@ import Prelude                          hiding ((<$>))
 --
 data Context n
         = Context
-        { -- | Top level environment for terms.
-          contextEnvX           :: !(EnvX n)
+        { -- | The oracle knows the types and kinds of things in other
+          --   modules (or can find out). When checking a closed module
+          --   this can be set to Nothing.
+          contextOracle         :: !(Maybe (Oracle n))
+
+          -- | Top level environment of the current module.
+        , contextEnvX           :: !(EnvX n)
 
           -- | Fresh name generator for context positions.
         , contextGenPos         :: !Int
@@ -94,7 +100,7 @@ data Context n
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
- ppr (Context _ genPos genExists ls _solved)
+ ppr (Context _oracle _envX genPos genExists ls _solved)
   = vcat
   [ text "Context "
   , text "  genPos    = " % int genPos
@@ -105,13 +111,13 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
                 | i <- [0..]]]
 
 
-
 -- Construction ---------------------------------------------------------------
 -- | An empty context.
 emptyContext :: Context n
 emptyContext
         = Context
-        { contextEnvX           = EnvX.empty
+        { contextOracle         = Nothing
+        , contextEnvX           = EnvX.empty
         , contextGenPos         = 0
         , contextGenExists      = 0
         , contextElems          = []
@@ -269,22 +275,26 @@ popToPos pos ctx
 lookupType :: Eq n => Bound n -> Context n -> Maybe (Type n)
 lookupType u ctx
  = case u of
-        UPrim{}         -> Nothing
-        UName n         -> goName n    (contextElems ctx)
-        UIx   ix        -> goIx   ix 0 (contextElems ctx)
+        UName n  -> goName n    (contextElems ctx)
+        UIx   ix -> goIx   ix 0 (contextElems ctx)
  where
-        goName _n []    = Nothing
+        goName _n []
+         = Nothing
+
         goName n  (ElemType (BName n' t) : ls)
          | n == n'      = Just t
          | otherwise    = goName n ls
+
         goName  n (_ : ls)
          = goName n ls
 
 
         goIx _ix _d []  = Nothing
+
         goIx ix d  (ElemType (BAnon t) : ls)
          | ix == d      = Just t
          | otherwise    = goIx   ix (d + 1) ls
+
         goIx ix d  (_ : ls)
          = goIx ix d ls
 
@@ -294,26 +304,26 @@ lookupType u ctx
 lookupKind :: Ord n => Bound n -> Context n -> Maybe (Kind n, Role)
 lookupKind u ctx
  = case u of
-        UPrim{}
-         -> case EnvT.lookup u (contextEnvT ctx) of
-                Nothing -> Nothing
-                Just k  -> Just (k, RoleAbstract)
-
-        UName n         -> goName n    (contextElems ctx)
-        UIx   ix        -> goIx   ix 0 (contextElems ctx)
+        UName n  -> goName n    (contextElems ctx)
+        UIx   ix -> goIx   ix 0 (contextElems ctx)
  where
-        goName _n []    = Nothing
+        goName _ []
+         = Nothing
+
         goName n  (ElemKind (BName n' t) role : ls)
          | n == n'      = Just (t, role)
          | otherwise    = goName n ls
+
         goName  n (_ : ls)
          = goName n ls
 
 
         goIx _ix _d []  = Nothing
+
         goIx ix d  (ElemKind (BAnon t) role : ls)
          | ix == d      = Just (t, role)
          | otherwise    = goIx   ix (d + 1) ls
+
         goIx ix d  (_ : ls)
          = goIx ix d ls
 

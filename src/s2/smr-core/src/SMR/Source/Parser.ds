@@ -6,10 +6,15 @@ export
 import SMR.Source.Lexer
 import SMR.Source.Config
 import SMR.Source.Expected
+import SMR.Source.Token
 import SMR.Core.Exp
+import SMR.Core.Exp.Compounds
+import Class.Category
 import Control.Parsec
+import Data.Text.Location
 import Data.Maybe
 import Data.Lens
+import Data.List
 where
 
 

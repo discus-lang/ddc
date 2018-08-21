@@ -160,12 +160,14 @@ convertM pp runConfig defs kenv tenv mm
                 = ModuleCore
                 { moduleName            = moduleName mm
                 , moduleIsHeader        = moduleIsHeader mm
+                , moduleTransitiveDeps  = Set.empty
 
                   -- None of the types imported by Discus modules are relevant
                   -- to the Salt language.
                 , moduleExportTypes     = []
                 , moduleExportValues    = ntsExports'
 
+                , moduleImportModules   = []
                 , moduleImportTypes     = Map.toList A.runtimeImportKinds
                 , moduleImportCaps      = []
 
@@ -240,10 +242,10 @@ convertExportValueM tctx tsSalt esrc
          -> do  n'      <- convertBindNameM n
                 return  $ ExportValueLocalNoType n'
 
-        ExportValueSea n x t
+        ExportValueSea mn n x t
          -> do  n'      <- convertBindNameM n
                 t'      <- convertSuperT tctx t
-                return  $ ExportValueSea n' x t'
+                return  $ ExportValueSea mn n' x t'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -298,8 +300,8 @@ convertImportValueM tctx isrc
         --   We assume that they don't return thunks,
         --   so we don't need any extra arity information to produce
         --   the Salt level type.
-        ImportValueSea n str t
+        ImportValueSea mn n str t
          -> do  n'      <- convertBindNameM n
                 t'      <- convertSuperT tctx t
-                return  $  ImportValueSea n' str t'
+                return  $  ImportValueSea mn n' str t'
 

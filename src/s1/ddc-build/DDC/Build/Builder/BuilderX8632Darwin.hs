@@ -1,3 +1,5 @@
+{-# OPTIONS_HADDOCK hide #-}
+
 module DDC.Build.Builder.BuilderX8632Darwin where
 import DDC.Build.Builder.Base
 import qualified DDC.Core.Salt.Platform as Llvm

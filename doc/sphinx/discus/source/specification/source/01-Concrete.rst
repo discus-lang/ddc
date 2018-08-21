@@ -61,6 +61,9 @@ Declarations
    ::= 'data' Con DeclDataParams*
           ('where' '{' (Con ':' Type)+; '}')?
 
+    |  'data' Con DeclDataParams*
+          '=' (Con TypeArg*) '|'+
+
   DeclDataParams                                      (data type parameters)
    ::= '(' Var+ ':' Type ')'                          (data type parameters with shared kind)
 
@@ -80,7 +83,7 @@ Declarations
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
 
-Data type declarations define parameterised data types, giving the types of their data constructors. The return type of each constructor must match the data type being defined. It is valid to define a data type with no data constructors.
+Data type declarations define parameterised data types, giving the types of their data constructors. The return type of each constructor must match the data type being defined. It is valid to define a data type with no data constructors. We also support Haskell style data type declarations where only the data constructor name and parameter types are provided.
 
 Term declarations are either type signatures or declarations that can mention function parameters, have an optional result type, and are defined in terms of guarded expressions.
 

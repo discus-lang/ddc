@@ -5,14 +5,12 @@ module DDC.Core.Codec.Shimmer.Decode
         , takeModuleDecls
         , takeTyCon)
 where
-import qualified DDC.Core.Transform.SpreadX     as SpreadX
-import qualified DDC.Core.Interface.Base        as C
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Exp.Simple.Compounds  as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
-import qualified DDC.Type.Env                   as C
 import qualified DDC.Type.Sum                   as Sum
 
 import qualified SMR.Core.Exp                   as S
@@ -24,12 +22,13 @@ import Data.IORef
 import Data.Maybe
 import Data.Text                                (Text)
 import Data.Map                                 (Map)
+import Data.Set                                 (Set)
 import qualified Data.Text                      as T
 import qualified System.IO.Unsafe               as System
 import qualified Data.Map.Strict                as Map
+import qualified Data.Set                       as Set
 import qualified Data.ByteString                as BS
 import Prelude hiding (read)
-
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -50,26 +49,20 @@ fromRef c ss
 -- Interface --------------------------------------------------------------------------------------
 decodeInterface
         :: (Show n, Ord n)
-        => Config n
-        -> C.Env n
-        -> C.Env n
+        => Config n             -- ^ Decode configuration.
         -> FilePath             -- ^ Path of interace file, for error messages.
         -> UTCTime              -- ^ Timestamp of interface file.
         -> BS.ByteString        -- ^ Interface file contents.
         -> Maybe (C.Interface n)
 
-decodeInterface config kenv tenv filePath timeStamp bs
- | Just mm <- takeModuleDecls config
-           $  S.unpackFileDecls bs
- = let
-        mm_spread = SpreadX.spreadX kenv tenv mm
-
-   in   Just $ C.Interface
+decodeInterface config filePath timeStamp bs
+ | Just mm <- takeModuleDecls config $ S.unpackFileDecls bs
+ = Just $ C.Interface
         { C.interfaceFilePath   = filePath
         , C.interfaceTimeStamp  = timeStamp
         , C.interfaceVersion    = "version"
-        , C.interfaceModuleName = C.moduleName mm_spread
-        , C.interfaceModule     = mm_spread }
+        , C.interfaceModuleName = C.moduleName mm
+        , C.interfaceModule     = mm }
 
  | otherwise
  = Nothing
@@ -82,10 +75,9 @@ takeModuleDecls c decls
 
         Just mn
          = case colName col of
-                [S.DeclSet _ (XAps "l" ssParts)]
-                  |  Just sParts <- sequence $ map takeXTxt ssParts
-                  -> Just $ C.ModuleName $ map T.unpack sParts
-                _ -> Nothing
+                [S.DeclSet _ ssModuleName]
+                        -> Just $ fromModuleName ssModuleName
+                _       -> Nothing
 
         mpT     = Map.fromList [(tx, ss) | S.DeclMac tx ss <- colDsT col]
         mpD     = Map.fromList [(tx, ss) | S.DeclMac tx ss <- colDsD col]
@@ -94,8 +86,10 @@ takeModuleDecls c decls
    in   Just $ C.ModuleCore
          { C.moduleName            = mn
          , C.moduleIsHeader        = False
+         , C.moduleTransitiveDeps  = Set.unions $ map (takeDeclDeps c) $ colDeps  col
          , C.moduleExportTypes     = concatMap (takeDeclExTyp c)     $ colExTyp col
          , C.moduleExportValues    = concatMap (takeDeclExVal c mpT) $ colExVal col
+         , C.moduleImportModules   = concatMap (takeDeclImMod c)     $ colImMod col
          , C.moduleImportTypes     = concatMap (takeDeclImTyp c)     $ colImTyp col
          , C.moduleImportDataDefs  = concatMap (takeDeclDat   c mpD) $ colImDat col
          , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c mpS) $ colImSyn col
@@ -121,16 +115,19 @@ collectModuleDecls decls
         let read = readIORef
         let rev  = reverse
 
-        refName  <- new;
+        refName  <- new; refDeps  <- new;
         refExTyp <- new; refExVal <- new;
-        refImTyp <- new; refImDat <- new; refImSyn <- new; refImCap <- new; refImVal <- new
+        refImMod <- new; refImTyp <- new; refImDat <- new;
+        refImSyn <- new; refImCap <- new; refImVal <- new
         refLcDat <- new; refLcSyn <- new
         refD     <- new; refS     <- new; refT     <- new; refX     <- new
 
         let eat (d@(S.DeclSet tx _ss) : ds)
              | T.isPrefixOf "m-name"   tx = do { modifyIORef' refName  (d :); eat ds }
+             | T.isPrefixOf "m-deps"   tx = do { modifyIORef' refDeps  (d :); eat ds }
              | T.isPrefixOf "m-ex-typ" tx = do { modifyIORef' refExTyp (d :); eat ds }
              | T.isPrefixOf "m-ex-val" tx = do { modifyIORef' refExVal (d :); eat ds }
+             | T.isPrefixOf "m-im-mod" tx = do { modifyIORef' refImMod (d :); eat ds }
              | T.isPrefixOf "m-im-typ" tx = do { modifyIORef' refImTyp (d :); eat ds }
              | T.isPrefixOf "m-im-dat" tx = do { modifyIORef' refImDat (d :); eat ds }
              | T.isPrefixOf "m-im-syn" tx = do { modifyIORef' refImSyn (d :); eat ds }
@@ -152,17 +149,18 @@ collectModuleDecls decls
         eat decls
 
         dsName  <- read refName
+        dsDeps  <- read refDeps
         dsExTyp <- read refExTyp; dsExVal <- read refExVal
-        dsImTyp <- read refImTyp; dsImDat <- read refImDat
+        dsImMod <- read refImMod; dsImTyp <- read refImTyp; dsImDat <- read refImDat
         dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImVal <- read refImVal
         dsLcDat <- read refLcDat; dsLcSym <- read refLcSyn
         dsD     <- read refD;     dsS     <- read refS;     dsT     <- read refT
         dsX     <- read refX
 
         return  $ Collect
-                { colName  = rev dsName
+                { colName  = rev dsName,  colDeps  = rev dsDeps
                 , colExTyp = rev dsExTyp, colExVal = rev dsExVal
-                , colImTyp = rev dsImTyp, colImDat = rev dsImDat
+                , colImMod = rev dsImMod, colImTyp = rev dsImTyp, colImDat = rev dsImDat
                 , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImVal = rev dsImVal
                 , colLcDat = rev dsLcDat, colLcSyn = rev dsLcSym
                 , colDsD   = rev dsD,     colDsS   = rev dsS,     colDsT   = rev dsT
@@ -170,9 +168,9 @@ collectModuleDecls decls
 
 data Collect
         = Collect
-        { colName  :: [SDecl]
+        { colName  :: [SDecl], colDeps  :: [SDecl]
         , colExTyp :: [SDecl], colExVal :: [SDecl]
-        , colImTyp :: [SDecl], colImDat :: [SDecl]
+        , colImMod :: [SDecl], colImTyp :: [SDecl], colImDat :: [SDecl]
         , colImSyn :: [SDecl], colImCap :: [SDecl], colImVal :: [SDecl]
         , colLcDat :: [SDecl], colLcSyn :: [SDecl]
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
@@ -185,8 +183,16 @@ fromModuleName ss
         XAps "module-name" ssParts
           |  Just txs     <- sequence $ map takeXTxt ssParts
           -> C.ModuleName $ map T.unpack txs
-
         _ -> failDecode "takeModuleName"
+
+
+-- DeclExTyp --------------------------------------------------------------------------------------
+takeDeclDeps  :: Config n -> SDecl -> Set C.ModuleName
+takeDeclDeps _ dd
+ = case dd of
+        S.DeclSet "m-deps" ssListNames
+          -> Set.fromList $ map fromModuleName $ fromList ssListNames
+        _ -> failDecode "takeDeclDeps"
 
 
 -- DeclExTyp --------------------------------------------------------------------------------------
@@ -241,19 +247,32 @@ takeDeclExVal c mpT dd
                 Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
-                        { C.exportValueLocalModuleName = fromModuleName ssModuleName
-                        , C.exportValueLocalName       = nName
-                        , C.exportValueLocalType       = fromType c ssType
-                        , C.exportValueLocalArity      = Just (fromI nT, fromI nX, fromI nB) })
+                        { C.exportValueLocalModuleName  = fromModuleName ssModuleName
+                        , C.exportValueLocalName        = nName
+                        , C.exportValueLocalType        = fromType c ssType
+                        , C.exportValueLocalArity       = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeExVal (XAps "ex-val-sea" [ssNameInternal, XTxt txNameExternal, ssType])
+        takeExVal (XAps "ex-val-sea"
+                        [ssModuleName, ssNameInternal, XTxt txNameExternal, ssType])
          = let nInternal = fromRef c ssNameInternal
            in  (nInternal,  C.ExportValueSea
-                        { C.exportValueSeaNameInternal = nInternal
-                        , C.exportValueSeaNameExternal = txNameExternal
-                        , C.exportValueSeaType         = fromType c ssType })
+                        { C.exportValueSeaModuleName    = fromModuleName ssModuleName
+                        , C.exportValueSeaNameInternal  = nInternal
+                        , C.exportValueSeaNameExternal  = txNameExternal
+                        , C.exportValueSeaType          = fromType c ssType })
 
-        takeExVal _ = failDecode "takeExVal"
+        takeExVal _ = failDecode $ "takeExVal" ++ show dd
+
+
+-- DeclImMod --------------------------------------------------------------------------------------
+takeDeclImMod :: Ord n => Config n -> SDecl -> [C.ModuleName]
+takeDeclImMod _c dd
+ = case dd of
+        S.DeclSet "m-im-mod" ssListImMod
+          -> map takeImMod $ fromList ssListImMod
+        _ -> failDecode "takeDeclImMod failed"
+ where
+        takeImMod ss    = fromModuleName ss
 
 
 -- DeclImTyp --------------------------------------------------------------------------------------
@@ -399,16 +418,18 @@ takeDeclImVal c mpT dd
          | Just n      <- configTakeRef c (ssVar :: SExp)
          , Just ssType <- Map.lookup txMacType mpT
          = (n, C.ImportValueModule
-                { C.importValueModuleName  = fromModuleName ssModuleName
-                , C.importValueModuleVar   = n
-                , C.importValueModuleType  = fromType c ssType
-                , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
+                { C.importValueModuleName       = fromModuleName ssModuleName
+                , C.importValueModuleVar        = n
+                , C.importValueModuleType       = fromType c ssType
+                , C.importValueModuleArity      = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeImVal (XAps "im-val-sea" [ssNameInternal, XTxt txNameExternal, XMac txMacType])
+        takeImVal (XAps "im-val-sea"
+                        [ssModuleName, ssNameInternal, XTxt txNameExternal, XMac txMacType])
          | Just ssType  <- Map.lookup txMacType mpT
          , Just n       <- configTakeRef c ssNameInternal
          = (n, C.ImportValueSea
-                { C.importValueSeaNameInternal  = n
+                { C.importValueSeaModuleName    = fromModuleName ssModuleName
+                , C.importValueSeaNameInternal  = n
                 , C.importValueSeaNameExternal  = txNameExternal
                 , C.importValueSeaType          = fromType c ssType })
 
@@ -427,9 +448,11 @@ fromType c ss
             in  tf
 
         -- Applications of a data type constructor.
+        -- TODO: elim intermediate Bound
         XAps "tu" (ssBound : ssArgs)
-         -> C.tApps (C.TCon $ C.TyConBound (fromBound c ssBound) (C.tBot C.sComp))
-                    (map (fromType c) ssArgs)
+         -> let C.UName n = fromBound c ssBound
+            in  C.tApps (C.TCon $ C.TyConBound n)
+                        (map (fromType c) ssArgs)
 
         -- Abstraction.
         XAps "tb" [ssBind, ssBody]
@@ -517,14 +540,8 @@ fromBound c ss
 takeBound :: Ord n => Config n -> SExp -> Maybe (C.Bound n)
 takeBound c ss
  = case ss of
-        XNat n
-          -> Just $ C.UIx $ fromIntegral n
-
-        XAps "up" [ssRef]
-          | Just n       <- configTakeRef c ssRef
-          -> Just $ C.UPrim n
-
-        _ -> fmap C.UName $ configTakeRef c ss
+        XNat n  -> Just $ C.UIx $ fromIntegral n
+        _       -> fmap C.UName $ configTakeRef c ss
 
 
 -- TyCon ------------------------------------------------------------------------------------------
@@ -534,56 +551,56 @@ takeTyCon c ss
 
         -- TyConBound
         XApp (XSym "tcb") [ssBound]
-         | Just u       <- takeBound c ssBound
-         -> Just $ C.TyConBound u (C.tBot C.sComp)
+         | Just (C.UName n) <- takeBound c ssBound
+         -> Just $ C.TyConBound n
 
         -- TyConExists
         XApp (XSym "tcy") [XNat n, ssType]
          -> Just $ C.TyConExists (fromIntegral n) $ fromType c ssType
 
         -- TyConSort
-        XSym "tsp"      -> Just $ C.TyConSort    C.SoConProp
-        XSym "tsc"      -> Just $ C.TyConSort    C.SoConComp
+        XSym "ts-prop"          -> Just $ C.TyConSort    C.SoConProp
+        XSym "ts-comp"          -> Just $ C.TyConSort    C.SoConComp
 
         -- TyConKind
-        XSym "tkf"      -> Just $ C.TyConKind    C.KiConFun
-        XSym "tkw"      -> Just $ C.TyConKind    C.KiConWitness
-        XSym "tkd"      -> Just $ C.TyConKind    C.KiConData
-        XSym "tkr"      -> Just $ C.TyConKind    C.KiConRegion
-        XSym "tke"      -> Just $ C.TyConKind    C.KiConEffect
-        XSym "tkc"      -> Just $ C.TyConKind    C.KiConClosure
+        XSym "tk-arr"           -> Just $ C.TyConKind    C.KiConFun
+        XSym "tk-witness"       -> Just $ C.TyConKind    C.KiConWitness
+        XSym "tk-data"          -> Just $ C.TyConKind    C.KiConData
+        XSym "tk-region"        -> Just $ C.TyConKind    C.KiConRegion
+        XSym "tk-effect"        -> Just $ C.TyConKind    C.KiConEffect
+        XSym "tk-closure"       -> Just $ C.TyConKind    C.KiConClosure
 
         -- TyConWitness
-        XSym "twl"      -> Just $ C.TyConWitness C.TwConImpl
-        XSym "twp"      -> Just $ C.TyConWitness C.TwConPure
-        XSym "twc"      -> Just $ C.TyConWitness C.TwConConst
-        XSym "twd"      -> Just $ C.TyConWitness C.TwConDeepConst
-        XSym "twm"      -> Just $ C.TyConWitness C.TwConMutable
-        XSym "twv"      -> Just $ C.TyConWitness C.TwConDeepMutable
-        XApp (XSym "twt") [XNat n]
-                        -> Just $ C.TyConWitness $ C.TwConDistinct $ fromIntegral n
-        XSym "twj"      -> Just $ C.TyConWitness $ C.TwConDisjoint
+        XSym "tw-impl"          -> Just $ C.TyConWitness C.TwConImpl
+        XSym "tw-pure"          -> Just $ C.TyConWitness C.TwConPure
+        XSym "tw-const"         -> Just $ C.TyConWitness C.TwConConst
+        XSym "tw-deepconst"     -> Just $ C.TyConWitness C.TwConDeepConst
+        XSym "tw-mutable"       -> Just $ C.TyConWitness C.TwConMutable
+        XSym "tw-deepmutable"   -> Just $ C.TyConWitness C.TwConDeepMutable
+        XApp (XSym "tw-distinct") [XNat n]
+                                -> Just $ C.TyConWitness $ C.TwConDistinct $ fromIntegral n
+        XSym "tw-disjoint"      -> Just $ C.TyConWitness $ C.TwConDisjoint
 
         -- TyConSpec
-        XSym "tcu"      -> Just $ C.TyConSpec    C.TcConUnit
-        XSym "tcf"      -> Just $ C.TyConSpec    C.TcConFunExplicit
-        XSym "tci"      -> Just $ C.TyConSpec    C.TcConFunImplicit
-        XSym "tcs"      -> Just $ C.TyConSpec    C.TcConSusp
+        XSym "tc-unit"          -> Just $ C.TyConSpec    C.TcConUnit
+        XSym "tc-fun"           -> Just $ C.TyConSpec    C.TcConFunExplicit
+        XSym "tc-funi"          -> Just $ C.TyConSpec    C.TcConFunImplicit
+        XSym "tc-susp"          -> Just $ C.TyConSpec    C.TcConSusp
 
-        XApp (XSym "tco") sfs
+        XApp (XSym "tc-record") sfs
          | Just ts <- sequence $ map takeXSym sfs
          -> Just $ C.TyConSpec $ C.TcConRecord ts
 
-        XSym "tcr"      -> Just $ C.TyConSpec    C.TcConRead
-        XSym "tch"      -> Just $ C.TyConSpec    C.TcConHeadRead
-        XSym "tce"      -> Just $ C.TyConSpec    C.TcConDeepRead
-        XSym "tcw"      -> Just $ C.TyConSpec    C.TcConWrite
-        XSym "tcq"      -> Just $ C.TyConSpec    C.TcConDeepWrite
-        XSym "tca"      -> Just $ C.TyConSpec    C.TcConAlloc
-        XSym "tcb"      -> Just $ C.TyConSpec    C.TcConDeepAlloc
+        XSym "tc-read"          -> Just $ C.TyConSpec    C.TcConRead
+        XSym "tc-headread"      -> Just $ C.TyConSpec    C.TcConHeadRead
+        XSym "tc-deepread"      -> Just $ C.TyConSpec    C.TcConDeepRead
+        XSym "tc-write"         -> Just $ C.TyConSpec    C.TcConWrite
+        XSym "tc-deepwrite"     -> Just $ C.TyConSpec    C.TcConDeepWrite
+        XSym "tc-alloc"         -> Just $ C.TyConSpec    C.TcConAlloc
+        XSym "tc-deepalloc"     -> Just $ C.TyConSpec    C.TcConDeepAlloc
 
         -- Soz.
-        _               -> Nothing
+        _                       -> Nothing
 
 
 -- Utils ------------------------------------------------------------------------------------------

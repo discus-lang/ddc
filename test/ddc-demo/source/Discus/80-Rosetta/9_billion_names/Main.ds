@@ -30,8 +30,9 @@
 module Main
 import System.IO.Console
 import Class.Show
+import Data.Numeric
+import Data.Maybe
 import Data.List
-import Data.Numeric.Nat
 where
 
 

@@ -166,10 +166,8 @@ typeIsUnboxed tt
         TVar{}          -> False
 
         -- All plain constructors are unboxed.
-        TCon (TyConBound _ k)
-         | isDataKind k -> True
-
-        TCon _          -> False
+        -- The others won't be used as parameters, so don't worry.
+        TCon _          -> True
 
         -- Higher kinded types are not values types,
         -- so we'll say they're not unboxed.

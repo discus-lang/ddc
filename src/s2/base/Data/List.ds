@@ -27,23 +27,25 @@ export
         filter; filterS;
         all; any;
 }
-import  Data.Numeric.Nat
-import  Data.Numeric.Bool
-import  Data.Tuple
-import  Data.Maybe
-import  Data.Function
-import  Class.Functor
-import  Class.Monad
-import  Class.Ord
-import  Class.Eq
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import Data.Tuple
+import Data.Maybe
+import Data.Function
+import Class.Numeric
+import Class.Category
+import Class.Functor
+import Class.Monad
+import Class.Ord
+import Class.Eq
 where
 
 
 -------------------------------------------------------------------------------
 -- | Standard Cons-lists.
-data List (a: Data) where
-        Nil     : List a
-        Cons    : a -> List a -> List a
+data List (a: Data)
+        = Nil
+        | Cons a (List a)
 
 
 -- Dictionaries ---------------------------------------------------------------
@@ -131,8 +133,6 @@ intersperse (c: a) (xx: List a): List a
 
         Cons x (Cons y xs)
          -> Cons x (Cons c (intersperse c (Cons y xs)))
-
-
 
 
 -- Projections ----------------------------------------------------------------

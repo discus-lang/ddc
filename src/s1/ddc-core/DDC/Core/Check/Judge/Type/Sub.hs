@@ -178,7 +178,7 @@ stripImplicitParams
 stripImplicitParams ctx tt
  = case tt of
         -- Look through type synonyms.
-        TCon (TyConBound (UName n) _)
+        TCon (TyConBound n)
          | Just tt' <- Map.lookup n
                     $  EnvT.envtEquations $ contextEnvT ctx
          -> stripImplicitParams ctx tt'

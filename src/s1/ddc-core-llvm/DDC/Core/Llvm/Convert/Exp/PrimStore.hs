@@ -340,13 +340,13 @@ convPrimStore ctx mdst p as
 
         -- Refer to a global variable.
         A.PrimStore (A.PrimStoreGlobal _)
-         | [A.RType t, A.RExp x]        <- as
-         ,  A.XCon (C.DaConPrim n _)    <- x
+         | [A.RType t, A.RExp x]   <- as
+         ,  A.XCon (C.DaConPrim n) <- x
          ,  A.NamePrimLit (A.PrimLitTextLit txName) <- n
          ,  Just vDst   <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
-                let vPtr = Var (NameGlobal (Text.unpack txName)) (TPointer t')
+                let vPtr = Var (NameGlobal (A.sanitizeName $ Text.unpack txName)) (TPointer t')
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint (XVar vPtr)
 

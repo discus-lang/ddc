@@ -10,7 +10,7 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
-import qualified DDC.Core.Interface.Base        as C
+import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
@@ -20,11 +20,12 @@ import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
 import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 import Data.Text                                (Text)
 import DDC.Data.Pretty
 
-import qualified Foreign.Marshal.Alloc                  as Foreign
-import qualified System.IO                              as System
+import qualified Foreign.Marshal.Alloc          as Foreign
+import qualified System.IO                      as System
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -63,19 +64,22 @@ storeInterface config pathDst ii
 --
 takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
 takeModuleDecls c mm@C.ModuleCore{}
- =  [ dName,   dExTyp,  dExTrm
-    , dImTyp,  dImDat, dImSyn, dImCap, dImTrm
+ =  [ dName,   dDeps
+    , dExTyp,  dExTrm
+    , dImMod,  dImTyp,  dImDat, dImSyn, dImCap, dImTrm
     , dLcDat,  dLcSyn ]
  ++ concat
     [ dsImDat, dsImSyn, dsImTrm
     , dsLcDat, dsLcSyn, dsLcTrm ]
  where
-
+        -- Module Name.
         dName
-         = S.DeclSet "m-name"
-         $ case C.moduleName mm of
-                C.ModuleName sParts
-                 -> xList $ map (xTxt . T.pack) sParts
+         = S.DeclSet "m-name" $ takeModuleName $ C.moduleName mm
+
+        -- Transitive dependencies on other modules.
+        dDeps
+         = S.DeclSet "m-deps"
+         $ xList $ map takeModuleName $ Set.toList $ C.moduleTransitiveDeps mm
 
         -- Exported Types.
         dExTyp
@@ -88,6 +92,11 @@ takeModuleDecls c mm@C.ModuleCore{}
         dExTrm
          = S.DeclSet "m-ex-val"
          $ xList $ map (takeExportValue c) $ map snd $ C.moduleExportValues mm
+
+        -- Imported Modules.
+        dImMod
+         = S.DeclSet "m-im-mod" $ xList xsImport
+         where xsImport  = map takeModuleName  $ C.moduleImportModules mm
 
         -- Imported Types.
         dImTyp
@@ -175,16 +184,14 @@ takeExportValue c es
                         [ takeModuleName mn, xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
                         , xNat aT, xNat aX, xNat aB]
 
-        C.ExportValueLocalNoType n
-         -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc"
-                        [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+        C.ExportValueLocalNoType _
+         -> error "ddc-core.takeExportValue: not exporting ValueLocalNoType"
 
         -- TODO: split type into own decl so we can import/export via the same data.
-        C.ExportValueSea n x t
+        C.ExportValueSea mn n x t
          -> let Just tx = configTakeVarName c n
             in  xAps "ex-val-sea"
-                        [ xTxt tx, xTxt x, takeType c t ]
+                        [ takeModuleName mn, xTxt tx, xTxt x, takeType c t ]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------
@@ -273,7 +280,8 @@ takeImportValue c iv
         C.ImportValueSea{}
          -> let Just tx = configTakeVarName c (C.importValueSeaNameInternal iv)
             in  ( xAps "im-val-sea"
-                        [ xTxt tx
+                        [ takeModuleName $ C.importValueSeaModuleName iv
+                        , xTxt tx
                         , xTxt (C.importValueSeaNameExternal iv)
                         , xMac ("t-" <> tx)]
                 , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueSeaType iv)])
@@ -298,9 +306,9 @@ takeExp c xx
         -- Con ----
         C.XCon  _ dc
          -> case dc of
-                C.DaConUnit      -> xSym "xdu"
-                C.DaConRecord fs -> xAps "xdr" (map xSym fs)
-                C.DaConPrim n _  -> configTakeRef c n
+                C.DaConUnit      -> xSym "dc-unit"
+                C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
+                C.DaConPrim n    -> configTakeRef c n
                 C.DaConBound n   -> takeDaConBoundName c n
 
         -- Abs -----
@@ -351,10 +359,10 @@ takeExp c xx
         C.XCast _ cc x
          -> case cc of
                 C.CastWeakenEffect eff
-                                -> xAps "xcw" [takeType c eff,  takeExp c x]
-                C.CastPurify w  -> xAps "xcp" [takeWitness c w, takeExp c x]
-                C.CastBox       -> xAps "xcb" [takeExp c x]
-                C.CastRun       -> xAps "xcr" [takeExp c x]
+                                -> xAps "xtw" [takeType c eff,  takeExp c x]
+                C.CastPurify w  -> xAps "xtp" [takeWitness c w, takeExp c x]
+                C.CastBox       -> xAps "xtb" [takeExp c x]
+                C.CastRun       -> xAps "xtr" [takeExp c x]
 
 
 -- Param ------------------------------------------------------------------------------------------
@@ -401,11 +409,8 @@ takeAlt c aa
          -> xAps "ae" [takeExp c x]
 
         -- Unit
-        C.AAlt (C.PData C.DaConUnit []) x
-         -> xAps "au" [takeExp c x]
-
         C.AAlt (C.PData C.DaConUnit bs) x
-         -> xAps "au" (takeExp c x : map (takeBind c) bs)
+         -> xAps "au" (map (takeBind c) bs ++ [takeExp c x])
 
         -- Record
         C.AAlt (C.PData (C.DaConRecord fs) []) x
@@ -415,19 +420,12 @@ takeAlt c aa
          -> xAps "ar" ((xList (map xSym fs) : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Prim
-        C.AAlt (C.PData (C.DaConPrim n _) []) x
-         -> xAps "ap" [configTakeRef c n, takeExp c x]
-
-        C.AAlt (C.PData (C.DaConPrim n _) bs) x
+        C.AAlt (C.PData (C.DaConPrim n) bs) x
          -> xAps "ap" ((configTakeRef c n  : map (takeBind c) bs) ++ [takeExp c x])
 
         -- Bound
-        C.AAlt (C.PData (C.DaConBound n) []) x
-         -> xAps "ab"   [ takeDaConBoundName c n
-                        , takeExp c x]
-
         C.AAlt (C.PData (C.DaConBound n) bs) x
-         -> xAps "ab"   ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
+         -> xAps "ab" ((takeDaConBoundName c n : map (takeBind c) bs) ++ [takeExp c x])
 
 
 -- Witness ----------------------------------------------------------------------------------------
@@ -459,9 +457,9 @@ takeType c tt
    in   xAps "tf" (map takeFunParam tcsParam ++ [takeType c tResult])
 
  -- Flatten out applications of data type constructor.
- | Just (tc, tsArg)    <- C.takeTyConApps tt
- , C.TyConBound u _ <- tc
- = xAps "tu" (takeBound c u : map (takeType c) tsArg)
+ | Just (tc, tsArg) <- C.takeTyConApps tt
+ , C.TyConBound n   <- tc
+ = xAps "tu" (takeBound c (C.UName n) : map (takeType c) tsArg)
 
  -- Some other type.
  | otherwise
@@ -484,7 +482,7 @@ takeType c tt
 -- DaConBoundName ---------------------------------------------------------------------------------
 takeDaConBoundName :: Config n -> C.DaConBoundName n -> SExp
 takeDaConBoundName c (C.DaConBoundName mnModule mnType nCtor)
- = xAps "dcbn"
+ = xAps "dcn"
         [ xMaybe xModuleName mnModule
         , xMaybe (configTakeRef c) mnType
         , configTakeRef c nCtor ]
@@ -513,8 +511,6 @@ takeBound c uu
          | Just tx   <- configTakeConName c n -> xTxt tx
          | otherwise -> configTakeRef c n
 
-        C.UPrim n       -> xAps "up" [configTakeRef c n]
-
 
 -- TyCon ------------------------------------------------------------------------------------------
 takeTyCon :: Config n -> C.TyCon n -> SExp
@@ -524,56 +520,58 @@ takeTyCon c tc
         C.TyConKind    cn       -> takeKiCon cn
         C.TyConWitness cn       -> takeTwCon cn
         C.TyConSpec    cn       -> takeTcCon cn
-        C.TyConBound   u _k     -> xApp (xSym "tcb") [takeBound c u]
+
+        -- TODO: elim intermediate Bound
+        C.TyConBound   n        -> xApp (xSym "tcb") [takeBound c (C.UName n)]
         C.TyConExists  i k      -> xApp (xSym "tcy") [xNat i, takeType c k]
 
 
 takeSoCon :: C.SoCon -> SExp
 takeSoCon c
  = case c of
-        C.SoConProp             -> xSym "tsp"
-        C.SoConComp             -> xSym "tsc"
+        C.SoConProp             -> xSym "ts-prop"
+        C.SoConComp             -> xSym "ts-comp"
 
 
 takeKiCon :: C.KiCon -> SExp
 takeKiCon c
  = case c of
-        C.KiConFun              -> xSym "tkf"
-        C.KiConWitness          -> xSym "tkw"
-        C.KiConData             -> xSym "tkd"
-        C.KiConRegion           -> xSym "tkr"
-        C.KiConEffect           -> xSym "tke"
-        C.KiConClosure          -> xSym "tkc"
+        C.KiConFun              -> xSym "tk-arr"
+        C.KiConWitness          -> xSym "tk-witness"
+        C.KiConData             -> xSym "tk-data"
+        C.KiConRegion           -> xSym "tk-region"
+        C.KiConEffect           -> xSym "tk-effect"
+        C.KiConClosure          -> xSym "tk-closure"
 
 
 takeTwCon :: C.TwCon -> SExp
 takeTwCon c
  = case c of
-        C.TwConImpl             -> xSym "twl"
-        C.TwConPure             -> xSym "twp"
-        C.TwConConst            -> xSym "twc"
-        C.TwConDeepConst        -> xSym "twd"
-        C.TwConMutable          -> xSym "twm"
-        C.TwConDeepMutable      -> xSym "twv"
-        C.TwConDistinct n       -> xAps "twt" [xNat n]
-        C.TwConDisjoint         -> xSym "twj"
+        C.TwConImpl             -> xSym "tw-impl"
+        C.TwConPure             -> xSym "tw-pure"
+        C.TwConConst            -> xSym "tw-const"
+        C.TwConDeepConst        -> xSym "tw-deepconst"
+        C.TwConMutable          -> xSym "tw-mutable"
+        C.TwConDeepMutable      -> xSym "tw-deepmutable"
+        C.TwConDistinct n       -> xAps "tw-distinct" [xNat n]
+        C.TwConDisjoint         -> xSym "tw-disjoint"
 
 
 takeTcCon :: C.TcCon -> SExp
 takeTcCon c
  = case c of
-        C.TcConUnit             -> xSym "tcu"
-        C.TcConFunExplicit      -> xSym "tcf"
-        C.TcConFunImplicit      -> xSym "tci"
-        C.TcConSusp             -> xSym "tcs"
-        C.TcConRecord ts        -> xAps "tco" (map xSym ts)
-        C.TcConRead             -> xSym "tcr"
-        C.TcConHeadRead         -> xSym "tch"
-        C.TcConDeepRead         -> xSym "tce"
-        C.TcConWrite            -> xSym "tcw"
-        C.TcConDeepWrite        -> xSym "tcq"
-        C.TcConAlloc            -> xSym "tca"
-        C.TcConDeepAlloc        -> xSym "tcb"
+        C.TcConUnit             -> xSym "tc-unit"
+        C.TcConFunExplicit      -> xSym "tc-fun"
+        C.TcConFunImplicit      -> xSym "tc-funi"
+        C.TcConSusp             -> xSym "tc-susp"
+        C.TcConRecord ts        -> xAps "tc-record" (map xSym ts)
+        C.TcConRead             -> xSym "tc-read"
+        C.TcConHeadRead         -> xSym "tc-headread"
+        C.TcConDeepRead         -> xSym "tc-deepread"
+        C.TcConWrite            -> xSym "tc-write"
+        C.TcConDeepWrite        -> xSym "tc-deepwrite"
+        C.TcConAlloc            -> xSym "tc-alloc"
+        C.TcConDeepAlloc        -> xSym "tc-deepalloc"
 
 
 -- Utils ------------------------------------------------------------------------------------------

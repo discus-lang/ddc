@@ -21,6 +21,7 @@ instance (Pretty n, Eq n) => Pretty (Bind n) where
          | isBot t      = mempty
          | otherwise    = text ": " <> ppr t
 
+
 -- Binder ---------------------------------------------------------------------
 instance Pretty n => Pretty (Binder n) where
  ppr bb
@@ -52,7 +53,6 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
  ppr nn
   = case nn of
         UName n        -> ppr n
-        UPrim n        -> ppr n
         UIx i          -> text "^" <> ppr i
 
 
@@ -144,7 +144,7 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConKind kc    -> ppr kc
         TyConWitness tc -> ppr tc
         TyConSpec tc    -> ppr tc
-        TyConBound u _k -> ppr u
+        TyConBound u    -> ppr u
         TyConExists n _ -> text "?" <> int n
 
 

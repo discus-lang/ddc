@@ -24,26 +24,36 @@ import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.LSP
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
-import DDC.Driver.Command.ToPHP
-import qualified DDC.Core.Flow          as Flow
-
 import DDC.Driver.Interface.Source
+
 import DDC.Build.Builder
 import DDC.Data.Pretty
+
 import System.Environment
+import System.FilePath
 import System.IO
 import System.Exit
 import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Except
-import qualified System.FilePath                as System
-import qualified System.Directory               as System
-import qualified DDC.Driver.Stage               as Driver
-import qualified DDC.Driver.Config              as Driver
-import qualified DDC.Core.Salt.Runtime          as Runtime
-import qualified DDC.Core.Simplifier.Recipe     as Simplifier
-import qualified DDC.Version                    as Version
-import qualified DDC.Core.Interface.Store       as Store
+import qualified System.FilePath                        as System
+import qualified System.Directory                       as System
+
+import qualified DDC.Build.Builder                      as Build
+
+import qualified DDC.Driver.Stage                       as Driver
+import qualified DDC.Driver.Config                      as Driver
+import qualified DDC.Driver.Interface.Load              as Driver
+import qualified DDC.Driver.Interface.Status            as Driver
+import qualified DDC.Driver.Interface.Locate            as Driver
+
+import qualified DDC.Core.Flow                          as Flow
+import qualified DDC.Core.Discus                        as Discus
+import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as Discus
+import qualified DDC.Core.Salt.Runtime                  as Runtime
+import qualified DDC.Core.Simplifier.Recipe             as Simplifier
+import qualified DDC.Core.Interface.Store               as Store
+import qualified DDC.Version                            as Version
 
 
 ---------------------------------------------------------------------------------------------------
@@ -67,7 +77,8 @@ main
 ---------------------------------------------------------------------------------------------------
 run :: Config -> IO ()
 run config
- = case configMode config of
+ = do status <- Driver.newStatus
+      case configMode config of
         -- We didn't get any arguments on the command line.
         ModeNone
          ->     putStr hello
@@ -93,8 +104,8 @@ run config
         -- Parse and type check a module.
         ModeCheck filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
-                result  <- runExceptT $  cmdCheckFromFile dconfig store filePath
+                store   <- newDiscusStore dconfig status
+                result  <- runExceptT $ cmdCheckFromFile dconfig store filePath
 
                 case result of
                  Left err
@@ -107,7 +118,7 @@ run config
         -- Parse, type check and transform a module.
         ModeLoad filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdLoadFromFile dconfig store
                                 (configTrans config) (configWith config)
                                 filePath
@@ -116,7 +127,7 @@ run config
         ModeCompile filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdCompileRecursive dconfig False store [filePath]
 
         -- Compile a module into an executable.
@@ -124,14 +135,14 @@ run config
         ModeMake fsPath@(filePath1 : _)
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath1)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdCompileRecursive dconfig True store fsPath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdBuild dconfig store filePath
 
         ModeLSP
@@ -140,20 +151,14 @@ run config
         -- Convert a module to Salt.
         ModeToSalt filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdToSaltFromFile dconfig store filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
+                store   <- newDiscusStore dconfig status
                 runError $ cmdToLlvmFromFile dconfig store filePath
-
-        -- Convert a module to C
-        ModeToPHP filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
-                runError $ cmdToPHPFromFile  dconfig store filePath
 
         -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.
@@ -294,6 +299,40 @@ getDriverConfig config mFilePath
 
         return  $ dconfig
                 { Driver.configSimplSalt        = simplSalt }
+
+
+---------------------------------------------------------------------------------------------------
+-- | Create a new interface store that knows how to load Discus interface files.
+newDiscusStore :: Driver.Config -> Driver.Status -> IO (Store.Store Discus.Name)
+newDiscusStore config status
+ = do   store   <- Store.new
+        return  $ store { Store.storeLoadInterface = Just $ goLocate store }
+ where
+        basePaths
+         =  Driver.configModuleBaseDirectories config
+         ++ [Build.buildBaseSrcDir (Driver.configBuilder config) </> "base"]
+
+        goLocate store nModule
+         = Driver.locateModuleFromPaths
+                status basePaths nModule "interface" ".di"
+         >>= \case
+                Left Driver.ErrorLocateNotFound{}
+                           -> return Nothing
+                Left err   -> failStore err
+                Right path -> goLoad store path nModule
+
+        goLoad store path nModule
+         = Driver.loadOrDeleteFreshInterface
+                Discus.takeName basePaths status store path nModule
+         >>= \case
+                Left err   -> failStore err
+                Right mii  -> return mii
+
+
+failStore :: Pretty err => err -> IO a
+failStore err
+ = do   hPutStrLn stderr $ renderIndent $ ppr err
+        exitWith $ ExitFailure 1
 
 
 ---------------------------------------------------------------------------------------------------

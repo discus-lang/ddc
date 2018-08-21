@@ -3,6 +3,7 @@ module Runtime.Prim.Reflect
 
 export foreign c value
  ddcPrimReifyValue      : [r: Region]. Ptr# r Obj -> Ptr# r Obj
+ ddcPrimReflectUnsafe   : [r: Region]. Ptr# r Obj -> Ptr# r Obj
 
  ddcPrimReflectUnit     : [r: Region]. Ptr# r Obj -> Unit
  ddcPrimReflectBool     : [r: Region]. Ptr# r Obj -> Bool#
@@ -10,6 +11,13 @@ export foreign c value
  ddcPrimReflectInt      : [r: Region]. Ptr# r Obj -> Int#
  ddcPrimReflectFloat32  : [r: Region]. Ptr# r Obj -> Float32#
  ddcPrimReflectFloat64  : [r: Region]. Ptr# r Obj -> Float64#
+ ddcPrimReflectWord8    : [r: Region]. Ptr# r Obj -> Word8#
+ ddcPrimReflectWord16   : [r: Region]. Ptr# r Obj -> Word16#
+ ddcPrimReflectWord32   : [r: Region]. Ptr# r Obj -> Word32#
+ ddcPrimReflectWord64   : [r: Region]. Ptr# r Obj -> Word64#
+ ddcPrimReflectAddr     : [r: Region]. Ptr# r Obj -> Addr#
+
+ ddcPrimReflectTextLit  : [r: Region]. Ptr# r Obj -> Ptr# r Obj
 
 
 import foreign c value
@@ -20,32 +28,42 @@ with letrec
 
 -- | Reifying a value is a no-op operationally,
 --   but is seen as a type cast to the source language.
-ddcPrimReifyValue [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
+ddcPrimReifyValue [r: Region]    (obj: Ptr# r Obj): Ptr# r Obj
+ = obj
+
+
+-- | Assert that this value is of the given type.
+--   We don't have a way to dynamically check that the Discus level types match
+--   so this safety needs to be guaranteed by the context the caller has.
+ddcPrimReflectUnsafe [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
  = obj
 
 
 -- | Check that a value is a unit value, or fail if it isn't
 ddcPrimReflectUnit [r: Region] (obj: Ptr# r Obj): Unit
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Unit"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Unit"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> ()
 
 
--- | Unbox a boxed TextLit, or fail if it isn't one of those.
-ddcPrimReflectTextLit [r: Region] (obj: Ptr# r Obj): TextLit#
+-- | Check that this is a boxed text literal.
+--   Text literals are boxed Raw objects that contain a length and pointer
+--   to statically allocated data. They're defined by the runtime system
+--   in primitive/Text.dcs and don't have a completely unboxed representation.
+ddcPrimReflectTextLit [r: Region] (obj: Ptr# r Obj): Ptr# r Obj
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.TextLit"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.TextLit"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
-         True#  -> peek# (castPtr# (ddcRawPayload obj))
+         True#  -> obj
 
 
 -- | Unbox a boxed Bool, or fail if it isn't one of those.
 ddcPrimReflectBool [r: Region] (obj: Ptr# r Obj): Bool#
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Bool"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Bool"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))
@@ -54,7 +72,7 @@ ddcPrimReflectBool [r: Region] (obj: Ptr# r Obj): Bool#
 -- | Unbox a boxed Nat, or fail if it isn't one of those.
 ddcPrimReflectNat [r: Region] (obj: Ptr# r Obj): Nat#
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Nat"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Nat"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))
@@ -63,7 +81,7 @@ ddcPrimReflectNat [r: Region] (obj: Ptr# r Obj): Nat#
 -- | Unbox a boxed Int, or fail if it isn't one of those.
 ddcPrimReflectInt [r: Region] (obj: Ptr# r Obj): Int#
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Int"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Int"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))
@@ -72,7 +90,7 @@ ddcPrimReflectInt [r: Region] (obj: Ptr# r Obj): Int#
 -- | Unbox a boxed Float32, or fail if it isn't one of those.
 ddcPrimReflectFloat32 [r: Region] (obj: Ptr# r Obj): Float32#
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Float32"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Float32"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))
@@ -81,7 +99,52 @@ ddcPrimReflectFloat32 [r: Region] (obj: Ptr# r Obj): Float32#
 -- | Unbox a boxed Float64, or fail if it isn't one of those.
 ddcPrimReflectFloat64 [r: Region] (obj: Ptr# r Obj): Float64#
  = do   iObj = ddcObjectInfoIndex obj
-        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.Base.Float64"#) 0#
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Float64"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word8, or fail if it isn't one of those.
+ddcPrimReflectWord8 [r: Region] (obj: Ptr# r Obj): Word8#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word8"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word16, or fail if it isn't one of those.
+ddcPrimReflectWord16 [r: Region] (obj: Ptr# r Obj): Word16#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word16"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word32, or fail if it isn't one of those.
+ddcPrimReflectWord32 [r: Region] (obj: Ptr# r Obj): Word32#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word32"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Word64, or fail if it isn't one of those.
+ddcPrimReflectWord64 [r: Region] (obj: Ptr# r Obj): Word64#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Word64"#) 0#
+        case eq# iObj iIdx of
+         False# -> fail#
+         True#  -> peek# (castPtr# (ddcRawPayload obj))
+
+
+-- | Unbox a boxed Addr, or fail if it isn't one of those.
+ddcPrimReflectAddr [r: Region] (obj: Ptr# r Obj): Addr#
+ = do   iObj = ddcObjectInfoIndex obj
+        iIdx = read# [Word32#]  (global# [Word32#] "ddcInfoIndex.data.Base.Addr"#) 0#
         case eq# iObj iIdx of
          False# -> fail#
          True#  -> peek# (castPtr# (ddcRawPayload obj))

@@ -24,14 +24,12 @@ import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Codec.Text.Parser     as C
 import qualified DDC.Core.Codec.Text.Lexer      as C
 import qualified DDC.Core.Simplifier            as C
 
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 import qualified DDC.Core.Transform.Resolve     as CResolve
-import qualified DDC.Core.Transform.SpreadX     as CSpread
 
 
 ---------------------------------------------------------------------------------------------------
@@ -43,33 +41,37 @@ data ConfigCoreLoad
         , configSinkTrace       :: B.Sink       -- ^ Sink for type checker trace.
         }
 
+
 -- | Load a core module from text.
 coreLoad
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
-        => String                       -- ^ Name of compiler stage.
-        -> C.Fragment n err             -- ^ Language fragment to check.
-        -> C.Mode n                     -- ^ Checker mode.
-        -> String                       -- ^ Name of source file.
-        -> Int                          -- ^ Line of source file.
-        -> String                       -- ^ Textual core code.
-        -> ConfigCoreLoad               -- ^ Sinked config.
+        => String               -- ^ Name of compiler stage.
+        -> C.Fragment n err     -- ^ Language fragment to check.
+        -> Maybe (C.Oracle n)   -- ^ Interface store to allow imports from other modules.
+        -> C.Mode n             -- ^ Checker mode.
+        -> String               -- ^ Name of source file.
+        -> Int                  -- ^ Line of source file.
+        -> String               -- ^ Textual core code.
+        -> ConfigCoreLoad       -- ^ Sinked config.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
+coreLoad !_stage !fragment !mOracle !mode !srcName !srcLine !str !config
  = do
         -- Parse the module.
-        mm_core    <- coreParse fragment srcName srcLine
-                        (configSinkTokens config)
-                        str
+        mm_core
+         <- coreParse fragment srcName srcLine
+                (configSinkTokens config)
+                str
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core)
                             (configSinkParsed config)
 
         -- Type check the module.
-        mm_checked <- coreCheck "CoreLoad" fragment mode
-                        (configSinkTrace   config)
-                        (configSinkChecked config)
-                        mm_core
+        mm_checked
+         <- coreCheck "CoreLoad" fragment mOracle mode
+                (configSinkTrace   config)
+                (configSinkChecked config)
+                mm_core
 
         return mm_checked
 
@@ -105,12 +107,7 @@ coreParse fragment srcName srcLine sinkTokens str
                         Left err -> throwE [B.ErrorLoad err]
                         Right mm -> return mm
 
-        -- Detect names of primitives values and types in parsed code.
-        let kenv      = C.profilePrimKinds profile
-        let tenv      = C.profilePrimTypes profile
-        let mm_spread = CSpread.spreadX kenv tenv mm_parsed
-
-        return mm_spread
+        return mm_parsed
 
 
 ---------------------------------------------------------------------------------------------------
@@ -119,15 +116,16 @@ coreCheck
         :: ( Pretty a, Show a
            , Pretty (err (C.AnTEC a n))
            , Ord n, Show n, Pretty n)
-        => String                       -- ^ Name of compiler stage.
-        -> C.Fragment n err             -- ^ Language fragment to check.
-        -> C.Mode n                     -- ^ Checker mode.
-        -> B.Sink                       -- ^ Sink for checker trace.
-        -> B.Sink                       -- ^ Sink for checked core code.
-        -> C.Module a n                 -- ^ Core module to check.
+        => String               -- ^ Name of compiler stage.
+        -> C.Fragment n err     -- ^ Language fragment to check.
+        -> Maybe (C.Oracle n)   -- ^ Import oracle to allow imports from other modules.
+        -> C.Mode n             -- ^ Checker mode.
+        -> B.Sink               -- ^ Sink for checker trace.
+        -> B.Sink               -- ^ Sink for checked core code.
+        -> C.Module a n         -- ^ Core module to check.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC a n) n)
 
-coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
+coreCheck !stage !fragment !mStore !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreCheck" #-}
    do
         let profile  = C.fragmentProfile fragment
@@ -135,7 +133,7 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 
         -- Type check the module with the generic core type checker.
         mm_checked
-         <- liftIO (C.checkModuleIO config mm mode) >>= \r
+         <- liftIO (C.checkModuleIO config mStore mm mode) >>= \r
          -> case r of
                 (Left err,  C.CheckTrace doc)
                  -> do  liftIO $  B.pipeSink (renderIndent doc) sinkTrace
@@ -180,9 +178,8 @@ coreReCheck
 
 coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreReCheck" #-}
-   do
-        let mm_reannot  = CReannotate.reannotate C.annotTail mm
-        coreCheck stage fragment mode sinkTrace sinkChecked mm_reannot
+   do   let mm_reannot  = CReannotate.reannotate C.annotTail mm
+        coreCheck stage fragment Nothing mode sinkTrace sinkChecked mm_reannot
 
 
 ---------------------------------------------------------------------------------------------------
@@ -191,19 +188,16 @@ coreResolve
         :: (Ord n, Show n, Pretty n)
         => String                       -- ^ Name of compiler stage.
         -> C.Fragment n arr             -- ^ Language fragment to use.
-        -> IO [(n, C.ImportValue n (C.Type n))]
-                                        -- ^ Top level env from other modules.
+        -> C.Oracle n                   -- ^ Interface oracle.
         -> C.Module a n
         -> ExceptT [B.Error] IO (C.Module a n)
 
-coreResolve !stage !fragment !makeNtsTop !mm
+coreResolve !stage !fragment !oracle !mm
  = {-# SCC "coreResolve" #-}
    do
-        ntsTop  <- liftIO $ makeNtsTop
-
         res     <- liftIO $ CResolve.resolveModule
-                        (C.fragmentProfile fragment)
-                        ntsTop mm
+                        (C.fragmentProfile fragment) oracle
+                        mm
 
         case res of
          Left  err  -> throwE [B.ErrorLint stage "PipeCoreResolve" err]
