@@ -51,7 +51,6 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
                     ddcPrimStderrPutTextLit "| Flag: "#
                     ddcPrimStderrPutAddr (read# [Addr#] rawBase 16#)
                     ddcPrimStderrPutTextLit "\n"#
-
                     ()
         _ -> ()
         

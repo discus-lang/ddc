@@ -8,25 +8,25 @@ import Data.CompactRegion
 where
 
 -- basic demo of how compact region works.
-main ()
- = private r with { Alloc r; Read r; Write r } in
+main 
+ = mutable r in
    do   
       -- create compact region at @r with size 1024 bytes
       cr = allocCR {@r} 1024
       -- store a number 2048 at compact region, the myVal is the value
       -- on the compact region. It won't be garbage collected until the region is dead.
       myVal = storeCR cr 2048
-      writel $ "value  = " % (show myVal)
+      writel $ "value  = " % show myVal
       -- append another value to the CR
       myVal2 = storeCR cr 4096
-      writel $ "value  = " % (show myVal)
-      writel $ "value  = " % (show myVal2)
+      writel $ "value  = " % show myVal)
+      writel $ "value  = " % show myVal2
       -- the CR is polymorphic, i.e. it does not care what is in the CR
       -- however, the return value is typed.
       myVal3 = storeCR cr "poly"
-      writel $ "value  = " % (show myVal)
-      writel $ "value  = " % (show myVal2)
-      writel $ "value  = " % (show myVal3)
+      writel $ "value  = " % show myVal
+      writel $ "value  = " % show myVal2
+      writel $ "value  = " % show myVal3
 
       -- declear CR is dead, it will be GC in next GC cycle.
       deleteCR cr
