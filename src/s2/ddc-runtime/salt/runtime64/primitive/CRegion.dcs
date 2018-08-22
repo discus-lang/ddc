@@ -31,7 +31,7 @@ with letrec
 
 ddcCompactRegionDebug (u : Unit) : Bool#
  = do 
-      False#
+      True#
 
 ddcCompactRegionDebugPrint (msg : TextLit#) : Unit
   = do
@@ -52,9 +52,18 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
                     ddcPrimStderrPutTextLit "| Size: "#
                     ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) (read# [Addr#] rawBase 0#)))
                     ddcPrimStderrPutTextLit "| Flag: "#
-                    ddcPrimStderrPutAddr (read# [Addr#] rawBase 16#)
-                    ddcPrimStderrPutTextLit "\n"#
-                    ()
+                    ddcPrimStderrPutAddr (promote# [Addr#] (truncate# [Word8#] (read# [Addr#] rawBase 16#)))
+                    
+                    refList = (read# [Addr#] rawBase 17#)
+                    case eq# refList (promote# [Addr#] 0#) of
+                      False# -> do ddcPrimStderrPutTextLit "| RefList: "#
+                                   ddcPrintCompactRegionHeader refList
+                                   ddcPrimStderrPutTextLit "\n"#
+                                   () 
+                      True# -> do ddcPrimStderrPutTextLit "\n"#
+                                  () 
+                     
+                   
         _ -> ()
         
 -- Ref List is the list of object compact region keeps live on the heap.
@@ -62,8 +71,8 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
 ddcPrimCompactRegionAlloc [r1 : Region] (initSize : Nat#) : Nat#
  = do 
       case eq# initSize 0# of
-        True#  -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc 1024# 1024#) --alloc default size
-        False# -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc initSize 1024#)
+        True#  -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc 1024# 64#) --alloc default size
+        False# -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc initSize 64#)
 
 ddcCompactRegionAlloc (initSize : Nat#) (initRefListSize : Nat#) : Addr#
  = do
@@ -214,10 +223,10 @@ ddcCompactRegionStoreObj [r1 : Region]
                         : Addr#
   = do
       case ddcObjectFormat pVal of
-        2# -> do ddcCompactRegionStoreObjWithRef rawBase pVal--thunk
-        3# -> do ddcCompactRegionStoreObjWithRef rawBase pVal --boxed
+        2# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--thunk
+        3# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal --boxed
         4# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--raw
-        5# -> do ddcCompactRegionStoreObjWithRef rawBase pVal--array
+        5# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--array
         _  -> do ddcCompactRegionUnsafeDirectStore rawBase pVal-- unknown
 
 ddcCompactRegionStoreObjWithRef [r1 : Region]
@@ -254,6 +263,7 @@ ddcCompactRegionUnsafeDirectStore [r1 : Region]
       
       top
 
+-- TODO : destroy the RefList 
 --| set the flag to mark compact region dead
 ddcPrimCompactRegionMarkDead [r1 : Region]  (handle : Nat#) : Unit
  = do handleValid = ddcCompactRegionHandleValidation handle

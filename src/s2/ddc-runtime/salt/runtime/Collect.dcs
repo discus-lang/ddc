@@ -94,7 +94,9 @@ ddcCollectHeap
                 (read# aaBackBase 0#)
                 aaBackTop
                 (read# aaBackMax  0#)
-
+        -- after LLVM root, directly scan compact region root
+        ddcScanCompactRegionTable aaBackTop
+        
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap
@@ -213,8 +215,46 @@ ddcEvacuateRoot
                 write# aaObj 0# aObjNew
 
                 ()
+-- | Scan the compact region RefList header
+-- trace object in the RefList, copy objects on the heap to the back-heap
+-- as root objects
+ddcScanCompactRegionTable
+          (aaBackTop : Addr#)
+          : Unit
+ = do
+      tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+      tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
+      ddcScanCompactRegionTable_iter aaBackTop tableBase tableMax
 
 
+ddcScanCompactRegionTable_iter
+          (aaBackTop : Addr#)
+          (curr  : Addr#)
+          (max   : Addr#)
+          : Unit
+ = do
+      case ge# curr max of
+        True#  -> ()
+        False# -> do  rawBase = read# [Addr#] curr 0#
+                      case ddcCompactRegionIsLive rawBase of
+                        True# -> do refListRawBase = read# [Addr#] rawBase 17#
+                                    refListTop = read# [Addr#] refListRawBase 0#
+                                    refListBase = plusAddr# refListRawBase 32# -- HEADER SIZE
+                                    ddcScanCompactRegionObjectRoot aaBackTop refListBase refListTop
+                                    ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
+                        False# -> do ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
+
+ddcScanCompactRegionObjectRoot
+            (aaBackTop : Addr#)
+            (refListCurr   : Addr#) 
+            (refListTop    : Addr#) -- a compact region top 8 bytes aligned
+ = do 
+      case ge# refListCurr refListTop of
+        True#  -> ()
+        False# -> do  ddcScanObject aaBackTop refListCurr
+                      ddcScanCompactRegionObjectRoot aaBackTop (plusAddr# refListCurr 8#) refListTop
+
+      
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
 ddcEvacuateObject
@@ -437,4 +477,3 @@ ddcScanBoxed_arg
                 ddcBoxedSetField aObjScan iArg aArgTo
 
                 ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
-
