@@ -51,6 +51,8 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
                     ddcPrimStderrPutAddr (read# [Addr#] rawBase 8#)
                     ddcPrimStderrPutTextLit "| Size: "#
                     ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) (read# [Addr#] rawBase 0#)))
+                    ddcPrimStderrPutTextLit "/"#
+                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) rawBase))
                     ddcPrimStderrPutTextLit "| Flag: "#
                     ddcPrimStderrPutAddr (promote# [Addr#] (truncate# [Word8#] (read# [Addr#] rawBase 16#)))
                     
@@ -70,9 +72,13 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
 --| Compact Region Allocation
 ddcPrimCompactRegionAlloc [r1 : Region] (initSize : Nat#) : Nat#
  = do 
-      case eq# initSize 0# of
-        True#  -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc 1024# 64#) --alloc default size
-        False# -> ddcCompactRegionInsertTable (ddcCompactRegionAlloc initSize 64#)
+      case lt# initSize 64# of
+        True#  -> do  regionRawBase = ddcCompactRegionAlloc 1024# 128#
+                      ddcPrintCompactRegionHeader regionRawBase
+                      ddcCompactRegionInsertTable regionRawBase --alloc default size
+        False# -> do  regionRawBase = ddcCompactRegionAlloc initSize 128#
+                      ddcPrintCompactRegionHeader regionRawBase
+                      ddcCompactRegionInsertTable regionRawBase
 
 ddcCompactRegionAlloc (initSize : Nat#) (initRefListSize : Nat#) : Addr#
  = do
@@ -95,7 +101,7 @@ ddcCompactRegionAlloc (initSize : Nat#) (initRefListSize : Nat#) : Addr#
                         (plusAddr# rawBase 32#)  -- top
                         (plusAddr# rawBase initSize) -- max
                         0b0000001w8# -- flags
-                        (ddcCompactRegionAlloc initSize 0#) -- ignore
+                        (ddcCompactRegionAlloc initRefListSize 0#) -- create cr
 
                       -- return raw base
                       rawBase
