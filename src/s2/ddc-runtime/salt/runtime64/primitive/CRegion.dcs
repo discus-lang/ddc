@@ -60,7 +60,6 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
                     case eq# refList (promote# [Addr#] 0#) of
                       False# -> do ddcPrimStderrPutTextLit "| RefList: "#
                                    ddcPrintCompactRegionHeader refList
-                                   ddcPrimStderrPutTextLit "\n"#
                                    () 
                       True# -> do ddcPrimStderrPutTextLit "\n"#
                                   () 
@@ -72,13 +71,9 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
 --| Compact Region Allocation
 ddcPrimCompactRegionAlloc [r1 : Region] (initSize : Nat#) : Nat#
  = do 
-      case lt# initSize 64# of
-        True#  -> do  regionRawBase = ddcCompactRegionAlloc 1024# 128#
-                      ddcPrintCompactRegionHeader regionRawBase
-                      ddcCompactRegionInsertTable regionRawBase --alloc default size
-        False# -> do  regionRawBase = ddcCompactRegionAlloc initSize 128#
-                      ddcPrintCompactRegionHeader regionRawBase
-                      ddcCompactRegionInsertTable regionRawBase
+      regionRawBase = ddcCompactRegionAlloc (add# 32# initSize) 128#
+      ddcPrintCompactRegionHeader regionRawBase
+      ddcCompactRegionInsertTable regionRawBase
 
 ddcCompactRegionAlloc (initSize : Nat#) (initRefListSize : Nat#) : Addr#
  = do
@@ -184,7 +179,7 @@ ddcCompactRegionStore [r1 r2 : Region] (handleSlotAddr : Addr#) (pVal : Ptr# r1 
         True# -> do -- now attempt to store object into the compact region
                     regionMax = read# [Addr#] regionRawBase 8#
                     regionTop = read# [Addr#] regionRawBase 0#
-                    makePtr# (ddcCompactRegionResizeStore handleSlotAddr regionRawBase regionMax regionTop pVal)
+                    makePtr# (ddcCompactRegionResizeStore handleSlotAddr regionRawBase regionTop regionMax pVal)
 
 
 -- store object into the compact region and
@@ -197,8 +192,8 @@ ddcCompactRegionResizeStore [r1 : Region]
                               (pVal : Ptr# r1 Obj )
                               : Addr#
   = do  freeSize = sub# max top
-        case lt# (ddcObjectSize pVal) (promote# [Nat#] freeSize) of
-          False# 
+        case ge# (ddcObjectSize pVal) (promote# [Nat#] freeSize) of
+          True# 
             -> do newSize = mul# (truncate# [Nat#] (sub# max rawBase)) 2# --TODO: a better strategy
                   rawBaseNew = malloc newSize
 
@@ -213,11 +208,9 @@ ddcCompactRegionResizeStore [r1 : Region]
                   free rawBase
                   -- trick, find another solution to this if possible.
                   ddcCompactRegionResizeStore handleSlotAddr rawBaseNew topNew maxNew pVal
-          True#
+          False#
             -> do -- store the object to the compact region
-                  objAddrNew = ddcCompactRegionUnsafeDirectStore rawBase pVal 
-                  -- update the address in the compact region table
-                  tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0# 
+                  objAddrNew = ddcCompactRegionStoreObj rawBase pVal 
                   write# handleSlotAddr 0# rawBase
                   -- return the addr of object in the compact region
                   objAddrNew
@@ -229,10 +222,10 @@ ddcCompactRegionStoreObj [r1 : Region]
                         : Addr#
   = do
       case ddcObjectFormat pVal of
-        2# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--thunk
-        3# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal --boxed
+        2# -> do ddcCompactRegionStoreObjWithRef rawBase pVal--thunk
+        3# -> do ddcCompactRegionStoreObjWithRef rawBase pVal --boxed
         4# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--raw
-        5# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--array
+        5# -> do ddcCompactRegionUnsafeDirectStore rawBase pVal--array TODO: what to do? 
         _  -> do ddcCompactRegionUnsafeDirectStore rawBase pVal-- unknown
 
 ddcCompactRegionStoreObjWithRef [r1 : Region]
