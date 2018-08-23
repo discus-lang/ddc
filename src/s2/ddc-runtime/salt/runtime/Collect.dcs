@@ -49,6 +49,12 @@ import foreign c value
   ddcPrimStdoutPutString : TextLit# -> Void#
   ddcPrimStdoutPutAddr : Addr# -> Void#
 
+  ddcPrimStderrPutAddr : Addr# -> Void#
+  ddcCompactRegionDebugPrint   : TextLit# -> Unit
+  ddcPrintCompactRegionHeader  : Addr# -> Unit
+  ddcCompactRegionDebug        : Unit -> Bool#
+
+
 with letrec
 
 
@@ -94,9 +100,10 @@ ddcCollectHeap
                 (read# aaBackBase 0#)
                 aaBackTop
                 (read# aaBackMax  0#)
+
         -- after LLVM root, directly scan compact region root
         ddcScanCompactRegionTable aaBackTop
-        
+
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap
@@ -237,22 +244,36 @@ ddcScanCompactRegionTable_iter
         True#  -> ()
         False# -> do  rawBase = read# [Addr#] curr 0#
                       case ddcCompactRegionIsLive rawBase of
-                        True# -> do refListRawBase = read# [Addr#] rawBase 17#
+                        -- not live, just skip
+                        False# -> do ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
+                        True# -> do ddcCompactRegionDebugPrint "GC| CR| Enter "#
+                                    ddcPrintCompactRegionHeader rawBase
+                                    refListRawBase = read# [Addr#] rawBase 17#
                                     refListTop = read# [Addr#] refListRawBase 0#
                                     refListBase = plusAddr# refListRawBase 32# -- HEADER SIZE
                                     ddcScanCompactRegionObjectRoot aaBackTop refListBase refListTop
                                     ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
-                        False# -> do ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
 
 ddcScanCompactRegionObjectRoot
             (aaBackTop : Addr#)
             (refListCurr   : Addr#) 
-            (refListTop    : Addr#) -- a compact region top 8 bytes aligned
+            (refListTop    : Addr#) 
+            : Unit
  = do 
       case ge# refListCurr refListTop of
         True#  -> ()
-        False# -> do  ddcScanObject aaBackTop refListCurr
-                      ddcScanCompactRegionObjectRoot aaBackTop (plusAddr# refListCurr 8#) refListTop
+        False# -> do
+                      boxedSize = ddcObjectSize refListCurr
+                      actualObjAddr = ddcBoxedGetField refListCurr 0#
+                      (case ddcCompactRegionDebug () of
+                        True# -> do ddcCompactRegionDebugPrint "GC| Ref| Found "#
+                                    ddcCompactRegionDebugPrint "| RefAddr: "#
+                                    ddcPrimStderrPutAddr actualObjAddr
+                                    ddcCompactRegionDebugPrint "\n "#
+                                    ()
+                        False# -> ())
+                      ddcScanObject aaBackTop refListCurr
+                      ddcScanCompactRegionObjectRoot aaBackTop (plusAddr# refListCurr boxedSize) refListTop
 
       
 -- | Evacuate a single object and update the to-space
@@ -278,7 +299,8 @@ ddcEvacuateObject
                 -- This is a real object in the from-space,
                 -- so evacuate it to the to-space.
                 False#  -> case ddcObjectIsInCompactRegion aObj of
-                              True#  -> aObj 
+                              True#  -> do  ddcCompactRegionDebugPrint "Reached CR Stop tracing\n"#
+                                            aObj 
                               False# -> ddcEvacuateCopy aaBackTop aObj
 
 

@@ -6,15 +6,33 @@ import Class.Numeric
 import Class.Ord
 import Data.Numeric.Nat
 import Data.Function
+import Data.Ref
 import Data.CompactRegion
+
+import foreign c value
+ ddcPerformGC : Unit -> Unit
 
 where
 
+createRefOnCR {@r1 : Region} {@r2 : Region}
+  (cr : CR r2)
+  : S (Alloc r1 + Write r2) (Ref r1 Text)
+  = do  
+        storeCR cr (allocRef {@r1} "hello")  
+
+
 -- basic demo of how compact region works.
 main ()
- = do writel (show (1+1))
-      case 3 < 2 of 
-        True-> writel $ show 1
-        False-> writel $ show 2
-      ()
+ = mutable r1 r2 in 
+    do  cr = allocCR {@r1} 1024
+        ref = createRefOnCR {@r1} cr
+        writel $ show (readRef ref)
+        ddcPerformGC ()
+        writel $ show (readRef ref)
+        -- ddcPerformGC ()
+        -- writel $ show (readRef ref)
+        -- ddcPerformGC ()
+        -- writel $ show (readRef ref)
+        -- ddcPerformGC ()
+        ()
 
