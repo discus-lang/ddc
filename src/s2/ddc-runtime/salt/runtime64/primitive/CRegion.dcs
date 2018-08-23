@@ -53,7 +53,7 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
                     ddcPrimStderrPutTextLit "| Max: "#
                     ddcPrimStderrPutAddr (read# [Addr#] rawBase 8#)
                     ddcPrimStderrPutTextLit "| Size: "#
-                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) (read# [Addr#] rawBase 0#)))
+                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 0#) rawBase))
                     ddcPrimStderrPutTextLit "/"#
                     ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) rawBase))
                     ddcPrimStderrPutTextLit "| Flag: "#
@@ -209,7 +209,7 @@ ddcCompactRegionResizeStore [r1 : Region]
                                     ()
                         False# -> ())
                   ddcPrintCompactRegionHeader rawBase
-
+                  -- TODO: Update pointer in the refList
                   -- copy old data and old header
                   usedSize = truncate# [Nat#] (sub# top rawBase)
                   copy# rawBaseNew rawBase usedSize
@@ -240,7 +240,7 @@ ddcCompactRegionStoreObj [r1 : Region]
         3# -> do ddcCompactRegionStoreObjWithRef rawBase pVal --boxed
         4# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--raw
         5# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--array TODO: what to do? 
-        _  -> do fail#
+        _  -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--mhm...
 
 ddcCompactRegionStoreObjWithRef [r1 : Region]
                             (rawBase : Addr#)

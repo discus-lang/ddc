@@ -269,7 +269,7 @@ ddcScanCompactRegionObjectRoot
                         True# -> do ddcCompactRegionDebugPrint "GC| Ref| Found "#
                                     ddcCompactRegionDebugPrint "| RefAddr: "#
                                     ddcPrimStderrPutAddr actualObjAddr
-                                    ddcCompactRegionDebugPrint "\n "#
+                                    ddcCompactRegionDebugPrint "\n"#
                                     ()
                         False# -> ())
                       ddcScanObject aaBackTop actualObjAddr
