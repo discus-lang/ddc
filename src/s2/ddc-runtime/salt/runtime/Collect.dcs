@@ -272,7 +272,7 @@ ddcScanCompactRegionObjectRoot
                                     ddcCompactRegionDebugPrint "\n "#
                                     ()
                         False# -> ())
-                      ddcScanObject aaBackTop refListCurr
+                      ddcScanObject aaBackTop actualObjAddr
                       ddcScanCompactRegionObjectRoot aaBackTop (plusAddr# refListCurr boxedSize) refListTop
 
       

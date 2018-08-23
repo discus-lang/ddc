@@ -249,15 +249,17 @@ ddcCompactRegionStoreObjWithRef [r1 : Region]
   = do  
         objBase = takePtr# pVal
         objSize = ddcObjectSize pVal
+
         refListHandleSlot = plusAddr# rawBase 17#
         case eq# (promote# [Nat#] (read# [Addr#] refListHandleSlot 0#)) 0# of
           True# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase objBase objSize
           False# -> do -- a boxed obj to hold pointer to storing obj.
+                      newTop = ddcCompactRegionUnsafeDirectStore [r1] rawBase objBase objSize
                       heapBox = ddcBoxedAlloc [r1] (truncate# 0#) (truncate# 1#) 1#
-                      ddcBoxedSetField heapBox 0# pVal
+                      ddcBoxedSetField [r1] [r1] heapBox 0# (makePtr# newTop)
                       -- store that boxed obj to the refList
                       ddcCompactRegionStore [r1] [r1] refListHandleSlot heapBox
-                      ddcCompactRegionUnsafeDirectStore [r1] rawBase objBase objSize
+                      newTop
         
 
         
