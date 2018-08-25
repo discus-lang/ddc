@@ -140,13 +140,10 @@ rewriteX' ignore_toplevel rules x0
          = do   arg' <- downA env arg
                 go env f ((arg',a):args) False
 
-        go env x@XVar{}   args  _toplevel
+        go env x@XVar{}   args _toplevel
          =      rewrites env x args
 
-        go env x@XPrim{}  args  _toplevel
-         =      rewrites env x args
-
-        go env x@XCon{}   args  _toplevel
+        go env x@XAtom{}  args _toplevel
          =      rewrites env x args
 
         go env (XAbs a (MType b) e) args _toplevel

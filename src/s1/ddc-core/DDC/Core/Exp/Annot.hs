@@ -1,7 +1,6 @@
 
 module DDC.Core.Exp.Annot
-        (
-         ---------------------------------------
+        (---------------------------------------
          -- * Abstract Syntax
           module DDC.Type.Exp
 
@@ -11,18 +10,16 @@ module DDC.Core.Exp.Annot
         , ParamMode     (..)
         , Param         (..)
         , Arg           (..)
+        , Atom          (..)
         , Prim          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
         , Cast          (..)
-        , pattern XLam
-        , pattern XLAM
-        , pattern XLLet
-        , pattern XLRec
-        , pattern XLPrivate
-        , pattern XBox
-        , pattern XRun
+        , pattern XLam,  pattern XLAM
+        , pattern XLLet, pattern XLRec, pattern XLPrivate
+        , pattern XBox,  pattern XRun
+        , pattern XPrim, pattern XCon,  pattern XLabel
 
           -- ** Witnesses
         , Witness       (..)

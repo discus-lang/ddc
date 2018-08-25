@@ -102,10 +102,8 @@ expliciateBind eqns bb
 expliciateExp :: Ord n => Map n (Type n) -> Exp a n -> Exp a n
 expliciateExp eqns xx
  = case xx of
-
-        XPrim{}         -> xx
-        XCon{}          -> xx
         XVar{}          -> xx
+        XAtom{}         -> xx
 
         XAbs a m xBody  -> XAbs  a (expliciateParam eqns m)
                                    (expliciateExp   eqns xBody)

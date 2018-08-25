@@ -21,7 +21,7 @@ import Data.List
 
 
 -- | Bubble casts outwards in a `Module`.
-bubbleModule 
+bubbleModule
         :: Ord n
         => Module a n -> Module a n
 
@@ -35,7 +35,7 @@ bubbleModule mm@ModuleCore{}
 bubbleX :: Ord n
         => KindEnv n -> TypeEnv n -> Exp a n -> Exp a n
 bubbleX kenv tenv x
- = let  
+ = let
         -- Bubble the expression, yielding any casts that floated out
         -- to top-level.
         (cs, x') = bubble kenv tenv x
@@ -51,7 +51,7 @@ class Bubble (c :: * -> * -> *) where
  bubble :: Ord n
         => KindEnv n
         -> TypeEnv n
-        -> c a n 
+        -> c a n
         -> ([FvsCast a n], c a n)
 
 
@@ -60,8 +60,7 @@ instance Bubble Exp where
   = {-# SCC bubble #-}
     case xx of
         XVar{}  -> ([], xx)
-        XPrim{} -> ([], xx)
-        XCon{}  -> ([], xx)
+        XAtom{} -> ([], xx)
 
         -- Drop casts before we leave lambda abstractions, because the
         -- function type depends on the effect and closure of the body.
@@ -100,7 +99,7 @@ instance Bubble Exp where
                 , XLet a lts' x2'')
 
         -- Decent into case-expressions.
-        --  Casts that depend on bound variables are dropped 
+        --  Casts that depend on bound variables are dropped
         --  in the corresponding alternatives.
         XCase a x alts
          -> let (cs, x')        = bubble kenv tenv x
@@ -126,7 +125,7 @@ instance Bubble Arg where
         RWitness{}
          ->     ([], aa)
 
-        RTerm x 
+        RTerm x
          -> let (cs, x') = bubble kenv tenv x
             in  (cs, RTerm x')
 
@@ -139,7 +138,7 @@ instance Bubble Lets where
  bubble kenv tenv lts
   = case lts of
 
-        -- Drop casts that mention the bound variable here, 
+        -- Drop casts that mention the bound variable here,
         -- but we can float the others further outwards.
         LLet b x
          -> let (cs, x')        = bubble kenv tenv x
@@ -167,7 +166,7 @@ instance Bubble Lets where
 
 instance Bubble Alt where
 
- -- Default patterns don't bind variables, 
+ -- Default patterns don't bind variables,
  -- so there is no problem floating casts outwards.
  bubble kenv tenv (AAlt PDefault x)
   = let (cs, x') = bubble kenv tenv x
@@ -186,7 +185,7 @@ instance Bubble Alt where
 
 -- FvsCast --------------------------------------------------------------------
 -- | A Cast along with its free level-1 and level-0 vars.
---   When we first build a `FvsCast` we record its free variables, 
+--   When we first build a `FvsCast` we record its free variables,
 --   so that we don't have to keep recomputing them.
 data FvsCast a n
         = FvsCast (Cast a n)
@@ -202,7 +201,7 @@ instance Ord n => MapBoundX (FvsCast a) n where
                 $ Set.toList fvs0)
 
 
-packFvsCasts 
+packFvsCasts
         :: Ord n
         => KindEnv n -> TypeEnv n
         -> a -> [FvsCast a n] -> [Cast a n]
@@ -217,25 +216,25 @@ packFvsCasts kenv tenv a fvsCasts
 packCasts :: Ord n
           => KindEnv n -> TypeEnv n -> a -> [Cast a n] -> [Cast a n]
 packCasts _kenv _tenv _a vs
- = let  
+ = let
         -- Sort casts into weakeff, weakclo and any others.
         -- We'll collect the weakeff and weakclo casts together.
         collect weakEffs weakClos others cc
          = case cc of
-            []                        
+            []
              -> (reverse weakEffs, reverse weakClos, reverse others)
 
-            CastWeakenEffect eff : cs 
+            CastWeakenEffect eff : cs
              -> collect (eff : weakEffs) weakClos others cs
 
             c : cs
              -> collect weakEffs        weakClos (c : others) cs
 
 
-        (effs, csOthers, _) 
+        (effs, csOthers, _)
                 = collect [] [] [] vs
 
-   in   (if null effs 
+   in   (if null effs
                 then []
                 else [CastWeakenEffect  (TSum $ Sum.fromList kEffect effs)])
      ++ csOthers
@@ -243,12 +242,12 @@ packCasts _kenv _tenv _a vs
 
 -- Dropping -------------------------------------------------------------------
 -- | Wrap the provided expression with these casts.
-dropAllCasts 
+dropAllCasts
         :: Ord n
         => KindEnv n
         -> TypeEnv n
-        -> a 
-        -> [FvsCast a n] -> Exp a n 
+        -> a
+        -> [FvsCast a n] -> Exp a n
         -> Exp a n
 
 dropAllCasts kenv tenv a cs x
@@ -260,14 +259,14 @@ dropAllCasts kenv tenv a cs x
 --   bound by these binders. The casts that do are used to wrap
 --   the provided expression, and the casts that don't are returned
 --   seprately so we can keep bubbling them up the tree.
-dropCasts 
+dropCasts
         :: Ord n
         => KindEnv n -> TypeEnv n
-        -> a 
+        -> a
         -> [Bind n]             -- ^ Level-1 binders.
         -> [Bind n]             -- ^ Level-0 binders.
-        -> [FvsCast a n] 
-        -> Exp a n 
+        -> [FvsCast a n]
+        -> Exp a n
         -> ([FvsCast a n], Exp a n)
 
 dropCasts kenv tenv a bs1 bs0 cs x

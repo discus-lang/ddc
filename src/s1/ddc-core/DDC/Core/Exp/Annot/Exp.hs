@@ -25,18 +25,16 @@ module DDC.Core.Exp.Annot.Exp
         , ParamMode     (..)
         , Param         (..)
         , Arg           (..)
+        , Atom          (..)
         , Prim          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
         , Cast          (..)
-        , pattern XLam
-        , pattern XLAM
-        , pattern XLLet
-        , pattern XLRec
-        , pattern XLPrivate
-        , pattern XBox
-        , pattern XRun
+        , pattern XLam,  pattern XLAM
+        , pattern XLLet, pattern XLRec, pattern XLPrivate
+        , pattern XBox,  pattern XRun
+        , pattern XCon,  pattern XPrim, pattern XLabel
 
           -- * Witnesses
         , Witness       (..)
@@ -52,19 +50,13 @@ import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
-import Data.Text                (Text)
+import DDC.Data.Label
 
 
 -- | Well-typed expressions have types of kind `Data`.
 data Exp a n
-        -- | Primitive operator of the ambient calculus.
-        = XPrim    !a !Prim
-
-        -- | Data constructor or literal.
-        | XCon     !a !(DaCon n (Type n))
-
         -- | Value variable or fragment specific primitive operation.
-        | XVar     !a !(Bound n)
+        = XVar     !a !(Bound n)
 
         -- | Function abstraction.
         | XAbs     !a !(Param n)  !(Exp a n)
@@ -75,12 +67,16 @@ data Exp a n
         -- | Possibly recursive bindings.
         | XLet     !a !(Lets a n) !(Exp a n)
 
+        -- | Atomic primitive.
+        | XAtom    !a !(Atom n)
+
         -- | Case branching.
         | XCase    !a !(Exp a n)  ![Alt a n]
 
         -- | Type cast.
         | XCast    !a !(Cast a n) !(Exp a n)
         deriving (Show, Eq)
+
 
 pattern XLam      a b x         = XAbs  a (MTerm b) x
 pattern XLAM      a b x         = XAbs  a (MType b) x
@@ -89,6 +85,9 @@ pattern XLRec     a bxs x2      = XLet  a (LRec bxs)  x2
 pattern XLPrivate a bs mt ws x2 = XLet  a (LPrivate bs mt ws) x2
 pattern XBox      a x           = XCast a CastBox x
 pattern XRun      a x           = XCast a CastRun x
+pattern XCon      a dc          = XAtom a (MACon  dc)
+pattern XPrim     a p           = XAtom a (MAPrim p)
+pattern XLabel    a l           = XAtom a (MALabel l)
 
 
 -- | Parameter sort.
@@ -109,36 +108,38 @@ data ParamMode
 
 -- | Parameter of an abstraction.
 data Param n
-        = MType         !(Bind n)       -- ^ Type binder.
-        | MTerm         !(Bind n)       -- ^ Term binder.
-        | MImplicit     !(Bind n)       -- ^ Implicit term binder.
+        = MType         !(Bind n)               -- ^ Type binder.
+        | MTerm         !(Bind n)               -- ^ Term binder.
+        | MImplicit     !(Bind n)               -- ^ Implicit term binder.
         deriving (Show, Eq)
 
 
 -- | Argument of an application.
 data Arg a n
-        = RType         !(Type      n)  -- ^ Type argument.
-        | RTerm         !(Exp     a n)  -- ^ Term argument.
-        | RWitness      !(Witness a n)  -- ^ Witness argument.
-        | RImplicit     !(Arg a n)      -- ^ Indicate an implicit argument.
+        = RType         !(Type      n)          -- ^ Type argument.
+        | RTerm         !(Exp     a n)          -- ^ Term argument.
+        | RWitness      !(Witness a n)          -- ^ Witness argument.
+        | RImplicit     !(Arg a n)              -- ^ Indicate an implicit argument.
         deriving (Show, Eq)
 
 
--- | Primitive operator of the ambient calculus.
---   These operators can be assigned standard functional types,
---   but might have some special handing in the type checker.
+-- | Term atom.
+data Atom n
+        = MACon         !(DaCon n (Type n))     -- ^ Data constructor.
+        | MALabel       !Label                  -- ^ Record label.
+        | MAPrim        !Prim                   -- ^ Baked in primitive.
+        deriving (Show, Eq)
+
+
+-- | Primitive operator or special value in the ambient calculus.
+--   These typically have special typing rules,
+--   or program transformations that work on them.
 data Prim
         -- | Produce a value by elaboration.
         = PElaborate
 
         -- | Project a field from a record.
-        | PProject Text
-
-        -- | Shuffle fields of a record.
-        | PShuffle
-
-        -- | Combine two records into a new one.
-        | PCombine
+        | PProject
         deriving (Show, Eq)
 
 

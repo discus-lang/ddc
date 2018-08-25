@@ -8,6 +8,7 @@ where
 import DDC.Core.Codec.Text.Pretty.Type  ()
 import DDC.Core.Exp.Annot
 import DDC.Data.Pretty
+import DDC.Data.Label
 
 
 -- Exp ------------------------------------------------------------------------
@@ -43,8 +44,6 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
     in case xx of
 
         XVar  _ u  -> ppr u
-        XPrim _ p  -> ppr p
-        XCon  _ dc -> ppr dc
 
         XAbs _ (MType _) _
          -> let Just (bs, xBody) = takeXLAMs xx
@@ -102,6 +101,10 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   vcat
                 [ pprLts lts %% text "in"
                 , pprX x]
+
+        XAtom _ (MAPrim p)  -> ppr p
+        XAtom _ (MACon dc)  -> ppr dc
+        XAtom _ (MALabel l) -> text "^" <> ppr l
 
         -- Print single alternative case expressions as 'letcase'.
         --    case x1 of { C v1 v2 -> x2 }
@@ -170,9 +173,13 @@ instance Pretty Prim where
  ppr pp
   = case pp of
         PElaborate      -> text "elaborate#"
-        PProject n      -> text "project(" % text n % text ")#"
-        PShuffle        -> text "shuffle#"
-        PCombine        -> text "combine#"
+        PProject        -> text "project#"
+
+
+-- Label ----------------------------------------------------------------------
+instance Pretty Label where
+ ppr ll
+  = text "^" <> text (nameOfLabel ll)
 
 
 -- Pat ------------------------------------------------------------------------

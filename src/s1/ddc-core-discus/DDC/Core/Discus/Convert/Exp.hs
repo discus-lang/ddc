@@ -66,15 +66,17 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Ambient primitives.
-        XPrim a p
+        XAtom a (MAPrim p)
          -> do  let a'  = annotTail a
                 return  $ XPrim a' p
 
-        ---------------------------------------------------
         -- Unapplied data constructor.
-        XCon a dc
+        XAtom a (MACon dc)
          -> do  xx'     <- downCtorApp a dc []
                 return  xx'
+
+        XAtom _a (MALabel _)
+         -> error "ddc-core-discus.convertExp: labels not handled yet"
 
         ---------------------------------------------------
         -- Type abstractions can appear in the body of expressions when
@@ -98,8 +100,6 @@ convertExp ectx ctx xx
              <- case p of
                   PElaborate{}            -> Nothing
                   PProject{}              -> convertPrimRecord ectx ctx xx
-                  PShuffle{}              -> convertPrimRecord ectx ctx xx
-                  PCombine{}              -> convertPrimRecord ectx ctx xx
          -> r
 
          -- Conversions for fragment specific primitive operators.

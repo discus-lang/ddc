@@ -141,14 +141,6 @@ usageX' xx
          -> ( used
             , XVar (used, a) u)
 
-        XPrim a p
-         -> ( empty
-            , XPrim (empty, a) p)
-
-        XCon a u
-         -> ( empty
-            , XCon  (empty, a) u)
-
         -- Wrap usages from the body in UsedInLambda to singla that if we move
         -- the definition here then it might not be demanded at runtime.
         XAbs a (MType b1) x2
@@ -201,6 +193,9 @@ usageX' xx
                              $ uncurry (++) (bindsOfLets lts)
          -> ( cleared
             , XLet (used', a) lts' x2')
+
+        XAtom a t
+         -> ( empty, XAtom (empty, a) t)
 
         -- Wrap usages in the Alts in UsedInAlt to signal that if we move
         -- the definition here then it might not be demanded at runtime.

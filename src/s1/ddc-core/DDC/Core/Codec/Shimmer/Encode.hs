@@ -296,22 +296,6 @@ takeExp c xx
         C.XVar  _ u
          -> takeBound c u
 
-        -- Prim -----
-        C.XPrim _ p
-         -> case p of
-                C.PElaborate     -> xSym "xpe"
-                C.PProject tx    -> xAps "xpp" [xSym tx]
-                C.PShuffle       -> xSym "xps"
-                C.PCombine       -> xSym "xpc"
-
-        -- Con ----
-        C.XCon  _ dc
-         -> case dc of
-                C.DaConUnit      -> xSym "dc-unit"
-                C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
-                C.DaConPrim n    -> configTakeRef c n
-                C.DaConBound n   -> takeDaConBoundName c n
-
         -- Abs -----
         C.XAbs{}
          -> let go acc (C.XAbs _ m     x)
@@ -351,6 +335,24 @@ takeExp c xx
                         Just t  -> xSome (takeType c t)]
                  ++ (map (takeBind c) bsWit)
                  ++ [takeExp c x2])
+
+        -- Atom -----
+        C.XAtom _ aa
+         -> case aa of
+                C.MACon dc
+                 -> case dc of
+                        C.DaConUnit      -> xSym "dc-unit"
+                        C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
+                        C.DaConPrim n    -> configTakeRef c n
+                        C.DaConBound n   -> takeDaConBoundName c n
+
+                C.MALabel l
+                 ->     xAps "xe" [xTxt $ nameOfLabel l]
+
+                C.MAPrim p
+                 -> case p of
+                        C.PElaborate    -> xSym "xp-elaborate"
+                        C.PProject      -> xSym "xp-project"
 
         -- Case -----
         C.XCase _ x as

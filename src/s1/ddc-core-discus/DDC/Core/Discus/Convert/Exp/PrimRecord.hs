@@ -7,7 +7,7 @@ import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                           (AnTEC(..))
 import qualified DDC.Core.Discus.Prim            as E
-import qualified DDC.Core.Salt.Runtime          as A
+-- import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
 
 
@@ -17,7 +17,10 @@ convertPrimRecord
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a (A.Name)))
 
-convertPrimRecord _ectx ctx xxExp
+convertPrimRecord _ectx _ctx _xxExp
+ = Nothing
+
+{- TODO: We're redoing this.
  = let convertX = contextConvertExp ctx
    in  case xxExp of
 
@@ -47,3 +50,4 @@ convertPrimRecord _ectx ctx xxExp
                                         xRecord' iField
 
         _ -> Nothing
+-}

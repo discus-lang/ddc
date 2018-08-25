@@ -114,12 +114,6 @@ instance Complies Exp where
 
         XVar{}          -> ok
 
-        -- primitives ---------------------------
-        XPrim{}         -> ok
-
-        -- constructors -------------------------
-        XCon{}          -> ok
-
         -- spec binders -------------------------
         XAbs _ (MType b) x
          | contextAbsBody context
@@ -243,6 +237,9 @@ instance Complies Exp where
                                         (Env.extends bs tenv)
                                         (reset context) x2
                 return (tUsed2, vUsed2)
+
+        -- atom ---------------------------------
+        XAtom{}         -> ok
 
         -- case ---------------------------------
         XCase _ x1 alts

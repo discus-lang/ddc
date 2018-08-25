@@ -59,12 +59,6 @@ instance AnonymizeX (Exp a) where
   = {-# SCC anonymizeWithX #-}
     let down = anonymizeWithX keep kstack tstack
     in case xx of
-        -- FIXME: need to fix for prims.
---        XVar _ UPrim{}  -> xx
-
-        XPrim{}         -> xx
-        XCon{}          -> xx
-
         XVar a u@(UName{})
          |  Just ix      <- findIndex (boundMatchesBind u) tstack
          -> XVar a (UIx ix)
@@ -91,8 +85,9 @@ instance AnonymizeX (Exp a) where
                  = pushAnonymizeLets keep kstack tstack lts
             in  XLet a lts' (anonymizeWithX keep kstack' tstack' x)
 
-        XCase a x alts  -> XCase a    (down x) (map down alts)
-        XCast a c x     -> XCast a    (down c) (down x)
+        XAtom{}         -> xx
+        XCase a x alts  -> XCase a (down x) (map down alts)
+        XCast a c x     -> XCast a (down c) (down x)
 
 
 instance AnonymizeX (Arg a) where

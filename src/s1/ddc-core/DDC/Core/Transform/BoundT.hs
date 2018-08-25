@@ -16,21 +16,20 @@ instance Ord n => MapBoundT (Exp a) n where
   = let down = mapBoundAtDepthT f d
     in case xx of
         XVar a u                -> XVar a   u
-        XPrim{}                 -> xx
-        XCon{}                  -> xx
 
         XAbs a (MType b) x      -> XAbs a (MType b) (mapBoundAtDepthT f (d + countBAnons [b]) x)
         XAbs a (MTerm b) x      -> XAbs a (MTerm     (down b)) (down x)
         XAbs a (MImplicit b) x  -> XAbs a (MImplicit (down b)) (down x)
 
         XApp a x1 x2            -> XApp a (down x1) (down x2)
-         
-        XLet a lets x   
-         -> let (lets', levels) = mapBoundAtDepthTLets f d lets 
+
+        XLet a lets x
+         -> let (lets', levels) = mapBoundAtDepthTLets f d lets
             in  XLet a lets' (mapBoundAtDepthT f (d + levels) x)
 
-        XCase    a x alts       -> XCase    a (down x)  (map down alts)
-        XCast    a cc x         -> XCast    a (down cc) (down x)
+        XAtom {}                -> xx
+        XCase a x alts          -> XCase    a (down x)  (map down alts)
+        XCast a cc x            -> XCast    a (down cc) (down x)
 
 
 instance Ord n => MapBoundT (Arg a) n where
@@ -42,7 +41,7 @@ instance Ord n => MapBoundT (Arg a) n where
         RImplicit x             -> RImplicit (down x)
         RWitness  x             -> RWitness  (down x)
 
-         
+
 instance Ord n => MapBoundT (Witness a) n where
  mapBoundAtDepthT f d ww
   = let down = mapBoundAtDepthT f d
@@ -69,7 +68,7 @@ instance Ord n => MapBoundT (Alt a) n where
     in case p of
         PDefault                -> AAlt PDefault (down x)
         PData dc bs             -> AAlt (PData dc (map down bs)) (down x)
-        
+
 
 mapBoundAtDepthTLets
         :: Ord n

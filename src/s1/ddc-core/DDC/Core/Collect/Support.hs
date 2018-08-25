@@ -165,14 +165,6 @@ instance SupportX (Exp a) where
          | Env.member u tenv    -> mempty
          | otherwise            -> mempty { supportDaVar = Set.singleton u}
 
-        XPrim{}
-         -> mempty
-
-        XCon _ dc
-         -> case dc of
-                DaConBound n    -> mempty { supportDaCon = Set.singleton n }
-                _               -> mempty
-
         XAbs _ (MType b) x
          -> support kenv tenv b
          <> support (Env.extend b kenv) tenv x
@@ -197,6 +189,15 @@ instance SupportX (Exp a) where
                 tenv'           = Env.extends bs0 tenv
                 s2              = support kenv' tenv' x2
             in  mappend s1 s2
+
+        XAtom _ MAPrim{}        -> mempty
+
+        XAtom _ MALabel{}       -> mempty
+
+        XAtom _ (MACon dc)
+         -> case dc of
+                DaConBound n    -> mempty { supportDaCon = Set.singleton n }
+                _               -> mempty
 
         XCase _ x1 alts
          -> let s1              = support kenv tenv x1

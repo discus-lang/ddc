@@ -24,6 +24,8 @@ import qualified Data.Text                      as Text
 import qualified Data.Set                       as Set
 import Data.Maybe
 
+import DDC.Data.Label
+
 import DDC.Core.Module
         ( ExportType    (..)
         , ExportValue   (..)
@@ -285,13 +287,8 @@ toCoreX a xx
          -> return $ C.XPrim a C.PElaborate
 
         S.XPrim (S.PrimValProject n)
-         -> return $ C.XPrim a (C.PProject n)
-
-        S.XPrim S.PrimValShuffle
-         -> return $ C.XPrim a C.PShuffle
-
-        S.XPrim S.PrimValCombine
-         -> return $ C.XPrim a C.PCombine
+         -> return $ C.XApp a (C.XAtom a (C.MAPrim C.PProject))
+                              (C.RTerm (C.XAtom a (C.MALabel (labelOfText n))))
 
         S.XPrim p
          -> case toCorePrimVal p of
@@ -299,20 +296,20 @@ toCoreX a xx
                 _       -> error "ddc-source-discus: cannot convert prim"
 
         S.XVar u
-         -> C.XVar      <$> pure a <*> toCoreU u
+         -> C.XVar <$> pure a <*> toCoreU u
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
         S.XCon dc@(C.DaConBound (C.DaConBoundName _ _ (S.DaConBoundLit (S.PrimLitTextLit{}))))
-         -> C.XApp      <$> pure a
-                        <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
-                        <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
+         -> C.XApp <$> pure a
+                   <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
+                   <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
 
         S.XCon  dc
-         -> C.XCon      <$> pure a <*> toCoreDC dc
+         -> C.XCon <$> pure a <*> toCoreDC dc
 
         S.XAbs  p x
-         -> C.XAbs      <$> pure a <*> toCoreParam p  <*> toCoreX a x
+         -> C.XAbs <$> pure a <*> toCoreParam p  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.
@@ -327,17 +324,17 @@ toCoreX a xx
                                 [ C.RTerm (C.XCon a dc1')
                                 , C.RTerm (C.XCon a dc2')]
         S.XApp x1 x2
-         -> C.XApp      <$> pure a  <*> toCoreX a x1 <*> toCoreArg a x2
+         -> C.XApp  <$> pure a  <*> toCoreX a x1 <*> toCoreArg a x2
 
         S.XLet lts x
          -> toCoreLtsX a lts x
 
         S.XCase x alts
-         -> C.XCase     <$> pure a  <*> toCoreX a x
-                                    <*> (sequence $ map (toCoreA a) alts)
+         -> C.XCase <$> pure a  <*> toCoreX a x
+                                <*> (sequence $ map (toCoreA a) alts)
 
         S.XCast c x
-         -> C.XCast     <$> pure a  <*> toCoreC a c <*> toCoreX a x
+         -> C.XCast <$> pure a  <*> toCoreC a c <*> toCoreX a x
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertSugaredExp xx

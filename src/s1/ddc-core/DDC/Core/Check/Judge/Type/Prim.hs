@@ -26,11 +26,9 @@ shapeOfPrim :: Prim -> Type n
 shapeOfPrim p
  = case p of
         PElaborate
-         -> tForall kData
-         $  \tVal -> tVal
+         -> tForall   kData $ \tVal -> tVal
 
-        PProject _
-         -> tForalls [kData, kData]
-         $  \[tObj, tResult] -> tObj `tFun` tResult
+        PProject
+         -> tForalls [kData, kData, kData]
+         $  \[tObj, tLabel, tResult] -> tObj `tFun` tLabel `tFun` tResult
 
-        _ -> error "shapeOfPrim: no match"

@@ -127,8 +127,6 @@ instance Namify (Exp a) where
     let down = namify tnam xnam
     in case xx of
         XVar a u        -> liftM2 XVar (return a) (rewriteX tnam xnam u)
-        XPrim{}         -> return xx
-        XCon{}          -> return xx
 
         XAbs a (MType b) x
          -> do  (tnam', b')     <- pushT  tnam b
@@ -167,6 +165,7 @@ instance Namify (Exp a) where
                 x2'             <- namify tnam' xnam' x2
                 return $ XLet a (LPrivate b' mt bs') x2'
 
+        XAtom {}        -> return xx
         XCase a x1 alts -> liftM2 (XCase    a) (down x1)  (mapM down alts)
         XCast a c  x    -> liftM2 (XCast    a) (down c)   (down x)
 

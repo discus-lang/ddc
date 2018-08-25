@@ -23,11 +23,10 @@ replaceX sub xx
                 Nothing -> xx
 
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
         XAbs  a b x     -> XAbs  a b (down x)
         XApp  a x1 x2   -> XApp  a   (down x1) (replaceArg sub x2)
         XLet  a lts x2  -> XLet  a   (replaceL sub lts) (down x2)
+        XAtom{}         -> xx
         XCase a x alts  -> XCase a   (down x) (map (replaceA sub) alts)
         XCast a c x     -> XCast a c (down x)
 

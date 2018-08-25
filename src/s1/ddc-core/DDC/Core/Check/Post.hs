@@ -14,8 +14,6 @@ import qualified DDC.Type.Sum   as Sum
 checkExp :: Exp a n -> Either (Error a n) ()
 checkExp xx
  = case xx of
-        XPrim{} -> return ()
-        XCon{}  -> return ()
         XVar{}  -> return ()
 
         XAbs a p x
@@ -29,6 +27,8 @@ checkExp xx
         XLet a lts x
          -> do  checkLets a lts
                 checkExp  x
+
+        XAtom{} -> return ()
 
         XCase a x alts
          -> do  checkExp  x

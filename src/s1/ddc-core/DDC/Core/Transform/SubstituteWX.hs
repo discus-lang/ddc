@@ -22,41 +22,41 @@ import Control.Monad
 
 -- | Wrapper for `substituteWithWX` that determines the set of free names in the
 --   type being substituted, and starts with an empty binder stack.
-substituteWX 
-        :: (Ord n, SubstituteWX c) 
+substituteWX
+        :: (Ord n, SubstituteWX c)
         => Bind n -> Witness a n -> c a n -> c a n
 
 substituteWX b wArg xx
  | Just u       <- takeSubstBoundOfBind b
  = substituteWithWX wArg
-        ( Sub 
+        ( Sub
         { subBound      = u
 
           -- Rewrite level-1 binders that have the same name as any
           -- of the free variables in the expression to substitute.
-        , subConflict1  
+        , subConflict1
                 = Set.fromList
-                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty wArg) 
+                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty wArg)
 
           -- Rewrite level-0 binders that have the same name as any
           -- of the free variables in the expression to substitute.
         , subConflict0
                 = Set.fromList
-                $ mapMaybe takeNameOfBound 
-                $ Set.toList 
+                $ mapMaybe takeNameOfBound
+                $ Set.toList
                 $ freeX Env.empty wArg
-                
+
         , subStack1     = BindStack [] [] 0 0
         , subStack0     = BindStack [] [] 0 0
         , subShadow0    = False })
         xx
 
  | otherwise    = xx
- 
+
 
 -- | Wrapper for `substituteWithWX` to substitute multiple things.
-substituteWXs 
-        :: (Ord n, SubstituteWX c) 
+substituteWXs
+        :: (Ord n, SubstituteWX c)
         => [(Bind n, Witness a n)] -> c a n -> c a n
 substituteWXs bts x
         = foldr (uncurry substituteWX) x bts
@@ -69,15 +69,13 @@ class SubstituteWX (c :: * -> * -> *) where
         => Witness a n -> Sub n -> c a n -> c a n
 
 
-instance SubstituteWX Exp where 
+instance SubstituteWX Exp where
  substituteWithWX wArg sub xx
   = {-# SCC substituteWithWX #-}
     let down s x   = substituteWithWX wArg s x
         into s x   = renameWith s x
     in case xx of
         XVar a u        -> XVar a u
-        XPrim{}         -> xx
-        XCon{}          -> xx
 
         XAbs a (MType b) x
          -> let (sub1, b')      = bind1 sub b
@@ -116,8 +114,9 @@ instance SubstituteWX Exp where
                 mT'             = liftM (into sub) mT
             in  XLet a (LPrivate b' mT' bs') x2'
 
-        XCase    a x1 alts      -> XCase    a (down sub x1) (map (down sub) alts)
-        XCast    a cc x1        -> XCast    a (down sub cc) (down sub x1)
+        XAtom{}                 -> xx
+        XCase    a x1 alts      -> XCase a (down sub x1) (map (down sub) alts)
+        XCast    a cc x1        -> XCast a (down sub cc) (down sub x1)
 
 
 instance SubstituteWX Arg where
@@ -137,7 +136,7 @@ instance SubstituteWX Alt where
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
-        
+
         AAlt (PData uCon bs) x
          -> let (sub1, bs')     = bind0s sub bs
                 x'              = down   sub1 x
@@ -171,13 +170,13 @@ instance SubstituteWX Witness where
 
 
 -- | Rewrite or substitute into a witness variable.
-substW  :: Ord n => Witness a n -> Sub n -> Bound n 
+substW  :: Ord n => Witness a n -> Sub n -> Bound n
         -> Either (Bound n) (Witness a n)
 
 substW wArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
         Left  u'                -> Left u'
-        Right n  
+        Right n
          | not $ subShadow0 sub -> Right (liftX n wArg)
          | otherwise            -> Left  u
 

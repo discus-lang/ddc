@@ -93,9 +93,8 @@ resolveExp !ctx xx
                         return xResult
 
         -- Boilerplate traversal.
-        XPrim{} -> return xx
-        XCon{}  -> return xx
         XVar{}  -> return xx
+        XAtom{} -> return xx
 
         XAbs  a p x
          -> XAbs  a p <$> resolveExp (contextPushParam p ctx) x

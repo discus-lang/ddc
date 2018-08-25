@@ -410,8 +410,7 @@ windBodyX refMap context xx
 
         -- Boilerplate --------------------------
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
+        XAtom{}         -> xx
         XAbs a b x      -> XAbs a b (down x)
 
         XApp{}          -> xx

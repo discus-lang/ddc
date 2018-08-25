@@ -35,7 +35,7 @@ instance Inline Exp where
          | Set.member n inside
          -> xx
 
-         -- If there is a template for this variable then inline it, 
+         -- If there is a template for this variable then inline it,
          -- but remember that we're now inside the body so we don't inline
          -- recursive functions forever.
          | Just xx'     <- get n
@@ -43,11 +43,10 @@ instance Inline Exp where
             in  inline get inside' xx'
 
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
         XAbs  a b x     -> XAbs  a b (down x)
         XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
         XLet  a lts x2  -> XLet  a   (down lts) (down x2)
+        XAtom{}         -> xx
         XCase a x alts  -> XCase a   (down x)   (map down alts)
         XCast a c x     -> XCast a c            (down x)
 

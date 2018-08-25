@@ -203,9 +203,7 @@ addArgsX nts xx
                 Nothing   -> xx
 
         XVar{}            -> xx
-        XPrim{}           -> xx
-        XCon{}            -> xx
-
+        XAtom{}           -> xx
         XApp{}            -> addArgsAppX nts xx []
 
         -- For the rest of the constructs their types do not

@@ -65,9 +65,7 @@ instance Monad m => TransformUpMX m Exp where
  transformUpMX f env !xx
   = (f env =<<)
   $ case xx of
-        XVar{}          -> return xx
-        XPrim{}         -> return xx
-        XCon{}          -> return xx
+        XVar{}  -> return xx
 
         XAbs a (MType b) x1
          -> liftM3 XAbs (return a) (return (MType b))
@@ -95,6 +93,8 @@ instance Monad m => TransformUpMX m Exp where
 
                 x'        <- transformUpMX f env' x
                 return  $ XLet a lts' x'
+
+        XAtom{} -> return xx
 
         XCase a x alts
          -> liftM3 XCase (return a)

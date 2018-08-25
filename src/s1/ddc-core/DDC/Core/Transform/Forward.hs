@@ -194,8 +194,6 @@ instance Forward Exp where
                     return $ XVar (snd a) u
 
         XVar  a u       -> return $ XVar  (snd a) u
-        XPrim a p       -> return $ XPrim (snd a) p
-        XCon  a u       -> return $ XCon  (snd a) u
         XAbs  a b x     -> liftM    (XAbs (snd a) b) (down x)
         XApp  a x1 x2   -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
@@ -278,6 +276,7 @@ instance Forward Exp where
         XLet (_, a') lts x
          ->     liftM2 (XLet a') (down lts) (down x)
 
+        XAtom a t       -> return $ XAtom (snd a) t
         XCase a x alts  -> liftM2 (XCase    (snd a)) (down x) (mapM down alts)
         XCast a c x     -> liftM2 (XCast    (snd a)) (down c) (down x)
 

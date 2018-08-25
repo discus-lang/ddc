@@ -52,8 +52,6 @@ instance BindStruct (Exp a n) n where
  slurpBindTree xx
   = case xx of
         XVar _ u        -> [BindUse BoundExp u]
-        XPrim{}         -> []
-        XCon{}          -> []
         XApp _ x1 x2    -> slurpBindTree x1 ++ slurpBindTree x2
 
         XAbs _ (MType     b) x  -> [bindDefT BindLAM [b] [x]]
@@ -74,6 +72,7 @@ instance BindStruct (Exp a n) n where
          ++ [ BindDef  BindLetRegions b
              [bindDefX BindLetRegionWith bs [x2]]]
 
+        XAtom{}         -> []
         XCase _ x alts  -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
 
