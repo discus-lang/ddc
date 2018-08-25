@@ -101,7 +101,8 @@ convertDataT ctx tt
             in  convertDataT ctx' tBody
 
         -- Resentable types always have kind Data, but type sums cannot.
-        TSum{}    -> throw $ ErrorUnexpectedSum
+        TSum{}  -> throw $ ErrorUnexpectedSum
+        TRow{}  -> throw $ ErrorUnexpectedRow
 
 
 -- | Convert some data type from Core Discus to Core Salt.

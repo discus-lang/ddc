@@ -64,11 +64,7 @@ expliciateModule mm
 
 ---------------------------------------------------------------------------------------------------
 -- | Make type explicit by substituting in the definitions for all type synonyms.
-expliciateType
-        :: Ord n
-        => Map n (Type n)
-        -> Type n -> Type n
-
+expliciateType :: Ord n => Map n (Type n) -> Type n -> Type n
 expliciateType eqns tt
  = let down = expliciateType eqns
    in case tt of
@@ -89,6 +85,7 @@ expliciateType eqns tt
         TApp    t1 t2   -> TApp (down t1) (down t2)
         TForall b tBody -> TForall b (down tBody)
         TSum    ts      -> TSum $ Sum.fromList (Sum.kindOfSum ts) $ map down $ Sum.toList ts
+        TRow    r       -> TRow [ (l, down t) | (l, t) <- r ]
 
 
 expliciateBind
@@ -102,11 +99,7 @@ expliciateBind eqns bb
 
 ---------------------------------------------------------------------------------------------------
 -- | Expliciate an expression.
-expliciateExp
-        :: Ord n
-        => Map n (Type n)
-        -> Exp a n -> Exp a n
-
+expliciateExp :: Ord n => Map n (Type n) -> Exp a n -> Exp a n
 expliciateExp eqns xx
  = case xx of
 

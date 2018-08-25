@@ -102,25 +102,12 @@ checkBind a b
 checkType  :: Error a n -> Type n -> Either (Error a n) ()
 checkType err tt
  = case tt of
-        TCon (TyConExists _ _)
-         -> Left err
-
-        TCon _
-         ->     return ()
-
-        TVar{}
-         ->     return ()
-
-        TAbs _ t
-         ->     checkType err t
-
-        TApp t1 t2
-         -> do  checkType err t1
-                checkType err t2
-
-        TForall _ t
-         -> do  checkType err t
-
-        TSum ts
-         ->     mapM_ (checkType err) $ Sum.toList ts
+        TCon (TyConExists _ _)  -> Left err
+        TCon _          -> return ()
+        TVar{}          -> return ()
+        TAbs _ t        -> checkType err t
+        TApp t1 t2      -> do checkType err t1; checkType err t2
+        TForall _ t     -> checkType err t
+        TSum ts         -> mapM_ (checkType err) $ Sum.toList ts
+        TRow r          -> mapM_ (checkType err) $ map snd r
 

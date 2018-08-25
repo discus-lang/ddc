@@ -36,6 +36,7 @@ instance NFData n => NFData (Type n) where
         TApp    t1 t2   -> rnf t1 `seq` rnf t2
         TForall b t     -> rnf b  `seq` rnf t
         TSum    ts      -> rnf ts
+        TRow    row     -> rnf row
 
 
 instance NFData n => NFData (TypeSum n) where

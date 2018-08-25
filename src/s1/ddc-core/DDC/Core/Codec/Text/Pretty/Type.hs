@@ -6,6 +6,7 @@ import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Data.Pretty
+import DDC.Data.Label
 import qualified DDC.Type.Sum           as Sum
 
 
@@ -122,6 +123,12 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
 
          | otherwise
          -> pprParen (d > 9) $  ppr ts
+
+        TRow r
+         -> brackets
+          $ (hcat $ punctuate (text ", ")
+                  [ (text $ nameOfLabel l) % text ": " % ppr t
+                  | (l, t) <- r])
 
 
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where

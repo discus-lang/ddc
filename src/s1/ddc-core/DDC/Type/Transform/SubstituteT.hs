@@ -72,9 +72,11 @@ substituteExistsT cs tt
         TForall b t     -> TForall b (down t)
 
         TSum ts
-         -> TSum
-         $  Sum.fromList (Sum.kindOfSum ts)
-         $  map down $ Sum.toList ts
+         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
+                 $ map down $ Sum.toList ts
+
+        TRow r
+         -> TRow [ (l, down t) | (l, t) <- r ]
 
 
 -- SubstituteT ----------------------------------------------------------------
@@ -142,7 +144,9 @@ instance SubstituteT Type where
 
              in  TForall b' tBody'
 
-         TSum ss        -> TSum (down ss)
+         TSum ss -> TSum (down ss)
+
+         TRow r  -> TRow [ (l, down t') | (l, t') <- r ]
 
 
 instance SubstituteT TypeSum where

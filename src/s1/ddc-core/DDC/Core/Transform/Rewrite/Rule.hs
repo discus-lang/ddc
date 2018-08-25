@@ -461,6 +461,7 @@ checkValidPattern expr
         go_t (TApp l r)         = go_t l >> go_t r
         go_t t@(TForall _ _)    = Left $ ErrorNotFirstOrderType t
         go_t (TSum _)           = return ()
+        go_t (TRow _)           = return ()
 
         go_a (RType t)          = go_t t
         go_a (RWitness _)       = return ()

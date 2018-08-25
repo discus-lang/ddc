@@ -329,6 +329,7 @@ eraseTForalls tt
         TAbs{}          -> tt
         TApp t1 t2      -> TApp (eraseTForalls t1) (eraseTForalls t2)
         TForall _ t     -> eraseTForalls t
+        TRow{}          -> tt
         TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
                                 $ map eraseTForalls $ Sum.toList ts
 

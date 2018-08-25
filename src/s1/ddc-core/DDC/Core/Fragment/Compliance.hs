@@ -312,10 +312,10 @@ compliesT profile tt
          -> compliesT profile t
 
         TSum ts
-         -> do  ss      <- mapM (compliesT profile)
-                        $  Sum.toList ts
+         -> fmap Set.unions $ mapM (compliesT profile) $ Sum.toList ts
 
-                return  $ Set.unions ss
+        TRow r
+         -> fmap Set.unions $ mapM (compliesT profile) $ map snd r
 
 
 -- Bind -----------------------------------------------------------------------

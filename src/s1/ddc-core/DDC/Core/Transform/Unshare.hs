@@ -91,8 +91,8 @@ addParamsT tt
          -> do  tBody'   <- addParamsT tBody
                 return   $  TForall b tBody'
 
-        TSum{}
-         -> Nothing
+        TSum{} -> Nothing
+        TRow{} -> Nothing
 
 
 -------------------------------------------------------------------------------

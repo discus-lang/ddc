@@ -44,6 +44,9 @@ data Error a
         -- | Found an unexpected type sum.
         | ErrorUnexpectedSum
 
+        -- | Found an unexpected row type.
+        | ErrorUnexpectedRow
+
         -- | Found an unbound variable.
         | ErrorUnbound
         { errorBound    :: Bound E.Name }
@@ -99,6 +102,9 @@ instance Show a => Pretty (Error a) where
 
         ErrorUnexpectedSum
          -> vcat [ text "Unexpected type sum."]
+
+        ErrorUnexpectedRow
+         -> vcat [ text "Unexpected type row."]
 
         ErrorUnbound u
          -> vcat [ text "Unbound name " <> ppr u <> text "."]

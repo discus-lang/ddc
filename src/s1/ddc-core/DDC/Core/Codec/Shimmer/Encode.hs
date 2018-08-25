@@ -10,6 +10,8 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
+import DDC.Data.Label
+import DDC.Data.Pretty
 import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -19,13 +21,12 @@ import qualified DDC.Type.Sum                   as Sum
 import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
-import qualified Data.Text                      as T
-import qualified Data.Set                       as Set
-import Data.Text                                (Text)
-import DDC.Data.Pretty
 
+import Data.Text                                (Text)
 import qualified Foreign.Marshal.Alloc          as Foreign
 import qualified System.IO                      as System
+import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -474,6 +475,11 @@ takeType c tt
 
         C.TSum ts       -> xAps "ts" ( takeType c (Sum.kindOfSum ts)
                                      : (map (takeType c) $ Sum.toList ts))
+
+        C.TRow r
+         -> xAps "tr"
+                [ xPair (xTxt (nameOfLabel l)) (takeType c t)
+                | (l, t) <- r ]
 
         C.TCon tc       -> takeTyCon c tc
         C.TVar u        -> takeBound c u

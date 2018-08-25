@@ -148,20 +148,14 @@ crushHeadT env tt
                 Nothing  -> tt
                 Just tt' -> crushHeadT env tt'
 
-        TCon{}  -> tt
+        TApp t1 t2 -> TApp (crushHeadT env t1) (crushHeadT env t2)
 
-        TVar{}  -> tt
-
-        TAbs{}  -> tt
-
-        TApp t1 t2
-         -> let t1'     = crushHeadT env t1
-                t2'     = crushHeadT env t2
-            in  TApp t1' t2'
-
-        TForall{} -> tt
-
-        TSum{}    -> tt
+        TCon{}     -> tt
+        TVar{}     -> tt
+        TAbs{}     -> tt
+        TForall{}  -> tt
+        TSum{}     -> tt
+        TRow{}     -> tt
 
 
 -- | Crush compound effects and closure terms.
@@ -268,11 +262,13 @@ crushEffect env tt
         TForall b t
          -> TForall b $ crushEffect env t
 
+        TRow r
+         -> TRow [ (l, crushEffect env t) | (l, t) <- r ]
+
         TSum ts
-         -> TSum
-          $ Sum.fromList (Sum.kindOfSum ts)
-          $ map (crushEffect env)
-          $ Sum.toList ts
+         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
+                 $ map (crushEffect env)
+                 $ Sum.toList ts
 
 
 {- TODO: this old deep effect code has long rotted. ditch it.

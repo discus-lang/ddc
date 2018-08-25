@@ -96,12 +96,13 @@ slurpExists :: Type n -> [Exists n]
 slurpExists tt
  = case tt of
         TCon (TyConExists n k)  -> [Exists n k]
-        TCon _                  -> []
-        TVar {}                 -> []
-        TAbs b xBody            -> slurpExists (typeOfBind b) ++ slurpExists xBody
-        TApp t1 t2              -> slurpExists t1 ++ slurpExists t2
-        TForall b xBody         -> slurpExists (typeOfBind b) ++ slurpExists xBody
-        TSum ts                 -> concatMap slurpExists $ Sum.toList ts
+        TCon _          -> []
+        TVar {}         -> []
+        TAbs b xBody    -> slurpExists (typeOfBind b) ++ slurpExists xBody
+        TApp t1 t2      -> slurpExists t1 ++ slurpExists t2
+        TForall b xBody -> slurpExists (typeOfBind b) ++ slurpExists xBody
+        TSum ts         -> concatMap slurpExists $ Sum.toList ts
+        TRow r          -> concatMap slurpExists $ map snd r
 
 
 -- Elem -------------------------------------------------------------------------------------------
