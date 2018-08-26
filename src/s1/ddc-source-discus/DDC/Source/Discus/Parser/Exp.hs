@@ -90,15 +90,10 @@ pExpArgsSP pX
 pExpArgsSpecSP :: Parser (SP, Exp) -> Parser (SP, [Arg])
 pExpArgsSpecSP pX
  = P.choice
-        -- [Type]
- [ do   sp      <- pSym SSquareBra
-        t       <- pType
-        pSym    SSquareKet
-        return  (sp, [RType t])
 
-        -- New syntax for type applications.
+ [      -- New syntax for type applications.
         -- @TypeAtom
- , P.try $ do
+   P.try $ do
         pSym SBraceBra
         sp      <- pSym SAt
         t       <- pType

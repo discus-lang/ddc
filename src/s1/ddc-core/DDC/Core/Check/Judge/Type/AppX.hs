@@ -10,6 +10,18 @@ import qualified DDC.Type.Sum           as Sum
 import qualified Data.Map.Strict        as Map
 
 
+reduceType :: (Ord n, Show n) => Context n -> Type n -> CheckM a n (Type n)
+reduceType ctx tt
+ = case tt of
+        TCon (TyConBound n)
+         -> lookupTypeSyn ctx n
+         >>= \case
+                Nothing -> return tt
+                Just t' -> reduceType ctx t'
+
+        _ -> return tt
+
+
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
@@ -41,10 +53,12 @@ checkAppX !table !ctx0
         (xArg', tArg, effsArg, ctx2)
          <- checkArg table ctx1 Recon DemandNone arg
 
+        tArg' <- reduceType ctx2 tArg
+
         -- Determine the result type.
         -- TODO: better errors.
         tResult
-         <- case takeTApps tArg of
+         <- case takeTApps tArg' of
                 -- Projection of a tuple field.
                 [TCon (TyConSpec TcConT), TRow lts]
                  -> case lookup l lts of
@@ -58,7 +72,7 @@ checkAppX !table !ctx0
                         _       -> error "field not in record"
 
                 -- Can't project this thing.
-                _ -> error $ "invalid projection of " ++ show tArg
+                _ -> error $ "invalid projection of " ++ show tArg'
 
         ctrace  $ vcat
                 [ text "*<  App Recon Project"
@@ -280,10 +294,12 @@ synthAppArg table
         (xArg', tArg, effsArg, ctx1)
          <- checkArg table ctx0 (Synth isScope) DemandRun arg
 
+        tArg' <- reduceType ctx1 tArg
+
         -- Determine the result type.
         -- TODO: better errors.
         tResult
-         <- case takeTApps tArg of
+         <- case takeTApps tArg' of
                 -- Projection of a tuple field.
                 [TCon (TyConSpec TcConT), TRow lts]
                  -> case lookup l lts of
@@ -301,11 +317,11 @@ synthAppArg table
                         -- The type of the thing is not constrained,
                         -- so we don't know the resulting field type.
                         TCon (TyConExists{})
-                          -> error $ "ambiguous projection of " ++ show tArg
+                          -> error $ "ambiguous projection of " ++ show tArg'
 
                         -- The type of the thing is not something
                         -- that we can project a field from.
-                        _ -> error $ "invalid projection of " ++ show tArg
+                        _ -> error $ "invalid projection of " ++ show tArg'
 
         ctrace  $ vcat
                 [ text "*<  App Synth Project"
