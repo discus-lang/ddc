@@ -49,7 +49,8 @@ convertPrimRecord _ectx ctx xxExp
                 let xInfoIdx    = A.xWord a' 0 32
 
                 -- Use 8 byte hashes for each field name.
-                let xLengthRaw  = A.xNat a' $ fromIntegral $ length ls * 8
+                -- The length of the object is specified in 64-bit words.
+                let xLengthRaw  = A.xNat a' $ fromIntegral $ length ls
 
                 -- Store all the field pointers in the object.
                 let xLengthPtrs = A.xNat a' $ fromIntegral $ length ls
