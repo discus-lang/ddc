@@ -123,6 +123,9 @@ convertDataAppT ctx tt
         , length ns == length tsArgs
         = do    return $ A.tPtr A.rTop A.tObj
 
+        | Just (TyConSpec TcConR, _)                    <- takeTyConApps tt
+        = do    return $ A.tPtr A.rTop A.tObj
+
 
         -- Primitive TyCons -------------------------------
         -- We don't handle the numeric types here, because they should have

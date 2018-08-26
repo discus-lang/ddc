@@ -166,6 +166,21 @@ convertExp ectx ctx xx
                      $ text "Cannot convert partially applied data constructor."
 
         ---------------------------------------------------
+        -- Fully applied record construction.
+        XApp _ xa xb
+         | (x1, _xsArgs)         <- takeXApps1 xa xb
+         , XPrim _ (PRecord _ls) <- x1
+         , Just make             <- convertPrimRecord ectx ctx xx
+         -> make
+
+        -- Fully applied record field projection.
+        XApp _ xa xb
+         | (x1, _xsArgs)        <- takeXApps1 xa xb
+         , XPrim _ (PProject _l) <- x1
+         , Just make            <- convertPrimRecord ectx ctx xx
+         -> make
+
+        ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
         --  This does not cover application of primops, those are handled by one
         --  of the above cases.

@@ -10,6 +10,7 @@
 --     3) Array: An object with pointers to up to 2^32-1 other boxed objects.
 --     4) Raw:   An object containing up to (2^32-1-8) raw non-pointer bytes.
 --     5) Small: An object containing up to 4 raw non-pointer bytes.
+--     6) Mixed: An object with both non-pointer and pointer data.
 --
 --   All objects start with a 64-bit object  header that includes a format
 --   descriptor byte and an index into the object info table. The header
@@ -43,16 +44,17 @@
 --           0  0  1  0  X  X  0  1  -- Boxed
 --           0  0  1  1  X  X  0  1  -- Raw
 --           0  1  0  0  X  X  0  1  -- Array
+--           0  1  0  1  X  X  0  1  -- Mixed
 --           -- size --  X  X  1  1  -- Small
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
 --           X  X  X  X  X  c  X  X  -- Ref by obj in Compact region flag
-
 --
 --   Compact Region
 --     The 2nd bit of the flag is used for the compact region
 --     if the flag is set, the garbage collector will stop tracing the object
 --     and assume any reference from it will keep live.
+--
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
 --     "to-space" its header in the "from-space" is overwritten with a pointer
@@ -193,10 +195,10 @@ ddcObjectSetCompactRegionFlag [r: Region] (obj : Ptr# r Obj) (flag: Bool#) : Uni
  = do
         fmt =  peek# (castPtr# obj)
         case flag of
-          True#  -> do 
+          True#  -> do
                       write# (takePtr# obj) 0# (bor# fmt (promote# [Word64#] 0b0100w8#))
                       ()
-          False# -> do 
+          False# -> do
                       write# (takePtr# obj) 0# (band# fmt (promote# [Word64#] 0b1011w8#))
                       ()
 
