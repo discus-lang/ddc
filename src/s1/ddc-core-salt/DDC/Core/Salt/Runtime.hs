@@ -508,7 +508,7 @@ xRecordProject a trPrime trField xObject xLabel
 
 utRecordProject :: (Bound Name, Type Name)
 utRecordProject
- =      ( UName (NameVar "ddcRecordProject")
+ =      ( UName (NameVar "ddcPrimRecordProject")
         , tForalls [kRegion, kRegion]
           $ \[r1, r2] -> tPtr r1 tObj `tFun` tWord 64 `tFun` tPtr r2 tObj)
 

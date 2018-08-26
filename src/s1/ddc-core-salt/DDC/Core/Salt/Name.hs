@@ -99,11 +99,11 @@ import Data.Char
 import Data.List
 import Data.Maybe
 import Data.Text                                        (Text)
+import qualified Text.Printf                            as Text
 import qualified DDC.Core.Codec.Text.Lexer.Tokens       as K
 import qualified Data.Text                              as T
 import qualified Data.Monoid                            as T
 import qualified Data.List                              as L
-
 
 -- | Names of things used in Disciple Core Salt.
 data Name
@@ -372,7 +372,11 @@ instance Pretty PrimLit where
         PrimLitNat     i        -> integer i <> text "#"
         PrimLitInt     i        -> integer i <> text "i#"
         PrimLitSize    i        -> integer i <> text "s#"
-        PrimLitWord    i bits   -> integer i <> text "w" <> int bits    <> text "#"
+
+        PrimLitWord    i bits
+         -> string (Text.printf "0x%08x" i)
+         <> text "w" <> int bits  <> text "#"
+
         PrimLitFloat   f bits   -> double  f <> text "f" <> int bits    <> text "#"
         PrimLitChar    c        -> string (show c)                      <> text "#"
         PrimLitTextLit tx       -> (string $ show $ T.unpack tx)        <> text "#"

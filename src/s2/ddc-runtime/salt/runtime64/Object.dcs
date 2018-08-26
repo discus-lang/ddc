@@ -128,6 +128,8 @@ export foreign c value
 
  -- Objects with both raw and poitner data.
  ddcMixedAlloc          : [r1:    Region]. Word32# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
  ddcMixedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
  ddcMixedSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
@@ -159,6 +161,7 @@ ddcObjectHeader [r: Region] (obj: Ptr# r Obj): Word64#
 --      Raw          = 4#
 --      Array        = 5#
 --      Small        = 6#
+--      Mixed        = 7#
 --
 ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
  = do   -- Get the format byte from the header.
@@ -179,6 +182,7 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
                 0b00100000w8# -> 3# -- Boxed
                 0b00110000w8# -> 4# -- Raw
                 0b01000000w8# -> 5# -- Array
+                0b01010000w8# -> 7# -- Mixed
                 _             -> 0# -- Unknown
 
           -- Forwarding pointers point to 8-byte aligned objects,
@@ -218,6 +222,7 @@ ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
     3# -> ddcBoxedSize  obj
     4# -> ddcRawSize    obj
     6# -> ddcSmallSize  obj
+    7# -> ddcMixedSize  obj
     _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
              0#
 
@@ -237,6 +242,7 @@ ddcObjectSizeMinimum [r: Region] (obj: Ptr# r Obj): Nat#
     3# -> 8#    -- Boxed  (64-bit header)
     4# -> 8#    -- Raw    (64-bit header)
     6# -> 8#    -- Small  (64-bit header with embedded data)
+    7# -> 8#    -- Mixed  (64-bit header)
     _  -> do ddcFailObject obj "ddcHeaderSizeOfObject"# "unrecognized object"#
              0#
 
@@ -811,6 +817,18 @@ ddcMixedAlloc
         -- Return pointer to the new object.
         makePtr# addr
 
+
+ddcMixedSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do
+        nWordsPayload  = ddcMixedRawSizeWords obj
+        nPtrsPayload   = ddcMixedPointerCount obj
+
+        bytesObj
+         = (add# (size# [Word64#])                      -- Header word.
+           (add# (shl# nWordsPayload (size2# [Addr#]))   -- Payload words.
+                 (shl# nPtrsPayload  (size2# [Addr#]))))
+
+        bytesObj
 
 -- | Determine the total size of the raw data in a mixed object, in words.
 ddcMixedRawSizeWords [r: Region] (obj: Ptr# r Obj): Nat#

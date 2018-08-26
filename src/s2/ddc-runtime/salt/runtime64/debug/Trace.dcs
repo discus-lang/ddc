@@ -57,6 +57,12 @@ import foreign c value
  -- Raw Objects.
  ddcRawPayloadSize      : [r1:     Region]. Ptr# r1 Obj  -> Nat#
 
+ -- Mixed Objects.
+ ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
+ ddcMixedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
  -- GC Interface.
  ddcLlvmRootGetStart    : Nat#  -> Addr#
  ddcLlvmRootIsEnd       : Addr# -> Bool#
@@ -123,6 +129,7 @@ ddcTraceObj
           3#    -> traceBoxed   recurse print obj
           4#    -> traceRaw     print obj
           6#    -> traceSmall   print obj
+          7#    -> traceMixed   recurse print obj
 
           _     -> do
                  ddcPrimStderrPutString "ddc-runtime.ddcTraceObj: Unrecognized object format.\n"#
@@ -380,6 +387,77 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
                 ddcPrimStdoutPutString "}\n"#
                 ())
         obj
+
+---------------------------------------------------------------------------------------------------
+-- Print a Mixed object to stdout.
+traceMixed [r: Region] (recurse print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
+ = do
+        (case print of
+          False# -> ()
+          True#  -> do
+                ddcPrimStdoutPutString "Mixed\n"#
+                fieldAddr     "{   ptr            = "# (takePtr# obj)
+                fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord32   "    format         = "# (truncate# (ddcObjectFormat obj))
+                ())
+
+        -- Check that the rest of the header is also within the heap,
+        -- which will also read the tag/format field.
+        ddcCheckObjExtent obj (ddcObjectSizeMinimum obj)
+
+        -- Check that the payload is also within the heap,
+        -- which will also read the rest of the header.
+        ddcCheckObjExtent obj (ddcObjectSize obj)
+
+        nWords = ddcMixedRawSizeWords obj
+        traceMixedRaw  print obj nWords 0#
+
+        nPtrs  = ddcMixedPointerCount obj
+        traceMixedPtrs print obj nPtrs 0#
+
+        ddcPrimStdoutPutString "}\n"#
+
+        obj
+
+
+traceMixedRaw
+        [r: Region]
+        (print: Bool#) (obj: Ptr# r Obj) (n: Nat#) (i: Nat#): Unit
+ = case eq# n i of
+         True# -> ()
+         False#
+          -> do pPayload   = ddcMixedPayload obj
+                pPayload64 = castPtr# [r] [Word64#] pPayload
+                w64        = peek# [r] [Word64#] (plusPtr# pPayload64 (shl# i (size2# [Word64#])))
+
+                (case print of
+                  False# -> ()
+                  True#  -> do
+                        ddcPrimStdoutPutString "    word "#
+                        ddcPrimStdoutPutNat    i
+                        ddcPrimStdoutPutString "         = "#
+                        ddcPrimStdoutPutWord64  w64
+                        ddcPrimStdoutPutString ";\n"#
+                        traceMixedRaw print obj n (add# i 1#))
+
+
+-- | Print pointers in a boxed object, which point to more objects.
+traceMixedPtrs
+        [r: Region]
+        (print: Bool#) (obj: Ptr# r Obj) (n: Nat#) (i: Nat#): Unit
+ = case eq# n i of
+         True# -> ()
+         False#
+          -> do addr     = takePtr# [r] (ddcMixedGetField [r] obj i)
+                (case print of
+                  False# -> ()
+                  True#  -> do
+                        ddcPrimStdoutPutString "    arg "#
+                        ddcPrimStdoutPutNat    i
+                        ddcPrimStdoutPutString "          = "#
+                        ddcPrimStdoutPutAddr   addr
+                        ddcPrimStdoutPutString ";\n"#
+                        traceMixedPtrs print obj n (add# i 1#))
 
 
 ---------------------------------------------------------------------------------------------------
