@@ -29,8 +29,19 @@ instance Pretty PrimVal where
         PrimValCast     p       -> ppr p
         PrimValVector   p       -> ppr p
         PrimValFun      p       -> ppr p
-        PrimValElaborate        -> text "elaborate#"
-        PrimValProject _        -> text "project#"
-        PrimValShuffle          -> text "shuffle#"
-        PrimValCombine          -> text "combine"
+
+        PrimValElaborate
+         -> text "elaborate#"
+
+        PrimValProject l
+         -> text "project#" %% ppr l
+
+        PrimValTuple ls
+         -> text "tuple#"   %% (braces $ hcat (punctuate (text ",") (map ppr ls)))
+
+        PrimValRecord ls
+         -> text "record#"  %% (braces $ hcat (punctuate (text ",") (map ppr ls)))
+
+        PrimValVariant l
+         -> text "variant#" %% ppr l
 

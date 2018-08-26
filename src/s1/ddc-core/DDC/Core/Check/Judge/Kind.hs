@@ -475,14 +475,16 @@ checkTypeM config ctx0 UniverseSpec (TRow rr) mode@Synth{}
         -- TODO: check the kinds are all data.
         return (TRow $ zip ls ts', kRow, ctx1)
 
-checkTypeM config ctx0 UniverseSpec (TRow rr) mode@(Check _kExpected)
+checkTypeM config ctx0 UniverseSpec (TRow rr) (Check _kExpected)
  = do
         -- Check all the element types.
         let (ls, ts) = unzip rr
-        (ts', _ks', ctx1) <- checkTypesM config ctx0 UniverseSpec mode ts
+        (ts', _ks', ctx1)
+         <- checkTypesM config ctx0 UniverseSpec
+                (Check kData) ts
 
         -- TODO: check the contained kinds.
-        -- TODO:
+        -- TODO: check expected kind is row
         return (TRow $ zip ls ts', kRow, ctx1)
 
 

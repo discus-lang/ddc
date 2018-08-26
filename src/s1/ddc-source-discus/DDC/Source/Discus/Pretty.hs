@@ -276,7 +276,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XTuple _ r
          -> parens $ hcat $ punctuate (text ", ")
-                [ ppr l % text " =t " % ppr x | (l, x) <- r ]
+                [ ppr l % text " = " % ppr x | (l, x) <- r ]
 
         XRecord _ r
          -> brackets $ hcat $ punctuate (text ", ")

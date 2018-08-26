@@ -161,7 +161,9 @@ instance NFData PrimVal where
         PrimValVector   p       -> rnf p
         PrimValFun      p       -> rnf p
         PrimValElaborate        -> ()
-        PrimValProject _        -> ()
-        PrimValShuffle          -> ()
-        PrimValCombine          -> ()
+        PrimValTuple    ls      -> rnf ls
+        PrimValRecord   ls      -> rnf ls
+        PrimValVariant  l       -> rnf l
+        PrimValProject  l       -> rnf l
+
 

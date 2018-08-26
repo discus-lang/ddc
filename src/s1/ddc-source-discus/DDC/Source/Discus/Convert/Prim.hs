@@ -22,12 +22,12 @@ toCoreTyConDiscus tc
 toCorePrimVal :: S.PrimVal -> Maybe C.Name
 toCorePrimVal pv
  = case pv of
+        S.PrimValLit    p       -> Just $ toCorePrimLit    p
         S.PrimValArith  p       -> Just $ C.NamePrimArith  p False
         S.PrimValCast   p       -> Just $ C.NamePrimCast   p False
         S.PrimValError  p       -> Just $ C.NameOpError    p False
         S.PrimValVector p       -> Just $ C.NameOpVector   p False
         S.PrimValFun    p       -> Just $ C.NameOpFun      p
-        S.PrimValLit    p       -> Just $ toCorePrimLit    p
         _                       -> Nothing
 
 

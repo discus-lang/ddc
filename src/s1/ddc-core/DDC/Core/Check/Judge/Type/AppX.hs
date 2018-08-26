@@ -13,13 +13,70 @@ import qualified Data.Map.Strict        as Map
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
-checkAppX !table !ctx
+checkAppX !table !ctx0
         Recon demand
         xx@(XApp a xFn arg)
+
+ -- Rule (App Recon Project)
+ --  Application of the tuple or record projection operator.
+ --  We determine the result type by looking up the appropriate field
+ --  of the record type.
+ | XAtom _ (MAPrim (PProject l)) <- xFn
+ = do
+        ctrace  $ vcat
+                [ text "*>  App Recon Project"
+                , text "    xFn    = " <> ppr xFn
+                , mempty ]
+
+        -- Check the functional expression.
+        --   We don't need the dummy type around the projection prim,
+        --   but do need the annotation itself so the AST type matches.
+        (xFn',  _tFn, _effsFn, ctx1)
+         <- tableCheckExp table table ctx0  Recon demand xFn
+
+        -- Reconstruct the type of the argument.
+        --   We know this is supposed to be a record, but the type
+        --   of the field we want needs to have been determined
+        --   by the context.
+        (xArg', tArg, effsArg, ctx2)
+         <- checkArg table ctx1 Recon DemandNone arg
+
+        -- Determine the result type.
+        -- TODO: better errors.
+        tResult
+         <- case takeTApps tArg of
+                -- Projection of a tuple field.
+                [TCon (TyConSpec TcConT), TRow lts]
+                 -> case lookup l lts of
+                        Just t  -> return t
+                        _       -> error "field not in tuple"
+
+                -- Projection of a record field.
+                [TCon (TyConSpec TcConR), TRow lts]
+                 -> case lookup l lts of
+                        Just t  -> return t
+                        _       -> error "field not in record"
+
+                -- Can't project this thing.
+                _ -> error $ "invalid projection of " ++ show tArg
+
+        ctrace  $ vcat
+                [ text "*<  App Recon Project"
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Build the result expression.
+        let xResult
+                = XApp  (AnTEC tResult (TSum effsArg) (tBot kClosure) a)
+                        xFn' xArg'
+
+        return  (xResult, tResult, effsArg, ctx2)
+
+ | otherwise
  = do
         -- Check the functional expression.
         (xFn',  tFn,  effsFn, ctx1)
-         <- tableCheckExp table table ctx  Recon demand xFn
+         <- tableCheckExp table table ctx0  Recon demand xFn
 
         -- Check the argument.
         (arg', tArg, effsArg, ctx2)
@@ -156,6 +213,7 @@ synthAppArg table
  , Just tFn'    <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
  = do   synthAppArg table a xx ctx0 demand isScope xFn tFn' effsFn arg
 
+
  -- Rule (App Synth exists)
  --  Functional type is an existential.
  | Just iFn     <- takeExists tFn
@@ -200,6 +258,66 @@ synthAppArg table
                 , mempty ]
 
         return  (xResult, tA2, esResult, ctx2)
+
+
+ -- Rule (App Synth Project)
+ --  Application of the tuple or record projection operator.
+ --  We determine the result type by looking up the appropriate field
+ --  of the record type.
+ | XAtom _ (MAPrim (PProject l)) <- xFn
+ = do
+        ctrace  $ vcat
+                [ text "*>  App Synth Project"
+                , text "    demand = " <> ppr demand
+                , text "    scope  = " <> ppr isScope
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Synthesise the type of the argument.
+        --   We know this is supposed to be a record, but the type
+        --   of the field we want needs to have been determined
+        --   by the context.
+        (xArg', tArg, effsArg, ctx1)
+         <- checkArg table ctx0 (Synth isScope) DemandRun arg
+
+        -- Determine the result type.
+        -- TODO: better errors.
+        tResult
+         <- case takeTApps tArg of
+                -- Projection of a tuple field.
+                [TCon (TyConSpec TcConT), TRow lts]
+                 -> case lookup l lts of
+                        Just t  -> return t
+                        _       -> error "field not in tuple"
+
+                -- Projection of a record field.
+                [TCon (TyConSpec TcConR), TRow lts]
+                 -> case lookup l lts of
+                        Just t  -> return t
+                        _       -> error "field not in record"
+
+                -- Can't project this thing.
+                _ -> case tArg of
+                        -- The type of the thing is not constrained,
+                        -- so we don't know the resulting field type.
+                        TCon (TyConExists{})
+                          -> error $ "ambiguous projection of " ++ show tArg
+
+                        -- The type of the thing is not something
+                        -- that we can project a field from.
+                        _ -> error $ "invalid projection of " ++ show tArg
+
+        ctrace  $ vcat
+                [ text "*<  App Synth Project"
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Build the result expression.
+        let xResult
+                = XApp  (AnTEC tResult (TSum effsArg) (tBot kClosure) a)
+                        xFn xArg'
+
+        return  (xResult, tResult, effsArg, ctx1)
 
 
  -- Rule (App Synth Match)

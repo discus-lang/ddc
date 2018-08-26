@@ -157,13 +157,11 @@ desugarX rns xx
                  $  XLet (LLet b1                   (XCast CastBox x2'))
                  $  x1
 
-
         -- Eliminate trivial v1 = v2 bindings.
         XLet (LLet (XBindVarMT (BName n1) _) (XVar (UName n2))) x1
          -> do  let rns'    = (n1, n2) : rns
                 progress
                 desugarX rns' x1
-
 
         -- The match desugarer introduces case alternatives where the pattern
         -- is just a variable, which we can convert to a let-expression.
@@ -217,12 +215,10 @@ desugarX rns xx
                  $ XLet  (LLet (XBindVarMT b Nothing) x0')
                  $ XCase (XVar u) alts'
 
-
         -- Eliminate (run (box x)) pairs.
         XCast CastBox (XCast CastRun x)
          -> do  progress
                 desugarX rns x
-
 
         -- Lookup renames from the variable rename map.
         XVar (UName n0)
@@ -240,13 +236,18 @@ desugarX rns xx
 
                  else   return xx
 
-
         -- Convert XWhere to let expressions.
         XWhere _sp x cls
          -> do  x'      <- desugarX rns x
                 cls'    <- mapM (desugarCl rns) cls
                 return  $  XLet (LGroup True cls') x'
 
+        -- Flatten out record literals.
+        XRecord _sp lxs
+         -> do  let (ls, xs) = unzip lxs
+                xs'     <- mapM (desugarX rns) xs
+                return  $ makeXApps (XPrim (PrimValRecord ls))
+                        $ map RTerm xs'
 
         -- Boilerplate.
         XAnnot a x              -> XAnnot a    <$> desugarX rns x
@@ -268,10 +269,6 @@ desugarX rns xx
         XTuple sp r
          -> let (ls, xs)        = unzip r
             in  XTuple sp  <$> (zip ls <$> mapM (desugarX  rns) xs)
-
-        XRecord sp r
-         -> let (ls, xs)        = unzip r
-            in  XRecord sp <$> (zip ls <$> mapM (desugarX  rns) xs)
 
         XVariant sp l x         -> XVariant sp l <$> desugarX rns x
         XArray sp xs            -> XArray sp <$> mapM (desugarX rns) xs

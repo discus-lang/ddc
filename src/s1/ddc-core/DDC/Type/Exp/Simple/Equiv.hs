@@ -52,7 +52,7 @@ equivWithBindsT env stack1 stack2 t1 t2
         t2'     = unpackSumT $ crushSomeT env t2
 
    in case (t1', t2') of
-        (TVar u1,         TVar u2)
+        (TVar u1, TVar u2)
          -- Free variables are name-equivalent, bound variables aren't:
          -- (forall a. a) != (forall b. a)
          | Nothing         <- getBindType stack1 u1
@@ -79,7 +79,7 @@ equivWithBindsT env stack1 stack2 t1 t2
          -> equivWithBindsT env stack1 stack2 t1' t2''
 
         -- Constructor names must be equal.
-        (TCon tc1,        TCon tc2)
+        (TCon tc1, TCon tc2)
          -> equivTyCon tc1 tc2
 
         -- Push binders on the stack as we enter foralls.
@@ -91,14 +91,14 @@ equivWithBindsT env stack1 stack2 t1 t2
                 t12 t22
 
         -- Decend into applications.
-        (TApp t11 t12,    TApp t21 t22)
+        (TApp t11 t12, TApp t21 t22)
          -> equivWithBindsT env stack1 stack2 t11 t21
          && equivWithBindsT env stack1 stack2 t12 t22
 
         -- Sums are equivalent if all of their components are.
-        (TSum ts1,        TSum ts2)
-         -> let ts1'      = Sum.toList ts1
-                ts2'      = Sum.toList ts2
+        (TSum ts1, TSum ts2)
+         -> let ts1' = Sum.toList ts1
+                ts2' = Sum.toList ts2
 
                 -- If all the components of the sum were in the element
                 -- arrays then they come out of Sum.toList sorted
@@ -117,6 +117,11 @@ equivWithBindsT env stack1 stack2 t1 t2
 
             in  (length ts1' == length ts2')
             &&  (checkFast || checkSlow)
+
+        -- Rows are equivalent if their components are.
+        (TRow lts1, TRow lts2)
+         -> (map fst lts1 == map fst lts2)
+         && and (zipWith (equivWithBindsT env stack1 stack2) (map snd lts1) (map snd lts2))
 
         (_, _)  -> False
 

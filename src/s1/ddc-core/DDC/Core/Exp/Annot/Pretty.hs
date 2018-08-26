@@ -104,7 +104,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XAtom _ (MAPrim p)  -> ppr p
         XAtom _ (MACon dc)  -> ppr dc
-        XAtom _ (MALabel l) -> text "^" <> ppr l
+        XAtom _ (MALabel l) -> text "~" <> ppr l
 
         -- Print single alternative case expressions as 'letcase'.
         --    case x1 of { C v1 v2 -> x2 }
@@ -167,31 +167,27 @@ instance (Pretty n, Eq n) => Pretty (Arg a n) where
 instance Pretty Prim where
  ppr pp
   = case pp of
-        PElaborate      -> text "elaborate#"
-        PProject        -> text "project#"
+        PElaborate
+         -> text "elaborate#"
 
         PTuple ls
-         -> text "tuple{"
-         %  hcat (punctuate (text ",") (map ppr ls))
-         %  text "}#"
+         -> text "tuple#"
+         %% (braces $ hcat (punctuate (text ",") (map ppr ls)))
 
         PRecord ls
-         -> text "record{"
-         %  hcat (punctuate (text ",") (map ppr ls))
-         %  text "}#"
+         -> text "record#"
+         %% (braces $ hcat (punctuate (text ",") (map ppr ls)))
 
-        PVariant ls l
-         -> text "variant{"
-         %  hcat (punctuate (text ",") (map ppr ls))
-         %  text "}{"
-         %  ppr l
-         %  text "}#"
+        PProject l
+         -> text "project#" %% (braces $ ppr l)
+
+        PVariant l
+         -> text "variant#" %% (braces $ ppr l)
 
 
 -- Label ----------------------------------------------------------------------
 instance Pretty Label where
- ppr ll
-  = text "^" <> text (nameOfLabel ll)
+ ppr ll = text (nameOfLabel ll)
 
 
 -- Pat ------------------------------------------------------------------------

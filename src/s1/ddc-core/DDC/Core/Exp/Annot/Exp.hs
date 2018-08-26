@@ -138,17 +138,17 @@ data Prim
         -- | Produce a value by elaboration.
         = PElaborate
 
-        -- | Construct a tuple  literal with the given field labels.
+        -- | Construct a tuple literal with the given field labels.
         | PTuple   ![Label]
 
         -- | Construct a record literal with the given field labels.
         | PRecord  ![Label]
 
         -- | Construct a variant literal with the given field label.
-        | PVariant ![Label] !Label
+        | PVariant !Label
 
         -- | Project a field from a tuple or record.
-        | PProject
+        | PProject !Label
         deriving (Show, Eq)
 
 

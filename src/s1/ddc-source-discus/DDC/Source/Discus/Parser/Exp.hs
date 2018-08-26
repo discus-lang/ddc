@@ -61,7 +61,7 @@ pExpAppSP
 pExpAppsSP :: Parser (SP, (Exp, [Arg]))
 pExpAppsSP
  = do   (spF, xFun) <- pExpFrontSP
-        xsArg       <- pExpArgsSP pExpAtomSP
+        xsArg       <- pExpArgsSP pExpAtomProjSP
         return (spF, (xFun, xsArg))
 
 
@@ -78,7 +78,7 @@ pExpArgsSP pX
 
         -- Some arguments.
  , do   (_, xsArg)       <- pExpArgsSpecSP pX
-        xsMore           <- pExpArgsSP     pExpAtomSP
+        xsMore           <- pExpArgsSP pExpAtomProjSP
         return  (xsArg ++ xsMore)
 
         -- No more arguments.
@@ -220,9 +220,25 @@ pExpFrontSP
         return  (sp, XAnnot sp $ XCast CastRun x)
 
         -- ATOM
- , do   pExpAtomSP
+ , do   pExpAtomProjSP
  ]
  <?> "an expression"
+
+
+-- | Parse an atomic expression perhaps followed by some record projection.
+pExpAtomProjSP :: Parser (SP, Exp)
+pExpAtomProjSP
+ = do
+        (sp, xBody) <- pExpAtomSP
+
+        P.choice
+         [ do   pSym SDot
+                ns      <- fmap (map labelOfText)
+                        $ P.sepEndBy (fmap fst $ pVarNameSP) (pSym SDot)
+                return  ( sp
+                        , foldl (\x' n -> XApp (XPrim (PrimValProject n)) (RTerm x')) xBody ns )
+
+         , do   return (sp, xBody) ]
 
 
 -- | Parse a variable, constructor or parenthesised expression,
@@ -254,7 +270,7 @@ pExpAtomSP
                 n    <- fmap fst $ pVarNameSP
                 pSym SRoundKet
                 pSym SHash
-                return (sp, XPrim (PrimValProject n))
+                return (sp, XPrim (PrimValProject $ labelOfText n))
 
           | Text.pack "elaborate#" == tx
           -> do return (sp, XPrim PrimValElaborate)
@@ -269,13 +285,7 @@ pExpAtomSP
                 then return (sp, XPrim PrimValElaborate)
 
         else if u == (UName $ Text.pack "project#")
-                then return (sp, XPrim (PrimValProject (Text.pack "field")))
-
-        else if u == (UName $ Text.pack "shuffle#")
-                then return (sp, XPrim PrimValShuffle)
-
-        else if u == (UName $ Text.pack "combine#")
-                then return (sp, XPrim PrimValCombine)
+                then return (sp, XPrim (PrimValProject $ labelOfText (Text.pack "field")))
 
         else return (sp, XVar u)
 

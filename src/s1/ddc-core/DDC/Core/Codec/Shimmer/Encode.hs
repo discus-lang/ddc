@@ -351,17 +351,20 @@ takeExp c xx
 
                 C.MAPrim p
                  -> case p of
-                        C.PElaborate    -> xSym "xp-elaborate"
-                        C.PTuple   ls   -> xAps "xp-tuple"   (map (xTxt . nameOfLabel) ls)
-                        C.PRecord  ls   -> xAps "xp-record"  (map (xTxt . nameOfLabel) ls)
+                        C.PElaborate
+                         -> xSym "xp-elaborate"
 
-                        C.PVariant ls l
-                         -> xAps "xp-variant"
-                                [ xList (map (xTxt . nameOfLabel) ls)
-                                , xTxt $ nameOfLabel l ]
+                        C.PTuple   ls
+                         -> xAps "xp-tuple"   (map (xTxt . nameOfLabel) ls)
 
-                        C.PProject      -> xSym "xp-project"
+                        C.PRecord  ls
+                         -> xAps "xp-record"  (map (xTxt . nameOfLabel) ls)
 
+                        C.PVariant l
+                         -> xAps "xp-variant" [xTxt $ nameOfLabel l]
+
+                        C.PProject l
+                         -> xAps "xp-project" [xTxt $ nameOfLabel l]
 
         -- Case -----
         C.XCase _ x as

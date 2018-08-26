@@ -24,8 +24,6 @@ import qualified Data.Text                      as Text
 import qualified Data.Set                       as Set
 import Data.Maybe
 
-import DDC.Data.Label
-
 import DDC.Core.Module
         ( ExportType    (..)
         , ExportValue   (..)
@@ -286,9 +284,17 @@ toCoreX a xx
         S.XPrim S.PrimValElaborate
          -> return $ C.XPrim a C.PElaborate
 
-        S.XPrim (S.PrimValProject n)
-         -> return $ C.XApp a (C.XAtom a (C.MAPrim C.PProject))
-                              (C.RTerm (C.XAtom a (C.MALabel (labelOfText n))))
+        S.XPrim (S.PrimValTuple ls)
+         -> return $ C.XAtom a (C.MAPrim (C.PTuple ls))
+
+        S.XPrim (S.PrimValRecord ls)
+         -> return $ C.XAtom a (C.MAPrim (C.PRecord ls))
+
+        S.XPrim (S.PrimValVariant l)
+         -> return $ C.XAtom a (C.MAPrim (C.PVariant l))
+
+        S.XPrim (S.PrimValProject l)
+         -> return $ C.XAtom a (C.MAPrim (C.PProject l))
 
         S.XPrim p
          -> case toCorePrimVal p of
