@@ -11,6 +11,7 @@ import qualified DDC.Core.Discus.Prim           as E
 import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
+import qualified Data.Set                       as Set
 
 
 convertPrimRecord
@@ -28,6 +29,19 @@ convertPrimRecord _ectx ctx xxExp
          | Just (PRecord ls, rs) <- takeXPrimApps xxExp
          , _tsField <- [t | RType t <- rs]
          , xsField  <- [x | RTerm x <- rs]
+
+           -- Comparison of labels is via the hash.
+           --  If we have any repeated labels or a hash collision
+           --  then this will fail.
+           --
+           --  TODO: do interning of record labels and compare via the global
+           --  label index instead. We want the label names anyway for the
+           --  reflection library. Using the hashes is just a stop-gap.
+           --
+         , True     <- if (Set.size $ Set.fromList ls) == length ls
+                        then True
+                        else error "convertPrimRecord: repeated field or hash collision"
+
          -> Just $ do
                 let a' = annotTail a
 
