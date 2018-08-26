@@ -70,23 +70,20 @@ acceptBuiltin str
 
         -- Witness type constructors.
         "Const"         -> Just (BTwCon TwConConst)
-        "DeepConst"     -> Just (BTwCon TwConDeepConst)
         "Mutable"       -> Just (BTwCon TwConMutable)
-        "DeepMutable"   -> Just (BTwCon TwConDeepMutable)
         "Purify"        -> Just (BTwCon TwConPure)
         "Disjoint"      -> Just (BTwCon TwConDisjoint)
         "Distinct"      -> Just (BTwCon (TwConDistinct 2))
 
         -- Type constructors.
-        "Unit"          -> Just (BTcCon (TcConUnit))
-        "S"             -> Just (BTcCon (TcConSusp))
-        "Read"          -> Just (BTcCon (TcConRead))
-        "HeadRead"      -> Just (BTcCon (TcConHeadRead))
-        "DeepRead"      -> Just (BTcCon (TcConDeepRead))
-        "Write"         -> Just (BTcCon (TcConWrite))
-        "DeepWrite"     -> Just (BTcCon (TcConDeepWrite))
-        "Alloc"         -> Just (BTcCon (TcConAlloc))
-        "DeepAlloc"     -> Just (BTcCon (TcConDeepAlloc))
+        "Unit"          -> Just (BTcCon TcConUnit)
+        "S"             -> Just (BTcCon TcConSusp)
+        "T#"            -> Just (BTcCon TcConT)
+        "R#"            -> Just (BTcCon TcConR)
+        "V#"            -> Just (BTcCon TcConV)
+        "Read"          -> Just (BTcCon TcConRead)
+        "Write"         -> Just (BTcCon TcConWrite)
+        "Alloc"         -> Just (BTcCon TcConAlloc)
 
         -- Builtin types.
         "Pure"          -> Just BPure

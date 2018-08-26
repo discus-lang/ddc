@@ -98,8 +98,11 @@ convertExp ectx ctx xx
          |  Just p      <- takeNamePrimAppX xx
          ,  Just r
              <- case p of
-                  PElaborate{}            -> Nothing
-                  PProject{}              -> convertPrimRecord ectx ctx xx
+                  PElaborate{}  -> Nothing
+                  PTuple{}      -> Nothing
+                  PRecord{}     -> Nothing
+                  PVariant{}    -> Nothing
+                  PProject{}    -> convertPrimRecord ectx ctx xx
          -> r
 
          -- Conversions for fragment specific primitive operators.

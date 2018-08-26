@@ -78,6 +78,26 @@ toCoreT uu tt
         S.TApp t1 t2
          -> C.TApp      <$> toCoreT uu t1 <*> toCoreT uu t2
 
+        S.TRow r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (toCoreT uu) ts
+                return  $ C.TRow $ zip ls ts'
+
+        S.TTuple r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (toCoreT uu) ts
+                return  $ C.TApp (C.TCon (C.TyConSpec C.TcConT)) (C.TRow $ zip ls ts')
+
+        S.TRecord r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (toCoreT uu) ts
+                return  $ C.TApp (C.TCon (C.TyConSpec C.TcConR)) (C.TRow $ zip ls ts')
+
+        S.TVariant r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (toCoreT uu) ts
+                return  $ C.TApp (C.TCon (C.TyConSpec C.TcConV)) (C.TRow $ zip ls ts')
+
 
 -- TyCon ------------------------------------------------------------------------------------------
 -- | Convert a Source TyCon to Core, or Nothing if it cannot be converted in isolation.

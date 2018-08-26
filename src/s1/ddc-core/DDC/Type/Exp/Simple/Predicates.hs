@@ -209,8 +209,6 @@ isSomeReadEffect tt
         TApp (TCon (TyConSpec con)) _
          -> case con of
                 TcConRead       -> True
-                TcConHeadRead   -> True
-                TcConDeepRead   -> True
                 _               -> False
 
         _                       -> False
@@ -224,7 +222,6 @@ isSomeWriteEffect tt
         TApp (TCon (TyConSpec con)) _
          -> case con of
                 TcConWrite      -> True
-                TcConDeepWrite  -> True
                 _               -> False
 
         _                       -> False
@@ -238,7 +235,6 @@ isSomeAllocEffect tt
         TApp (TCon (TyConSpec con)) _
          -> case con of
                 TcConAlloc      -> True
-                TcConDeepAlloc  -> True
                 _               -> False
 
         _                       -> False

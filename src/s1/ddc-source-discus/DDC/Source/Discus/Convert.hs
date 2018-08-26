@@ -344,6 +344,10 @@ toCoreX a xx
         S.XWhere{}      -> Left $ ErrorConvertSugaredExp xx
         S.XAbsPat{}     -> Left $ ErrorConvertSugaredExp xx
         S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx
+        S.XTuple{}      -> Left $ ErrorConvertSugaredExp xx
+        S.XRecord{}     -> Left $ ErrorConvertSugaredExp xx
+        S.XVariant{}    -> Left $ ErrorConvertSugaredExp xx
+        S.XArray{}      -> Left $ ErrorConvertSugaredExp xx
 
 
 -- Arg --------------------------------------------------------------------------------------------

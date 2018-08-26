@@ -352,7 +352,16 @@ takeExp c xx
                 C.MAPrim p
                  -> case p of
                         C.PElaborate    -> xSym "xp-elaborate"
+                        C.PTuple   ls   -> xAps "xp-tuple"   (map (xTxt . nameOfLabel) ls)
+                        C.PRecord  ls   -> xAps "xp-record"  (map (xTxt . nameOfLabel) ls)
+
+                        C.PVariant ls l
+                         -> xAps "xp-variant"
+                                [ xList (map (xTxt . nameOfLabel) ls)
+                                , xTxt $ nameOfLabel l ]
+
                         C.PProject      -> xSym "xp-project"
+
 
         -- Case -----
         C.XCase _ x as
@@ -550,6 +559,7 @@ takeKiCon c
         C.KiConRegion           -> xSym "tk-region"
         C.KiConEffect           -> xSym "tk-effect"
         C.KiConClosure          -> xSym "tk-closure"
+        C.KiConRow              -> xSym "tk-row"
 
 
 takeTwCon :: C.TwCon -> SExp
@@ -558,9 +568,7 @@ takeTwCon c
         C.TwConImpl             -> xSym "tw-impl"
         C.TwConPure             -> xSym "tw-pure"
         C.TwConConst            -> xSym "tw-const"
-        C.TwConDeepConst        -> xSym "tw-deepconst"
         C.TwConMutable          -> xSym "tw-mutable"
-        C.TwConDeepMutable      -> xSym "tw-deepmutable"
         C.TwConDistinct n       -> xAps "tw-distinct" [xNat n]
         C.TwConDisjoint         -> xSym "tw-disjoint"
 
@@ -573,13 +581,12 @@ takeTcCon c
         C.TcConFunImplicit      -> xSym "tc-funi"
         C.TcConSusp             -> xSym "tc-susp"
         C.TcConRecord ts        -> xAps "tc-record" (map xSym ts)
+        C.TcConT                -> xSym "tc-t"
+        C.TcConR                -> xSym "tc-r"
+        C.TcConV                -> xSym "tc-v"
         C.TcConRead             -> xSym "tc-read"
-        C.TcConHeadRead         -> xSym "tc-headread"
-        C.TcConDeepRead         -> xSym "tc-deepread"
         C.TcConWrite            -> xSym "tc-write"
-        C.TcConDeepWrite        -> xSym "tc-deepwrite"
         C.TcConAlloc            -> xSym "tc-alloc"
-        C.TcConDeepAlloc        -> xSym "tc-deepalloc"
 
 
 -- Utils ------------------------------------------------------------------------------------------

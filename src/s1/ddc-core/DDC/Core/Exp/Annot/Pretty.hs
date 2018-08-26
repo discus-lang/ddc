@@ -152,20 +152,15 @@ instance (Pretty n, Eq n) => Pretty (Param n) where
 instance (Pretty n, Eq n) => Pretty (Arg a n) where
  ppr aa
   = case aa of
-        RType t
-         -> text "["  <> ppr t <> text "]"
-
-        RTerm x
-         -> text "("  <> ppr x <> text ")"
-
-        RWitness w
-         -> text "<"  <> ppr w <> text ">"
+        RType t         -> text "["  <> ppr t <> text "]"
+        RTerm x         -> text "("  <> ppr x <> text ")"
+        RWitness w      -> text "<"  <> ppr w <> text ">"
 
         -- An implicit term.
         RImplicit (RTerm x)
           -> text "{"  <> ppr x <> text "}"
 
-        _ -> text "INVALID"
+        _               -> text "INVALID"
 
 
 -- Prim -----------------------------------------------------------------------
@@ -174,6 +169,23 @@ instance Pretty Prim where
   = case pp of
         PElaborate      -> text "elaborate#"
         PProject        -> text "project#"
+
+        PTuple ls
+         -> text "tuple{"
+         %  hcat (punctuate (text ",") (map ppr ls))
+         %  text "}#"
+
+        PRecord ls
+         -> text "record{"
+         %  hcat (punctuate (text ",") (map ppr ls))
+         %  text "}#"
+
+        PVariant ls l
+         -> text "variant{"
+         %  hcat (punctuate (text ",") (map ppr ls))
+         %  text "}{"
+         %  ppr l
+         %  text "}#"
 
 
 -- Label ----------------------------------------------------------------------

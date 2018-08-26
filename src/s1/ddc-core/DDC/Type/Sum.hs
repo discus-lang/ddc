@@ -226,9 +226,7 @@ hashTcCon :: TcCon -> Maybe TyConHash
 hashTcCon tc
  = case tc of
         TcConRead       -> Just $ TyConHash 0
-        TcConDeepRead   -> Just $ TyConHash 1
         TcConWrite      -> Just $ TyConHash 2
-        TcConDeepWrite  -> Just $ TyConHash 3
         TcConAlloc      -> Just $ TyConHash 4
         _               -> Nothing
 
@@ -246,9 +244,7 @@ unhashTyCon (TyConHash i)
  = TyConSpec
  $ case i of
         0               -> TcConRead
-        1               -> TcConDeepRead
         2               -> TcConWrite
-        3               -> TcConDeepWrite
         4               -> TcConAlloc
 
         -- This should never happen, because we only produce hashes

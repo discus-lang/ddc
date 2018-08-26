@@ -64,23 +64,8 @@ pTypeUnion
 pTypeFun :: Parser Type
 pTypeFun
  = P.choice
- [ -- Implicit universal quantification (old syntax)
-   -- [v1 v1 ... vn : T1]. T2
-   do   pSym SSquareBra
-        bs      <- P.many1 pBind
-        sp      <- pTokSP (KOp ":")
-        kBind   <- pTypeUnion
-        pSym SSquareKet
-        pSym SDot
-
-        tBody   <- pTypeFun
-        return  $ foldr (\b t -> TAnnot sp
-                              $  TApp (TCon (TyConForall kBind))
-                                      (TAbs b kBind t))
-                        tBody bs
-
-        -- Implicit function constructor or universal quantification.
- , do   pSym SBraceBra
+ [      -- Implicit function constructor or universal quantification.
+   do   pSym SBraceBra
         P.choice
          [ do   -- Implicit universal quantification.
                 -- {@v1 v2 .. vn : T1} -> T2
@@ -106,7 +91,6 @@ pTypeFun
                 tResult <- pTypeFun
                 return  $  TAnnot sp $ TFunImplicit tParam tResult
          ]
-
 
  , P.try $ do
         pSym SRoundBra
@@ -176,17 +160,49 @@ pTypeArgSP
         -- Builtin type constructors.
  , do   pTypeBuiltinSP
 
-        -- Primitive record type constructor.
-        --  like (x,y,z)#
- , P.try $ do
-        sp     <- pSym SRoundBra
-        ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        return ( TCon (TyConPrim (TyConPrimTcCon (TcConRecord ns)))
-               , sp)
+        -- A row type.
+        --   like {x : Nat, y : Nat, z : Nat}
+ , do   sp       <- pSym SBraceBra
+        nlsField
+         <- P.sepBy
+                (do (n, _)  <- pVarNameSP
+                    _       <- pTokSP (KOp ":")
+                    t       <- pType
+                    return  (labelOfText n, t))
+                (pSym SComma)
+        pSym SBraceKet
+        return  ( TRecord nlsField
+                , sp)
 
-        -- Tuple type.
+        -- A record type.
+        --   like [x : Nat, y : Nat, z : Nat]
+ , do   sp       <- pSym SSquareBra
+        nlsField
+         <- P.sepBy
+                (do (n, _)  <- pVarNameSP
+                    _       <- pTokSP (KOp ":")
+                    t       <- pType
+                    return  (labelOfText n, t))
+                (pSym SComma)
+        pSym SSquareKet
+        return  ( TRecord nlsField
+                , sp)
+
+        -- A variant type.
+        --   like <x : Nat, y : Nat, z : Nat>
+ , do   sp       <- pTokSP (KOp "<")
+        nlsField
+         <- P.sepBy
+                (do (n, _)  <- pVarNameSP
+                    _       <- pTokSP (KOp ":")
+                    t       <- pType
+                    return  (labelOfText n, t))
+                (pSym SComma)
+        pTokSP (KOp ">")
+        return  ( TVariant nlsField
+                , sp)
+
+        -- A tuple type represented as algebraic data.
  , P.try $ do
         sp        <- pSym SRoundBra
         tField1   <- pType
@@ -199,23 +215,6 @@ pTypeArgSP
         let tc    =  TyConBound (TyConBoundName nCtor)
         return    ( TAnnot sp $  makeTApps (TCon tc) ts
                   , sp)
-
-        -- Full application of a primitive record type constructor.
-        --   like (x : Nat, y : Nat, z : Nat)
- , P.try $ do
-        sp       <- pSym SRoundBra
-        (nsField, tsField)
-                <- fmap unzip
-                $  P.sepBy
-                        (do (n, _)  <- pVarNameSP
-                            _       <- pTokSP (KOp ":")
-                            t       <- pType
-                            return  (n, t))
-                        (pSym SComma)
-        pSym SRoundKet
-        let tRecord = TCon (TyConPrim (TyConPrimTcCon (TcConRecord nsField)))
-        return  ( makeTApps tRecord tsField
-                , sp)
 
         -- The syntax for the nullary record type constructor '()#' overlaps
         -- with that of the unit data construtor '()', so try the former first.
@@ -231,7 +230,7 @@ pTypeArgSP
          pSym SRoundKet
          return  (t, sp)
  ]
- <?> "an atomic type"
+ <?> "a simple type"
 
 
 -- | Parse a builtin type.

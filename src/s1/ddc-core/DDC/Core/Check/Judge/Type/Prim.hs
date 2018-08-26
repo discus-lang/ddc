@@ -28,6 +28,25 @@ shapeOfPrim p
         PElaborate
          -> tForall   kData $ \tVal -> tVal
 
+        PTuple ls
+         -> tForalls (replicate (length ls) kData)
+          $ \tsParam -> foldr tFun
+                         (tTuple [ (l, t) | l <- ls, t <- tsParam])
+                         (reverse tsParam)
+
+        PRecord ls
+         -> tForalls (replicate (length ls) kData)
+          $ \tsParam -> foldr tFun
+                         (tRecord [ (l, t) | l <- ls, t <- tsParam ])
+                         (reverse tsParam)
+
+        PVariant ls l
+         -> tForalls (replicate (length ls) kData)
+          $ \tsParam -> let ltsField  = [ (l', t) | l' <- ls, t <- tsParam ]
+                            tResult   = tVariant ltsField
+                            Just tArg = lookup l ltsField
+                        in  tArg `tFun` tResult
+
         PProject
          -> tForalls [kData, kData, kData]
          $  \[tObj, tLabel, tResult] -> tObj `tFun` tLabel `tFun` tResult

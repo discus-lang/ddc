@@ -265,6 +265,17 @@ desugarX rns xx
         XAbsPat  sp ps p mt x   -> XAbsPat  sp ps p mt <$> desugarX rns x
         XLamCase sp alts        -> XLamCase sp <$> mapM (desugarAC rns) alts
 
+        XTuple sp r
+         -> let (ls, xs)        = unzip r
+            in  XTuple sp  <$> (zip ls <$> mapM (desugarX  rns) xs)
+
+        XRecord sp r
+         -> let (ls, xs)        = unzip r
+            in  XRecord sp <$> (zip ls <$> mapM (desugarX  rns) xs)
+
+        XVariant sp l x         -> XVariant sp l <$> desugarX rns x
+        XArray sp xs            -> XArray sp <$> mapM (desugarX rns) xs
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar an argument.

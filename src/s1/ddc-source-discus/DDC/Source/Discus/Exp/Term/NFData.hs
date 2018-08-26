@@ -25,6 +25,10 @@ instance NFData l => NFData (GExp l) where
         XWhere    a cl x        -> rnf a   `seq` rnf cl `seq` rnf x
         XAbsPat   a _ps w mt x  -> rnf a   `seq` rnf w  `seq` rnf mt `seq` rnf x
         XLamCase  a as          -> rnf a   `seq` rnf as
+        XTuple    a r           -> rnf a   `seq` rnf r
+        XRecord   a r           -> rnf a   `seq` rnf r
+        XVariant  a l x         -> rnf a   `seq` rnf l `seq` rnf x
+        XArray    a xs          -> rnf a   `seq` rnf xs
 
 
 instance NFData l => NFData (GXBindVarMT l) where

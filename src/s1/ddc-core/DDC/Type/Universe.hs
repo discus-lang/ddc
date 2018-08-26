@@ -137,7 +137,7 @@ universeFromType1 kenv tt
         TApp t1 _               -> universeFromType1 kenv t1
         TForall b t2            -> universeFromType1 (Env.extend b kenv) t2
         TSum _                  -> Nothing
-        TRow _                  -> Nothing
+        TRow _                  -> Just UniverseSpec
 
 
 -- | Yield the universe of some type.

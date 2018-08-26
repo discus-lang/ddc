@@ -165,13 +165,10 @@ crushHeadT env tt
 --   that tries to re-crush the same non-crushable type over and over.
 --
 crushSomeT :: Ord n => EnvT n -> Type n -> Type n
-crushSomeT env tt
+crushSomeT _env tt
  = case tt of
         TApp (TCon tc) _
          -> case tc of
-                TyConSpec TcConDeepRead  -> crushEffect env tt
-                TyConSpec TcConDeepWrite -> crushEffect env tt
-                TyConSpec TcConDeepAlloc -> crushEffect env tt
                 _                        -> tt
 
         _ -> tt
@@ -199,6 +196,7 @@ crushEffect env tt
          -> TAbs b $ crushEffect env t
 
         TApp t1 t2
+{-
          -- Head Read.
          |  Just (TyConSpec TcConHeadRead, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
@@ -218,7 +216,7 @@ crushEffect env tt
               -> tBot kEffect
 
              _ -> tt
-
+-}
          -- Deep Read.
          -- See Note: Crushing with higher kinded type vars.
 --         | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt

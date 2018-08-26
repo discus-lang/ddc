@@ -283,6 +283,29 @@ pExpAtomSP
  , do   (u, sp)         <- pBoundIxSP
         return  (sp, XVar u)
 
+        -- Record literal.
+ , P.try $ do
+        P.lookAhead
+         $ do   _       <- pSym SSquareBra
+                _       <- pVarNameSP
+                _       <- pSym SEquals
+                return ()
+
+        sp      <- pSym SSquareBra
+        (nsField, xsField)
+         <- fmap unzip
+          $ P.sepBy
+                (do (n, _) <- pVarNameSP
+                    _      <- pSym SEquals
+                    x      <- pExp
+                    return (n, x))
+                (pSym SComma)
+
+        pSym SSquareKet
+        return  ( sp
+                , XRecord sp [ (labelOfText n, x) | n <- nsField | x <- xsField ])
+
+
         -- Full application of a record data constructor.
         --   like (x = e1, y = e2, z = e3)
  , P.try $ do

@@ -58,6 +58,12 @@ module DDC.Type.Exp.Simple.Compounds
         , takeTSusp
         , takeTSusps
 
+          -- * Row type constructors.
+        , tTuple
+        , tRecord
+        , tVariant
+
+
           -- * Implications
         , tImpl
         , takeTImpl
@@ -73,22 +79,21 @@ module DDC.Type.Exp.Simple.Compounds
         , sComp, sProp
 
           -- * Kind construction
-        , kData, kRegion, kEffect, kClosure, kWitness
+        , kData, kRegion, kEffect, kClosure, kWitness, kRow
 
           -- * Effect type constructors
-        , tRead,        tDeepRead,      tHeadRead
-        , tWrite,       tDeepWrite
-        , tAlloc,       tDeepAlloc
+        , tRead, tWrite, tAlloc
 
           -- * Witness type constructors
         , tPure
-        , tConst,       tDeepConst
-        , tMutable,     tDeepMutable
+        , tConst
+        , tMutable
         , tDistinct
 
           -- * Type constructor wrappers.
         , tConData0,    tConData1)
 where
+import DDC.Data.Label
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
 
@@ -594,6 +599,25 @@ takeTSusps tt
         _ -> ([], tt)
 
 
+-- Row typed things -----------------------------------------------------------
+-- | Construct a tuple type.
+tTuple :: [(Label, Type n)] -> Type n
+tTuple lts
+ = TApp (TCon (TyConSpec TcConR)) (TRow lts)
+
+
+-- | Construct a record type.
+tRecord :: [(Label, Type n)] -> Type n
+tRecord lts
+ = TApp (TCon (TyConSpec TcConR)) (TRow lts)
+
+
+-- | Construct a variant type.
+tVariant :: [(Label, Type n)] -> Type n
+tVariant lts
+ = TApp (TCon (TyConSpec TcConV)) (TRow lts)
+
+
 -- Level 3 constructors (sorts) -----------------------------------------------
 -- | Sort of kinds of computational types.
 sComp           = TCon $ TyConSort SoConComp
@@ -618,29 +642,20 @@ kClosure        = TCon $ TyConKind KiConClosure
 -- | Kind of witness types.
 kWitness        = TCon $ TyConKind KiConWitness
 
+-- | Kind of row types.
+kRow            = TCon $ TyConKind KiConRow
+
 
 -- Level 1 constructors (witness and computation types) -----------------------
 -- Effect type constructors
 -- | Read effect type constructor.
 tRead           = tcCon1 TcConRead
 
--- | Head Read effect type constructor.
-tHeadRead       = tcCon1 TcConHeadRead
-
--- | Deep Read effect type constructor.
-tDeepRead       = tcCon1 TcConDeepRead
-
 -- | Write effect type  constructor.
 tWrite          = tcCon1 TcConWrite
 
--- | Deep Write effect type constructor.
-tDeepWrite      = tcCon1 TcConDeepWrite
-
 -- | Alloc effect type constructor.
 tAlloc          = tcCon1 TcConAlloc
-
--- | Deep Alloc effect type constructor.
-tDeepAlloc      = tcCon1 TcConDeepAlloc
 
 -- Witness type constructors.
 -- | Pure witness type constructor.
@@ -649,14 +664,8 @@ tPure           = twCon1 TwConPure
 -- | Const witness type constructor.
 tConst          = twCon1 TwConConst
 
--- | Deep Const witness type constructor.
-tDeepConst      = twCon1 TwConDeepConst
-
 -- | Mutable witness type constructor.
 tMutable        = twCon1 TwConMutable
-
--- | Deep Mutable witness type constructor.
-tDeepMutable    = twCon1 TwConDeepMutable
 
 -- | Distinct witness type constructor.
 tDistinct n     = twCon2 (TwConDistinct n)

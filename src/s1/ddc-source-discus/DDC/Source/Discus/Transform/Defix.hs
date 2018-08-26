@@ -86,6 +86,11 @@ instance Defix GExp l where
         XAbsPat  a ps p mt x    -> liftM  (XAbsPat a ps p mt) (down x)
         XLamCase a alts         -> liftM  (XLamCase a) (mapM down alts)
 
+        XTuple   a lxs  -> XTuple a     <$> ((zip $ map fst lxs) <$> (mapM down $ map snd lxs))
+        XRecord  a lxs  -> XRecord a    <$> ((zip $ map fst lxs) <$> (mapM down $ map snd lxs))
+        XVariant a l x  -> XVariant a l <$> down x
+        XArray   a xs   -> XArray a     <$> mapM down xs
+
 
 instance Defix GArg l where
  defix table rr

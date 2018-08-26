@@ -79,21 +79,24 @@ downX l f d xx
          -> let (lets', levels) = mapBoundAtDepthXLets l f d lets
             in  XLet lets' (mapBoundAtDepthX l f (d + levels) x)
 
-        XCase x alts      -> XCase (downX l f d x)  (map (downA l f d) alts)
-        XCast cc x        -> XCast (downC l f d cc) (downX l f d x)
+        XCase x alts            -> XCase (downX l f d x)  (map (downA l f d) alts)
+        XCast cc x              -> XCast (downC l f d cc) (downX l f d x)
 
-        XDefix    a rs    -> XDefix    a (map (downArg l f d) rs)
-        XInfixOp  a x     -> XInfixOp  a x
-        XInfixVar a x     -> XInfixVar a x
-        XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
-        XWhere    a x cls -> XWhere    a (downX l f d x) (map (downCL l f d) cls)
+        XDefix    a rs          -> XDefix    a (map (downArg l f d) rs)
+        XInfixOp  a x           -> XInfixOp  a x
+        XInfixVar a x           -> XInfixVar a x
+        XMatch    a gs x        -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
+        XWhere    a x cls       -> XWhere    a (downX l f d x) (map (downCL l f d) cls)
 
         XAbsPat   a ps p mt x
          -> let d'      = d + countBAnonsP l p
             in  XAbsPat a ps p mt (downX l f d' x)
 
-        XLamCase  a alts
-         -> XLamCase a (map (downA l f d) alts)
+        XLamCase  a alts        -> XLamCase a (map (downA l f d) alts)
+        XTuple    a r           -> XTuple   a [ (la, downX l f d x) | (la, x) <- r ]
+        XRecord   a r           -> XRecord  a [ (la, downX l f d x) | (la, x) <- r ]
+        XVariant  a la x        -> XVariant a la (downX l f d x)
+        XArray    a xs          -> XArray   a (map (downX l f d) xs)
 
 
 instance MapBoundX GArg l where
