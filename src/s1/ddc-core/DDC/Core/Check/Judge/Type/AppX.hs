@@ -6,12 +6,13 @@ import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Data.Label
-import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified DDC.Type.Sum           as Sum
-import qualified Data.Map.Strict        as Map
+import qualified DDC.Core.Check.Context.Resolve as Resolve
+import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Type.Sum                   as Sum
+import qualified Data.Map.Strict                as Map
 
 
-
+---------------------------------------------------------------------------------------------------
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
@@ -168,8 +169,7 @@ checkArg  table ctx mode demand arg
         _ -> error "checkArg: nope"
 
 
-
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Synthesize the type of a function applied to its argument.
 synthAppArg
         :: (Show a, Show n, Ord n, Pretty n)
@@ -490,7 +490,7 @@ synthAppArg table
  =      throw $ ErrorAppNotFun a xx tFn
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Split a function-ish type into its parts.
 --   This works for implications, as well as the function constructor
 --   with and without a latent effect.
@@ -509,7 +509,7 @@ splitFunType tt
         _ -> Nothing
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- TODO: move this to its own module.
 reduceType :: (Ord n, Show n) => Context n -> Type n -> CheckM a n (Type n)
 reduceType ctx tt
@@ -523,27 +523,28 @@ reduceType ctx tt
         _ -> return tt
 
 
+---------------------------------------------------------------------------------------------------
+-- TODO: better errors.
 projectFieldType
         :: (Ord n, Show n)
         => Context n
         -> Type n -> Label
         -> CheckM a n (Type n)
 
-projectFieldType ctx tObj_ lField
- = do
-        let defs = contextDataDefs ctx
+projectFieldType ctx tObj0 lField
+ = goReduce
+ where
+        goReduce
+         = do   tObj <- reduceType ctx tObj0
+                goInspect tObj
 
-        tObj <- reduceType ctx tObj_
-
-        -- Determine the result type.
-        -- TODO: better errors.
-        tResult
-         <- case takeTApps tObj of
+        goInspect tObj
+         = case takeTApps tObj of
                 -- Projection of a tuple field.
                 [TCon (TyConSpec TcConT), TRow lts]
                  -> case lookup lField lts of
                         Just t  -> return t
-                        _       -> error "field not in tuple"
+                        _       -> error $ "field not in tuple"
 
                 -- Projection of a record field.
                 [TCon (TyConSpec TcConR), TRow lts]
@@ -551,23 +552,26 @@ projectFieldType ctx tObj_ lField
                         Just t  -> return t
                         _       -> error $ "field not in record " ++ show lField
 
-                -- Look through single constructor data types.
-                -- TODO: need to use the resolve framework to get the data type def.
-                [TCon (TyConBound n)]
-                 | Just dataType   <- Map.lookup n $ dataDefsTypes defs
-                 -> case dataTypeCtors dataType of
-                        Just [dataCtor]
-                          -> case dataCtorFieldTypes dataCtor of
-                                [tField] -> projectFieldType ctx tField lField
-                                _        -> error $ "not projecting through too many fields in  " ++ show tObj
-                        _ -> error $ "not projecting too many ctors in " ++ show tObj
+                [TCon (TyConBound nDataType)]
+                 -> goLookupData tObj nDataType
 
                 -- Can't project this thing.
-                _ -> error $ "invalid projection of " ++ show tObj ++ " label " ++ show lField
+                _ -> error
+                   $  "invalid projection of "
+                   ++ show tObj ++ " label " ++ show lField
 
+        goLookupData tObj nDataType
+         = do   mDataType <- Resolve.lookupDataType ctx nDataType
+                case mDataType of
+                 Nothing -> error "goUnwrapData: can't find data type decl"
+                 Just dataType -> goUnwrapData tObj dataType
 
-        return tResult
+        goUnwrapData tObj dataType
+         = case dataTypeCtors dataType of
+                Just [dataCtor]
+                  -> case dataCtorFieldTypes dataCtor of
+                        [tField] -> projectFieldType ctx tField lField
+                        _        -> error $ "not projecting through too many fields in  " ++ show tObj
 
-
-
+                _ -> error $ "not projecting too many ctors in " ++ show tObj
 
