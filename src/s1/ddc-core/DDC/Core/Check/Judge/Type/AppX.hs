@@ -5,21 +5,11 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.Base
+import DDC.Data.Label
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.Map.Strict        as Map
 
-
-reduceType :: (Ord n, Show n) => Context n -> Type n -> CheckM a n (Type n)
-reduceType ctx tt
- = case tt of
-        TCon (TyConBound n)
-         -> lookupTypeSyn ctx n
-         >>= \case
-                Nothing -> return tt
-                Just t' -> reduceType ctx t'
-
-        _ -> return tt
 
 
 -- | Check a value expression application.
@@ -53,26 +43,8 @@ checkAppX !table !ctx0
         (xArg', tArg, effsArg, ctx2)
          <- checkArg table ctx1 Recon DemandNone arg
 
-        tArg' <- reduceType ctx2 tArg
-
         -- Determine the result type.
-        -- TODO: better errors.
-        tResult
-         <- case takeTApps tArg' of
-                -- Projection of a tuple field.
-                [TCon (TyConSpec TcConT), TRow lts]
-                 -> case lookup l lts of
-                        Just t  -> return t
-                        _       -> error "field not in tuple"
-
-                -- Projection of a record field.
-                [TCon (TyConSpec TcConR), TRow lts]
-                 -> case lookup l lts of
-                        Just t  -> return t
-                        _       -> error "field not in record"
-
-                -- Can't project this thing.
-                _ -> error $ "invalid projection of " ++ show tArg'
+        tResult <- projectFieldType ctx0 tArg l
 
         ctrace  $ vcat
                 [ text "*<  App Recon Project"
@@ -294,34 +266,8 @@ synthAppArg table
         (xArg', tArg, effsArg, ctx1)
          <- checkArg table ctx0 (Synth isScope) DemandRun arg
 
-        tArg' <- reduceType ctx1 tArg
-
         -- Determine the result type.
-        -- TODO: better errors.
-        tResult
-         <- case takeTApps tArg' of
-                -- Projection of a tuple field.
-                [TCon (TyConSpec TcConT), TRow lts]
-                 -> case lookup l lts of
-                        Just t  -> return t
-                        _       -> error "field not in tuple"
-
-                -- Projection of a record field.
-                [TCon (TyConSpec TcConR), TRow lts]
-                 -> case lookup l lts of
-                        Just t  -> return t
-                        _       -> error "field not in record"
-
-                -- Can't project this thing.
-                _ -> case tArg of
-                        -- The type of the thing is not constrained,
-                        -- so we don't know the resulting field type.
-                        TCon (TyConExists{})
-                          -> error $ "ambiguous projection of " ++ show tArg'
-
-                        -- The type of the thing is not something
-                        -- that we can project a field from.
-                        _ -> error $ "invalid projection of " ++ show tArg'
+        tResult <- projectFieldType ctx1 tArg l
 
         ctrace  $ vcat
                 [ text "*<  App Synth Project"
@@ -561,4 +507,67 @@ splitFunType tt
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
         _ -> Nothing
+
+
+-------------------------------------------------------------------------------
+-- TODO: move this to its own module.
+reduceType :: (Ord n, Show n) => Context n -> Type n -> CheckM a n (Type n)
+reduceType ctx tt
+ = case tt of
+        TCon (TyConBound n)
+         -> lookupTypeSyn ctx n
+         >>= \case
+                Nothing -> return tt
+                Just t' -> reduceType ctx t'
+
+        _ -> return tt
+
+
+projectFieldType
+        :: (Ord n, Show n)
+        => Context n
+        -> Type n -> Label
+        -> CheckM a n (Type n)
+
+projectFieldType ctx tObj_ lField
+ = do
+        let defs = contextDataDefs ctx
+
+        tObj <- reduceType ctx tObj_
+
+        -- Determine the result type.
+        -- TODO: better errors.
+        tResult
+         <- case takeTApps tObj of
+                -- Projection of a tuple field.
+                [TCon (TyConSpec TcConT), TRow lts]
+                 -> case lookup lField lts of
+                        Just t  -> return t
+                        _       -> error "field not in tuple"
+
+                -- Projection of a record field.
+                [TCon (TyConSpec TcConR), TRow lts]
+                 -> case lookup lField lts of
+                        Just t  -> return t
+                        _       -> error $ "field not in record " ++ show lField
+
+                -- Look through single constructor data types.
+                -- TODO: need to use the resolve framework to get the data type def.
+                [TCon (TyConBound n)]
+                 | Just dataType   <- Map.lookup n $ dataDefsTypes defs
+                 -> case dataTypeCtors dataType of
+                        Just [dataCtor]
+                          -> case dataCtorFieldTypes dataCtor of
+                                [tField] -> projectFieldType ctx tField lField
+                                _        -> error $ "not projecting through too many fields in  " ++ show tObj
+                        _ -> error $ "not projecting too many ctors in " ++ show tObj
+
+                -- Can't project this thing.
+                _ -> error $ "invalid projection of " ++ show tObj ++ " label " ++ show lField
+
+
+        return tResult
+
+
+
 

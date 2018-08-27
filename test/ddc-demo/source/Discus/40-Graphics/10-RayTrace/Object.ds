@@ -10,33 +10,26 @@ import Data.Maybe; Data.Numeric
 where
 
 
-data Ray where
-        Ray     :  Vec3         -- ^ Origin
-                -> Vec3         -- ^ Direction
-                -> Ray
+-- | A ray in the 3d world.
+data Ray
+        = Ray [ origin:      Vec3
+              , direction:   Vec3 ]
 
-data Object where
-        Sphere  :  Vec3         -- Position.
-                -> Float        -- Radius.
-                -> Vec3         -- Color
-                -> Float        -- Shine
-                -> Object
 
-        Plane   :  Vec3         -- Position
-                -> Vec3         -- Normal
-                -> Vec3         -- Color
-                -> Float        -- Shine
-                -> Object
+-- | An object in the world.
+data Object
+        = Sphere [ center: Vec3, radius: Float
+                 , color:  Vec3, shine:  Float ]
 
-        Checks  :  Vec3         -- Position
-                -> Vec3         -- Normal
-                -> Float        -- Shine
-                -> Object
+        | Plane  [ point:  Vec3, normal: Vec3
+                 , color:  Vec3, shine:  Float ]
+
+        | Checks [ point:  Vec3, normal: Vec3
+                 , shine:  Float ]
 
 
 -- | Cast a ray into a list of objects and find the nearest intersection point.
 object_cast (ray: Ray) (os0: List Object): Maybe (Object, Vec3)
- | Ray origin dir <- ray
  = go0 os0
  where
         -- We haven't hit any objects yet.
@@ -50,7 +43,7 @@ object_cast (ray: Ray) (os0: List Object): Maybe (Object, Vec3)
         -- We already hit an object and we're testing others to see
         -- if they're closer.
         go1 oClose oDist Nil
-         = Just (oClose, origin + vec3_muls dir oDist)
+         = Just (oClose, ray.origin + vec3_muls ray.direction oDist)
 
         go1 oClose oDist (Cons o os)
          = case object_distance ray o of
@@ -77,55 +70,60 @@ object_check (ray: Ray) (os0: List Object) (dist: Float): Bool
 
 -- | Cast a ray from an origin point along a direction,
 --   and if it hits the given shape then return the distance.
-object_distance ((Ray origin dir): Ray) (object: Object): Maybe Float
- | Sphere center radius color shine <- object
- = do   p       = origin + vec3_muls dir (vec3_dot (center - origin) dir)
-        d_cp    = vec3_magnitude (p - center)
+object_distance (ray: Ray) (object: Object): Maybe Float
+ | Sphere sphere <- object
+ = do   p       = ray.origin
+                + vec3_muls ray.direction
+                        (vec3_dot (sphere.center - ray.origin) ray.direction)
 
-        d       = vec3_magnitude (p - origin)
-                        - float64_sqrt (radius * radius - d_cp * d_cp)
+        d_cp    = vec3_magnitude (p - sphere.center)
+
+        d       = vec3_magnitude (p - ray.origin)
+                - float64_sqrt (sphere.radius * sphere.radius - d_cp * d_cp)
         match
-         | d_cp >= radius                       = Nothing
-         | vec3_dot (p - origin) dir <= 0.0     = Nothing
-         | otherwise                            = Just d
+         | d_cp >= sphere.radius        = Nothing
+         | vec3_dot (p - ray.origin) ray.direction <= 0.0     = Nothing
+         | otherwise                    = Just d
 
- | Plane point normal color shine  <- object
- = if vec3_dot dir normal >= 0.0
+ | Plane plane <- object
+ = if vec3_dot ray.direction plane.normal >= 0.0
         then Nothing
-        else Just (div (vec3_dot (point - origin) normal) (vec3_dot dir normal))
+        else Just (div (vec3_dot (plane.point - ray.origin) plane.normal)
+                       (vec3_dot ray.direction plane.normal))
 
- | Checks point normal shine  <- object
- = if vec3_dot dir normal >= 0.0
+ | Checks checks <- object
+ = if vec3_dot ray.direction checks.normal >= 0.0
         then Nothing
-        else Just (div (vec3_dot (point - origin) normal) (vec3_dot dir normal))
+        else Just (div (vec3_dot (checks.point - ray.origin) checks.normal)
+                       (vec3_dot ray.direction checks.normal))
 
 
 -- | Compute the surface normal of the shape at the given point.
 object_normal (point: Vec3) (object: Object): Vec3
- | Sphere center radius color shine <- object
- = vec3_normalize (point - center)
-
- | Plane point normal _    <- object
- = normal
-
- | Checks point normal _   <- object
- = normal
+ = case object of
+        Sphere sphere   -> vec3_normalize (point - sphere.center)
+        Plane  plane    -> plane.normal
+        Checks checks   -> checks.normal
 
 
 -- | Get the diffuse color of an object at the given point.
 object_color (object: Object) (point: Vec3): Vec3
  = case object of
-        Sphere _ _ color _      -> color
-        Plane  _ _ color _      -> color
-        Checks _ _ _            -> checkers point
+        Sphere sphere   -> sphere.color
+        Plane  plane    -> plane.color
+        Checks _        -> checkers point
 
 
--- | Get the shien of an object at the given point.
+-- | Get the shine of an object at the given point.
+--
+--   TODO: auto unwrap provided all ctors have field of same type.
+--   we can inject the case expression in Rule App Synth Project.
+--
 object_shine (object: Object) (point: Vec3): Float
  = case object of
-        Sphere _ _ _ shine      -> shine
-        Plane  _ _ _ shine      -> shine
-        Checks _ _ shine        -> shine
+        Sphere sphere   -> sphere.shine
+        Plane  plane    -> plane.shine
+        Checks checks   -> checks.shine
 
 
 checkers ((Vec3 x y z ): Vec3): Vec3

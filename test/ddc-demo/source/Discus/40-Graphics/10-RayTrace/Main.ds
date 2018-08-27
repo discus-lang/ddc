@@ -10,6 +10,9 @@ import Data.Numeric
 where
 
 
+-- TODO: need to fix shimmer loading.
+
+
 -- | Draw a ray-traced image as a PPM file.
 main ()
  = do

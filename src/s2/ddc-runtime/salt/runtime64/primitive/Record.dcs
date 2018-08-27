@@ -20,6 +20,8 @@ ddcPrimRecordProject
         [r1 r2: Region]
         (pObj: Ptr# r1 Obj) (wField: Word64#): Ptr# r2 Obj
  = do
+        ** TODO: branch on object type. we may be given a boxed object with a single field.
+
         -- Each of the fields is identified by a hash which is a word
         -- long, so the number of words is also the number of fields.
         nFields = ddcMixedRawSizeWords pObj
