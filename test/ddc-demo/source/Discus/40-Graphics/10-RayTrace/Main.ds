@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.Numeric
 where
 
+
 -- | Draw a ray-traced image as a PPM file.
 main ()
  = do
@@ -28,8 +29,7 @@ main ()
         writel $ show width %% show width
         writel "255"
 
-        draw    world posEye fov
-                size limit
+        draw world posEye fov size limit
 
 
 draw    (world:  World)                 -- ^ World to draw.

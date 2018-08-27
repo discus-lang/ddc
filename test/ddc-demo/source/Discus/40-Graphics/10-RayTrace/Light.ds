@@ -8,17 +8,20 @@ where
 
 
 data Light
-        = Light [ point : Vec3
-                , color : Vec3 ]
+ =      [ point : Vec3
+        , color : Vec3 ]
 
 
 -- | Translate a light by the given offset.
 light_translate (v: Vec3) (light: Light): Light
- = [point = light.point + v, color = light.color]
+ =      [ point = light.point + v
+        , color = light.color]
 
 
 -- | Compute the direct lighting at a particular point for a list of lights.
-light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
+light_applys
+        (point normal: Vec3)
+        (ls: List Light) (os: List Object): Vec3
  = go ls (Vec3 0.0 0.0 0.0)
  where
         go Nil total
@@ -30,7 +33,9 @@ light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
 
 
 -- | Compute the direct lighting at a particular point for a single light.
-light_apply (point normal: Vec3) (light: Light) (os: List Object): Vec3
+light_apply
+        (point normal: Vec3)
+        (light: Light) (os: List Object): Vec3
  = do
         -- Vector from the light to the surface point.
         dir     = vec3_normalize (light.point - point)

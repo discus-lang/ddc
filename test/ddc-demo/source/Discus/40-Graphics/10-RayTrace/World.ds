@@ -6,8 +6,7 @@ where
 
 
 data World
- = World
-        [ objects:  List Object
+ =      [ objects:  List Object
         , lights:   List Light
         , ambient:  Vec3 ]
 

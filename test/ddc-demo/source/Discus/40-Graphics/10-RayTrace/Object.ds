@@ -12,8 +12,8 @@ where
 
 -- | A ray in the 3d world.
 data Ray
-        = Ray [ origin:      Vec3
-              , direction:   Vec3 ]
+ =      [ origin:      Vec3
+        , direction:   Vec3 ]
 
 
 -- | An object in the world.
@@ -47,7 +47,7 @@ object_cast (ray: Ray) (os0: List Object): Maybe (Object, Vec3)
 
         go1 oClose oDist (Cons o os)
          = case object_distance ray o of
-                Nothing         -> go1 oClose oDist os
+                Nothing          -> go1 oClose oDist os
                 Just dist'
                  | dist' < oDist -> go1 o      dist'  os
                  | otherwise     -> go1 oClose oDist  os
@@ -115,10 +115,6 @@ object_color (object: Object) (point: Vec3): Vec3
 
 
 -- | Get the shine of an object at the given point.
---
---   TODO: auto unwrap provided all ctors have field of same type.
---   we can inject the case expression in Rule App Synth Project.
---
 object_shine (object: Object) (point: Vec3): Float
  = case object of
         Sphere sphere   -> sphere.shine

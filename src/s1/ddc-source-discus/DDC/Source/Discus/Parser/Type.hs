@@ -7,7 +7,8 @@ module DDC.Source.Discus.Parser.Type
         , pTypeApp
         , pTypeArgSP
         , pTyConSP
-        , pTyConBound)
+        , pTyConBound
+        , pTypeRecordSP)
 where
 import DDC.Source.Discus.Parser.Base            as S
 import DDC.Source.Discus.Lexer                  as S
@@ -176,17 +177,7 @@ pTypeArgSP
 
         -- A record type.
         --   like [x : Nat, y : Nat, z : Nat]
- , do   sp       <- pSym SSquareBra
-        nlsField
-         <- P.sepBy
-                (do (n, _)  <- pVarNameSP
-                    _       <- pTokSP (KOp ":")
-                    t       <- pType
-                    return  (labelOfText n, t))
-                (pSym SComma)
-        pSym SSquareKet
-        return  ( TRecord nlsField
-                , sp)
+ , do   pTypeRecordSP
 
         -- A variant type.
         --   like <x : Nat, y : Nat, z : Nat>
@@ -231,6 +222,21 @@ pTypeArgSP
          return  (t, sp)
  ]
  <?> "a simple type"
+
+
+pTypeRecordSP :: Parser (Type, SourcePos)
+pTypeRecordSP
+ = do   sp       <- pSym SSquareBra
+        nlsField
+         <- P.sepBy
+                (do (n, _)  <- pVarNameSP
+                    _       <- pTokSP (KOp ":")
+                    t       <- pType
+                    return  (labelOfText n, t))
+                (pSym SComma)
+        pSym SSquareKet
+        return  ( TRecord nlsField
+                , sp)
 
 
 -- | Parse a builtin type.
