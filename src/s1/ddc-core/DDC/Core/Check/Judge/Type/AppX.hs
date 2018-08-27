@@ -552,12 +552,15 @@ projectFieldType ctx tObj0 lField
                         Just t  -> return t
                         _       -> error $ "field not in record " ++ show lField
 
-                [TCon (TyConBound nDataType)]
+                (TCon (TyConBound nDataType) : _)
                  -> goLookupData tObj nDataType
 
                 -- Can't project this thing.
-                _ -> error $ "invalid projection of "
-                           ++ show tObj ++ " label " ++ show lField
+                tsParts -> error $ unlines
+                        [ "invalid projection"
+                        , "type  " ++ show tObj
+                        , "label " ++ show lField
+                        , "parts " ++ show tsParts ]
 
         goLookupData tObj nDataType
          = do   mDataType <- Resolve.lookupDataType ctx nDataType

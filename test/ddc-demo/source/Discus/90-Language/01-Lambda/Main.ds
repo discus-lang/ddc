@@ -15,9 +15,8 @@ where
 
 
 main ()
- = do
-        cs      = charListOfText "(\\x. x) (\\foo. bar foo) (\\y. y)"
-        ts      = lexTokens cs
+ = do   cs = charListOfText "(\\x. x) (\\foo. bar foo) (\\y. y)"
+        ts = lexTokens cs
 
         case parseExp ts of
          Nothing

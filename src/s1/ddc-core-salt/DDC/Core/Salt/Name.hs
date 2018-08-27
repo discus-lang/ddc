@@ -374,8 +374,21 @@ instance Pretty PrimLit where
         PrimLitSize    i        -> integer i <> text "s#"
 
         PrimLitWord    i bits
-         -> string (Text.printf "0x%08x" i)
-         <> text "w" <> int bits  <> text "#"
+         -> case bits of
+                8       -> string (Text.printf "0x%02x" i)
+                        <> text "w" <> int bits  <> text "#"
+
+                16      -> string (Text.printf "0x%04x" i)
+                        <> text "w" <> int bits  <> text "#"
+
+                32      -> string (Text.printf "0x%08x" i)
+                        <> text "w" <> int bits  <> text "#"
+
+                64      -> string (Text.printf "0x%016x" i)
+                        <> text "w" <> int bits  <> text "#"
+
+                _       -> string (Text.printf "0x%0x" i)
+                        <> text "w" <> int bits  <> text "#"
 
         PrimLitFloat   f bits   -> double  f <> text "f" <> int bits    <> text "#"
         PrimLitChar    c        -> string (show c)                      <> text "#"

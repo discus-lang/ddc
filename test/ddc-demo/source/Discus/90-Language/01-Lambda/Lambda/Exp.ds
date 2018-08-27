@@ -44,7 +44,7 @@ applySubst (ss@(Subst ps): Subst) (xx: Exp): Exp
 
 
 -- | Apply a function to the second components of a list of tuples.
-mapSnd (f: a -> b) (xx: List (Tup2 c a)): List (Tup2 c b)
+mapSnd (f: a -> b) (xx: List (c, a)): List (c, b)
  = case xx of
         Nil              -> Nil
         Cons (T2 x y) xs -> Cons (T2 x (f y)) (mapSnd f xs)

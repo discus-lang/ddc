@@ -17,9 +17,8 @@ where
 
 
 main ()
- = private r with {Read r; Write r; Alloc r}
-   in do
-        -- Load command-line arguments.
+ = mutable r in
+   do   -- Load command-line arguments.
         mSteps
          = mainArgs_load Nothing
          $ Cons (ArgNat "-steps" "number of steps" (\n _ -> (Just n)))
