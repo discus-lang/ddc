@@ -5,6 +5,7 @@ module DDC.Core.Codec.Shimmer.Decode
         , takeModuleDecls
         , takeTyCon)
 where
+import DDC.Data.Label
 import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -472,6 +473,10 @@ fromType c ss
          -> C.TSum $ Sum.fromList (fromType c ssKind)
                    $ map (fromType c) ssArgs
 
+        -- Row
+        XAps "tr" ssElems
+         -> C.TRow $ map (fromTypeRowElem c) ssElems
+
           -- Con
         _ |  Just tc    <- takeTyCon c ss
           -> C.TCon tc
@@ -481,6 +486,23 @@ fromType c ss
           -> C.TVar u
 
           | otherwise   -> failDecode "fromType failed"
+
+
+fromTypeRowElem :: Ord n => Config n -> SExp -> (Label, C.Type n)
+fromTypeRowElem c ss
+ = case ss of
+        XAps "p" [ssLabel, ssType]
+         -> (fromLabel ssLabel, fromType c ssType)
+
+        _ -> failDecode "fromTypeRowElem failed"
+
+
+fromLabel :: SExp -> Label
+fromLabel ss
+ = case ss of
+        XTxt tx -> labelOfText tx
+        _       -> failDecode "fromLabel failed"
+
 
 
 takeTypeFun :: Ord n => Config n -> [SExp] -> C.Type n -> Maybe (C.Type n)

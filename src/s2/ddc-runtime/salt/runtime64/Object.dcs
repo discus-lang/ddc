@@ -163,7 +163,7 @@ ddcObjectHeader [r: Region] (obj: Ptr# r Obj): Word64#
 --      Small        = 6#
 --      Mixed        = 7#
 --
-ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
+ddcObjectFormat [r: Region] (obj: Ptr# r Obj): Nat#
  = do   -- Get the format byte from the header.
         fmt8    = truncate# [Word8#] (peek# [r] [Word64#] (castPtr# obj))
 

@@ -5,6 +5,8 @@ export foreign c value
  ddcPrimRecordProject   : [r1 r2: Region]. Ptr# r1 Obj -> Word64# -> Ptr# r2 Obj
 
 import foreign c value
+ ddcObjectFormat        : [r: Region].     Ptr# r Obj -> Nat#
+
  ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
@@ -19,16 +21,20 @@ with letrec
 ddcPrimRecordProject
         [r1 r2: Region]
         (pObj: Ptr# r1 Obj) (wField: Word64#): Ptr# r2 Obj
- = do
-        ** TODO: branch on object type. we may be given a boxed object with a single field.
+ = case ddcObjectFormat pObj of
+        -- TODO: look through single fields in boxed objects.
 
-        -- Each of the fields is identified by a hash which is a word
-        -- long, so the number of words is also the number of fields.
-        nFields = ddcMixedRawSizeWords pObj
-        pHashes = ddcMixedPayload pObj
+        -- Mixed object, used for records.
+        7# -> do
+                -- Each of the fields is identified by a hash which is a word
+                -- long, so the number of words is also the number of fields.
+                nFields = ddcMixedRawSizeWords pObj
+                pHashes = ddcMixedPayload pObj
 
-        iField  = ddcPrimRecordProject_search wField (castPtr# pHashes) nFields 0#
-        ddcMixedGetField pObj iField
+                iField  = ddcPrimRecordProject_search wField (castPtr# pHashes) nFields 0#
+                ddcMixedGetField pObj iField
+
+        _ -> fail#
 
 
 ddcPrimRecordProject_search
