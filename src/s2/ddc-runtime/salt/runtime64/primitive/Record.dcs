@@ -7,6 +7,9 @@ export foreign c value
 import foreign c value
  ddcObjectFormat        : [r: Region].     Ptr# r Obj -> Nat#
 
+ ddcBoxedFields         : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
  ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
@@ -22,7 +25,12 @@ ddcPrimRecordProject
         [r1 r2: Region]
         (pObj: Ptr# r1 Obj) (wField: Word64#): Ptr# r2 Obj
  = case ddcObjectFormat pObj of
-        -- TODO: look through single fields in boxed objects.
+        -- Look through boxed objects with a single field.
+        3# -> do
+                nFields = ddcBoxedFields pObj
+                case eq# nFields 1# of
+                 True#  -> ddcPrimRecordProject (ddcBoxedGetField [r1] [r1] pObj 0#) wField
+                 False# -> fail#
 
         -- Mixed object, used for records.
         7# -> do
@@ -52,5 +60,4 @@ ddcPrimRecordProject_search
                  True#  -> ix
                  False# -> ddcPrimRecordProject_search
                                 wWanted pFields nFields (add# ix 1#)
-
 

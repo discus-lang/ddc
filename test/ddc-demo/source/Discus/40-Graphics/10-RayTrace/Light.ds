@@ -7,16 +7,14 @@ import Data.Maybe; Data.Numeric
 where
 
 
-data Light where
-        Light   :  Vec3         -- Point source for light.
-                -> Vec3         -- Color of light.
-                -> Light
+data Light
+        = Light [ point : Vec3
+                , color : Vec3 ]
 
 
 -- | Translate a light by the given offset.
-light_translate (v: Vec3) (l: Light): Light
- = case l of
-        Light pos color -> Light (pos + v) color
+light_translate (v: Vec3) (light: Light): Light
+ = Light [point = light.point + v, color = light.color]
 
 
 -- | Compute the direct lighting at a particular point for a list of lights.
@@ -32,14 +30,13 @@ light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
 
 
 -- | Compute the direct lighting at a particular point for a single light.
-light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
- | Light lpoint color   <- l
+light_apply (point normal: Vec3) (light: Light) (os: List Object): Vec3
  = do
         -- Vector from the light to the surface point.
-        dir     = vec3_normalize (lpoint - point)
+        dir     = vec3_normalize (light.point - point)
 
         -- Distance from the light source to the surface point.
-        dist    = vec3_magnitude (lpoint - point)
+        dist    = vec3_magnitude (light.point - point)
 
         if object_check (Ray [origin = point, direction = normal]) os dist
          then Vec3 0.0 0.0 0.0
@@ -49,5 +46,5 @@ light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
 
                 -- The light that is reflected.
                 if mag > 0.0
-                 then   vec3_muls color mag
+                 then   vec3_muls light.color mag
                  else   Vec3 0.0 0.0 0.0

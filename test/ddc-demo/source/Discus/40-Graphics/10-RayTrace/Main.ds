@@ -9,23 +9,18 @@ import Data.Maybe
 import Data.Numeric
 where
 
-
--- TODO: need to fix shimmer loading.
-
-
 -- | Draw a ray-traced image as a PPM file.
 main ()
  = do
-        mWidth
-         = mainArgs_load Nothing
-         $ Cons (ArgNat "-width" "width of image" (\n _ -> Just n))
-         $ Nil
+        mWidth  = mainArgs_load Nothing
+                $ Cons (ArgNat "-width" "width of image" (\n _ -> Just n))
+                $ Nil
 
         width   = fromMaybe 40 mWidth
         world   = world_make 0.0
-        posEye  = Vec3 0.0   0.0  -500.0
+        posEye  = Vec3 0.0 0.0 -500.0
         fov     = 100.0
-        size    = (truncate# width, truncate# width)
+        size    = [x = truncate# width, y = truncate# width]
         limit   = 5
 
         writel "P3"
@@ -33,20 +28,22 @@ main ()
         writel $ show width %% show width
         writel "255"
 
-        draw world posEye fov size limit
+        draw    world posEye fov
+                size limit
 
 
-draw    (world:  World)         -- ^ World to draw.
-        (posEye: Vec3)          -- ^ Position of eye.
-        (fov:    Float)         -- ^ Field of view.
-        (size:  (Float, Float)) -- ^ Size of image, in pixels.
-        (limit:  Nat)           -- ^ Limit number of ray bounces.
+draw    (world:  World)                 -- ^ World to draw.
+        (posEye: Vec3)                  -- ^ Position of eye.
+        (fov:    Float)                 -- ^ Field of view.
+        (size:   [x: Float, y: Float])  -- ^ Size of image, in pixels.
+        (limit:  Nat)                   -- ^ Limit number of ray bounces.
         : S Console Unit
- | (sizeX, sizeY) <- size
  = go -0.5 0.5
  where
-        stepX   = div 1.0 sizeX
-        stepY   = div 1.0 sizeY
+        sizeX   = size.x
+        sizeY   = size.y
+        stepX   = div 1.0 size.x
+        stepY   = div 1.0 size.y
 
         go (posX posY: Float): S Console Unit
          | posX >= 0.5

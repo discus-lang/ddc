@@ -21,8 +21,8 @@ world_make (time: Float): World
 
 -- | Lights in the world.
 world_lights (time: Float): List Light
- = Cons (Light  (Vec3 300.0     (0.0 - 300.0)   (0.0 - 100.0))
-                (Vec3 150000.0  150000.0        150000.0))
+ = Cons (Light  [ point = Vec3 300.0     (0.0 - 300.0)   (0.0 - 100.0)
+                , color = Vec3 150000.0  150000.0        150000.0 ])
  $ Nil
 
 

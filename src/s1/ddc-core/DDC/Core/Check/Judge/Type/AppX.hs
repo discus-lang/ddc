@@ -556,14 +556,13 @@ projectFieldType ctx tObj0 lField
                  -> goLookupData tObj nDataType
 
                 -- Can't project this thing.
-                _ -> error
-                   $  "invalid projection of "
-                   ++ show tObj ++ " label " ++ show lField
+                _ -> error $ "invalid projection of "
+                           ++ show tObj ++ " label " ++ show lField
 
         goLookupData tObj nDataType
          = do   mDataType <- Resolve.lookupDataType ctx nDataType
                 case mDataType of
-                 Nothing -> error "goUnwrapData: can't find data type decl"
+                 Nothing -> error "can't find data type decl"
                  Just dataType -> goUnwrapData tObj dataType
 
         goUnwrapData tObj dataType
@@ -571,7 +570,7 @@ projectFieldType ctx tObj0 lField
                 Just [dataCtor]
                   -> case dataCtorFieldTypes dataCtor of
                         [tField] -> projectFieldType ctx tField lField
-                        _        -> error $ "not projecting through too many fields in  " ++ show tObj
+                        _ -> error $ "not projecting through too many fields in  " ++ show tObj
 
                 _ -> error $ "not projecting too many ctors in " ++ show tObj
 
