@@ -14,7 +14,7 @@ data Light
 
 -- | Translate a light by the given offset.
 light_translate (v: Vec3) (light: Light): Light
- = Light [point = light.point + v, color = light.color]
+ = [point = light.point + v, color = light.color]
 
 
 -- | Compute the direct lighting at a particular point for a list of lights.
@@ -38,7 +38,7 @@ light_apply (point normal: Vec3) (light: Light) (os: List Object): Vec3
         -- Distance from the light source to the surface point.
         dist    = vec3_magnitude (light.point - point)
 
-        if object_check (Ray [origin = point, direction = normal]) os dist
+        if object_check [origin = point, direction = normal] os dist
          then Vec3 0.0 0.0 0.0
          else do
                 -- Magnitude of reflection.

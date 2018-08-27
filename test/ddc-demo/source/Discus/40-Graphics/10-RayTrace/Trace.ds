@@ -49,8 +49,9 @@ trace_ray (world: World) (ray0: Ray) (limit0: Nat): Vec3
         --       provided the record type matches.
 
         go_cast origin dir limit
-         = case object_cast (Ray [origin = origin, direction = dir]) world.objects of
-                -- Ray did not intersect any objects.
+         = case object_cast [origin = origin, direction = dir]
+                            world.objects
+            of  -- Ray did not intersect any objects.
                 Nothing
                  -> Vec3 0.0 0.0 0.0
 

@@ -14,9 +14,9 @@ data World
 
 -- | Make the world.
 world_make (time: Float): World
- = World [ objects = world_objects time
-         , lights  = world_lights  time
-         , ambient = Vec3 0.3 0.3 0.3 ]
+ = [ objects = world_objects time
+   , lights  = world_lights  time
+   , ambient = Vec3 0.3 0.3 0.3 ]
 
 
 -- | Lights in the world.
