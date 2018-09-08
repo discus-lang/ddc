@@ -14,7 +14,7 @@ nat2  = 93
 -- Some polymorphic CAF.
 --  During code generation we insert a value abstraction under
 --  the existing type abstraction to make it a function.
-fnord2 [a: Data]: Fnord a
+fnord2 {@a: Data}: Fnord a
  = Fnord
 
 -- A suspended computation as a CAF.
@@ -31,8 +31,8 @@ main (_: Unit): S Console Unit
  = doTwice (box do writel $ "derp = "
                           % showNat
                                 ( nat1 + nat2
-                                + defnord (fnord1 [Nat#])
-                                + defnord (fnord2 [Nat#]))
+                                + defnord (fnord1 {@Nat#})
+                                + defnord (fnord2 {@Nat#}))
                    writel text1
                    run comp1
                    run comp2)

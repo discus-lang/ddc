@@ -97,13 +97,6 @@ foo (_ : Unit): Unit
 ;;
 
 
-:parse..
-module Test where
-foo (_ : Unit): (x,y,z)# Nat Nat Nat
- = (x,y,z)# [Nat] [Nat] [Nat] 1 2 3
-;;
-
-
 -- Check parsing of match expressions.
 :parse..
 module Test where
