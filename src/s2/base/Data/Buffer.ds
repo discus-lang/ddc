@@ -1,0 +1,49 @@
+
+module Data.Buffer
+export buffer8_fromVector; buffer8_peek; buffer8_pull
+import Data.Numeric
+import Data.Maybe
+import Data.Ref
+where
+
+
+-- | A buffer backed by a vector of bytes.
+--   The buffer has a current position and a maximum length.
+data Buffer (r: Region)
+        = Buffer (Vector# r Word8) (Ref r Nat) (Ref r Nat)
+
+
+-- | Wrap a buffer container around a vector.
+--
+--   This does not copy the vector, so writes to the returned buffer
+--   will write through to the provided vector.
+buffer8_fromVector (vec: Vector# r Word8): S (Alloc r) (Buffer r)
+ = do   refPos  = allocRef {@r} 0
+        refLen  = allocRef {@r} (vectorLength# vec)
+        Buffer vec refPos refLen
+
+
+-- | Peek the element at the current position of the buffer,
+--   or `Nothing` if we're already at the end.
+buffer8_peek ((Buffer vec refPos refLen): Buffer r)
+        : S (Read r) (Maybe Word8)
+ = do   pos     = readRef refPos
+        len     = readRef refLen
+        if pos >= len
+         then Nothing
+         else   Just (vectorRead# vec pos)
+
+
+-- | Pull the element at the current position in the buffer,
+--   advancing the current position by one element,
+--   or `Nothing` if we're already at the end.
+buffer8_pull ((Buffer vec refPos refLen): Buffer r)
+        : S (Read r + Write r) (Maybe Word8)
+ = do   pos     = readRef refPos
+        len     = readRef refLen
+        if pos >= len
+         then Nothing
+         else do
+                writeRef refPos (pos + 1)
+                Just (vectorRead# vec pos)
+
