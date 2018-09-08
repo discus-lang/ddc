@@ -20,6 +20,7 @@ instance Alpha Type where
         TApp    t1 t2   -> TApp    (alpha f t1) (alpha f t2)
         TForall b t     -> TForall (alpha f b)  (alpha f t)
         TSum    ts      -> TSum    (alpha f ts)
+        TRow    r       -> TRow    [ (l, alpha f t) | (l, t) <- r ]
 
 
 instance Alpha TypeSum where

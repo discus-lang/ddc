@@ -40,6 +40,8 @@ freeVarsT env tt
          |  otherwise
          -> Set.empty
 
-        TApp t1 t2
-         -> Set.union (freeVarsT env t1) (freeVarsT env t2)
-
+        TApp t1 t2      -> Set.union (freeVarsT env t1) (freeVarsT env t2)
+        TRow r          -> Set.unions $ map (freeVarsT env . snd) r
+        TTuple r        -> Set.unions $ map (freeVarsT env . snd) r
+        TRecord r       -> Set.unions $ map (freeVarsT env . snd) r
+        TVariant r      -> Set.unions $ map (freeVarsT env . snd) r

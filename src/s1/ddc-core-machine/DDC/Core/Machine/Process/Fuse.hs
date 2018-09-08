@@ -8,7 +8,7 @@ where
 import DDC.Core.Machine.Process.Base
 import DDC.Core.Machine.Prim
 import qualified Data.Map as Map
-import DDC.Core.Exp
+import DDC.Core.Exp                     hiding (Label)
 
 import Control.Monad (foldM)
 

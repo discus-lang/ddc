@@ -7,7 +7,8 @@ import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
-import qualified DDC.Type.Sum           as Sum
+import qualified DDC.Core.Check.Context.Resolve as Resolve
+import qualified DDC.Type.Sum                   as Sum
 
 
 -- | Make the left type a subtype of the right type,
@@ -270,7 +271,7 @@ makeSub config a ctx0 x0 xL tL tR err
         let xL_elab     = XApp aFn xL (RImplicit (RTerm xArgElab))
 
         (xL_elab', effs1, ctx1)
-                <- makeSub config a ctx0 x0 xL_elab tL2 tR err
+         <- makeSub config a ctx0 x0 xL_elab tL2 tR err
 
         ctrace  $ vcat
                 [ text "*<  Sub_Implicit_Arg"
@@ -457,11 +458,47 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.empty kEffect
                 , ctx4)
 
-
-    -- Sub_Fail
-    --   No other rule matched, so this expression is ill-typed.
-    | otherwise
+    -- Sub_Wrap
+    --   If the expected type is a data type with a single constructor
+    --   then try to auto-wrap the expression to make it the desired type.
+    --   The next pattern is to fail, so we might as well try to wrap.
+    | TCon (TyConBound nData) <- tR
     = do
+        mDataType <- Resolve.lookupDataType ctx0 nData
+        case mDataType of
+         Just dataType
+          |  Just [dataCtor] <- dataTypeCtors dataType
+          ,  [tRField]       <- dataCtorFieldTypes dataCtor
+          -> do
+                -- Try to coerce the expression we have to be the same type
+                -- as the field of the data constructor of the expected type.
+                (xL_field, effs, ctx1)
+                 <- makeSub config a ctx0 x0 xL tL tRField err
+
+                let aApp  = AnTEC tR (TSum effs) (tBot kClosure) a
+                let aCon  = AnTEC (typeOfDataCtor dataCtor) (tBot kEffect) (tBot kClosure) a
+
+                let dcCon = DaConBound $ DaConBoundName
+                          { daConBoundNameModule = Just $ dataCtorModuleName dataCtor
+                          , daConBoundTypeName   = Just $ dataCtorTypeName dataCtor
+                          , daConBoundNameCtor   = dataCtorName dataCtor }
+
+                let xL2   = XApp  aApp (XCon aCon dcCon) (RTerm xL_field)
+                return (xL2, effs, ctx1)
+
+          | otherwise
+          -> makeSub_Fail config a ctx0 x0 xL tL tR err
+
+         Nothing -> makeSub_Fail config a ctx0 x0 xL tL tR err
+
+    | otherwise
+    = makeSub_Fail config a ctx0 x0 xL tL tR err
+
+
+-- Sub_Fail
+--   No other rule matched, so this expression is ill-typed.
+makeSub_Fail _config _a _ctx0 _x0 _xL tL tR err
+ = do
         ctrace  $ vcat
                 [ text "**  Sub_Fail"
                 , text "    tL: " % string (show tL)

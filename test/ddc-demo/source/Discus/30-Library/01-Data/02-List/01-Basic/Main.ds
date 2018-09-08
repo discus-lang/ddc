@@ -1,6 +1,6 @@
 
 -- Demonstration of list combinators and combining commutable effects.
-module Main 
+module Main
 import Data.Numeric.Nat
 import Data.Function; Data.Maybe; Data.List
 import Data.Ref
@@ -10,7 +10,7 @@ where
 
 
 main ()
- = private r with { Alloc r; Read r; Write r } in 
+ = private r with { Alloc r; Read r; Write r } in
    do
         -- Create a demo list.
         xx      = enumFromTo 0 100
@@ -19,14 +19,14 @@ main ()
         xx'     = filter (λ(x: Nat) -> rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
-        ref     = allocRef [r] [Nat] 0
+        ref     = allocRef {@r} {@Nat} 0
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
         forS xx' (λ(x: Nat) ->
           do    writeRef ref ((readRef ref) + 1)
                 writel (show x))
-        
+
         -- Print out the final list length.
         writel $ show (readRef ref)
 

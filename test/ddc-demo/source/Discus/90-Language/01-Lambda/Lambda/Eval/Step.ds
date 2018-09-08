@@ -11,10 +11,10 @@ where
 
 
 -- | Result of performing a single step for an expression.
-data SStep (a: Data) where
-        StepNone        : SStep a
-        StepSome        : a -> SStep a
-        StepError       : SStep a
+data SStep (a: Data)
+        = StepNone
+        | StepSome a
+        | StepError
 
 
 show_SStep {Show a}: Show (SStep a)

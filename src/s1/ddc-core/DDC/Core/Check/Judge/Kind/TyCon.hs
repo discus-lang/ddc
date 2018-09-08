@@ -20,6 +20,7 @@ takeSortOfKiCon kc
         KiConEffect     -> Just sComp
         KiConClosure    -> Just sComp
         KiConWitness    -> Just sProp
+        KiConRow        -> Just sComp
 
 
 -- | Take the kind of a witness type constructor.
@@ -29,9 +30,7 @@ kindOfTwCon tc
         TwConImpl        -> kWitness  `kFun`  kWitness `kFun` kWitness
         TwConPure        -> kEffect   `kFun`  kWitness
         TwConConst       -> kRegion   `kFun`  kWitness
-        TwConDeepConst   -> kData     `kFun`  kWitness
         TwConMutable     -> kRegion   `kFun`  kWitness
-        TwConDeepMutable -> kData     `kFun`  kWitness
         TwConDisjoint    -> kEffect   `kFun`  kEffect  `kFun`  kWitness
         TwConDistinct n  -> (replicate n kRegion)      `kFuns` kWitness
 
@@ -45,10 +44,9 @@ kindOfTcCon tc
         TcConFunExplicit -> kData    `kFun` kData `kFun` kData
         TcConFunImplicit -> kData    `kFun` kData `kFun` kData
         TcConRecord ns   -> map (const kData) ns  `kFuns` kData
+        TcConT           -> kRow     `kFun` kData
+        TcConR           -> kRow     `kFun` kData
+        TcConV           -> kRow     `kFun` kData
         TcConRead        -> kRegion  `kFun` kEffect
-        TcConHeadRead    -> kData    `kFun` kEffect
-        TcConDeepRead    -> kData    `kFun` kEffect
         TcConWrite       -> kRegion  `kFun` kEffect
-        TcConDeepWrite   -> kData    `kFun` kEffect
         TcConAlloc       -> kRegion  `kFun` kEffect
-        TcConDeepAlloc   -> kData    `kFun` kEffect

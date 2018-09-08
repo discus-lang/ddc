@@ -92,6 +92,7 @@ instance Ord n => MapBoundT Type n where
         TAbs    b t     -> TAbs    b (mapBoundAtDepthT f (d + countBAnons [b]) t)
         TApp t1 t2      -> TApp      (mapBoundAtDepthT f d t1) (mapBoundAtDepthT f d t2)
         TForall b t     -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
+        TRow r          -> TRow     [(l, mapBoundAtDepthT f d t) | (l, t) <- r]
         TSum ss         -> TSum      (mapBoundAtDepthT f d ss)
 
 

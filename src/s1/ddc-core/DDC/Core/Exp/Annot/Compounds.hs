@@ -91,28 +91,26 @@ import Data.Maybe (catMaybes)
 annotOfExp :: Exp a n -> a
 annotOfExp xx
  = case xx of
-        XVar     a _    -> a
-        XPrim    a _    -> a
-        XCon     a _    -> a
-        XAbs     a _ _  -> a
-        XApp     a _ _  -> a
-        XLet     a _ _  -> a
-        XCase    a _ _  -> a
-        XCast    a _ _  -> a
+        XVar    a _     -> a
+        XAbs    a _ _   -> a
+        XApp    a _ _   -> a
+        XLet    a _ _   -> a
+        XAtom   a _     -> a
+        XCase   a _ _   -> a
+        XCast   a _ _   -> a
 
 
 -- | Apply a function to the annotation of an expression.
 mapAnnotOfExp :: (a -> a) -> Exp a n -> Exp a n
 mapAnnotOfExp f xx
  = case xx of
-        XVar     a u      -> XVar     (f a) u
-        XPrim    a p      -> XPrim    (f a) p
-        XCon     a c      -> XCon     (f a) c
-        XAbs     a b  x   -> XAbs     (f a) b  x
-        XApp     a x1 x2  -> XApp     (f a) x1 x2
-        XLet     a lt x   -> XLet     (f a) lt x
-        XCase    a x  as  -> XCase    (f a) x  as
-        XCast    a c  x   -> XCast    (f a) c  x
+        XVar    a u     -> XVar  (f a) u
+        XAbs    a b  x  -> XAbs  (f a) b  x
+        XApp    a x1 x2 -> XApp  (f a) x1 x2
+        XLet    a lt x  -> XLet  (f a) lt x
+        XAtom   a t     -> XAtom (f a) t
+        XCase   a x  as -> XCase (f a) x  as
+        XCast   a c  x  -> XCast (f a) c  x
 
 
 -- Lambdas ---------------------------------------------------------------------

@@ -95,7 +95,7 @@ smr_eqKey (k1 k2: Key): Bool
 
 -- | Equality dictionary for train cars.
 eq_Car {@s p: Data} {Eq s} {Eq p}: Eq (Car s p)
- = Eq   (\c1 c2 -> smr_eqCar [s] [p] c1 c2)
+ = Eq   (\c1 c2 -> smr_eqCar {@s} {@p} c1 c2)
         (\c1 c2 -> not $ smr_eqCar   c1 c2)
 
 
@@ -157,7 +157,7 @@ smr_eqBumps (bs1 bs2: List UpsBump): Bool
 
 -- | Equality dictionary for references.
 eq_Ref    {@s p: Data} {Eq s} {Eq p}: Eq (ExpRef s p)
- = Eq   (\x1 x2 -> smr_eqRef [s] [p] x1 x2)
+ = Eq   (\x1 x2 -> smr_eqRef {@s} {@p} x1 x2)
         (\x1 x2 -> not $ smr_eqRef   x1 x2)
 
 smr_eqRef {@s p: Data} {Eq s} {Eq p} (r1 r2: ExpRef s p): Bool

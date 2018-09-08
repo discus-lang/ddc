@@ -9,7 +9,7 @@ where
 
 
 main ()
- = private r with { Alloc r; Read r; Write r } in
-   do   arr     = arrayStore_alloc [r] 10 0
+ = mutable r in
+   do   arr     = arrayStore_alloc {@r} 10 0
         arrayStore_write arr 5 100
         writel $ show (array_index arr 5)

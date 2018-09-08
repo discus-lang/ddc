@@ -40,16 +40,16 @@ tailcall4#
 96i#
 :*: Int#
 
-42w8#
+0x2aw8#
 :*: Word8#
 
-42w16#
+0x002aw16#
 :*: Word16#
 
-42w32#
+0x0000002aw32#
 :*: Word32#
 
-42w64#
+0x000000000000002aw64#
 :*: Word64#
 
 TAG42#
@@ -70,13 +70,13 @@ While parsing.
 -- Error: not a valid bit width
 When checking expression.
   <batch>:50:2
-  Undefined data constructor: 42w42#
+  Undefined data constructor: 0x2aw42#
 
 -- Binary literals
-4w32#
+0x00000004w32#
 :*: Word32#
 
-128w8#
+0x80w8#
 :*: Word8#
 
 -- Error: Binary literal is wider than word size.

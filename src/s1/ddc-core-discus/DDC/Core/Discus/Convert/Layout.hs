@@ -120,9 +120,10 @@ fieldSizeOfType platform tt
         -- We're not supporting polymorphic fields yet.
         TForall{}       -> Nothing
 
-        -- We shouldn't find any TSums, because field types always have
-        -- kind data.
+        -- We shouldn't find any TSums, or TRows
+        -- because field types always have kind data.
         TSum{}          -> Nothing
+        TRow{}          -> Nothing
 
 
 -- | Get the raw size of a value with this type name.

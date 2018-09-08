@@ -9,11 +9,10 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
         XVar  a u               -> rnf a `seq` rnf u
-        XPrim a _               -> rnf a
-        XCon  a dc              -> rnf a `seq` rnf dc
         XAbs  a b x             -> rnf a `seq` rnf b   `seq` rnf x
         XApp  a x1 x2           -> rnf a `seq` rnf x1  `seq` rnf x2
         XLet  a lts x           -> rnf a `seq` rnf lts `seq` rnf x
+        XAtom a t               -> rnf a `seq` rnf t
         XCase a x alts          -> rnf a `seq` rnf x   `seq` rnf alts
         XCast a c x             -> rnf a `seq` rnf c   `seq` rnf x
 
@@ -25,6 +24,15 @@ instance (NFData a, NFData n) => NFData (Arg a n) where
         RTerm x                 -> rnf x
         RWitness  x             -> rnf x
         RImplicit x             -> rnf x
+
+
+instance NFData n => NFData (Atom n) where
+ rnf aa
+  = case aa of
+        MACon dc                -> rnf dc
+        MALabel l               -> rnf l
+        MAPrim _                -> ()
+
 
 instance (NFData n)  => NFData (Param n) where
  rnf mm

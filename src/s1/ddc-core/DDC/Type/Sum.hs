@@ -33,6 +33,8 @@ import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 import Prelude                          hiding (elem)
 
+-- TODO: denubify this code. use nubOrd instead.
+
 
 -- | Construct an empty type sum of the given kind.
 empty :: Kind n -> TypeSum n
@@ -101,6 +103,8 @@ elem t ts@TypeSumSet{}
 
              _ -> False
 
+        TRow{}          -> L.elem t (typeSumSpill ts)
+
 
 -- | Insert a new element into a sum.
 insert :: Ord n => Type n -> TypeSum n -> TypeSum n
@@ -131,6 +135,8 @@ insert t ts@TypeSumSet{}
 
         TSum ts'         -> foldr insert ts (toList ts')
 
+        TRow{}           -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
+
 
 -- | Delete an element from a sum.
 delete :: Ord n => Type n -> TypeSum n -> TypeSum n
@@ -153,6 +159,8 @@ delete t ts@TypeSumSet{}
         TForall{}       -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
 
         TSum ts'        -> foldr delete ts (toList ts')
+
+        TRow{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
 
 
 -- | Add two type sums.
@@ -218,9 +226,7 @@ hashTcCon :: TcCon -> Maybe TyConHash
 hashTcCon tc
  = case tc of
         TcConRead       -> Just $ TyConHash 0
-        TcConDeepRead   -> Just $ TyConHash 1
         TcConWrite      -> Just $ TyConHash 2
-        TcConDeepWrite  -> Just $ TyConHash 3
         TcConAlloc      -> Just $ TyConHash 4
         _               -> Nothing
 
@@ -238,9 +244,7 @@ unhashTyCon (TyConHash i)
  = TyConSpec
  $ case i of
         0               -> TcConRead
-        1               -> TcConDeepRead
         2               -> TcConWrite
-        3               -> TcConDeepWrite
         4               -> TcConAlloc
 
         -- This should never happen, because we only produce hashes

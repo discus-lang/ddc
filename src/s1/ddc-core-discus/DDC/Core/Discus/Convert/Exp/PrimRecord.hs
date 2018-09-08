@@ -5,10 +5,13 @@ where
 import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
+import DDC.Data.Label
 import DDC.Core.Check                           (AnTEC(..))
-import qualified DDC.Core.Discus.Prim            as E
+import qualified DDC.Core.Discus.Prim           as E
+import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
+import qualified Data.Set                       as Set
 
 
 convertPrimRecord
@@ -20,30 +23,77 @@ convertPrimRecord
 convertPrimRecord _ectx ctx xxExp
  = let convertX = contextConvertExp ctx
    in  case xxExp of
-
-        -- Project a single field from a record.
         XApp a _ _
-         -- Unpack the application of the projection primitive.
-         | Just ( PProject  nField
-                , [RType tRecord, RType _tField, RTerm xRecord])
-                <- takeXPrimApps xxExp
 
-         -- Get the list of fields from the record that we are projecting from.
-         , Just (TyConSpec (TcConRecord nsFields),   _tsFields)
-                <- takeTyConApps tRecord
+         -- Record construction -----------------------------------------------
+         | Just (PRecord ls, rs) <- takeXPrimApps xxExp
+         , _tsField <- [t | RType t <- rs]
+         , xsField  <- [x | RTerm x <- rs]
 
-         -- Lookup the index and type of the field we want from the record.
-         , Just (iField    :: Integer)
-                 <- lookup nField $ zip nsFields [0..]
+           -- Comparison of labels is via the hash.
+           --  If we have any repeated labels or a hash collision
+           --  then this will fail.
+           --
+           --  TODO: do interning of record labels and compare via the global
+           --  label index instead. We want the label names anyway for the
+           --  reflection library. Using the hashes is just a stop-gap.
+           --
+         , True     <- if (Set.size $ Set.fromList ls) == length ls
+                        then True
+                        else error "convertPrimRecord: repeated field or hash collision"
 
          -> Just $ do
-                let a'  =  annotTail a
+                let a' = annotTail a
 
-                -- Convert the record expression
+                -- Info table index is set to 0 as records are already self describing.
+                let xInfoIdx    = A.xWord a' 0 32
+
+                -- Use 8 byte hashes for each field name.
+                -- The length of the object is specified in 64-bit words.
+                let xLengthRaw  = A.xNat a' $ fromIntegral $ length ls
+
+                -- Store all the field pointers in the object.
+                let xLengthPtrs = A.xNat a' $ fromIntegral $ length ls
+
+                xsField' <- mapM (convertX ExpArg ctx) xsField
+
+                return
+                   -- allocate the object.
+                 $ XLet a' (LLet  (BAnon (A.tPtr A.rTop A.tObj))
+                                  (A.xAllocMixed a' A.rTop xInfoIdx xLengthRaw xLengthPtrs))
+
+                   -- get a pointer to the raw payload.
+                 $ XLet a' (LLet  (BAnon (A.tPtr A.rTop (A.tWord 64)))
+                                  (A.xCastPtr a' A.rTop (A.tWord 64) (A.tWord 8)
+                                    (A.xPayloadOfMixed a' A.rTop (XVar a' (UIx 0)))))
+
+                 $ foldr (XLet a') (XVar a' (UIx 1))
+
+                    -- write field hashes
+                 $  [ LLet (BNone A.tVoid)
+                           (A.xPoke a' A.rTop (A.tWord 64)
+                                (A.xPlusPtr a' A.rTop (A.tWord 64)
+                                        (XVar a' (UIx 0)) (A.xNat a' (ix * 8)))
+                                (A.xWord a' (fromIntegral $ hashOfLabel l) 64))
+                    | ix     <- [0..]
+                    | l      <- ls ]
+
+                    -- write field values
+                 ++ [ LLet (BNone A.tVoid)
+                           (A.xSetFieldOfMixed a' A.rTop A.rTop (XVar a' (UIx 1)) ix xField)
+                    | ix     <- [0..]
+                    | xField <- xsField' ]
+
+         -- Record field projection --------------------------------------------
+         |  Just (PProject l, [RTerm xRecord]) <- takeXPrimApps xxExp
+         -> Just $ do
+                let a' = annotTail a
+
                 xRecord' <- convertX ExpArg ctx xRecord
 
-                -- Project out the field that we want.
-                return   $  A.xGetFieldOfBoxed a' A.rTop A.rTop
-                                        xRecord' iField
+                return $ A.xRecordProject a'
+                                A.rTop A.rTop xRecord'
+                                (A.xWord a' (fromIntegral (hashOfLabel l)) 64)
 
         _ -> Nothing
+

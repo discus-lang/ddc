@@ -219,14 +219,9 @@ convertX xx
  -- otherwise just boilerplate recursion
  | otherwise
  = case xx of
-   XVar a b
-    -> XVar a  <$> convertBound b
-
-   XPrim a b
-    -> return $ XPrim a b
-
-   XCon a c
-    -> XCon a  <$> convertDaCon c
+   XVar a b     -> XVar a  <$> convertBound b
+   XCon a c     -> XCon a  <$> convertDaCon c
+   XAtom{}      -> error "ddc-core-flow.convertX: impossible"
 
    XAbs a (MType b) x
     -> XAbs a  <$> (fmap MType     $ convertBind  b) <*> convertX x

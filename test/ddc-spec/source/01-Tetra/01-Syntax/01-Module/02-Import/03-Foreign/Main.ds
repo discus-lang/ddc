@@ -53,9 +53,9 @@ import foreign abstract capability
 --   runtime system, and will be linked in automatically when the current
 --   module is built.
 import foreign c value
- ddcPrimRefAlloc : [r: Region]. [a: Data]. a -> S (Alloc r) (Ref r a)
- ddcPrimRefRead  : [r: Region]. [a: Data]. Ref r a -> S (Read r) a
- ddcPrimRefWrite : [r: Region]. [a: Data]. Ref r a -> a -> S (Write r) Void#
+ ddcPrimRefAlloc : {@r: Region} -> {@a: Data} -> a -> S (Alloc r) (Ref r a)
+ ddcPrimRefRead  : {@r: Region} -> {@a: Data} -> Ref r a -> S (Read r) a
+ ddcPrimRefWrite : {@r: Region} -> {@a: Data} -> Ref r a -> a -> S (Write r) Void#
 
 
 -- We'll also import some primitive types and operators that lets us write
@@ -84,7 +84,7 @@ main ()
         -- Allocate a new reference in our stash region.
         --  Doing this requires the 'stashAlloc' and 'stashRead' capabilities
         --  in the context.
-        ref     = ddcPrimRefAlloc [Stash] [TextLit] "before\n"
+        ref     = ddcPrimRefAlloc {@Stash} {@TextLit} "before\n"
         ddcPrimStdoutPutString (ddcPrimTakeTextLit (ddcPrimRefRead ref))
 
         -- Update the reference and print out the result.

@@ -83,7 +83,7 @@ data Error a n
         , errorChecking         :: Exp a n }
 
 
-        -- Application ------------------------------------
+        -- App --------------------------------------------
         -- | Tried to apply something that is not a function.
         | ErrorAppNotFun
         { errorAnnot            :: a
@@ -95,6 +95,31 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
 
+        -- | Cannot project fields from a value of this type.
+        | ErrorProjectCannot
+        { errorAnnot            :: a
+        , errorType             :: Type n
+        , errorField            :: Label }
+
+        -- | Object does not have field in record projection.
+        | ErrorProjectNoField
+        { errorAnnot            :: a
+        , errorType             :: Type n
+        , errorField            :: Label }
+
+        -- | Data type has too many constructors to auto unwrap.
+        | ErrorProjectTooManyCtors
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorType             :: Type n
+        , errorField            :: Label }
+
+        -- | Data constructor has too many arguments to auto unwrap.
+        | ErrorProjectTooManyArgs
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n
+        , errorType             :: Type n
+        , errorField            :: Label }
 
         -- Abs -------------------------------------------
         -- | A type abstraction that tries to shadow a type variable that is

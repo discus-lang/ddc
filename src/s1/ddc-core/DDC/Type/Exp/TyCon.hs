@@ -34,6 +34,11 @@ data KiCon
 
         -- | Kind of closures.
         | KiConClosure          -- 'Closure :: Comp'
+
+        -- | Kind of rows.
+        -- TODO: The Prop / Comp distinction isn't getting us anything.
+        --       Just classify both by Type.
+        | KiConRow              -- 'Row     :: Comp'
         deriving (Eq, Ord, Show)
 
 
@@ -48,14 +53,8 @@ data TwCon
         -- | Constancy of some region.
         | TwConConst            -- :: Region  -> Witness
 
-        -- | Constancy of material regions in some type
-        | TwConDeepConst        -- :: Data    -> Witness                -- TODO: unused
-
         -- | Mutability of some region.
         | TwConMutable          -- :: Region  -> Witness
-
-        -- | Mutability of material regions in some type.
-        | TwConDeepMutable      -- :: Data    -> Witness                -- TODO: unused
 
         -- | Distinctness of some n regions
         | TwConDistinct Int     -- :: Data    -> [Region] -> Witness
@@ -82,28 +81,26 @@ data TcCon
 
         -- | A record type constructor,
         --   with the given field names.
+        --   TODO: this records encoding is deprecated.
         | TcConRecord [Text]    -- '{n1 .. nn} :: Data -> ... Data -> Data
+
+        -- | Tuple constructor.
+        | TcConT                -- T# : Row -> Data
+
+        -- | Record constructor.
+        | TcConR                -- R# : Row -> Data
+
+        -- | Variant constructor.
+        | TcConV                -- V# : Row -> Data
 
         -- Effect type constructors -------------
         -- | Read of some region.
         | TcConRead             -- Read      :: 'Region -> Effect'
 
-        -- | Read the head region in a data type.
-        | TcConHeadRead         -- HeadRead  :: 'Data   -> Effect'      -- TODO: unused
-
-        -- | Read of all material regions in a data type.
-        | TcConDeepRead         -- DeepRead  :: 'Data   -> Effect'      -- TODO: unused
-
         -- | Write of some region.
         | TcConWrite            -- Write     :: 'Region -> Effect'
 
-        -- | Write to all material regions in some data type.
-        | TcConDeepWrite        -- DeepWrite :: 'Data   -> Effect'      -- TODO: unused
-
         -- | Allocation into some region.
         | TcConAlloc            -- Alloc     :: 'Region -> Effect'
-
-        -- | Allocation into all material regions in some data type.
-        | TcConDeepAlloc        -- DeepAlloc :: 'Data   -> Effect'      -- TODO: unused
         deriving (Eq, Ord, Show)
 

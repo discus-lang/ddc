@@ -5,21 +5,65 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Core.Env.EnvT      as EnvT
-import qualified DDC.Type.Sum           as Sum
-import qualified Data.Map.Strict        as Map
+import DDC.Data.Label
+import qualified DDC.Core.Check.Context.Resolve as Resolve
+import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Type.Sum                   as Sum
+import qualified Data.Map.Strict                as Map
 
 
+---------------------------------------------------------------------------------------------------
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
-checkAppX !table !ctx
+checkAppX !table !ctx0
         Recon demand
         xx@(XApp a xFn arg)
+
+ -- Rule (App Recon Project)
+ --  Application of the tuple or record projection operator.
+ --  We determine the result type by looking up the appropriate field
+ --  of the record type.
+ | XAtom _ (MAPrim (PProject l)) <- xFn
+ = do
+        ctrace  $ vcat
+                [ text "*>  App Recon Project"
+                , text "    xFn    = " <> ppr xFn
+                , mempty ]
+
+        -- Check the functional expression.
+        --   We don't need the dummy type around the projection prim,
+        --   but do need the annotation itself so the AST type matches.
+        (xFn',  _tFn, _effsFn, ctx1)
+         <- tableCheckExp table table ctx0  Recon demand xFn
+
+        -- Reconstruct the type of the argument.
+        --   We know this is supposed to be a record, but the type
+        --   of the field we want needs to have been determined
+        --   by the context.
+        (xArg', tArg, effsArg, ctx2)
+         <- checkArg table ctx1 Recon DemandNone arg
+
+        -- Determine the result type.
+        tResult <- projectFieldType (annotOfExp xx) xx ctx0 tArg l
+
+        ctrace  $ vcat
+                [ text "*<  App Recon Project"
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Build the result expression.
+        let xResult
+                = XApp  (AnTEC tResult (TSum effsArg) (tBot kClosure) a)
+                        xFn' xArg'
+
+        return  (xResult, tResult, effsArg, ctx2)
+
+ | otherwise
  = do
         -- Check the functional expression.
         (xFn',  tFn,  effsFn, ctx1)
-         <- tableCheckExp table table ctx  Recon demand xFn
+         <- tableCheckExp table table ctx0  Recon demand xFn
 
         -- Check the argument.
         (arg', tArg, effsArg, ctx2)
@@ -125,8 +169,7 @@ checkArg  table ctx mode demand arg
         _ -> error "checkArg: nope"
 
 
-
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Synthesize the type of a function applied to its argument.
 synthAppArg
         :: (Show a, Show n, Ord n, Pretty n)
@@ -155,6 +198,7 @@ synthAppArg table
  | TCon (TyConBound n) <- tFn
  , Just tFn'    <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
  = do   synthAppArg table a xx ctx0 demand isScope xFn tFn' effsFn arg
+
 
  -- Rule (App Synth exists)
  --  Functional type is an existential.
@@ -200,6 +244,42 @@ synthAppArg table
                 , mempty ]
 
         return  (xResult, tA2, esResult, ctx2)
+
+
+ -- Rule (App Synth Project)
+ --  Application of the tuple or record projection operator.
+ --  We determine the result type by looking up the appropriate field
+ --  of the record type.
+ | XAtom _ (MAPrim (PProject l)) <- xFn
+ = do
+        ctrace  $ vcat
+                [ text "*>  App Synth Project"
+                , text "    demand = " <> ppr demand
+                , text "    scope  = " <> ppr isScope
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Synthesise the type of the argument.
+        --   We know this is supposed to be a record, but the type
+        --   of the field we want needs to have been determined
+        --   by the context.
+        (xArg', tArg, effsArg, ctx1)
+         <- checkArg table ctx0 (Synth isScope) DemandRun arg
+
+        -- Determine the result type.
+        tResult <- projectFieldType a xx ctx1 tArg l
+
+        ctrace  $ vcat
+                [ text "*<  App Synth Project"
+                , text "    xFn     ="  <> ppr xFn
+                , mempty ]
+
+        -- Build the result expression.
+        let xResult
+                = XApp  (AnTEC tResult (TSum effsArg) (tBot kClosure) a)
+                        xFn xArg'
+
+        return  (xResult, tResult, effsArg, ctx1)
 
 
  -- Rule (App Synth Match)
@@ -410,7 +490,7 @@ synthAppArg table
  =      throw $ ErrorAppNotFun a xx tFn
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Split a function-ish type into its parts.
 --   This works for implications, as well as the function constructor
 --   with and without a latent effect.
@@ -427,4 +507,69 @@ splitFunType tt
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
         _ -> Nothing
+
+
+---------------------------------------------------------------------------------------------------
+-- TODO: move this to its own module.
+reduceType :: (Ord n, Show n) => Context n -> Type n -> CheckM a n (Type n)
+reduceType ctx tt
+ = case tt of
+        TCon (TyConBound n)
+         -> lookupTypeSyn ctx n
+         >>= \case
+                Nothing -> return tt
+                Just t' -> reduceType ctx t'
+
+        _ -> return tt
+
+
+---------------------------------------------------------------------------------------------------
+-- | Try to project out a single field of a type.
+projectFieldType
+        :: (Ord n, Show n)
+        => a -> Exp a n
+        -> Context n
+        -> Type n -> Label
+        -> CheckM a n (Type n)
+
+projectFieldType a xxBlame ctx tObj0 lField
+ = goReduce
+ where
+        goReduce
+         = do   tObj <- reduceType ctx tObj0
+                goInspect tObj
+
+        goInspect tObj
+         = case takeTApps tObj of
+                -- Projection of a tuple field.
+                [TCon (TyConSpec TcConT), TRow lts]
+                 -> case lookup lField lts of
+                        Just t  -> return t
+                        _       -> throw $ ErrorProjectNoField a tObj lField
+
+                -- Projection of a record field.
+                [TCon (TyConSpec TcConR), TRow lts]
+                 -> case lookup lField lts of
+                        Just t  -> return t
+                        _       -> throw $ ErrorProjectNoField a tObj lField
+
+                (TCon (TyConBound nDataType) : _)
+                 -> goLookupData tObj nDataType
+
+                -- Can't project this thing.
+                _tsParts -> throw $ ErrorProjectCannot a tObj lField
+
+        goLookupData tObj nDataType
+         = do   mDataType <- Resolve.lookupDataType ctx nDataType
+                case mDataType of
+                 Nothing -> throw $ ErrorUndefinedCtor a xxBlame
+                 Just dataType -> goUnwrapData tObj dataType
+
+        goUnwrapData tObj dataType
+         = case dataTypeCtors dataType of
+                Just [dataCtor]
+                  -> case dataCtorFieldTypes dataCtor of
+                        [tField] -> projectFieldType a xxBlame ctx tField lField
+                        _ -> throw $ ErrorProjectTooManyArgs a xxBlame tObj lField
+                _ -> throw $ ErrorProjectTooManyCtors a xxBlame tObj lField
 

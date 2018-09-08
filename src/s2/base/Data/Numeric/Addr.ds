@@ -14,15 +14,15 @@ type Addr = Addr#
 -- | Eq dictionary for Addr.
 eq_Addr:  Eq Addr
  = Eq eq' neq'
- where  eq'  a b        = eq#  [Addr#] a b
-        neq' a b        = neq# [Addr#] a b
+ where  eq'  a b = eq#  {@Addr#} a b
+        neq' a b = neq# {@Addr#} a b
 
 
 -- | Ord dictionary for Addr.
 ord_Addr:  Ord Addr
  = Ord  compare'
  where  compare' n1 n2
-         | gt# [Addr#] n1 n2    = GT
-         | lt# [Addr#] n1 n2    = LT
+         | gt# {@Addr#} n1 n2   = GT
+         | lt# {@Addr#} n1 n2   = LT
          | otherwise            = EQ
 

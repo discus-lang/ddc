@@ -189,6 +189,28 @@ makeEqT config ctx0 tL tR err
 
         return ctx2
 
+    -- EqT_Row
+    | TRow ltt1 <- tL
+    , TRow ltt2 <- tR
+    , length ltt1  == length ltt2
+    , map fst ltt1 == map fst ltt2
+    = do
+        ctrace  $ vcat
+                [ text "*>  EqT_Row"
+                , text "    tL: " % ppr tL
+                , text "    tR: " % ppr tR
+                , empty ]
+
+        let go ctx [] [] = return ctx
+
+            go ctx ((_l1, t1) : lts1) ((_l2, t2) : lts2)
+             = do ctx' <- makeEqT config ctx t1 t2 err
+                  go ctx' lts1 lts2
+
+            go _ _ _     = throw err
+
+        go ctx0 ltt1 ltt2
+
 
     -- EqT_Equiv
     | equivT (contextEnvT ctx0) tL tR

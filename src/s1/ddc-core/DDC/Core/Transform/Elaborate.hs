@@ -17,7 +17,7 @@ import Data.List
 
 -- | Elaborate witnesses in a module.
 elaborateModule :: Eq n => Module a n -> Module a n
-elaborateModule mm 
+elaborateModule mm
         = mm { moduleBody = elaborate [] $ moduleBody mm }
 
 
@@ -35,18 +35,17 @@ class Elaborate (c :: * -> *) where
 instance Elaborate (Exp a) where
  elaborate us xx
   = {-# SCC elaborate #-}
-    let down = elaborate us 
+    let down = elaborate us
     in case xx of
         XVar{}            -> xx
-        XPrim{}           -> xx
-        XCon{}            -> xx    
         XAbs  a b    x    -> XAbs a b (down x)
         XApp  a x1   x2   -> XApp a (down x1) (down x2)
 
-        XLet  a lts  x2 
+        XLet  a lts  x2
          -> let (us', lts') = elaborateLets us lts
             in  XLet a lts' (elaborate us' x2)
-            
+
+        XAtom {}          -> xx
         XCase a x    alts -> XCase a (down x) (map down alts)
         XCast a cst  x2   -> XCast a (down cst) (down x2)
 
@@ -62,40 +61,40 @@ instance Elaborate (Arg a) where
 
 instance Elaborate (Cast a) where
  elaborate _us cst = cst
- 
+
 
 instance Elaborate (Alt a) where
-  elaborate us (AAlt p x) = AAlt p (elaborate us x) 
+  elaborate us (AAlt p x) = AAlt p (elaborate us x)
 
 
 -- | Elaborate witnesses in some let-bindings.
 elaborateLets
-        :: Eq n 
+        :: Eq n
         => [Bound n]            -- ^ Witness bindings in the environment.
         -> Lets a n             -- ^ Elaborate these let bindings.
         -> ([Bound n], Lets a n)
 
-elaborateLets us lts 
- = let down = elaborate us 
+elaborateLets us lts
+ = let down = elaborate us
    in case lts of
         LLet b x   -> (us, LLet b (down x))
         LRec bs    -> (us, LRec $ map (second down) bs)
 
         LPrivate brs mt bws
          |  urs@(_:_) <- takeSubstBoundsOfBinds brs
-         -> let 
+         -> let
                 -- Mutable regions bound here.
-                rsMutable       = catMaybes 
+                rsMutable       = catMaybes
                                 $ map (takeMutableRegion . typeOfBind) bws
 
                 -- Make a new const witness for all non-mutable regions.
-                constWits       = map makeConstWit 
+                constWits       = map makeConstWit
                                 $ urs \\ rsMutable
 
                 -- Make a new distinct witness against all regions
                 -- in the environment.
                 Just ursTail    = takeTail urs
-                distinctWits    = map makeDistinctWit 
+                distinctWits    = map makeDistinctWit
                                 $  liftM2 (,) us   urs
                                 ++ zip        urs  ursTail
 
@@ -105,7 +104,7 @@ elaborateLets us lts
         _          -> (us, lts)
 
 makeConstWit u
-        = BNone $ tConst (TVar u)        
+        = BNone $ tConst (TVar u)
 
 makeDistinctWit (u1,u2)
         = BNone $ tDistinct 2 [TVar u1, TVar u2]

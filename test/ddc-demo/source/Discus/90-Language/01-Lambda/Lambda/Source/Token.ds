@@ -11,12 +11,12 @@ where
 
 
 -- | Tokens for lambda calculus language.
-data Token where
-        KName   : Name  -> Token        -- ^ Variable name.
-        KBra    : Token                 -- ^ Open  Bracket '('
-        KKet    : Token                 -- ^ Close Bracket ')'
-        KLambda : Token                 -- ^ Lambda symbol '/'
-        KDot    : Token                 -- ^ Dot stmbol
+data Token
+        = KName Name    -- ^ Variable name.
+        | KBra          -- ^ Open  Bracket '('
+        | KKet          -- ^ Close Bracket ')'
+        | KLambda       -- ^ Lambda symbol '/'
+        | KDot          -- ^ Dot symbol.
 
 
 -- | Check if two tokens are equal.

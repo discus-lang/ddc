@@ -8,9 +8,8 @@ where
 
 
 main ()
- = private r with { Alloc r; Read r; Write r } in
-   do   
-        vec     = vectorAlloc# [r] 100
+ = mutable r in
+   do   vec     = vectorAlloc# {@r} 100
         writel $ "length = "  % show (vectorLength# vec)
 
         vectorWrite# vec 99 27

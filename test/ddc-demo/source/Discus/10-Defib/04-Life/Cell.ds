@@ -11,9 +11,9 @@ where
 
 
 -- | A cell in the world can be empty or alive.
-data Cell where
-        CellEmpty : Cell
-        CellAlive : Cell
+data Cell
+        = CellEmpty
+        | CellAlive
 
 
 -- | Check if the given cell is empty.

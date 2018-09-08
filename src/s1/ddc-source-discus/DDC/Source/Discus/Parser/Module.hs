@@ -10,6 +10,7 @@ module DDC.Source.Discus.Parser.Module
 where
 import DDC.Source.Discus.Parser.Exp     as S
 import DDC.Source.Discus.Parser.Base    as S
+import DDC.Source.Discus.Parser.Type    as S
 import DDC.Source.Discus.Module         as S
 import DDC.Source.Discus.Exp            as S
 import DDC.Core.Codec.Text.Lexer.Tokens as K
@@ -273,12 +274,26 @@ pDeclData
 
            -- Data declaration with just data ctor names and params listed.
          , do   pSym SEquals
+
                 let TyConBindName tx = b
                 let tResult = makeTApps (TCon (TyConBound (TyConBoundName tx)))
                             $ [ TVar (let Just u = takeBoundOfBind p in u)
                               | (p, _k) <- ps ]
-                ctors   <- P.sepEndBy1 (pDeclDataCtorParams tResult) (pSym SBar)
-                return  $ TopData sp (DataDef b ps ctors)
+
+                P.choice
+                 [ do   -- Single record field, and we implicitly name the data
+                        -- constructor adter the type.
+                        (tField, _)  <- pTypeRecordSP
+                        let ctor = DataCtor
+                                 { dataCtorName       = DaConBindName tx
+                                 , dataCtorFieldTypes = [tField]
+                                 , dataCtorResultType = tResult }
+                        return  $ TopData sp (DataDef b ps [ctor])
+
+                 , do   ctors   <- P.sepEndBy1 (pDeclDataCtorParams tResult) (pSym SBar)
+                        return  $ TopData sp (DataDef b ps ctors)
+                 ]
+
 
            -- Data declaration with no data constructors.
          , do   return  $ TopData sp (DataDef b ps [])

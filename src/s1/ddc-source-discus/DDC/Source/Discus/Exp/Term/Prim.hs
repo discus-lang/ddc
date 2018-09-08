@@ -18,40 +18,44 @@ import DDC.Core.Discus
         , PrimCast      (..))
 
 import Data.Text      (Text)
+import DDC.Data.Label
 
 
 -------------------------------------------------------------------------------
 -- | Primitive values.
 data PrimVal
         -- | Primitive literals.
-        = PrimValLit            !PrimLit
+        = PrimValLit    !PrimLit
 
         -- | Primitive arithmetic operators.
-        | PrimValArith          !PrimArith
+        | PrimValArith  !PrimArith
 
         -- | Primitive numeric casting operators.
-        | PrimValCast           !PrimCast
+        | PrimValCast   !PrimCast
 
         -- | Primitive error handling.
-        | PrimValError          !OpError
+        | PrimValError  !OpError
 
         -- | Primitive vector operators.
-        | PrimValVector         !OpVector
+        | PrimValVector !OpVector
 
         -- | Primitive function operators.
-        | PrimValFun            !OpFun
+        | PrimValFun    !OpFun
 
         -- | Elaborate value.
         | PrimValElaborate
 
+        -- | Construct a tuple literal with the given field labels.
+        | PrimValTuple  ![Label]
+
+        -- | Construct a record literal with the given field labels.
+        | PrimValRecord ![Label]
+
+        -- | Construct a variant litearl with the given field labels.
+        | PrimValVariant !Label
+
         -- | Record field projection.
-        | PrimValProject        !Text
-
-        -- | Record field shuffle.
-        | PrimValShuffle
-
-        -- | Record field combine.
-        | PrimValCombine
+        | PrimValProject !Label
         deriving (Eq, Ord, Show)
 
 

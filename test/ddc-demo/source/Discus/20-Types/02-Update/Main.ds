@@ -16,13 +16,13 @@ where
 --
 main ()
  = private r with {Read r; Write r; Alloc r} in
-   do   
+   do
         -- Allocate a reference to a polymorphic function.
         -- (This is rejected by the type checker)
-        ref [a: Data]: Ref r (a -> a)
-         = run allocRef [r] [a -> a] (λx -> x)
+        ref {@a: Data}: Ref r (a -> a)
+         = run allocRef {@r} {@a -> a} (λx -> x)
 
-        -- Define a function that has a type which is more 
+        -- Define a function that has a type which is more
         -- specific than the one in the reference.
         succ = λx -> add# x 1
 

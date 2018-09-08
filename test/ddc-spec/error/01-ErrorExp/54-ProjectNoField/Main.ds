@@ -1,0 +1,5 @@
+
+module Main where
+
+main ()
+ = [x = 5].y

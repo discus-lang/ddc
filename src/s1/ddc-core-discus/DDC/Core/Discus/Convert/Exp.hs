@@ -66,15 +66,17 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Ambient primitives.
-        XPrim a p
+        XAtom a (MAPrim p)
          -> do  let a'  = annotTail a
                 return  $ XPrim a' p
 
-        ---------------------------------------------------
         -- Unapplied data constructor.
-        XCon a dc
+        XAtom a (MACon dc)
          -> do  xx'     <- downCtorApp a dc []
                 return  xx'
+
+        XAtom _a (MALabel _)
+         -> error "ddc-core-discus.convertExp: labels not handled yet"
 
         ---------------------------------------------------
         -- Type abstractions can appear in the body of expressions when
@@ -96,10 +98,11 @@ convertExp ectx ctx xx
          |  Just p      <- takeNamePrimAppX xx
          ,  Just r
              <- case p of
-                  PElaborate{}            -> Nothing
-                  PProject{}              -> convertPrimRecord ectx ctx xx
-                  PShuffle{}              -> convertPrimRecord ectx ctx xx
-                  PCombine{}              -> convertPrimRecord ectx ctx xx
+                  PElaborate{}  -> Nothing
+                  PTuple{}      -> Nothing
+                  PRecord{}     -> Nothing
+                  PVariant{}    -> Nothing
+                  PProject{}    -> convertPrimRecord ectx ctx xx
          -> r
 
          -- Conversions for fragment specific primitive operators.
@@ -161,6 +164,21 @@ convertExp ectx ctx xx
                then downCtorApp a dc xsArgs
                else throw $ ErrorUnsupported xx
                      $ text "Cannot convert partially applied data constructor."
+
+        ---------------------------------------------------
+        -- Fully applied record construction.
+        XApp _ xa xb
+         | (x1, _xsArgs)         <- takeXApps1 xa xb
+         , XPrim _ (PRecord _ls) <- x1
+         , Just make             <- convertPrimRecord ectx ctx xx
+         -> make
+
+        -- Fully applied record field projection.
+        XApp _ xa xb
+         | (x1, _xsArgs)        <- takeXApps1 xa xb
+         , XPrim _ (PProject _l) <- x1
+         , Just make            <- convertPrimRecord ectx ctx xx
+         -> make
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.

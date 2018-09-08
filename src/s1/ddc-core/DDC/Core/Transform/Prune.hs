@@ -213,10 +213,7 @@ isContainedEffect eff
         contained (c : _args)
          = case c of
                 TCon (TyConSpec TcConAlloc)     -> True
-                TCon (TyConSpec TcConDeepAlloc) -> True
                 TCon (TyConSpec TcConRead)      -> True
-                TCon (TyConSpec TcConHeadRead)  -> True
-                TCon (TyConSpec TcConDeepRead)  -> True
                 _                               -> False
 
         contained [] = False

@@ -447,11 +447,10 @@ checkValidPattern :: Exp a n -> Either (Error a n) ()
 checkValidPattern expr
  = go expr
  where  go (XVar _ _)           = return ()
-        go XPrim{}              = return ()
-        go (XCon _ _)           = return ()
         go x@(XAbs _ _ _)       = Left $ ErrorNotFirstOrder x
         go (XApp _ l r)         = go l >> go_a r
         go x@(XLet _ _ _)       = Left $ ErrorNotFirstOrder x
+        go XAtom{}              = return ()
         go x@(XCase _ _ _)      = Left $ ErrorNotFirstOrder x
         go (XCast _ _ x)        = go x
 
@@ -461,6 +460,7 @@ checkValidPattern expr
         go_t (TApp l r)         = go_t l >> go_t r
         go_t t@(TForall _ _)    = Left $ ErrorNotFirstOrderType t
         go_t (TSum _)           = return ()
+        go_t (TRow _)           = return ()
 
         go_a (RType t)          = go_t t
         go_a (RWitness _)       = return ()

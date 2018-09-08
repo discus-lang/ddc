@@ -37,6 +37,10 @@ import foreign c value
   ddcBoxedGetField      : Addr# -> Nat# -> Addr#
   ddcBoxedSetField      : Addr# -> Nat# -> Addr# -> Void#
 
+  ddcMixedPointerCount  : Addr# -> Nat#
+  ddcMixedGetField      : Addr# -> Nat# -> Addr#
+  ddcMixedSetField      : Addr# -> Nat# -> Addr# -> Void#
+
   ddcStatsOnGCEnd       : Unit -> Unit
   ddcStatsOnGCStart     : Unit -> Unit
 
@@ -45,7 +49,7 @@ import foreign c value
 
   ddcObjectIsInCompactRegion:  Addr# -> Bool#
   ddcCompactRegionIsLive : Addr# -> Bool#
-  
+
   ddcPrimStdoutPutString : TextLit# -> Void#
   ddcPrimStdoutPutAddr : Addr# -> Void#
 
@@ -134,9 +138,7 @@ ddcEvacuateRoots
         (aBackBase      : Addr#)
         (aaBackTop      : Addr#)
         (aBackMax       : Addr#) : Unit
- = ddcEvacuateStackEntry
-        aaBackTop
-        aRootStart
+ = ddcEvacuateStackEntry aaBackTop aRootStart
 
 -- | Evacuate the roots from the given stack entry.
 ddcEvacuateStackEntry
@@ -182,8 +184,7 @@ ddcEvacuateRootFrame
     0#  -> ()
     _   -> do
         ddcEvacuateRoot
-                aaBackTop
-                aaObj
+                aaBackTop aaObj
 
         ddcEvacuateRootFrame
                 aaBackTop
@@ -238,7 +239,7 @@ ddcEvacuateObject
                 -- This is a real object in the from-space,
                 -- so evacuate it to the to-space.
                 False#  -> case ddcObjectIsInCompactRegion aObj of
-                              True#  -> aObj 
+                              True#  -> aObj
                               False# -> ddcEvacuateCopy aaBackTop aObj
 
 
@@ -274,7 +275,7 @@ ddcCollectCompactRegionTable
                     :   Unit
  = do
       ddcCollectCompactRegionTableIter tableBase tableMax 0#
--- | 
+-- |
 ddcCollectCompactRegionTableIter
         ( tableBase :   Addr# )
         ( tableMax  :   Addr# )
@@ -288,7 +289,7 @@ ddcCollectCompactRegionTableIter
           ddcCollectCompactRegionTableIter tableBase tableMax (add# acc 8#)
           ()
 
-      
+
 ddcCollectCompactRegion
         ( rawBase        :   Addr# )
         ( tableEntryAddr : Addr#)
@@ -313,7 +314,7 @@ ddcCollectCompactRegion
 ddcScanHeap
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the next object we need to scan.
-                        : Unit
+        : Unit
  = case ge# aObjScan (read# aaToSpaceTop 0#) of
     -- When the next object pointer is past the top of the to-space
     -- then the scanning process is complete.
@@ -338,17 +339,16 @@ ddcScanHeap
 ddcScanObject
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the next object we need to scan.
-                        : Unit
+        : Unit
   = case ddcObjectFormat aObjScan of
           0# -> fail#   -- unknown object.
           1# -> fail#   -- broken heart.
-
           2# -> ddcScanThunk aaToSpaceTop aObjScan
           3# -> ddcScanBoxed aaToSpaceTop aObjScan
-
           4# -> ()      -- raw data contains no pointers to scan.
-          5# -> fail#   -- we don't allocated mixed objects yet.
+          5# -> fail#   -- arrays are not implemented yet.
           6# -> ()      -- small raw data contains no pointers to scan.
+          7# -> ddcScanMixed aaToSpaceTop aObjScan
           _  -> fail#   -- invalid format
 
 
@@ -357,7 +357,7 @@ ddcScanObject
 ddcScanThunk
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the thunk being scanned.
-                        : Unit      -- ^ Number of thunk arguments we still need to evacuate.
+        : Unit                      -- ^ Number of thunk arguments we still need to evacuate.
  =      ddcScanThunk_arg
                 aaToSpaceTop
                 aObjScan
@@ -370,7 +370,7 @@ ddcScanThunk_arg
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the thunk being scanned.
         (iArg nArgs     : Nat#)
-                        : Unit
+        : Unit
  = case ge# iArg nArgs of
     True#  -> ()
     False# -> do
@@ -400,12 +400,10 @@ ddcScanThunk_arg
 ddcScanBoxed
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the boxed object being scanned.
-                        : Unit
- = do   ddcScanBoxed_arg
-                aaToSpaceTop
-                aObjScan
-                0#
-                (ddcBoxedFields aObjScan)
+        : Unit
+ = ddcScanBoxed_arg
+        aaToSpaceTop aObjScan
+        0# (ddcBoxedFields aObjScan)
 
 
 -- | Scan an argument of a boxed object.
@@ -414,7 +412,7 @@ ddcScanBoxed_arg
         (aObjScan       : Addr#)    -- ^ Address of the boxed object being scanned.
         (iArg           : Nat#)
         (nArgs          : Nat#)
-                        : Unit
+        : Unit
  = case ge# iArg nArgs of
     True#  -> ()
     False# -> do
@@ -438,3 +436,44 @@ ddcScanBoxed_arg
 
                 ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
+
+---------------------------------------------------------------------------------------------------
+-- | Scan a mixed data object.
+ddcScanMixed
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the mixed object being scanned.
+        : Unit
+ = ddcScanMixed_arg
+        aaToSpaceTop aObjScan
+        0# (ddcMixedPointerCount aObjScan)
+
+
+-- | Scan an argument of a mied object.
+ddcScanMixed_arg
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the mixed object being scanned.
+        (iArg           : Nat#)
+        (nArgs          : Nat#)
+        : Unit
+ = case ge# iArg nArgs of
+    True#  -> ()
+    False# -> do
+        -- Address where the object argument is in the from-space.
+        aArgFrom  = ddcMixedGetField aObjScan iArg
+
+        -- Skip over null pointer arguments in the boxed object.
+        --   When the object is initially allocated the argument pointers are
+        --   set to null so that if a GC cycle runs before the thunk is
+        --   properly constructed then we won't read uninitialized memory here.
+        case eq# (truncate# aArgFrom) 0# of
+         True#  -> do
+                ddcScanMixed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
+
+         False# -> do
+                -- Evacuate the argument to the to-space.
+                aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
+
+                -- Update the argument field boxed object to the copied version of the argument.
+                ddcMixedSetField aObjScan iArg aArgTo
+
+                ddcScanMixed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs

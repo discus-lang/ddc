@@ -12,13 +12,13 @@ type Var = Text
 
 
 -- | Untyped lambda calculus with SKI combinators.
-data Exp where
-        XS      : Exp
-        XK      : Exp
-        XI      : Exp
-        XVar    : Var -> Exp
-        XApp    : Exp -> Exp -> Exp
-        XAbs    : Var -> Exp -> Exp
+data Exp
+        = XS
+        | XK
+        | XI
+        | XVar  Var
+        | XApp  Exp Exp
+        | XAbs  Var Exp
 
 
 -- | Pretty print an expression.

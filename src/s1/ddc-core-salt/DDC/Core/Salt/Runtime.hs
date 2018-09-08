@@ -11,6 +11,10 @@ module DDC.Core.Salt.Runtime
         , rTop
 
           -- * Runtime Functions
+          -- ** Thunk Objects
+        , xAllocThunk, xArgsOfThunk, xSetFieldOfThunk, xExtendThunk, xCopyArgsOfThunk
+        , xApplyThunk, xRunThunk
+
           -- ** Boxed Objects
         , xAllocBoxed, xBoxedTag
         , xGetFieldOfBoxed, xSetFieldOfBoxed
@@ -21,9 +25,13 @@ module DDC.Core.Salt.Runtime
           -- ** Raw Small Objects
         , xAllocSmall, xPayloadOfSmall
 
-          -- ** Thunk Objects
-        , xAllocThunk, xArgsOfThunk, xSetFieldOfThunk, xExtendThunk, xCopyArgsOfThunk
-        , xApplyThunk, xRunThunk
+          -- ** Mixed Objects.
+        , xAllocMixed
+        , xPayloadOfMixed
+        , xGetFieldOfMixed, xSetFieldOfMixed
+
+          -- ** Record operators.
+        , xRecordProject
 
           -- ** Allocator
         , xddcInit, xddcExit
@@ -85,10 +93,16 @@ runtimeImportKinds
 runtimeImportTypes :: Map Name (ImportValue Name (Type Name))
 runtimeImportTypes
  = Map.fromList
-    [ rn utAllocBoxed
+    [ rn utAllocThunk
+    , rn utArgsOfThunk
+    , rn utSetFieldOfThunk
+    , rn utExtendThunk
+    , rn utCopyArgsOfThunk
+    , rn utRunThunk
+
+    , rn utAllocBoxed
     , rn utBoxedTag
-    , rn utGetFieldOfBoxed
-    , rn utSetFieldOfBoxed
+    , rn utGetFieldOfBoxed, rn utSetFieldOfBoxed
 
     , rn utAllocSmall
     , rn utPayloadOfSmall
@@ -96,18 +110,17 @@ runtimeImportTypes
     , rn utAllocRaw
     , rn utPayloadOfRaw
 
-    , rn utAllocThunk
-    , rn utArgsOfThunk
-    , rn utSetFieldOfThunk
-    , rn utExtendThunk
-    , rn utCopyArgsOfThunk
-    , rn utRunThunk
+    , rn utAllocMixed
+    , rn utPayloadOfMixed
+    , rn utGetFieldOfMixed, rn utSetFieldOfMixed
 
     , rn (utApplyThunk 0)
     , rn (utApplyThunk 1)
     , rn (utApplyThunk 2)
     , rn (utApplyThunk 3)
     , rn (utApplyThunk 4)
+
+    , rn (utRecordProject)
 
     , rn utddcInit
     , rn utddcExit
@@ -320,16 +333,8 @@ utBoxedTag
         , tForall kRegion $ \r -> tPtr r tObj `tFun` tTag)
 
 
-
 -- | Get a field of a Boxed object.
-xGetFieldOfBoxed
-        :: a
-        -> Type Name    -- ^ Prime region var of object.
-        -> Type Name    -- ^ Regino of result object.
-        -> Exp a Name   -- ^ Object to update.
-        -> Integer      -- ^ Field index.
-        -> Exp a Name
-
+xGetFieldOfBoxed :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
 xGetFieldOfBoxed a trPrime trField x2 offset
  = xApps a (XVar a $ fst utGetFieldOfBoxed)
         [ RType trPrime
@@ -349,13 +354,8 @@ utGetFieldOfBoxed
 
 -- | Set a field in a Boxed Object.
 xSetFieldOfBoxed
-        :: a
-        -> Type Name    -- ^ Prime region var of object.
-        -> Type Name    -- ^ Region of field object.
-        -> Exp a Name   -- ^ Object to update.
-        -> Integer      -- ^ Field index.
-        -> Exp a Name   -- ^ New field value.
-        -> Exp a Name
+        :: a -> Type Name -> Type Name
+        -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
 
 xSetFieldOfBoxed a trPrime trField x2 offset val
  = xApps a (XVar a $ fst utSetFieldOfBoxed)
@@ -443,8 +443,77 @@ utPayloadOfSmall
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
 
 
--- Garbage Collector  -----------------------------------------------------------------------------
+-- Mixed ------------------------------------------------------------------------------------------
+-- | Allocate a mixed object.
+xAllocMixed :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
+xAllocMixed a tR xInfoIndex xWordsPayload xPointersPayload
+ = xApps a (XVar a $ fst utAllocMixed)
+        [ RType tR, RTerm xInfoIndex, RTerm xWordsPayload, RTerm xPointersPayload]
 
+utAllocMixed :: (Bound Name, Type Name)
+utAllocMixed
+ =      ( UName (NameVar "ddcMixedAlloc")
+        , tForall kRegion $ \r -> (tWord 32 `tFun` tNat `tFun` tNat `tFun` tPtr r tObj))
+
+
+-- | Get the raw payload of a mixed object.
+xPayloadOfMixed :: a -> Type Name -> Exp a Name -> Exp a Name
+xPayloadOfMixed a tR x2
+ = xApps a (XVar a $ fst utPayloadOfMixed)
+        [RType tR, RTerm x2]
+
+utPayloadOfMixed :: (Bound Name, Type Name)
+utPayloadOfMixed
+ =      ( UName (NameVar "ddcMixedPayload")
+        , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
+
+
+-- | Get a field of a Mixed object.
+xGetFieldOfMixed :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xGetFieldOfMixed a trPrime trField x2 offset
+ = xApps a (XVar a $ fst utGetFieldOfMixed)
+        [ RType trPrime, RType trField
+        , RTerm x2, RTerm $ xNat a offset ]
+
+utGetFieldOfMixed :: (Bound Name, Type Name)
+utGetFieldOfMixed
+ =      ( UName (NameVar "ddcMixedGetField")
+        , tForalls [kRegion, kRegion]
+                $ \[r1, r2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr r2 tObj)
+
+
+-- | Set a field in a Mixed Object.
+xSetFieldOfMixed
+        :: a -> Type Name -> Type Name
+        -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+
+xSetFieldOfMixed a trPrime trField x2 offset val
+ = xApps a (XVar a $ fst utSetFieldOfMixed)
+        [ RType trPrime, RType trField
+        , RTerm x2, RTerm $ xNat a offset, RTerm val]
+
+utSetFieldOfMixed :: (Bound Name, Type Name)
+utSetFieldOfMixed
+ =      ( UName (NameVar "ddcMixedSetField")
+        , tForalls [kRegion, kRegion]
+            $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
+
+
+-- Records ----------------------------------------------------------------------------------------
+-- | Get a field of a Mixed object.
+xRecordProject :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
+xRecordProject a trPrime trField xObject xLabel
+ = xApps a (XVar a $ fst utRecordProject)
+        [ RType trPrime, RType trField, RTerm xObject, RTerm xLabel ]
+
+utRecordProject :: (Bound Name, Type Name)
+utRecordProject
+ =      ( UName (NameVar "ddcPrimRecordProject")
+        , tForalls [kRegion, kRegion]
+          $ \[r1, r2] -> tPtr r1 tObj `tFun` tWord 64 `tFun` tPtr r2 tObj)
+
+
+-- Garbage Collector  -----------------------------------------------------------------------------
 -- Initialize the runtime system.
 xddcInit   :: a -> Integer -> Exp a Name -> Exp a Name -> Exp a Name
 xddcInit a bytesHeap xargc xargv

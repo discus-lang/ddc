@@ -18,46 +18,36 @@ where
 
 
 -- | A 2D world of cells.
-data World (r: Region) where
- World  :  Nat                  -- ^ Width of world.
-        -> Nat                  -- ^ Height of world.
-        -> Array (Store r Cell) (S (Read r) Cell)
-                                -- ^ Linear array of cells.
-        -> World r
+data World (r: Region)
+ =      [ width         : Nat
+        , height        : Nat
+        , cells         : Array (Store r Cell) (S (Read r) Cell) ]
 
 
 -- | Convert 2D coordinates to linear coordinates.
 linear (world: World r) (x y: Nat): Nat
- | World width _ _      <- world
- = x + y * width
+ = x + y * world.width
 
 
 -- Create a new world.
 newWorld (width height: Nat): S (Alloc r) (World r)
- = do   arr     = arrayStore_alloc {@r} (width * height) CellEmpty
-        World width height arr
+ = World [ width  = width
+         , height = height
+         , cells  = arrayStore_alloc {@r} (width * height) CellEmpty ]
 
 
 -- | Get a single cell from the world.
-getCell (world: World r) (x y: Nat)
-        : S (Read r) Cell
- | World width height arr       <- world
- = match
-        | x >= width    = CellEmpty
-        | y >= height   = CellEmpty
-        | otherwise     = array_index arr (linear world x y)
+getCell (world: World r) (x y: Nat): S (Read r) Cell
+ | x >= world.width     = CellEmpty
+ | y >= world.height    = CellEmpty
+ | otherwise            = array_index world.cells (linear world x y)
 
 
 -- | Set a single cell in the world.
-setCell (world: World r) (x y: Nat) (c: Cell)
-        : S (Write r) Unit
- | World width height arr       <- world
- = match
-        | x >= width    = ()
-        | y >= height   = ()
-        | otherwise
-         = do   arrayStore_write arr (linear world x y) c
-                ()
+setCell (world: World r) (x y: Nat) (c: Cell): S (Write r) Unit
+ | x >= world.width     = ()
+ | y >= world.height    = ()
+ | otherwise            = arrayStore_write world.cells (linear world x y) c
 
 
 -- | Get the neighbours of the given location.
@@ -87,13 +77,13 @@ forWorld
         (world: World r)
         (f:     Nat -> Nat -> S (Read r) Cell)
         : S (Read r + Alloc r) (World r)
- | World width height arr       <- world
- = extend r using r' with {Alloc r'; Read r'; Write r'} in
-   do   world'  = run newWorld {@r'} width height
+ = extend r using mutable r' in
+   do
+        world'  = newWorld {@r'} world.width world.height
 
         rec go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
-                | x >= width   = go 0 (y + 1)
-                | y >= height  = ()
+                | x >= world.width   = go 0 (y + 1)
+                | y >= world.height  = ()
                 | otherwise
                 = do    setCell world' x y (f x y)
                         go (x + 1) y
@@ -104,15 +94,14 @@ forWorld
 
 -- Show a world as a text string.
 showWorld (world: World r): S (Read r) Text
- | World width height arr       <- world
  = go 0 0 ""
  where
         go (x y: Nat) (acc: Text): S (Read r) Text
-         | x >= width   = go 0 (y + 1) (acc % "\n")
-         | y >= height  = acc
+         | x >= world.width   = go 0 (y + 1) (acc % "\n")
+         | y >= world.height  = acc
          | otherwise
          = go (x + 1) y
-         $ acc % case getCell world x y of
-                  CellEmpty -> ". "
-                  CellAlive -> "O "
+                $ acc % case getCell world x y of
+                         CellEmpty -> ". "
+                         CellAlive -> "O "
 
