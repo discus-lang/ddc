@@ -41,7 +41,7 @@ isRight (e: Either a b): Bool
 either_Functor {@x: Data}: Functor (Either x)
  = Functor either_fmap
  where
-        either_fmap : [a b c: Data]. (b -> c) -> Either a b -> Either a c
+        either_fmap : {@a b c: Data} -> (b -> c) -> Either a b -> Either a c
         either_fmap f xx
          = case xx of
                Left  xa -> Left xa
@@ -52,12 +52,12 @@ either_Functor {@x: Data}: Functor (Either x)
 either_Applicative {@x: Data}: Applicative (Either x)
  = Applicative either_Functor either_pure either_ap
  where
-        either_pure : [a b: Data]. b -> Either a b
+        either_pure : {@a b: Data} -> b -> Either a b
         either_pure x
          = Right x
 
-        either_ap   : [a b c: Data]
-                    . Either a (b -> c) -> Either a b -> Either a c
+        either_ap   :  {@a b c: Data}
+                    -> Either a (b -> c) -> Either a b -> Either a c
         either_ap mf ma
          = case mf of
                 Left  xa -> Left xa
@@ -70,12 +70,12 @@ either_Applicative {@x: Data}: Applicative (Either x)
 either_Monad {@x: Data}: Monad (Either x)
  = Monad either_Applicative either_return either_bind
  where
-        either_return : [a b: Data]. b -> Either a b
+        either_return : {@a b: Data} -> b -> Either a b
         either_return x
          = Right x
 
-        either_bind   : [a b c: Data]
-                      . Either a b -> (b -> Either a c) -> Either a c
+        either_bind   : {@a b c: Data}
+                      -> Either a b -> (b -> Either a c) -> Either a c
         either_bind ma f
          = case ma of
                 Left  xa -> Left xa

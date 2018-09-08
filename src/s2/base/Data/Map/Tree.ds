@@ -81,7 +81,7 @@ mapTree_lookup {Ord k} (kx: k) (mp: TreeMap k a): Maybe a
  = go kx mp
  where
         go _ Tip
-         = Nothing [a]
+         = Nothing {@a}
 
         go k (Bin _ kx x l r)
          = case compare k kx of

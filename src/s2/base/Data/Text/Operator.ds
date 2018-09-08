@@ -53,7 +53,7 @@ flattenText (tt: Text): Text
 
         -- Text has an outer append-node,
         -- so flatten the whole thing.
-        TextApp _ _     -> textOfVector (run vectorOfText [RegionText] tt)
+        TextApp _ _     -> textOfVector (run vectorOfText {@RegionText} tt)
 
 
 -- Pretty Printing ------------------------------------------------------------
