@@ -31,6 +31,7 @@ module DDC.Core.Exp.Annot.Exp
         , Alt           (..)
         , Pat           (..)
         , Cast          (..)
+        , Label
         , pattern XLam,  pattern XLAM
         , pattern XLLet, pattern XLRec, pattern XLPrivate
         , pattern XBox,  pattern XRun

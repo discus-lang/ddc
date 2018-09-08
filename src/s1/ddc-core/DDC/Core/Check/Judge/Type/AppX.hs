@@ -45,7 +45,7 @@ checkAppX !table !ctx0
          <- checkArg table ctx1 Recon DemandNone arg
 
         -- Determine the result type.
-        tResult <- projectFieldType ctx0 tArg l
+        tResult <- projectFieldType (annotOfExp xx) xx ctx0 tArg l
 
         ctrace  $ vcat
                 [ text "*<  App Recon Project"
@@ -267,7 +267,7 @@ synthAppArg table
          <- checkArg table ctx0 (Synth isScope) DemandRun arg
 
         -- Determine the result type.
-        tResult <- projectFieldType ctx1 tArg l
+        tResult <- projectFieldType a xx ctx1 tArg l
 
         ctrace  $ vcat
                 [ text "*<  App Synth Project"
@@ -524,14 +524,15 @@ reduceType ctx tt
 
 
 ---------------------------------------------------------------------------------------------------
--- TODO: better errors.
+-- | Try to project out a single field of a type.
 projectFieldType
         :: (Ord n, Show n)
-        => Context n
+        => a -> Exp a n
+        -> Context n
         -> Type n -> Label
         -> CheckM a n (Type n)
 
-projectFieldType ctx tObj0 lField
+projectFieldType a xxBlame ctx tObj0 lField
  = goReduce
  where
         goReduce
@@ -544,36 +545,31 @@ projectFieldType ctx tObj0 lField
                 [TCon (TyConSpec TcConT), TRow lts]
                  -> case lookup lField lts of
                         Just t  -> return t
-                        _       -> error $ "field not in tuple"
+                        _       -> throw $ ErrorProjectNoField a tObj lField
 
                 -- Projection of a record field.
                 [TCon (TyConSpec TcConR), TRow lts]
                  -> case lookup lField lts of
                         Just t  -> return t
-                        _       -> error $ "field not in record " ++ show lField
+                        _       -> throw $ ErrorProjectNoField a tObj lField
 
                 (TCon (TyConBound nDataType) : _)
                  -> goLookupData tObj nDataType
 
                 -- Can't project this thing.
-                tsParts -> error $ unlines
-                        [ "invalid projection"
-                        , "type  " ++ show tObj
-                        , "label " ++ show lField
-                        , "parts " ++ show tsParts ]
+                _tsParts -> throw $ ErrorProjectCannot a tObj lField
 
         goLookupData tObj nDataType
          = do   mDataType <- Resolve.lookupDataType ctx nDataType
                 case mDataType of
-                 Nothing -> error "can't find data type decl"
+                 Nothing -> throw $ ErrorUndefinedCtor a xxBlame
                  Just dataType -> goUnwrapData tObj dataType
 
         goUnwrapData tObj dataType
          = case dataTypeCtors dataType of
                 Just [dataCtor]
                   -> case dataCtorFieldTypes dataCtor of
-                        [tField] -> projectFieldType ctx tField lField
-                        _ -> error $ "not projecting through too many fields in  " ++ show tObj
-
-                _ -> error $ "not projecting too many ctors in " ++ show tObj
+                        [tField] -> projectFieldType a xxBlame ctx tField lField
+                        _ -> throw $ ErrorProjectTooManyArgs a xxBlame tObj lField
+                _ -> throw $ ErrorProjectTooManyCtors a xxBlame tObj lField
 

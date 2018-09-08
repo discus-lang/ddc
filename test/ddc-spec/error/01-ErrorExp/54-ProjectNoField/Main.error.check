@@ -1,0 +1,6 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/54-ProjectNoField/Main.ds:4:1
+  Field 'y' is not in record
+    of type: R# {x: Nat#}
