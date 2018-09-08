@@ -1,0 +1,27 @@
+
+module SMR.Core.Exp.Base
+import Data.Text
+import Data.List
+where
+
+
+type Name = Text
+
+data Exp (a k p: Data)
+        = XAnn  a (Exp a k p)                   -- ^ Annotated expression.
+        | XVar  Name Nat                        -- ^ Variable with a bump counter.
+        | XAbs  (List Name) (Exp a k p)         -- ^ Abstraction over some named parameters.
+        | XKey  (Key k) (List (Exp a k p))      -- ^ Keyword application.
+        | XRef  (Ref p)                         -- ^ Reference to an external thing.
+
+data Key (k: Data)
+        = KKey k                                -- ^ Client defined keyword.
+        | KSim  (List Nat)                      -- ^ Simultaneous substitution with binding depth.
+        | KRec  (List Nat)                      -- ^ Recursive substitution with binding depth.
+
+data Ref (p: Data)
+        = RPrm  p                               -- ^ Client defined primitive.
+        | RSym  Name                            -- ^ Symbol name.
+        | RMac  Name                            -- ^ Macro name.
+        | RSet  Name                            -- ^ Set name.
+
