@@ -32,11 +32,15 @@ instance NFData TyConDiscus where
 instance NFData a => NFData (GType a) where
  rnf xx
   = case xx of
-        TAnnot a t              -> rnf a  `seq` rnf t
-        TCon   tc               -> rnf tc
-        TVar   _bv              -> ()
-        TAbs   _bv k t          -> rnf k  `seq` rnf t
-        TApp   t1 t2            -> rnf t1 `seq` rnf t2
+        TAnnot a t      -> rnf a  `seq` rnf t
+        TCon tc         -> rnf tc
+        TVar _bv        -> ()
+        TAbs _bv k t    -> rnf k  `seq` rnf t
+        TApp t1 t2      -> rnf t1 `seq` rnf t2
+        TRow r          -> rnf r
+        TTuple r        -> rnf r
+        TRecord r       -> rnf r
+        TVariant r      -> rnf r
 
 
 instance NFData a => NFData (GTyCon a) where

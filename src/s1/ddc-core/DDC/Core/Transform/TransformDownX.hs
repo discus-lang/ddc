@@ -17,7 +17,7 @@ import qualified DDC.Type.Env   as Env
 transformDownX
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformDownMX Identity c)
-        => (KindEnv n -> TypeEnv n -> Exp a n -> Exp a n)       
+        => (KindEnv n -> TypeEnv n -> Exp a n -> Exp a n)
                         -- ^ The worker function is given the current
                         --   kind and type environments.
         -> KindEnv n    -- ^ Initial kind environment.
@@ -26,9 +26,9 @@ transformDownX
         -> c a n
 
 transformDownX f kenv tenv xx
-        = runIdentity 
-        $ transformDownMX 
-                (\kenv' tenv' x -> return (f kenv' tenv' x)) 
+        = runIdentity
+        $ transformDownMX
+                (\kenv' tenv' x -> return (f kenv' tenv' x))
                 kenv tenv xx
 
 
@@ -36,7 +36,7 @@ transformDownX f kenv tenv xx
 transformDownX'
         :: forall (c :: * -> * -> *) a n
         .  (Ord n, TransformDownMX Identity c)
-        => (Exp a n -> Exp a n)       
+        => (Exp a n -> Exp a n)
                         -- ^ The worker function is given the current
                         --      kind and type environments.
         -> c a n        -- ^ Transform this thing.
@@ -68,28 +68,26 @@ instance Monad m => TransformDownMX m Module where
 
 instance Monad m => TransformDownMX m Exp where
  transformDownMX f kenv tenv !xx
-  = {-# SCC transformDownMX #-} 
-    f kenv tenv xx >>= \xx' -> 
+  = {-# SCC transformDownMX #-}
+    f kenv tenv xx >>= \xx' ->
      case xx' of
         XVar{}          -> return xx'
-        XPrim{}         -> return xx'
-        XCon{}          -> return xx'
 
         XAbs a (MType b) x1
          -> liftM3 XAbs (return a) (return (MType b))
                         (transformDownMX f (Env.extend b kenv) tenv x1)
 
-        XAbs a (MTerm b) x1    
+        XAbs a (MTerm b) x1
          -> liftM3 XAbs (return a) (return (MTerm b))
                         (transformDownMX f kenv (Env.extend b tenv) x1)
 
-        XAbs a (MImplicit b) x1    
+        XAbs a (MImplicit b) x1
          -> liftM3 XAbs (return a) (return (MImplicit b))
                         (transformDownMX f kenv (Env.extend b tenv) x1)
 
-        XApp a x1 x2    
-         -> liftM3 XApp (return a) 
-                        (transformDownMX f kenv tenv x1) 
+        XApp a x1 x2
+         -> liftM3 XApp (return a)
+                        (transformDownMX f kenv tenv x1)
                         (transformDownMX f kenv tenv x2)
 
         XLet a lts x
@@ -98,13 +96,15 @@ instance Monad m => TransformDownMX m Exp where
                 let tenv' = Env.extends (valwitBindsOfLets lts') tenv
                 x'        <- transformDownMX f kenv' tenv' x
                 return  $ XLet a lts' x'
-                
+
+        XAtom{}         -> return xx'
+
         XCase a x alts
          -> liftM3 XCase (return a)
                          (transformDownMX f kenv tenv x)
                          (mapM (transformDownMX f kenv tenv) alts)
 
-        XCast a c x       
+        XCast a c x
          -> liftM3 XCast
                         (return a) (return c)
                         (transformDownMX f kenv tenv x)
@@ -126,7 +126,7 @@ instance Monad m => TransformDownMX m Lets where
         LLet b x
          -> liftM2 LLet (return b)
                         (transformDownMX f kenv tenv x)
-        
+
         LRec bxs
          -> do  let (bs, xs) = unzip bxs
                 let tenv'    = Env.extends bs tenv
@@ -142,10 +142,10 @@ instance Monad m => TransformDownMX m Alt where
   = case alt of
         AAlt p@(PData _ bsArg) x
          -> let tenv'   = Env.extends bsArg tenv
-            in  liftM2  AAlt (return p) 
+            in  liftM2  AAlt (return p)
                         (transformDownMX f kenv tenv' x)
 
         AAlt PDefault x
          ->     liftM2  AAlt (return PDefault)
-                        (transformDownMX f kenv tenv x) 
+                        (transformDownMX f kenv tenv x)
 

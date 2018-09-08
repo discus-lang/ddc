@@ -113,10 +113,9 @@ enterX config arities xx
         XApp{}
          -> error "ddc-core-simpl.Snip: snipX shouldn't give us an XApp"
 
-        -- leafy constructors
-        XVar{}                  -> xx
-        XPrim{}                 -> xx
-        XCon{}                  -> xx
+        -- leafy things
+        XVar{}  -> xx
+        XAtom{} -> xx
 
         -- lambdas
         XAbs a (MType b)     e  -> XAbs a (MType b)     (down [(b,0)] e)

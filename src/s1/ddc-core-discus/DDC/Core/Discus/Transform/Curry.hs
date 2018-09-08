@@ -97,9 +97,6 @@ curryX envt callables xx
         XVar  _ u
          ->     return $ XVar () u
 
-        XPrim _ p
-         ->     return $ XPrim () p
-
         XApp  _ x1 a2
          -> do  result  <- curryX_call envt callables xx
                 case result of
@@ -113,8 +110,6 @@ curryX envt callables xx
                  Nothing  -> XCast () CastRun    <$> down x1
 
         -- Boilerplate.
-        XCon     _ c
-         -> return $ XCon     () c
 
         XAbs     _ (MType b) xBody
          ->     XAbs () (MType b) <$> curryX   envt callables  xBody
@@ -140,6 +135,9 @@ curryX envt callables xx
         XLet     _ lts@(LPrivate{}) xBody
          ->     XLet  ()  <$> curryLts envt callables  lts
                           <*> curryX   envt callables  xBody
+
+        XAtom _ p
+         ->     return $ XAtom () p
 
         XCase    _ x as
          ->     XCase ()  <$> down x

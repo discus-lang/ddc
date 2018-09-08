@@ -11,11 +11,11 @@ module DDC.Core.Machine.Process.Base
         )
 where
 import DDC.Core.Machine.Prim
-import DDC.Core.Exp
+import DDC.Core.Exp                     hiding (Label)
 
 import qualified Data.Map as Map
 
-import DDC.Core.Codec.Text.Pretty          ()
+import DDC.Core.Codec.Text.Pretty       ()
 import DDC.Data.Pretty
 
 newtype Label

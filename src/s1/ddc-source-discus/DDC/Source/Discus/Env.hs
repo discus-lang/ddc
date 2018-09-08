@@ -351,9 +351,10 @@ typeOfPrimVal dc
         PrimValVector   p       -> Just $ typeOpVector  p
         PrimValFun      p       -> Just $ typeOpFun     p
         PrimValElaborate        -> Nothing
+        PrimValTuple{}          -> Nothing
+        PrimValRecord{}         -> Nothing
+        PrimValVariant{}        -> Nothing
         PrimValProject{}        -> Nothing
-        PrimValShuffle          -> Nothing
-        PrimValCombine          -> Nothing
 
 
 -- | Take the type of a primitive literal.

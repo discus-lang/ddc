@@ -115,22 +115,27 @@ makeTBot k = TCon (TyConUnion k)
 takeAnnotOfExp :: GExp a -> Maybe a
 takeAnnotOfExp xx
  = case xx of
-        XAnnot a _          -> Just a
-        XPrim{}             -> Nothing
-        XVar{}              -> Nothing
-        XCon{}              -> Nothing
-        XAbs    _  x        -> takeAnnotOfExp x
-        XApp    x1 a2       -> firstJust [takeAnnotOfExp x1, takeAnnotOfArg a2]
-        XLet    _  x        -> takeAnnotOfExp x
-        XCase   x  _        -> takeAnnotOfExp x
-        XCast   _  x        -> takeAnnotOfExp x
-        XDefix    a _       -> Just a
-        XInfixOp  a _       -> Just a
-        XInfixVar a _       -> Just a
-        XMatch    a _ _     -> Just a
-        XWhere    a _ _     -> Just a
-        XAbsPat   a _ _ _ _ -> Just a
-        XLamCase  a _       -> Just a
+        XAnnot a _              -> Just a
+        XPrim{}                 -> Nothing
+        XVar{}                  -> Nothing
+        XCon{}                  -> Nothing
+        XAbs    _  x            -> takeAnnotOfExp x
+        XApp    x1 a2           -> firstJust [takeAnnotOfExp x1, takeAnnotOfArg a2]
+        XLet    _  x            -> takeAnnotOfExp x
+        XCase   x  _            -> takeAnnotOfExp x
+        XCast   _  x            -> takeAnnotOfExp x
+        XDefix    a _           -> Just a
+        XInfixOp  a _           -> Just a
+        XInfixVar a _           -> Just a
+        XMatch    a _ _         -> Just a
+        XWhere    a _ _         -> Just a
+        XAbsPat   a _ _ _ _     -> Just a
+        XLamCase  a _           -> Just a
+        XTuple    a _           -> Just a
+        XRecord   a _           -> Just a
+        XVariant  a _ _         -> Just a
+        XArray    a _           -> Just a
+
 
 firstJust = listToMaybe . catMaybes
 
@@ -140,10 +145,10 @@ firstJust = listToMaybe . catMaybes
 takeAnnotOfArg :: GArg a -> Maybe a
 takeAnnotOfArg arg
  = case arg of
-        RType _             -> Nothing
-        RTerm x             -> takeAnnotOfExp x
-        RWitness  _         -> Nothing
-        RImplicit arg'      -> takeAnnotOfArg arg'
+        RType _                 -> Nothing
+        RTerm x                 -> takeAnnotOfExp x
+        RWitness  _             -> Nothing
+        RImplicit arg'          -> takeAnnotOfArg arg'
 
 
 -- Applications ---------------------------------------------------------------

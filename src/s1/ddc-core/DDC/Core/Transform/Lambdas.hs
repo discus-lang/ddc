@@ -103,17 +103,20 @@ lambdasX p c xx
         XVar{}
          -> return (xx, mempty)
 
-        XPrim{}
+        XAtom _a MAPrim{}
          -> return (xx, mempty)
 
         -- FIXME: pass through other names.
-        XCon a (DaConBound (DaConBoundName _ _ nCon))
+        XAtom a (MACon (DaConBound (DaConBoundName _ _ nCon)))
          -> do  mResult <- etaXConApp p c a xx nCon []
                 case mResult of
                  Nothing        -> return (xx, mempty)
                  Just result    -> return result
 
-        XCon{}
+        XAtom _ MACon{}
+         -> return (xx, mempty)
+
+        XAtom _ MALabel{}
          -> return (xx, mempty)
 
         -- Lift type lambdas to top-level.

@@ -165,18 +165,19 @@ checkExpM
 -- Dispatch to the checker table based on what sort of AST node we're at.
 checkExpM !table !ctx !mode !demand !xx
  = case xx of
-    XVar{}                 -> tableCheckVarCon     table table ctx mode demand xx
-    XPrim{}                -> tableCheckPrim       table table ctx mode demand xx
-    XCon{}                 -> tableCheckVarCon     table table ctx mode demand xx
-    XApp _ _ RType{}       -> tableCheckAppT       table table ctx mode demand xx
-    XApp{}                 -> tableCheckAppX       table table ctx mode demand xx
-    XAbs _ (MType _) _     -> tableCheckLamT       table table ctx mode demand xx
-    XAbs _ (MTerm _) _     -> tableCheckLamX       table table ctx mode demand xx
-    XAbs _ (MImplicit _) _ -> tableCheckLamX       table table ctx mode demand xx
-    XLet _ LPrivate{} _    -> tableCheckLetPrivate table table ctx mode demand xx
-    XLet{}                 -> tableCheckLet        table table ctx mode demand xx
-    XCase{}                -> tableCheckCase       table table ctx mode demand xx
-    XCast{}                -> tableCheckCast       table table ctx mode demand xx
+    XVar{}                  -> tableCheckVarCon     table table ctx mode demand xx
+    XApp _ _ RType{}        -> tableCheckAppT       table table ctx mode demand xx
+    XApp{}                  -> tableCheckAppX       table table ctx mode demand xx
+    XAbs  _ (MType _) _     -> tableCheckLamT       table table ctx mode demand xx
+    XAbs  _ (MTerm _) _     -> tableCheckLamX       table table ctx mode demand xx
+    XAbs  _ (MImplicit _) _ -> tableCheckLamX       table table ctx mode demand xx
+    XAtom _ (MACon{})       -> tableCheckVarCon     table table ctx mode demand xx
+    XAtom _ (MAPrim{})      -> tableCheckPrim       table table ctx mode demand xx
+    XAtom _ (MALabel{})     -> error "checkExpM: labels not handled yet"
+    XLet  _ LPrivate{} _    -> tableCheckLetPrivate table table ctx mode demand xx
+    XLet{}                  -> tableCheckLet        table table ctx mode demand xx
+    XCase{}                 -> tableCheckCase       table table ctx mode demand xx
+    XCast{}                 -> tableCheckCast       table table ctx mode demand xx
 
 
 -- Table ----------------------------------------------------------------------

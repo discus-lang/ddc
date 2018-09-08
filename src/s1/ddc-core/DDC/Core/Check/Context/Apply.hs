@@ -61,11 +61,13 @@ applyContextEither ctx is tt
                 return $ TForall b' t'
 
         TSum ts
-         -> do  tss'    <- mapM (applyContextEither ctx is)
-                        $  Sum.toList ts
+         -> do  tss'    <- mapM (applyContextEither ctx is) $  Sum.toList ts
+                return  $ TSum $ Sum.fromList (Sum.kindOfSum ts) tss'
 
-                return  $ TSum
-                        $ Sum.fromList (Sum.kindOfSum ts) tss'
+        TRow r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (applyContextEither ctx is) ts
+                return  $ TRow $ zip ls ts'
 
 
 -- | Like `applyContextEither`, but for the solved types.
@@ -113,9 +115,11 @@ applySolvedEither ctx is tt
                 return  $ TForall b' t'
 
         TSum ts
-         -> do  tss'    <- mapM (applySolvedEither ctx is)
-                        $  Sum.toList ts
+         -> do  tss'    <- mapM (applySolvedEither ctx is) $ Sum.toList ts
+                return  $  TSum $ Sum.fromList (Sum.kindOfSum ts) tss'
 
-                return  $  TSum
-                        $  Sum.fromList (Sum.kindOfSum ts) tss'
+        TRow r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM (applySolvedEither ctx is) ts
+                return  $  TRow $ zip ls ts'
 

@@ -77,9 +77,7 @@ data GXBindVarMT a
 data GExp a
         ---------------------------------------------------
         -- Core Language Constructs.
-        --   These are also in the core language, and after desugaring only
-        --   these constructs are used.
-        --
+
         = XAnnot    !a !(GExp a)
 
         -- | Primitives
@@ -140,6 +138,18 @@ data GExp a
         -- | Lambda abstraction that matches its argument against
         --   the given alternatives.
         | XLamCase  !a ![GAltCase a]
+
+        -- | Labeled tuple.
+        | XTuple    !a ![(Label, GExp a)]
+
+        -- | Record literal.
+        | XRecord   !a ![(Label, GExp a)]
+
+        -- | Variant literal.
+        | XVariant  !a Label (GExp a)
+
+        -- | Array literal.
+        | XArray    !a [GExp a]
 
 
 -- | Binding occurrence of a data constructor.

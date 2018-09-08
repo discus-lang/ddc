@@ -12,10 +12,10 @@ pprExp (xx: Exp): Text
 
 
 -- | Context of a pretty printed expression.
-data Context where
-        ContextFun    : Context
-        ContextArg    : Context
-        ContextBody   : Context
+data Context
+        = ContextFun
+        | ContextArg
+        | ContextBody
 
 
 -- | Pretty print an expression in the given context.

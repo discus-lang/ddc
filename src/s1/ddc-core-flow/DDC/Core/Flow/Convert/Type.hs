@@ -88,22 +88,13 @@ convertType tt
  -- For other primitives, convertName will handle convert them
  | otherwise
  = case tt of
-    TVar b
-     -> TVar    <$> convertBound b
-    TCon c
-     -> TCon    <$> convertTyCon c
-
-    TAbs b t
-     -> TAbs    <$> convertBind b <*> convertType t
-
-    TApp p q
-     -> TApp    <$> convertType p <*> convertType q
-
-    TForall b t
-     -> TForall <$> convertBind b <*> convertType t
-
-    TSum _t
-     -> return $ TSum $ TypeSumBot $ kData -- throw    $ ErrorUnexpectedSum
+    TVar b      -> TVar    <$> convertBound b
+    TCon c      -> TCon    <$> convertTyCon c
+    TAbs b t    -> TAbs    <$> convertBind b <*> convertType t
+    TApp p q    -> TApp    <$> convertType p <*> convertType q
+    TForall b t -> TForall <$> convertBind b <*> convertType t
+    TSum _t     -> throw    $ ErrorUnexpectedSum
+    TRow _t     -> throw    $ ErrorUnexpectedSum
 
 
 convertBind :: Bind F.Name -> ConvertM (Bind T.Name)

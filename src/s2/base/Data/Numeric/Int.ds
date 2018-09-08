@@ -17,40 +17,40 @@ type Int = Int#
 -- | Eq dictionary for Int.
 eq_Int:  Eq Int
  = Eq eq' neq'
- where  eq'  a b        = eq#  [Int#] a b
-        neq' a b        = neq# [Int#] a b
+ where  eq'  a b = eq#  {@Int#} a b
+        neq' a b = neq# {@Int#} a b
 
 
 -- | Ord dictionary for Int.
 ord_Int:  Ord Int
  = Ord  compare'
  where  compare' n1 n2
-         | gt# [Int#] n1 n2     = GT
-         | lt# [Int#] n1 n2     = LT
+         | gt# {@Int#} n1 n2     = GT
+         | lt# {@Int#} n1 n2     = LT
          | otherwise            = EQ
 
 
 -- | Add dictionary for Int.
 add_Int: Add Int
- = Add (\x y -> add# [Int#] x y)
+ = Add (\x y -> add# {@Int#} x y)
 
 
 -- | Sub dictionary for Int.
 sub_Int: Sub Int
- = Sub (\x y -> sub# [Int#] x y)
+ = Sub (\x y -> sub# {@Int#} x y)
 
 
 -- | Mul dictionary for Int.
 mul_Int: Mul Int
- = Mul (\x y -> mul# [Int#] x y)
+ = Mul (\x y -> mul# {@Int#} x y)
 
 
 -- | Div dictionary for Int.
 div_Int: Div Int
- = Div (\x y -> div# [Int#] x y)
+ = Div (\x y -> div# {@Int#} x y)
 
 
 -- | Rem dictionary for Int.
 rem_Int: Rem Int
- = Rem (\x y -> rem# [Int#] x y)
+ = Rem (\x y -> rem# {@Int#} x y)
 

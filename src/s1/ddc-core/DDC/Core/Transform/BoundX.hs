@@ -87,8 +87,6 @@ instance MapBoundX (Exp a) n where
   = let down = mapBoundAtDepthX f d
     in case xx of
         XVar a u        -> XVar a (f d u)
-        XPrim{}         -> xx
-        XCon{}          -> xx
 
         XAbs a (MType b) x
          -> XAbs a (MType b)     (down x)
@@ -105,6 +103,7 @@ instance MapBoundX (Exp a) n where
          -> let (lets', levels) = mapBoundAtDepthXLets f d lets
             in  XLet a lets' (mapBoundAtDepthX f (d + levels) x)
 
+        XAtom{}         -> xx
         XCase a x alts  -> XCase a (down x)  (map down alts)
         XCast a cc x    -> XCast a (down cc) (down x)
 

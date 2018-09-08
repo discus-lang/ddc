@@ -26,7 +26,7 @@ pushHead (xx: Exp s p): Maybe (Exp s p)
 --   pushing those may not terminate.
 pushDeep (xx: Exp s p): Maybe (Exp s p)
  = private r with { Read r; Write r; Alloc r } in
-   do   refPushed = allocRef [r] False
+   do   refPushed = allocRef {@r} False
         xx'       = pushDeepRef refPushed xx
         case readRef refPushed of
          False  → Nothing

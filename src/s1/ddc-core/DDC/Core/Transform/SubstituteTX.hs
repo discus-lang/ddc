@@ -1,5 +1,5 @@
 
--- | Capture avoiding substitution of types in expressions. 
+-- | Capture avoiding substitution of types in expressions.
 --
 --   If a binder would capture a variable then it is anonymized
 --   to deBruijn form.
@@ -39,14 +39,14 @@ substituteTXs bts x
 substituteBoundTX :: (SubstituteTX c, Ord n) => Bound n -> Type n -> c n -> c n
 substituteBoundTX u tArg xx
  = substituteWithTX tArg
-        ( Sub 
+        ( Sub
         { subBound      = u
 
           -- Rewrite level-1 binders that have the same name as any
           -- of the free variables in the expression to substitute.
-        , subConflict1  
+        , subConflict1
                 = Set.fromList
-                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty tArg) 
+                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty tArg)
 
           -- Rewrite level-0 binders that have the same name as any
           -- of the free variables in the expression to substitute.
@@ -64,14 +64,13 @@ class SubstituteTX (c :: * -> *) where
         => Type n -> Sub n -> c n -> c n
 
 
-instance SubstituteTX (Exp a) where 
+instance SubstituteTX (Exp a) where
  substituteWithTX tArg sub xx
   = {-# SCC substituteWithTX #-}
     let down x   = substituteWithTX tArg x
     in case xx of
         XVar a u        -> XVar a u
-        XPrim{}         -> xx
-        XCon{}          -> xx
+
         XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
         XAbs a (MType b) x
@@ -109,6 +108,7 @@ instance SubstituteTX (Exp a) where
                 x2'             = down   sub2 x2
             in  XLet a (LPrivate b' mT' bs') x2'
 
+        XAtom {}        -> xx
         XCase a x1 alts -> XCase    a (down sub x1) (map (down sub) alts)
         XCast a cc x1   -> XCast    a (down sub cc) (down sub x1)
 
@@ -129,7 +129,7 @@ instance SubstituteTX (Alt a) where
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
-        
+
         AAlt (PData uCon bs) x
          -> let (sub1, bs')     = bind0s sub (map (down sub) bs)
                 x'              = down   sub1 x

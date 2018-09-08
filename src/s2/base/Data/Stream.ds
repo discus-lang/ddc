@@ -61,7 +61,7 @@ arrayOfStream
  = extend r1 using mutable r2 in
    do
         -- Allocate an array of the given maximum size.
-        arr     = arrayStore_alloc [r2] n d
+        arr     = arrayStore_alloc {@r2} n d
 
         -- Unstream elements into the array.
         unstreamToArray ss arr 0

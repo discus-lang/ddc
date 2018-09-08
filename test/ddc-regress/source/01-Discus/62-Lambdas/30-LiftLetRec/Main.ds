@@ -25,9 +25,9 @@ data TestMap (k a: Data) where
 
 map_lookup ((Ord compare): Ord k) (kx: k) (mp: TestMap k a): Maybe a
  = go kx mp
- where  
-        go _ Tip2 
-         = Nothing [a]
+ where
+        go _ Tip2
+         = Nothing {@a}
 
         go k (Bin2 _ kx x l r)
          = case compare k kx of

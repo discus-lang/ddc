@@ -106,6 +106,7 @@ universeFromType2 tt
         TApp _ t2               -> universeFromType2 t2
         TForall{}               -> Nothing
         TSum _                  -> Nothing
+        TRow _                  -> Nothing
 
 
 -- | Given the type of some thing (up one level),
@@ -129,19 +130,20 @@ universeFromType1 kenv tt
         TCon (TyConSpec _)                -> Nothing
 
         -- TODO: this is rotted. Does anything still use the 'universe' fns?
-        TCon (TyConBound  _)       -> Nothing -- universeFromType2 k
-        TCon (TyConExists _ k)     -> universeFromType2 k
+        TCon (TyConBound  _)    -> Nothing -- universeFromType2 k
+        TCon (TyConExists _ k)  -> universeFromType2 k
 
-        TAbs b t2                  -> universeFromType1 (Env.extend b kenv) t2
-        TApp t1 _                  -> universeFromType1 kenv t1
-        TForall b t2               -> universeFromType1 (Env.extend b kenv) t2
-        TSum _                     -> Nothing
+        TAbs b t2               -> universeFromType1 (Env.extend b kenv) t2
+        TApp t1 _               -> universeFromType1 kenv t1
+        TForall b t2            -> universeFromType1 (Env.extend b kenv) t2
+        TSum _                  -> Nothing
+        TRow _                  -> Just UniverseSpec
 
 
 -- | Yield the universe of some type.
 --
 -- @  universeOfType (tBot kEffect) = UniverseSpec
---  universeOfType kRegion        = UniverseKind
+--    universeOfType kRegion        = UniverseKind
 -- @
 --
 universeOfType :: Ord n => Env n -> Type n -> Maybe Universe
@@ -166,5 +168,6 @@ universeOfType kenv tt
         TApp _ t2               -> universeOfType kenv t2
         TForall b t2            -> universeOfType (Env.extend b kenv) t2
         TSum ss                 -> universeFromType1 kenv (T.kindOfSum ss)
+        TRow _                  -> Just UniverseSpec
 
 

@@ -10,6 +10,8 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
+import DDC.Data.Label
+import DDC.Data.Pretty
 import qualified DDC.Core.Interface.Store       as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -19,13 +21,12 @@ import qualified DDC.Type.Sum                   as Sum
 import qualified SMR.Core.Codec                 as S
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
-import qualified Data.Text                      as T
-import qualified Data.Set                       as Set
-import Data.Text                                (Text)
-import DDC.Data.Pretty
 
+import Data.Text                                (Text)
 import qualified Foreign.Marshal.Alloc          as Foreign
 import qualified System.IO                      as System
+import qualified Data.Text                      as T
+import qualified Data.Set                       as Set
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -295,22 +296,6 @@ takeExp c xx
         C.XVar  _ u
          -> takeBound c u
 
-        -- Prim -----
-        C.XPrim _ p
-         -> case p of
-                C.PElaborate     -> xSym "xpe"
-                C.PProject tx    -> xAps "xpp" [xSym tx]
-                C.PShuffle       -> xSym "xps"
-                C.PCombine       -> xSym "xpc"
-
-        -- Con ----
-        C.XCon  _ dc
-         -> case dc of
-                C.DaConUnit      -> xSym "dc-unit"
-                C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
-                C.DaConPrim n    -> configTakeRef c n
-                C.DaConBound n   -> takeDaConBoundName c n
-
         -- Abs -----
         C.XAbs{}
          -> let go acc (C.XAbs _ m     x)
@@ -350,6 +335,36 @@ takeExp c xx
                         Just t  -> xSome (takeType c t)]
                  ++ (map (takeBind c) bsWit)
                  ++ [takeExp c x2])
+
+        -- Atom -----
+        C.XAtom _ aa
+         -> case aa of
+                C.MACon dc
+                 -> case dc of
+                        C.DaConUnit      -> xSym "dc-unit"
+                        C.DaConRecord fs -> xAps "dc-record" (map xSym fs)
+                        C.DaConPrim n    -> configTakeRef c n
+                        C.DaConBound n   -> takeDaConBoundName c n
+
+                C.MALabel l
+                 ->     xAps "xe" [xTxt $ nameOfLabel l]
+
+                C.MAPrim p
+                 -> case p of
+                        C.PElaborate
+                         -> xSym "xp-elaborate"
+
+                        C.PTuple   ls
+                         -> xAps "xp-tuple"   (map (xTxt . nameOfLabel) ls)
+
+                        C.PRecord  ls
+                         -> xAps "xp-record"  (map (xTxt . nameOfLabel) ls)
+
+                        C.PVariant l
+                         -> xAps "xp-variant" [xTxt $ nameOfLabel l]
+
+                        C.PProject l
+                         -> xAps "xp-project" [xTxt $ nameOfLabel l]
 
         -- Case -----
         C.XCase _ x as
@@ -475,6 +490,11 @@ takeType c tt
         C.TSum ts       -> xAps "ts" ( takeType c (Sum.kindOfSum ts)
                                      : (map (takeType c) $ Sum.toList ts))
 
+        C.TRow r
+         -> xAps "tr"
+                [ xPair (xTxt (nameOfLabel l)) (takeType c t)
+                | (l, t) <- r ]
+
         C.TCon tc       -> takeTyCon c tc
         C.TVar u        -> takeBound c u
 
@@ -542,6 +562,7 @@ takeKiCon c
         C.KiConRegion           -> xSym "tk-region"
         C.KiConEffect           -> xSym "tk-effect"
         C.KiConClosure          -> xSym "tk-closure"
+        C.KiConRow              -> xSym "tk-row"
 
 
 takeTwCon :: C.TwCon -> SExp
@@ -550,9 +571,7 @@ takeTwCon c
         C.TwConImpl             -> xSym "tw-impl"
         C.TwConPure             -> xSym "tw-pure"
         C.TwConConst            -> xSym "tw-const"
-        C.TwConDeepConst        -> xSym "tw-deepconst"
         C.TwConMutable          -> xSym "tw-mutable"
-        C.TwConDeepMutable      -> xSym "tw-deepmutable"
         C.TwConDistinct n       -> xAps "tw-distinct" [xNat n]
         C.TwConDisjoint         -> xSym "tw-disjoint"
 
@@ -565,13 +584,12 @@ takeTcCon c
         C.TcConFunImplicit      -> xSym "tc-funi"
         C.TcConSusp             -> xSym "tc-susp"
         C.TcConRecord ts        -> xAps "tc-record" (map xSym ts)
+        C.TcConT                -> xSym "tc-t"
+        C.TcConR                -> xSym "tc-r"
+        C.TcConV                -> xSym "tc-v"
         C.TcConRead             -> xSym "tc-read"
-        C.TcConHeadRead         -> xSym "tc-headread"
-        C.TcConDeepRead         -> xSym "tc-deepread"
         C.TcConWrite            -> xSym "tc-write"
-        C.TcConDeepWrite        -> xSym "tc-deepwrite"
         C.TcConAlloc            -> xSym "tc-alloc"
-        C.TcConDeepAlloc        -> xSym "tc-deepalloc"
 
 
 -- Utils ------------------------------------------------------------------------------------------

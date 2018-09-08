@@ -106,6 +106,28 @@ ppr' (ErrorAppCannotInferPolymorphic a _xx)
         , text "  Please supply type annotations to constrain the functional"
         , text "  part to have a quantified type." ]
 
+ppr' (ErrorProjectCannot a t l)
+ = vcat [ ppr a
+        , text "Cannot project field " % squotes (ppr l)
+        , text "  from value of type: " % ppr t ]
+
+ppr' (ErrorProjectNoField a t l)
+ = vcat [ ppr a
+        , text "Field " % squotes (ppr l) % text " is not in record"
+        , text "  of type: " % ppr t ]
+
+ppr' (ErrorProjectTooManyCtors a _ t l)
+ = vcat [ ppr a
+        , text "Field " % squotes (ppr l) % text " cannot be extracted automatically"
+        , text "  as the data type has too many constructors."
+        , text "  type is: " % ppr t ]
+
+ppr' (ErrorProjectTooManyArgs a _ t l)
+ = vcat [ ppr a
+        , text "Field " % squotes (ppr l) % text " cannot be extracted automatically"
+        , text "  as the data constructor has too many arguments."
+        , text "  type is: " % ppr t ]
+
 
 -- Lambda ---------------------------------------------------------------------
 ppr' (ErrorAbsShadow a _xx b)

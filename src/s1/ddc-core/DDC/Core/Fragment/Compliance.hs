@@ -114,12 +114,6 @@ instance Complies Exp where
 
         XVar{}          -> ok
 
-        -- primitives ---------------------------
-        XPrim{}         -> ok
-
-        -- constructors -------------------------
-        XCon{}          -> ok
-
         -- spec binders -------------------------
         XAbs _ (MType b) x
          | contextAbsBody context
@@ -244,6 +238,9 @@ instance Complies Exp where
                                         (reset context) x2
                 return (tUsed2, vUsed2)
 
+        -- atom ---------------------------------
+        XAtom{}         -> ok
+
         -- case ---------------------------------
         XCase _ x1 alts
          -> do  (tUsed1,  vUsed1)
@@ -312,10 +309,10 @@ compliesT profile tt
          -> compliesT profile t
 
         TSum ts
-         -> do  ss      <- mapM (compliesT profile)
-                        $  Sum.toList ts
+         -> fmap Set.unions $ mapM (compliesT profile) $ Sum.toList ts
 
-                return  $ Set.unions ss
+        TRow r
+         -> fmap Set.unions $ mapM (compliesT profile) $ map snd r
 
 
 -- Bind -----------------------------------------------------------------------

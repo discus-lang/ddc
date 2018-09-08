@@ -205,10 +205,23 @@ desugarX sp xx
                 return   $ XWhere sp' x' (map snd spcls')
 
         XAbsPat  sp' ps w mt x
-         ->     XAbsPat sp' ps w mt <$> desugarX sp x
+         -> XAbsPat sp' ps w mt <$> desugarX sp x
 
         XLamCase sp' alts
-         ->     XLamCase sp' <$> mapM (desugarAC sp) alts
+         -> XLamCase sp' <$> mapM (desugarAC sp) alts
+
+        XTuple   sp' lxs
+         ->  XTuple sp'
+         <$> ((zip $ map fst lxs) <$> mapM (desugarX sp) (map snd lxs))
+
+        XRecord   sp' lxs
+         ->  XRecord sp'
+         <$> ((zip $ map fst lxs) <$> mapM (desugarX sp) (map snd lxs))
+
+
+        XVariant sp' l x -> XVariant sp' l <$> desugarX sp x
+
+        XArray   sp' xs  -> XArray   sp' <$> mapM (desugarX sp) xs
 
 
 -------------------------------------------------------------------------------

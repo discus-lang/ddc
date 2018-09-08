@@ -169,7 +169,10 @@ takeName ss
         -- Hole
         XSym "hole"                     -> Just $ D.NameHole
 
-        _ -> error $ "ddc-core-discus.Codec.Shimmer.takeName failed for " ++ show ss
+        _ -> error $ unlines
+                [ "ddc-core-discus.Codec.Shimmer.takeName failed."
+                , " shimmer expression was:"
+                , show ss ]
 
 
 pattern XTxt tx    = S.XRef (S.RTxt tx)

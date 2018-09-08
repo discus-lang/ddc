@@ -169,8 +169,7 @@ boxingX config xx
 
         -- Boilerplate.
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
+        XAtom{}         -> xx
         XAbs a b x      -> XAbs a b  (boxingX   config x)
         XApp a x1 x2    -> XApp a    (boxingX   config x1)  (boxingA config x2)
         XLet a lts x    -> XLet a    (boxingLts config lts) (boxingX config x)

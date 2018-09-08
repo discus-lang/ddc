@@ -74,7 +74,7 @@ letrec {
             ^0 in
       let xx11    
           = let ^       
-                = ddcInfoFrameAddSuper xx10 1w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx10 0x0001w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -99,7 +99,7 @@ letrec {
             ^0 in
       let xx4     
           = ddcInfoFramePush xx12 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -165,7 +165,7 @@ letrec {
             ^0 in
       let xx7     
           = let ^       
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "neg"# in
+                = ddcInfoFrameAddSuper xx6 0x0001w16# 0x0000w16# "DDC"# "neg"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.neg"#) 0# ^0 in
             ^0 in
@@ -190,7 +190,7 @@ letrec {
             ^0 in
       let xx3     
           = ddcInfoFramePush xx8 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -266,7 +266,7 @@ letrec {
             ^0 in
       let xx7     
           = let ^       
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx6 0x0001w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -291,7 +291,7 @@ letrec {
             ^0 in
       let xx3     
           = ddcInfoFramePush xx8 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -379,7 +379,7 @@ letrec {
             ^0 in
       let xx8     
           = let ^       
-                = ddcInfoFrameAddSuper xx7 2w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx7 0x0002w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -404,7 +404,7 @@ letrec {
             ^0 in
       let xx3     
           = ddcInfoFramePush xx9 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -482,7 +482,7 @@ letrec {
             ^0 in
       let xx11    
           = let ^       
-                = ddcInfoFrameAddSuper xx10 2w16# 0w16# "DDC"# "add"# in
+                = ddcInfoFrameAddSuper xx10 0x0002w16# 0x0000w16# "DDC"# "add"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.add"#) 0# ^0 in
             ^0 in
@@ -507,7 +507,7 @@ letrec {
             ^0 in
       let xx13    
           = let ^       
-                = ddcInfoFrameAddSuper xx12 1w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx12 0x0001w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -532,7 +532,7 @@ letrec {
             ^0 in
       let xx4     
           = ddcInfoFramePush xx14 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -581,7 +581,7 @@ letrec {
             ^0 in
       let xx10    
           = let ^       
-                = ddcInfoFrameAddData xx9 0w16# 0w16# "Test"# "Hot"# in
+                = ddcInfoFrameAddData xx9 0x0000w16# 0x0000w16# "Test"# "Hot"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Hot"#) 0# ^0 in
             ^0 in
@@ -606,7 +606,7 @@ letrec {
             ^0 in
       let xx12    
           = let ^       
-                = ddcInfoFrameAddData xx11 1w16# 0w16# "Test"# "Cold"# in
+                = ddcInfoFrameAddData xx11 0x0001w16# 0x0000w16# "Test"# "Cold"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cold"#) 0# ^0 in
             ^0 in
@@ -654,7 +654,7 @@ letrec {
             ^0 in
       let xx16    
           = let ^       
-                = ddcInfoFrameAddSuper xx15 1w16# 0w16# "DDC"# "flipit"# in
+                = ddcInfoFrameAddSuper xx15 0x0001w16# 0x0000w16# "DDC"# "flipit"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.flipit"#) 0# ^0 in
             ^0 in
@@ -679,7 +679,7 @@ letrec {
             ^0 in
       let xx7     
           = ddcInfoFramePush xx17 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -732,7 +732,7 @@ letrec {
             ^0 in
       let xx10    
           = let ^       
-                = ddcInfoFrameAddData xx9 0w16# 2w16# "Test"# "Cons"# in
+                = ddcInfoFrameAddData xx9 0x0000w16# 0x0002w16# "Test"# "Cons"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cons"#) 0# ^0 in
             ^0 in
@@ -757,7 +757,7 @@ letrec {
             ^0 in
       let xx12    
           = let ^       
-                = ddcInfoFrameAddData xx11 1w16# 0w16# "Test"# "Nil"# in
+                = ddcInfoFrameAddData xx11 0x0001w16# 0x0000w16# "Test"# "Nil"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Nil"#) 0# ^0 in
             ^0 in
@@ -805,7 +805,7 @@ letrec {
             ^0 in
       let xx16    
           = let ^       
-                = ddcInfoFrameAddSuper xx15 1w16# 0w16# "DDC"# "head"# in
+                = ddcInfoFrameAddSuper xx15 0x0001w16# 0x0000w16# "DDC"# "head"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.head"#) 0# ^0 in
             ^0 in
@@ -830,7 +830,7 @@ letrec {
             ^0 in
       let xx7     
           = ddcInfoFramePush xx17 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -876,7 +876,7 @@ letrec {
             ^0 in
       let xx10    
           = let ^       
-                = ddcInfoFrameAddData xx9 0w16# 2w16# "Test"# "Cons"# in
+                = ddcInfoFrameAddData xx9 0x0000w16# 0x0002w16# "Test"# "Cons"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cons"#) 0# ^0 in
             ^0 in
@@ -901,7 +901,7 @@ letrec {
             ^0 in
       let xx12    
           = let ^       
-                = ddcInfoFrameAddData xx11 1w16# 0w16# "Test"# "Nil"# in
+                = ddcInfoFrameAddData xx11 0x0001w16# 0x0000w16# "Test"# "Nil"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Nil"#) 0# ^0 in
             ^0 in
@@ -949,7 +949,7 @@ letrec {
             ^0 in
       let xx16    
           = let ^       
-                = ddcInfoFrameAddSuper xx15 2w16# 0w16# "DDC"# "head"# in
+                = ddcInfoFrameAddSuper xx15 0x0002w16# 0x0000w16# "DDC"# "head"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.head"#) 0# ^0 in
             ^0 in
@@ -974,7 +974,7 @@ letrec {
             ^0 in
       let xx7     
           = ddcInfoFramePush xx17 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -1041,7 +1041,7 @@ letrec {
             ^0 in
       let xx7     
           = let ^       
-                = ddcInfoFrameAddSuper xx6 1w16# 0w16# "DDC"# "swap"# in
+                = ddcInfoFrameAddSuper xx6 0x0001w16# 0x0000w16# "DDC"# "swap"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.swap"#) 0# ^0 in
             ^0 in
@@ -1066,7 +1066,7 @@ letrec {
             ^0 in
       let xx3     
           = ddcInfoFramePush xx8 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -1152,7 +1152,7 @@ letrec {
             ^0 in
       let xx15    
           = let ^       
-                = ddcInfoFrameAddData xx14 0w16# 2w16# "Test"# "Cons"# in
+                = ddcInfoFrameAddData xx14 0x0000w16# 0x0002w16# "Test"# "Cons"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cons"#) 0# ^0 in
             ^0 in
@@ -1177,7 +1177,7 @@ letrec {
             ^0 in
       let xx17    
           = let ^       
-                = ddcInfoFrameAddData xx16 1w16# 0w16# "Test"# "Nil"# in
+                = ddcInfoFrameAddData xx16 0x0001w16# 0x0000w16# "Test"# "Nil"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Nil"#) 0# ^0 in
             ^0 in
@@ -1225,7 +1225,7 @@ letrec {
             ^0 in
       let xx21    
           = let ^       
-                = ddcInfoFrameAddSuper xx20 2w16# 0w16# "DDC"# "head"# in
+                = ddcInfoFrameAddSuper xx20 0x0002w16# 0x0000w16# "DDC"# "head"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.head"#) 0# ^0 in
             ^0 in
@@ -1250,7 +1250,7 @@ letrec {
             ^0 in
       let xx23    
           = let ^       
-                = ddcInfoFrameAddSuper xx22 1w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx22 0x0001w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -1275,7 +1275,7 @@ letrec {
             ^0 in
       let xx10    
           = ddcInfoFramePush xx24 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 
 
@@ -1352,7 +1352,7 @@ letrec {
             ^0 in
       let xx19    
           = let ^       
-                = ddcInfoFrameAddData xx18 0w16# 2w16# "Test"# "Cons"# in
+                = ddcInfoFrameAddData xx18 0x0000w16# 0x0002w16# "Test"# "Cons"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cons"#) 0# ^0 in
             ^0 in
@@ -1377,7 +1377,7 @@ letrec {
             ^0 in
       let xx21    
           = let ^       
-                = ddcInfoFrameAddData xx20 1w16# 0w16# "Test"# "Nil"# in
+                = ddcInfoFrameAddData xx20 0x0001w16# 0x0000w16# "Test"# "Nil"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Nil"#) 0# ^0 in
             ^0 in
@@ -1425,7 +1425,7 @@ letrec {
             ^0 in
       let xx25    
           = let ^       
-                = ddcInfoFrameAddData xx24 0w16# 0w16# "Test"# "Hot"# in
+                = ddcInfoFrameAddData xx24 0x0000w16# 0x0000w16# "Test"# "Hot"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Hot"#) 0# ^0 in
             ^0 in
@@ -1450,7 +1450,7 @@ letrec {
             ^0 in
       let xx27    
           = let ^       
-                = ddcInfoFrameAddData xx26 1w16# 0w16# "Test"# "Cold"# in
+                = ddcInfoFrameAddData xx26 0x0001w16# 0x0000w16# "Test"# "Cold"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.data.Test.Cold"#) 0# ^0 in
             ^0 in
@@ -1498,7 +1498,7 @@ letrec {
             ^0 in
       let xx31    
           = let ^       
-                = ddcInfoFrameAddSuper xx30 2w16# 0w16# "DDC"# "head"# in
+                = ddcInfoFrameAddSuper xx30 0x0002w16# 0x0000w16# "DDC"# "head"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.head"#) 0# ^0 in
             ^0 in
@@ -1523,7 +1523,7 @@ letrec {
             ^0 in
       let xx33    
           = let ^       
-                = ddcInfoFrameAddSuper xx32 1w16# 0w16# "DDC"# "foo"# in
+                = ddcInfoFrameAddSuper xx32 0x0001w16# 0x0000w16# "DDC"# "foo"# in
             let _       
                 = write# [Word32#] (globali# [Word32#] "ddcInfoIndex.super.DDC.foo"#) 0# ^0 in
             ^0 in
@@ -1548,6 +1548,6 @@ letrec {
             ^0 in
       let xx16    
           = ddcInfoFramePush xx34 in
-      ddcBoxedAlloc [rT] TAG0# 1w32# 0#
+      ddcBoxedAlloc [rT] TAG0# 0x00000001w32# 0#
 }
 

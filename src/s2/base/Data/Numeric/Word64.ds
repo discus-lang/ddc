@@ -13,57 +13,56 @@ where
 
 
 -- | Default Word64 type is an alias for the primitive type.
-type Word64      = Word64#
+type Word64 = Word64#
 
 
 -- | Eq dictionary for Word64.
 eq_Word64:  Eq Word64
  = Eq eq' neq'
- where  eq'  a b        = eq#  [Word64#] a b
-        neq' a b        = neq# [Word64#] a b
+ where  eq'  a b = eq#  {@Word64#} a b
+        neq' a b = neq# {@Word64#} a b
 
 
 -- | Ord dictionary for Word64.
 ord_Word64:  Ord Word64
  = Ord  compare'
  where  compare' n1 n2
-         | gt# [Word64#] n1 n2     = GT
-         | lt# [Word64#] n1 n2     = LT
+         | gt# {@Word64#} n1 n2 = GT
+         | lt# {@Word64#} n1 n2 = LT
          | otherwise            = EQ
 
 
 -- | Add dictionary for Word64.
 add_Word64: Add Word64
- = Add (\x y -> add# [Word64#] x y)
+ = Add (\x y -> add# {@Word64#} x y)
 
 
 -- | Sub dictionary for Nat.
 sub_Word64: Sub Word64
- = Sub (\x y -> if gt# [Word64#] y x
+ = Sub (\x y -> if gt# {@Word64#} y x
                  then 0w64
-                 else sub# [Word64#] x y)
+                 else sub# {@Word64#} x y)
 
 
 -- | Mul dictionary for Word64.
 mul_Word64: Mul Word64
- = Mul (\x y -> mul# [Word64#] x y)
+ = Mul (\x y -> mul# {@Word64#} x y)
 
 
 -- | Div dictionary for Word64.
 div_Word64: Div Word64
- = Div (\x y -> div# [Word64#] x y)
-
+ = Div (\x y -> div# {@Word64#} x y)
 
 -- | Rem dictionary for Word64.
 rem_Word64: Rem Word64
- = Rem (\x y -> rem# [Word64#] x y)
+ = Rem (\x y -> rem# {@Word64#} x y)
 
 
 -- | Bits dictionary for Word64;
 bits_Word64: Bits Word64
- = Bits (\x y -> shl#  [Word64#] x y)
-        (\x y -> shr#  [Word64#] x y)
-        (\x y -> band# [Word64#] x y)
-        (\x y -> bor#  [Word64#] x y)
-        (\x y -> bxor# [Word64#] x y)
+ = Bits (\x y -> shl#  {@Word64#} x y)
+        (\x y -> shr#  {@Word64#} x y)
+        (\x y -> band# {@Word64#} x y)
+        (\x y -> bor#  {@Word64#} x y)
+        (\x y -> bxor# {@Word64#} x y)
 

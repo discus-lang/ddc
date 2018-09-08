@@ -18,12 +18,11 @@ injectX :: Map A.Name (Exp a A.Name -> Exp a A.Name)
 injectX injs xx
  = case xx of
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
         XAbs  a b x     -> XAbs  a b   (injectX injs x) -- Should we error? Salt doesn't have lambdas.
         XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectArg injs x2)
-        XLet  a lts x   -> XLet  a     (injectLts injs lts) 
+        XLet  a lts x   -> XLet  a     (injectLts injs lts)
                                        (injectionsOfLets injs lts (injectX injs x))
+        XAtom{}         -> xx
         XCase a x alts  -> XCase a     (injectX injs x)      (map (injectA injs) alts)
         XCast a c x     -> XCast a c   (injectX injs x)
 
@@ -57,11 +56,11 @@ injectLts injs lts
 -- Construct the transformation to inject, given a set of names
 
 injectionsOfLets  :: Map A.Name (exp -> exp) -> Lets a A.Name -> exp -> exp
-injectionsOfLets injs lts 
+injectionsOfLets injs lts
         = injectionsOfBinds injs (valwitBindsOfLets lts)
 
 injectionsOfPat   :: Map A.Name (exp -> exp) -> Pat A.Name -> exp -> exp
-injectionsOfPat injs pp 
+injectionsOfPat injs pp
         = injectionsOfBinds injs (bindsOfPat pp)
 
 injectionsOfBinds :: Map A.Name (exp -> exp) -> [Bind A.Name] -> exp -> exp

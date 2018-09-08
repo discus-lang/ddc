@@ -179,11 +179,13 @@ typeIsUnboxed tt
          , tTarget == tObj
          -> False
 
-        TApp t1 t2
-         -> typeIsUnboxed t1 || typeIsUnboxed t2
-
+        TApp t1 t2      -> typeIsUnboxed t1 || typeIsUnboxed t2
         TForall _ t     -> typeIsUnboxed t
 
+        -- Sums should have effect kind, and are thus not value types.
         TSum{}          -> False
+
+        -- Rows should have row kind, and are thus not value types.
+        TRow{}          -> False
 
 

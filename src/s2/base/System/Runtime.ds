@@ -44,10 +44,12 @@ import foreign c value
 
  -- From Hook.dcs --------------------
  -- | Set the callback for when the runtime encounters a file exception.
- ddcHookSetExceptionFile        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+ ddcHookSetExceptionFile
+        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
 
  -- | Set the callback for when the runtime encounters a network exception.
- ddcHookSetExceptionNetwork     : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+ ddcHookSetExceptionNetwork
+        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
 
 
 where

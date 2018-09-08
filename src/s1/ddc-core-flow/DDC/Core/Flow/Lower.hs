@@ -172,8 +172,8 @@ lowerEither _config _procnames (Right (b,xx))
       TForall bind tt'
        -> TForall bind (replaceProcTy tt')
 
-      TSum ts
-       -> TSum ts
+      TSum ts -> TSum ts
+      TRow ts -> TRow ts
 
 
 -- | Lower a single series process into fused code.

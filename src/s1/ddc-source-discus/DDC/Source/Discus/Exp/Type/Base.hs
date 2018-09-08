@@ -3,6 +3,7 @@
 -- Generic type expression representation.
 module DDC.Source.Discus.Exp.Type.Base
         ( module DDC.Source.Discus.Exp.Bind
+        , module DDC.Data.Label
 
           -- * Abstract Syntax
         , GType         (..)
@@ -49,27 +50,46 @@ where
 import DDC.Source.Discus.Exp.Type.Prim
 import DDC.Source.Discus.Exp.Bind
 import DDC.Type.Exp.TyCon
-
 import DDC.Core.Discus  (PrimTyCon     (..))
+import DDC.Data.Label
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Generic type expression representation.
 data GType a
+        ---------------------------------------------------
+        -- Core Language Constructs.
+
         -- | An annotated type.
-        = TAnnot     !a (GType a)
+        = TAnnot !a (GType a)
 
         -- | Type constructor or literal.
-        | TCon       !(GTyCon a)
+        | TCon  !(GTyCon a)
 
         -- | Type variable.
-        | TVar       !Bound
+        | TVar  !Bound
 
         -- | Type abstracton.
-        | TAbs       !Bind (GType a) (GType a)
+        | TAbs  !Bind (GType a) (GType a)
 
         -- | Type application.
-        | TApp       !(GType a) (GType a)
+        | TApp  !(GType a) (GType a)
+
+        -- | Generic row type, used for tuples, records and variants.
+        | TRow  ![(Label, GType a)]
+
+        ---------------------------------------------------
+        -- Sugar Constructs.
+        --   These are eliminated when desugaring onto core.
+
+        -- | Tuple type which desugars onto a T# row.
+        | TTuple   ![(Label, GType a)]
+
+        -- | Record type which desugars onto R# row.
+        | TRecord  ![(Label, GType a)]
+
+        -- | Variant type which desugars onto V# row.
+        | TVariant ![(Label, GType a)]
 
 
 -- | Wrapper for primitive constructors that adds the ones

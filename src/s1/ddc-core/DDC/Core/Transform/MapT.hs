@@ -4,7 +4,7 @@ module DDC.Core.Transform.MapT
 where
 import DDC.Core.Exp.Annot.Exp
 
-type  MAPT m c n 
+type  MAPT m c n
         = (Type n -> m (Type n)) -> c n -> m (c n)
 
 
@@ -20,15 +20,14 @@ instance Monad m => MapT m (Exp a) where
  mapT f xx
   = let down :: forall (c :: * -> *). (Monad m, MapT m c) => c n -> m (c n)
         down = mapT f
-    in case xx of  
+    in case xx of
         XVar  a u       -> pure (XVar  a u)
-        XPrim a p       -> pure (XPrim a p)
-        XCon  a c       -> pure (XCon  a c)
-        XAbs  a b x     -> XAbs     a <$> down b   <*> down x
-        XApp  a x1 x2   -> XApp     a <$> down x1  <*> down x2
-        XLet  a lts x   -> XLet     a <$> down lts <*> down x
-        XCase a x alts  -> XCase    a <$> down x   <*> mapM down alts
-        XCast a cc x    -> XCast    a <$> down cc  <*> down x
+        XAbs  a b x     -> XAbs  a <$> down b   <*> down x
+        XApp  a x1 x2   -> XApp  a <$> down x1  <*> down x2
+        XLet  a lts x   -> XLet  a <$> down lts <*> down x
+        XAtom a t       -> pure (XAtom a t)
+        XCase a x alts  -> XCase a <$> down x   <*> mapM down alts
+        XCast a cc x    -> XCast a <$> down cc  <*> down x
 
 
 instance Monad m => MapT m Param where
@@ -120,7 +119,7 @@ instance Monad m => MapT m (Cast a) where
 
 
 instance Monad m => MapT m Bind where
- mapT f b       
+ mapT f b
   = case b of
         BNone t         -> BNone   <$> (f t)
         BAnon t         -> BAnon   <$> (f t)
@@ -128,7 +127,7 @@ instance Monad m => MapT m Bind where
 
 
 instance Monad m => MapT m Bound where
- mapT _ u       
+ mapT _ u
   = return u
-  
+
 

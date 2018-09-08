@@ -29,7 +29,7 @@ arrayBulk_alloc
         (size: Nat) (def: a)
         : Array Bulk a
  = do
-        sarr    = allocStoreArray [RegionBulk] size def
+        sarr    = allocStoreArray {@RegionBulk} size def
         MkArray Bulk def size
                 (\ix -> if ix < size
                         then readStoreArray sarr ix

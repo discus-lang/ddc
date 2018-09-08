@@ -42,7 +42,7 @@ make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
  = case n of
     0 -> Nil
     _ -> do
-        prev'   = scanl (add [Nat] {add_Nat}) 0 prev
+        prev'   = scanl (add {@Nat} {add_Nat}) 0 prev
         acc'    = map (tail1 0) (Cons prev' acc)
         row     = map (head  0) acc'
         Cons row (make (n - 1) acc' row)

@@ -6,6 +6,7 @@ import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Data.Pretty
+import DDC.Data.Label
 import qualified DDC.Type.Sum           as Sum
 
 
@@ -123,6 +124,12 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          | otherwise
          -> pprParen (d > 9) $  ppr ts
 
+        TRow r
+         -> braces
+          $ (hcat $ punctuate (text ", ")
+                  [ (text $ nameOfLabel l) % text ": " % ppr t
+                  | (l, t) <- r])
+
 
 instance (Pretty n, Eq n) => Pretty (TypeSum n) where
  ppr ss
@@ -166,6 +173,7 @@ instance Pretty KiCon where
         KiConEffect     -> text "Effect"
         KiConClosure    -> text "Closure"
         KiConWitness    -> text "Witness"
+        KiConRow        -> text "Row"
 
 
 -- TwCon ------------------------------------------------------------------------------------------
@@ -175,9 +183,7 @@ instance Pretty TwCon where
         TwConImpl       -> text "(=>)"
         TwConPure       -> text "Purify"
         TwConConst      -> text "Const"
-        TwConDeepConst  -> text "DeepConst"
         TwConMutable    -> text "Mutable"
-        TwConDeepMutable-> text "DeepMutable"
         TwConDistinct n -> text "Distinct" <> ppr n
         TwConDisjoint   -> text "Disjoint"
 
@@ -196,11 +202,11 @@ instance Pretty TcCon where
          <> (hcat $ punctuate (text ",") $ map text nn)
          <> text ")#"
 
-        TcConRead        -> text "Read"
-        TcConHeadRead    -> text "HeadRead"
-        TcConDeepRead    -> text "DeepRead"
-        TcConWrite       -> text "Write"
-        TcConDeepWrite   -> text "DeepWrite"
-        TcConAlloc       -> text "Alloc"
-        TcConDeepAlloc   -> text "DeepAlloc"
+        TcConT          -> text "T#"
+        TcConR          -> text "R#"
+        TcConV          -> text "V#"
+
+        TcConRead       -> text "Read"
+        TcConWrite      -> text "Write"
+        TcConAlloc      -> text "Alloc"
 

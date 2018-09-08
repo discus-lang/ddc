@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/55-ProjectTooManyCtors/Main.ds:4:1
+  Field 'derp' cannot be extracted automatically
+    as the data type has too many constructors.
+    type is: Nat#

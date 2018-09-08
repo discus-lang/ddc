@@ -215,6 +215,14 @@ downX a env xx
 
         XLamCase a' alts -> XLamCase a (map (downA a' env) alts)
 
+        XTuple a' lxs   -> XTuple a' [ (l, downX a' env x) | (l, x) <- lxs ]
+
+        XRecord a' lxs  -> XRecord a' [ (l, downX a' env x) | (l, x) <- lxs ]
+
+        XVariant a' l x -> XVariant a' l $ downX a' env x
+
+        XArray a' xs    -> XArray a' $ map (downX a' env) xs
+
 
 ---------------------------------------------------------------------------------------------------
 instance Expand Arg where

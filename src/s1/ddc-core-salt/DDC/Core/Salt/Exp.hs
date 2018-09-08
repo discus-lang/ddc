@@ -64,11 +64,11 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XVar  _ u
          -> G.XVar  <$> fromAnnot u
 
-        N.XPrim _ _
-         -> error "ddc-core-salt: fromAnnot finish me"
-
-        N.XCon  _ c
-         -> G.XCon  <$> fromAnnot c
+        N.XAtom _ t
+         -> case t of
+                N.MACon c       -> G.XCon <$> fromAnnot c
+                N.MALabel{}     -> error "ddc-core-salt: fromAnnot finish me"
+                N.MAPrim{}      -> error "ddc-core-salt: fromAnnot finish me"
 
         N.XAbs  _ (N.MType b) x
          -> G.XAbs  <$> (G.MType <$> fromAnnot b) <*> fromAnnot x

@@ -91,8 +91,8 @@ addParamsT tt
          -> do  tBody'   <- addParamsT tBody
                 return   $  TForall b tBody'
 
-        TSum{}
-         -> Nothing
+        TSum{} -> Nothing
+        TRow{} -> Nothing
 
 
 -------------------------------------------------------------------------------
@@ -203,9 +203,7 @@ addArgsX nts xx
                 Nothing   -> xx
 
         XVar{}            -> xx
-        XPrim{}           -> xx
-        XCon{}            -> xx
-
+        XAtom{}           -> xx
         XApp{}            -> addArgsAppX nts xx []
 
         -- For the rest of the constructs their types do not

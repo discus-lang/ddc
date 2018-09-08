@@ -13,7 +13,7 @@ where
 main ()
  = private r with {Read r; Write r; Alloc r} in
    do
-        vec     = vectorAlloc# [r] [Word8#] 4
+        vec     = vectorAlloc# {@r} {@Word8#} 4
         vectorWrite# vec 3 27w8
         vectorWrite# vec 0 0w8
         writel  (showNat (promote# (vectorRead#   vec 3)))

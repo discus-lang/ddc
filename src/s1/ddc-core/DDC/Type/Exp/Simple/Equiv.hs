@@ -52,7 +52,7 @@ equivWithBindsT env stack1 stack2 t1 t2
         t2'     = unpackSumT $ crushSomeT env t2
 
    in case (t1', t2') of
-        (TVar u1,         TVar u2)
+        (TVar u1, TVar u2)
          -- Free variables are name-equivalent, bound variables aren't:
          -- (forall a. a) != (forall b. a)
          | Nothing         <- getBindType stack1 u1
@@ -79,7 +79,7 @@ equivWithBindsT env stack1 stack2 t1 t2
          -> equivWithBindsT env stack1 stack2 t1' t2''
 
         -- Constructor names must be equal.
-        (TCon tc1,        TCon tc2)
+        (TCon tc1, TCon tc2)
          -> equivTyCon tc1 tc2
 
         -- Push binders on the stack as we enter foralls.
@@ -91,14 +91,14 @@ equivWithBindsT env stack1 stack2 t1 t2
                 t12 t22
 
         -- Decend into applications.
-        (TApp t11 t12,    TApp t21 t22)
+        (TApp t11 t12, TApp t21 t22)
          -> equivWithBindsT env stack1 stack2 t11 t21
          && equivWithBindsT env stack1 stack2 t12 t22
 
         -- Sums are equivalent if all of their components are.
-        (TSum ts1,        TSum ts2)
-         -> let ts1'      = Sum.toList ts1
-                ts2'      = Sum.toList ts2
+        (TSum ts1, TSum ts2)
+         -> let ts1' = Sum.toList ts1
+                ts2' = Sum.toList ts2
 
                 -- If all the components of the sum were in the element
                 -- arrays then they come out of Sum.toList sorted
@@ -117,6 +117,11 @@ equivWithBindsT env stack1 stack2 t1 t2
 
             in  (length ts1' == length ts2')
             &&  (checkFast || checkSlow)
+
+        -- Rows are equivalent if their components are.
+        (TRow lts1, TRow lts2)
+         -> (map fst lts1 == map fst lts2)
+         && and (zipWith (equivWithBindsT env stack1 stack2) (map snd lts1) (map snd lts2))
 
         (_, _)  -> False
 
@@ -148,20 +153,14 @@ crushHeadT env tt
                 Nothing  -> tt
                 Just tt' -> crushHeadT env tt'
 
-        TCon{}  -> tt
+        TApp t1 t2 -> TApp (crushHeadT env t1) (crushHeadT env t2)
 
-        TVar{}  -> tt
-
-        TAbs{}  -> tt
-
-        TApp t1 t2
-         -> let t1'     = crushHeadT env t1
-                t2'     = crushHeadT env t2
-            in  TApp t1' t2'
-
-        TForall{} -> tt
-
-        TSum{}    -> tt
+        TCon{}     -> tt
+        TVar{}     -> tt
+        TAbs{}     -> tt
+        TForall{}  -> tt
+        TSum{}     -> tt
+        TRow{}     -> tt
 
 
 -- | Crush compound effects and closure terms.
@@ -171,13 +170,10 @@ crushHeadT env tt
 --   that tries to re-crush the same non-crushable type over and over.
 --
 crushSomeT :: Ord n => EnvT n -> Type n -> Type n
-crushSomeT env tt
+crushSomeT _env tt
  = case tt of
         TApp (TCon tc) _
          -> case tc of
-                TyConSpec TcConDeepRead  -> crushEffect env tt
-                TyConSpec TcConDeepWrite -> crushEffect env tt
-                TyConSpec TcConDeepAlloc -> crushEffect env tt
                 _                        -> tt
 
         _ -> tt
@@ -205,6 +201,7 @@ crushEffect env tt
          -> TAbs b $ crushEffect env t
 
         TApp t1 t2
+{-
          -- Head Read.
          |  Just (TyConSpec TcConHeadRead, [t]) <- takeTyConApps tt
          -> case takeTyConApps t of
@@ -224,7 +221,7 @@ crushEffect env tt
               -> tBot kEffect
 
              _ -> tt
-
+-}
          -- Deep Read.
          -- See Note: Crushing with higher kinded type vars.
 --         | Just (TyConSpec TcConDeepRead, [t]) <- takeTyConApps tt
@@ -268,11 +265,13 @@ crushEffect env tt
         TForall b t
          -> TForall b $ crushEffect env t
 
+        TRow r
+         -> TRow [ (l, crushEffect env t) | (l, t) <- r ]
+
         TSum ts
-         -> TSum
-          $ Sum.fromList (Sum.kindOfSum ts)
-          $ map (crushEffect env)
-          $ Sum.toList ts
+         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
+                 $ map (crushEffect env)
+                 $ Sum.toList ts
 
 
 {- TODO: this old deep effect code has long rotted. ditch it.

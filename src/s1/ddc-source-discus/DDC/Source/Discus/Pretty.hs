@@ -61,6 +61,25 @@ instance PrettyLanguage l => Pretty (GType l) where
          -> pprParen' (d > 10)
          $  pprPrec 10 t1 %% pprPrec 11 t2
 
+        TRow r
+         -> braces
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TTuple r
+         -> parens
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TRecord r
+         -> brackets
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TVariant r
+         -> angles
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
 
 
 instance PrettyLanguage l => Pretty (GTyCon l) where
@@ -254,6 +273,20 @@ instance PrettyLanguage l => Pretty (GExp l) where
          $  text "λcase." <> lbrace <> line
                 <> (vcat $ punctuate semi $ map ppr alts)
          <> line <> rbrace
+
+        XTuple _ r
+         -> parens $ hcat $ punctuate (text ", ")
+                [ ppr l % text " = " % ppr x | (l, x) <- r ]
+
+        XRecord _ r
+         -> brackets $ hcat $ punctuate (text ", ")
+                [ ppr l % text " = " % ppr x | (l, x) <- r ]
+
+        XVariant _ l x
+         -> text "`" % ppr l %% pprPrec 11 x
+
+        XArray _ xs
+         -> brackets $ hcat $ punctuate (text ", ") $ map ppr xs
 
 
 -- Arg --------------------------------------------------------------------------------------------

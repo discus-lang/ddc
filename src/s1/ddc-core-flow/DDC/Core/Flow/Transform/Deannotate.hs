@@ -8,28 +8,33 @@ import qualified DDC.Core.Flow.Exp.Simple.Exp   as S
 
 -- | Convert the `Annot` version of the AST to the `Simple` version,
 --   using the provided function to decide when to keep the annotation.
-class Deannotate 
+class Deannotate
         (c1 :: * -> * -> *)
         (c2 :: * -> * -> *) | c1 -> c2
- where  
+ where
  deannotate :: (a -> Maybe a) -> c1 a n -> c2 a n
 
 
 instance Deannotate A.Exp S.Exp where
  deannotate f xx
-  = let down      = deannotate f 
+  = let down      = deannotate f
         wrap a x  = case f a of
                         Nothing -> x
                         Just a' -> S.XAnnot a' x
     in case xx of
         A.XVar  a u                     -> wrap a (S.XVar u)
-        A.XPrim a p                     -> wrap a (S.XPrim p)
-        A.XCon  a dc                    -> wrap a (S.XCon dc)
         A.XAbs  a (A.MType b) x         -> wrap a (S.XLAM b (down x))
         A.XAbs  a (A.MTerm b) x         -> wrap a (S.XLam b (down x))
         A.XAbs  a (A.MImplicit b) x     -> wrap a (S.XLam b (down x))
         A.XApp  a x1 x2                 -> wrap a (S.XApp   (down x1)  (down x2))
         A.XLet  a lts x2                -> wrap a (S.XLet   (down lts) (down x2))
+
+        A.XAtom a t
+         -> case t of
+                A.MACon  dc             -> wrap a (S.XCon dc)
+                A.MALabel{}             -> error "deannotate: finish me"
+                A.MAPrim p              -> wrap a (S.XPrim p)
+
         A.XCase a x alts                -> wrap a (S.XCase  (down x)   (map down alts))
         A.XCast a cc x                  -> wrap a (S.XCast  (down cc)  (down x))
 

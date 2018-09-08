@@ -63,9 +63,9 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
  -- Kind holes.
  --   This is some kind that we were explicitly told to infer,
  --   so make a new existential for it.
- | UniverseKind         <- uni
- , Just n               <- takeNameOfBound u
- , Just isHole          <- configNameIsHole config
+ | UniverseKind <- uni
+ , Just n       <- takeNameOfBound u
+ , Just isHole  <- configNameIsHole config
  , isHole n
  = case mode of
         -- We don't infer kind holes in recon mode.
@@ -91,9 +91,9 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
  -- Spec holes.
  --   This is some spec that we were explicitly told to infer,
  --   so make an existential for it.
- | UniverseSpec         <- uni
- , Just n               <- takeNameOfBound u
- , Just isHole          <- configNameIsHole config
+ | UniverseSpec <- uni
+ , Just n       <- takeNameOfBound u
+ , Just isHole  <- configNameIsHole config
  , isHole n
  = case mode of
         -- We don't infer spec holes in recon mode.
@@ -125,7 +125,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
 
  -- Some variable defined in an environment,
  -- or a primitive variable with its kind directly attached.
- | UniverseSpec          <- uni
+ | UniverseSpec <- uni
  = let
         -- Get the actual kind of the variable,
         -- according to the kind environment.
@@ -455,6 +455,37 @@ checkTypeM config ctx0 UniverseSpec
                     $  C.ErrorType $ ErrorTypeMismatch UniverseSpec k1' kExpected' tt
 
         return (t1', k1', ctx2)
+
+-- Rows -----------------------------------------
+checkTypeM config ctx0 UniverseSpec (TRow rr) Recon
+ = do
+        -- Check all the element types.
+        let (ls, ts) = unzip rr
+        (ts', _ks', ctx1) <- checkTypesM config ctx0 UniverseSpec Recon ts
+
+        -- TODO: check the kinds are all data.
+        return (TRow $ zip ls ts', kRow, ctx1)
+
+checkTypeM config ctx0 UniverseSpec (TRow rr) mode@Synth{}
+ = do
+        -- Check all the element types.
+        let (ls, ts) = unzip rr
+        (ts', _ks', ctx1) <- checkTypesM config ctx0 UniverseSpec mode ts
+
+        -- TODO: check the kinds are all data.
+        return (TRow $ zip ls ts', kRow, ctx1)
+
+checkTypeM config ctx0 UniverseSpec (TRow rr) (Check _kExpected)
+ = do
+        -- Check all the element types.
+        let (ls, ts) = unzip rr
+        (ts', _ks', ctx1)
+         <- checkTypesM config ctx0 UniverseSpec
+                (Check kData) ts
+
+        -- TODO: check the contained kinds.
+        -- TODO: check expected kind is row
+        return (TRow $ zip ls ts', kRow, ctx1)
 
 
 -- Sums -----------------------------------------
