@@ -17,13 +17,12 @@ import Data.Text.Char
 where
 
 
-
 -- | Load source files.
 loadSources
         (config: Config Name Prim)
         (paths:  List Text)
-        :        S (File + Console + Process)
-                   (List (Decl Name Prim))
+        : S (File + Console + Process)
+            (List (Decl Name Prim))
  = case paths of
         Nil     -> Nil
         Cons path paths'
@@ -42,8 +41,8 @@ loadSources
 loadSource
         (config: Config Name Prim)
         (path:   Text)
-        :        S (File + Console)
-                   (Maybe (List (Decl Name Prim)))
+        : S (File + Console)
+            (Maybe (List (Decl Name Prim)))
  = do
         str     = file_read path
         lStart  = Location 1 1

@@ -9,21 +9,21 @@ where
 
 
 -- | Command line arguments.
-data Mode where
+data Mode
         -- | Include a file into the top level scope.
-        ModeInclude      : Text -> Mode
+        = ModeInclude   [ file: Text ]
 
-        -- | Evaluate the given expression.
-        ModeEval         : Text -> Mode
+        -- | Evaluate the macro with the given name.
+        | ModeEval      [ name: Text ]
 
 
 -- | Argument definitions.
 smrReplArgs_defs: List (Arg (List Mode))
  = Cons ( ArgText "-i"    "include file"
-        $ \s as -> Cons (ModeInclude s) as)
+        $ \s as -> Cons (ModeInclude [file = s]) as)
 
  $ Cons ( ArgText "-eval" "evaluate expression"
-        $ \s as -> Cons (ModeEval s)    as)
+        $ \s as -> Cons (ModeEval [name = s])    as)
  $ Nil
 
 
@@ -38,8 +38,8 @@ smrReplArgs_collectIncludes (ms: List Mode): List Text
         Nil
          -> Nil
 
-        Cons (ModeInclude t) ms'
-         -> Cons t (smrReplArgs_collectIncludes ms')
+        Cons (ModeInclude inc) ms'
+         -> Cons inc.file (smrReplArgs_collectIncludes ms')
 
         Cons _ ms'
          -> smrReplArgs_collectIncludes ms'

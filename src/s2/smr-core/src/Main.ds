@@ -102,8 +102,8 @@ repl_start (state: State) (args: List Mode): S Console Unit
         Cons (ModeInclude _) args'
          -> repl_start state args'
 
-        Cons (ModeEval name) args'
-         -> case steps' state True (XRef (RMac name)) of
+        Cons (ModeEval xx) args'
+         -> case steps' state True (XRef (RMac xx.name)) of
                 Left err
                  -> writel $ ppr $ ErrorReplRuntime "<command>" err
 

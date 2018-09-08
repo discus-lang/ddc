@@ -131,7 +131,7 @@ pExpApp {c: Config s p}
 
 
 -- | Parser for an atomic expression.
-pExpAtom {c: Config s p}
+pExpAtom {config: Config s p}
          :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
         -- Parenthesised expression.
  = alts
@@ -169,13 +169,13 @@ pExpAtom {c: Config s p}
 
          -- Named symbol
          SSym
-          -> case configSym c name of
+          -> case config.readSym name of
                 Just s  -> return (XRef (RSym s))
                 Nothing -> failure
 
          -- Named primitive.
          SPrm
-          -> case configPrim c name of
+          -> case config.readPrm name of
                 Just p  -> return (XRef (RPrm p))
                 Nothing -> failure
 
@@ -305,7 +305,7 @@ pBump: Parser (Located Token) (Expected (Located Token) s p) ((Name, Nat), Nat)
 -------------------------------------------------------------------------------
 -- | Parser for a natural number.
 pNat:   Parser (Located Token) (Expected (Located Token) s p) Nat
- =      from ExBaseNat (takeNatOfToken    ∘ valueOfLocated)
+ =      from ExBaseNat (takeNatOfToken ∘ valueOfLocated)
 
 
 -- | Parser for a name in the given space.
