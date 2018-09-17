@@ -25,6 +25,10 @@ export foreign c value
  ddcInfoEntryGetSuperBoxes      : Addr# -> Word16#
  ddcInfoEntryGetSuperModuleName : Addr# -> Addr#
  ddcInfoEntryGetSuperName       : Addr# -> Addr#
+ ddcInfoEntryGetSuperHash0      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash1      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash2      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash3      : Addr# -> Word64#
 
 
 import foreign c value
@@ -171,7 +175,7 @@ ddcInfoInitStatic (_: Unit): Unit
 --   given number of entries.
 ddcInfoFrameNew (nEntries: Word32#): Addr#
  = do
-        nSizeOfEntry    = 32#
+        nSizeOfEntry    = 64#
 
         nSizeOfFrame
          =      add# (size# [Word32#])                  -- Total number of entries.
@@ -284,7 +288,7 @@ ddcInfoFrameAddSuper
         write# [Word16#] aEntry 8#  nBoxes      -- Arity of data constructor.
         write# [Addr#]   aEntry 16# aNameModule -- Module name.
         write# [Addr#]   aEntry 24# aNameSuper  -- Super name.
-        write# [Word64#] aEntry 32# wHash0      -- Hash of super expression (word0)
+        write# [Word64#] aEntry 32# wHash0      -- Hash of super expression (Word0)
         write# [Word64#] aEntry 40# wHash1      -- ..
         write# [Word64#] aEntry 48# wHash2      -- ..
         write# [Word64#] aEntry 56# wHash3      -- ..
@@ -330,6 +334,18 @@ ddcInfoEntryGetSuperModuleName (aEntry: Addr#): Addr#
 ddcInfoEntryGetSuperName  (aEntry: Addr#): Addr#
  =      read# [Addr#]   aEntry 24#
 
+ddcInfoEntryGetSuperHash0 (aEntry: Addr#): Word64#
+ =      read# [Word64#] aEntry 32#
+
+ddcInfoEntryGetSuperHash1 (aEntry: Addr#): Word64#
+ =      read# [Word64#] aEntry 40#
+
+ddcInfoEntryGetSuperHash2 (aEntry: Addr#): Word64#
+ =      read# [Word64#] aEntry 48#
+
+ddcInfoEntryGetSuperHash3 (aEntry: Addr#): Word64#
+ =      read# [Word64#] aEntry 56#
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Lookup the info table entry with the given identifier,
@@ -367,7 +383,7 @@ ddcInfoEntryLookup_loop
                 -- Get the address of the current entry in the frame.
                 aEntry  = plusAddr# aFrame
                          (add#  16#
-                               (mul# (promote# nEntry) 32#))
+                               (mul# (promote# nEntry) 64#))
 
                 -- See if this is the entry we were looking for.
                 nIdentx = read# [Word32#] aEntry 0#
