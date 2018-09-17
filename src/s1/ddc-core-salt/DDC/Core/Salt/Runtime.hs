@@ -586,6 +586,7 @@ utInfoFrameAddSuper
  =      ( UName (NameVar "ddcInfoFrameAddSuper")
         , tAddr `tFun` tWord 16 `tFun` tWord 16
                 `tFun` tTextLit `tFun` tTextLit
+                `tFun` tWord 64 `tFun` tWord 64 `tFun` tWord 64 `tFun` tWord 64
                 `tFun` tWord 32)
 
 -- Primops ----------------------------------------------------------------------------------------

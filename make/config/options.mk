@@ -12,6 +12,7 @@ GHC_LANGUAGE	:= \
         -XTupleSections \
         -XPatternGuards \
         -XKindSignatures \
+        -XPackageImports \
         -XPatternSynonyms \
         -XConstraintKinds \
 	-XFlexibleContexts \

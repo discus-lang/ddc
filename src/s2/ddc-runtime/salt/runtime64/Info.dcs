@@ -6,7 +6,11 @@ export foreign c value
  ddcInfoFrameNew                : Word32# -> Addr#
  ddcInfoFramePush               : Addr#   -> Unit
  ddcInfoFrameAddData            : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
- ddcInfoFrameAddSuper           : Addr#   -> Word16# -> Word16# -> Addr# -> Addr# -> Word32#
+
+ ddcInfoFrameAddSuper
+        :  Addr#   -> Word16# -> Word16# -> Addr# -> Addr#
+        -> Word64# -> Word64# -> Word64# -> Word64#
+        -> Word32#
 
  ddcInfoEntryLookup             : Word32# -> Addr#
  ddcInfoEntryGetIdent           : Addr# -> Word32#
@@ -136,7 +140,7 @@ ddcInfoInitStatic (_: Unit): Unit
 -- }
 --
 -- struct InfoEntryData <: InfoEntry
--- {                            -- Total size = 32 bytes.
+-- {                            -- Total size = 64 bytes.
 --    0  uint32  ident          -- Identifier of entry in infotable.
 --    4  uint16  type   = 0     -- Type of entry in infotable (0 = Data)
 --    6  uint16  tag            -- Tag of data constructor in its data type.
@@ -144,10 +148,11 @@ ddcInfoInitStatic (_: Unit): Unit
 --    10 uint8[] .. padding ..
 --    16 addr64  moduleName     -- Address of null-terminated string of module name.
 --    24 addr64  ctorName       -- Address of null-terminated string of constructor name.
+--    32 uint8[] .. padding ..  -- (so that all frames have the same length)
 -- }
 --
 -- struct InfoEntrySuper <: InfoEntry
--- {                            -- Total size = 32 bytes.
+-- {                            -- Total size = 64 bytes.
 --    0  uint32  ident          -- Identifier of entry in infotable.
 --    4  uint16  type   = 1     -- Type of entry in infotable (1 = Super)
 --    6  uint16  params         -- Number of parameters of function.
@@ -155,6 +160,10 @@ ddcInfoInitStatic (_: Unit): Unit
 --    10 uint8[] .. padding ..
 --    16 addr64  moduleName     -- Address of null-terminated string of module name.
 --    24 addr64  ctorName       -- Address of null-terminated string of constructor name.
+--    32 word64  hash0          -- Hash of super expression (word 0)
+--    40 word64  hash1          -- ...
+--    48 word64  hash2          -- ...
+--    56 word64  hash3          -- ...
 -- }
 
 
@@ -215,7 +224,7 @@ ddcInfoFrameAddData
         -- Initialize the entry in the frame.
         aEntry  = plusAddr# aFrame
                  (add#  16#
-                        (mul# (promote# nFrameUsed) 32#))
+                        (mul# (promote# nFrameUsed) 64#))
 
         write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
         write# [Word16#] aEntry 4#  0w16#       -- Entry type (0 = Data)
@@ -245,9 +254,13 @@ ddcInfoFrameAddSuper
         (nBoxes:        Word16#)        -- Number of inner boxes of super.
         (aNameModule:   Addr#)          -- Address of null-terminated string of module name.
         (aNameSuper:    Addr#)          -- Address of null-terminated string of super name.
+        (wHash0:        Word64#)        -- Hash of super expression (word0)
+        (wHash1:        Word64#)        -- ...
+        (wHash2:        Word64#)        -- ...
+        (wHash3:        Word64#)        -- ...
         : Word32#                       -- Index of new entry.
  = do
-        nSizeOfEntry    = 32#
+        nSizeOfEntry    = 64#
 
         -- Check that we're not about to overflow the frame.
         nFrameUsed      = read# [Word32#] aFrame 0#
@@ -263,7 +276,7 @@ ddcInfoFrameAddSuper
         -- Initialize the entry in the frame.
         aEntry  = plusAddr# aFrame
                  (add#  16#
-                        (mul# (promote# nFrameUsed) 32#))
+                        (mul# (promote# nFrameUsed) 64#))
 
         write# [Word32#] aEntry 0#  nIdent      -- Entry identifier.
         write# [Word16#] aEntry 4#  1w16#       -- Entry type (0 = Super)
@@ -271,6 +284,10 @@ ddcInfoFrameAddSuper
         write# [Word16#] aEntry 8#  nBoxes      -- Arity of data constructor.
         write# [Addr#]   aEntry 16# aNameModule -- Module name.
         write# [Addr#]   aEntry 24# aNameSuper  -- Super name.
+        write# [Word64#] aEntry 32# wHash0      -- Hash of super expression (word0)
+        write# [Word64#] aEntry 40# wHash1      -- ..
+        write# [Word64#] aEntry 48# wHash2      -- ..
+        write# [Word64#] aEntry 56# wHash3      -- ..
 
         -- Bump the count of entries in the frame.
         write# [Word32#] aFrame 0#  (add# nFrameUsed 1w32#)
