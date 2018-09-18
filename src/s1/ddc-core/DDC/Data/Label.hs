@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports #-}
+
 module DDC.Data.Label
         ( Label
         , labelOfText

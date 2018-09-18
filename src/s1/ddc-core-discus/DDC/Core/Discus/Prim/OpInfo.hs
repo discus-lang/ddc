@@ -62,6 +62,8 @@ typeOpInfoFlag op False
         OpInfoFrameAddSuper
          -> tAddr `tFun` tWord 16 `tFun` tWord 16
                   `tFun` tTextLit `tFun` tTextLit
+                  `tFun` tWord 64 `tFun` tWord 64
+                  `tFun` tWord 64 `tFun` tWord 64
                   `tFun` tWord 32
 
 typeOpInfoFlag op True
@@ -80,4 +82,8 @@ typeOpInfoFlag op True
         OpInfoFrameAddSuper
          -> tUnboxed tAddr `tFun` tUnboxed (tWord 16) `tFun` tUnboxed (tWord 16)
                            `tFun` tUnboxed tTextLit   `tFun` tUnboxed tTextLit
+                           `tFun` tUnboxed (tWord 64)
+                           `tFun` tUnboxed (tWord 64)
+                           `tFun` tUnboxed (tWord 64)
+                           `tFun` tUnboxed (tWord 64)
                            `tFun` tUnboxed (tWord 32)

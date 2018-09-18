@@ -23,6 +23,7 @@ import DDC.Core.Discus.Prim.TyConPrim
 import DDC.Core.Discus.Prim.OpFun
 import DDC.Core.Discus.Prim.Base
 import DDC.Core.Exp.Annot
+import Data.Word
 
 
 -- Fun --------------------------------------------------------------------------------------------
@@ -153,16 +154,29 @@ xInfoFrameAddSuper
         -> Int          -- ^ Number of boxes of super.
         -> Exp a Name   -- ^ Name of defining module.
         -> Exp a Name   -- ^ Name of super.
+        -> Word64       -- ^ First word of hash value
+        -> Word64       -- ^ ...
+        -> Word64       -- ^ ...
+        -> Word64       -- ^ ...
         -> Exp a Name
 
-xInfoFrameAddSuper a xPtr iParams iBoxes xNameModule xNameSuper
+xInfoFrameAddSuper
+        a xPtr iParams iBoxes xNameModule xNameSuper
+        wHash0 wHash1 wHash2 wHash3
  = xApps a
         (XVar a (UName (NameOpInfo OpInfoFrameAddSuper False)))
         [ RTerm xPtr
         , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iParams) 16))
         , RTerm $ XCon a (DaConPrim (NameLitWord (fromIntegral iBoxes)  16))
         , RTerm xNameModule
-        , RTerm xNameSuper]
+        , RTerm xNameSuper
+        , RTerm $ xWord a (fromIntegral wHash0) 64
+        , RTerm $ xWord a (fromIntegral wHash1) 64
+        , RTerm $ xWord a (fromIntegral wHash2) 64
+        , RTerm $ xWord a (fromIntegral wHash3) 64 ]
+
+xWord a i bits
+ = XCon a (DaConPrim (NameLitWord i bits))
 
 
 -- | Type of the ddcInfoFrameAddData runtime primitive.
