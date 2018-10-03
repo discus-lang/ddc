@@ -68,6 +68,7 @@ void ddcSeaStatsGCEnd(){
     timeList->data = cache;
   }else{
     append(timeList, cache);
+    fprintf(stderr,",%lu", (unsigned long)(cache->end.tv_usec - cache->start.tv_usec));
   }
   cache = NULL;
 }

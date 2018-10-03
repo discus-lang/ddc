@@ -8,6 +8,7 @@ import Data.CompactRegion
 
 import foreign c value
  ddcPerformGC : Unit -> Unit
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Text-> Unit
 
 where
 
@@ -21,14 +22,15 @@ main ()
  = mutable r in
    do   
       -- create compact region at @r with size 1024 bytes
-      cr = allocCR {@r} 1024
+      cr = allocCR {@r} ()
       -- store a number 2048 at compact region, the myVal is the value
       -- on the compact region. It won't be garbage collected until the region is dead.
       writel $ "- Store one value"
       myVal = storeCR cr 2048
       ddcPerformGC ()
       writel $ "value  = " % show myVal
-      -- append another value to the CR
+
+      -- -- append another value to the CR
       writel $ "- Store two value"
       myVal2 = storeCR cr 4096
       ddcPerformGC ()
@@ -47,5 +49,10 @@ main ()
       deleteCR cr
 
       ddcPerformGC ()
+      writel $ "value  = " % show myVal
+      writel $ "value  = " % show myVal2
+      writel $ "value  = " % show myVal3
+
+      -- ddcTraceObj {@r} True True myVal3
       ()
 

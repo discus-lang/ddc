@@ -24,7 +24,7 @@ hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat
 main ()
  = mutable r in
    do   
-      cr = allocCR {@r} 8
+      cr = allocCR {@r} ()
       acc = hitLimit cr 0
       deleteCR cr
       writel $ show acc

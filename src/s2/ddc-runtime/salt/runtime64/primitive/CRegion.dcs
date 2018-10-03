@@ -1,9 +1,16 @@
 module Runtime.Prim.CRegion
 
 export foreign c value
- ddcPrimCompactRegionAlloc    : [r1 :Region]. Nat# -> Nat#
+ ddcPrimCompactRegionAlloc    : [r1 :Region]. Unit -> Nat#
  ddcPrimCompactRegionStore    : [r1  r2: Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
  ddcPrimCompactRegionMarkDead : [r1 : Region]. Nat# -> Unit
+
+ ddcCompactRegionDestroy      : Addr# -> Unit
+ ddcCompactRegionGetNext      : Addr# -> Addr#
+ ddcCompactRegionGetRefList   : Addr# -> Addr#
+ ddcCompactRegionGetTail      : Addr# -> Addr#
+ ddcCompactRegionGetData      : Addr# -> Addr#
+
 
  ddcCompactRegionIsLive       : Addr# -> Bool#
  ddcCompactRegionDebugPrint   : TextLit# -> Unit
@@ -21,20 +28,23 @@ import foreign c value
  ddcObjectFormat  : [r: Region].     Ptr# r Obj -> Nat#
  ddcObjectSetCompactRegionFlag : [r: Region]. Ptr# r Obj -> Bool# -> Unit
  
-
+ ddcObjectIsInCompactRegion : [r: Region]. Ptr# r Obj -> Bool#
  ddcPrimStdoutPutNat : Nat# -> Void#
  ddcPrimStderrPutNat : Nat# -> Void#
  ddcPrimStdoutPutAddr : Addr# -> Void#
  ddcPrimStderrPutAddr : Addr# -> Void#
  ddcPrimStdoutPutTextLit : TextLit#   -> Void#
  ddcPrimStderrPutTextLit : TextLit#   -> Void#
+ ddcPrimShowNat          : Nat#     -> TextLit#
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ptr# r Obj -> Ptr# r Obj
+
  
 
 with letrec
 
 ddcCompactRegionDebug (u : Unit) : Bool#
  = do 
-      True#
+      False#
 
 ddcCompactRegionDebugPrint (msg : TextLit#) : Unit
   = do
@@ -48,63 +58,112 @@ ddcPrintCompactRegionHeader (rawBase : Addr#) : Unit
       case ddcCompactRegionDebug () of
         True# -> do ddcPrimStderrPutTextLit "CR-> Base: "#
                     ddcPrimStderrPutAddr rawBase
-                    ddcPrimStderrPutTextLit "| Top: "#
+                    ddcPrimStderrPutTextLit "| Next: "#
                     ddcPrimStderrPutAddr (read# [Addr#] rawBase 0#)
-                    ddcPrimStderrPutTextLit "| Max: "#
+                    ddcPrimStderrPutTextLit "| Tail: "#
                     ddcPrimStderrPutAddr (read# [Addr#] rawBase 8#)
-                    ddcPrimStderrPutTextLit "| Size: "#
-                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 0#) rawBase))
-                    ddcPrimStderrPutTextLit "/"#
-                    ddcPrimStderrPutNat (promote# [Nat#] (sub# (read# [Addr#] rawBase 8#) rawBase))
                     ddcPrimStderrPutTextLit "| Flag: "#
                     ddcPrimStderrPutAddr (promote# [Addr#] (truncate# [Word8#] (read# [Addr#] rawBase 16#)))
-                    
-                    refList = (read# [Addr#] rawBase 17#)
-                    case eq# refList (promote# [Addr#] 0#) of
-                      False# -> do ddcPrimStderrPutTextLit "| RefList: "#
-                                   ddcPrintCompactRegionHeader refList
-                                   () 
-                      True# -> do ddcPrimStderrPutTextLit "\n"#
-                                  () 
-                     
-                   
+                    ddcPrimStderrPutTextLit "| RefList: "#
+                    ddcPrimStderrPutAddr (read# [Addr#] rawBase 17#)
+                    ddcPrimStderrPutTextLit "\n"#
+
+                    ()
         _ -> ()
-        
+
+
+
 -- Ref List is the list of object compact region keeps live on the heap.
 --| Compact Region Allocation
-ddcPrimCompactRegionAlloc [r1 : Region] (initSize : Nat#) : Nat#
+ddcPrimCompactRegionAlloc [r1 : Region] (u : Unit) : Nat#
  = do 
-      regionRawBase = ddcCompactRegionAlloc (add# 32# initSize) 128#
+      regionRawBase = ddcCompactRegionAllocHead ()
+      refListBase = ddcCompactRegionAllocHead ()
+      ddcCompactRegionSetRefList regionRawBase refListBase
+
       ddcCompactRegionDebugPrint "Alloc| "#
       ddcPrintCompactRegionHeader regionRawBase
+
+      ddcCompactRegionDebugPrint "Alloc RefList| "#
+      ddcPrintCompactRegionHeader refListBase
+
       ddcCompactRegionInsertTable regionRawBase
 
-ddcCompactRegionAlloc (initSize : Nat#) (initRefListSize : Nat#) : Addr#
+-- head:   |next|tail|flags(live|x|x|x|x|x|x|x|)|RefList|
+-- data:   |next|xxxx|xxxx|xxxx|
+-- size:     8    8    1    8
+-- offset:   0    8    16   17
+ddcCompactRegionAllocHead (u : Unit) : Addr#
  = do
-      -- claim chunk of memory
-      rawBase = malloc initSize
-      -- construct header
-      case eq# initRefListSize 0# of
-        -- allocate refList
-        True#  -> do  ddcCompactRegionConstructHeader 
-                        rawBase 
-                        (plusAddr# rawBase 32#)  -- top
-                        (plusAddr# rawBase initSize) -- max
-                        0b0000001w8# -- flags
-                        (promote# [Addr#] 0#) -- ignore
-                      -- return raw base
-                      rawBase
-        -- allocate a compact region
-        False# -> do  ddcCompactRegionConstructHeader 
-                        rawBase 
-                        (plusAddr# rawBase 32#)  -- top
-                        (plusAddr# rawBase initSize) -- max
-                        0b0000001w8# -- flags
-                        (ddcCompactRegionAlloc initRefListSize 0#) -- create cr
-
-                      -- return raw base
-                      rawBase
+      headBase = malloc 32#
+      ddcCompactRegionSetNext headBase headBase
+      ddcCompactRegionSetTail headBase headBase
+      ddcCompactRegionSetLive headBase True#
+      headBase
       
+-- setters
+ddcCompactRegionSetNext (node : Addr#) (next : Addr#): Unit
+ = do write# node 0# next
+      ()
+
+ddcCompactRegionSetTail (node : Addr#) (tail : Addr#): Unit
+ = do write# node 8# tail
+      ()
+
+ddcCompactRegionSetLive (head : Addr#) (isLive : Bool#): Unit
+ = do (case isLive of
+        True# -> do write# head 16# 0b11111111w8#
+                    ()
+        False# -> do write# head 16# 0b11111110w8#
+                     ()
+        )
+      ()
+
+ddcCompactRegionSetRefList (head : Addr#) (refList : Addr#) : Unit
+ = do write# head 17# refList
+      ()
+  
+-- getters
+ddcCompactRegionGetNext (node : Addr#) : Addr#
+ = do r = read# node 0#
+      r
+
+ddcCompactRegionGetTail (node : Addr#) : Addr#
+ = do r = read# node 8#
+      r
+
+ddcCompactRegionIsLive (head : Addr#) : Bool#
+ = do   case eq# (truncate# [Nat#] head) 0# of
+          True#  -> do False#
+          False# -> do
+                flag8  = truncate# [Word8#] (read# [Addr#] head 16#)
+                case band# flag8 0b0000001w8# of
+                  0b00000001w8# -> True#
+                  _             -> False#
+
+ddcCompactRegionGetRefList (head : Addr#) : Addr#
+ = do r = read# head 17#
+      r
+
+ddcCompactRegionGetData (node : Addr#) : Addr#
+ = do r = plusAddr# node 32#
+      r
+
+-- free compact region list
+ddcCompactRegionDestroy (head : Addr#) : Unit
+ = do refList = ddcCompactRegionGetRefList head
+      ddcCompactRegionDestroyPrim refList (ddcCompactRegionGetTail refList)
+      ddcCompactRegionDestroyPrim head (ddcCompactRegionGetTail head)
+      ()
+
+ddcCompactRegionDestroyPrim (curr : Addr#) (max : Addr#) : Unit
+ = do case eq# curr max of
+        True#  -> do free curr
+                     ()
+        False# -> do next = ddcCompactRegionGetNext curr
+                     ddcCompactRegionDestroyPrim next max
+                     free curr
+                     ()
 
 -- procedure to insert into global table, should be inlined.
 ddcCompactRegionInsertTable (rawBase : Addr#): Nat#
@@ -135,15 +194,13 @@ ddcCompactRegionExtendsTable (u : Unit): Void#
       newSize = add# oldSize (read# (global# [Nat#] "ddcCRTableSize"#) 0#)
       tableBaseNew = malloc newSize
       tableMaxNew = plusAddr# tableBaseNew (sub# newSize 1#)
-      -- copy and destory old one
+      -- copy and Destroy old one
       copy# tableBaseNew tableBaseOld oldSize
       free tableBaseOld
 
       -- update globals
       write# (global# [Addr#] "ddcCRTableBase"#) 0# tableBaseNew
       write# (global# [Addr#] "ddcCRTableMax"#) 0# tableMaxNew
-      
-      
 
 -- return 0# when table is full
 -- otherwise return the address of the slot
@@ -168,189 +225,152 @@ ddcPrimCompactRegionStore [r1 r2: Region] (handle : Nat#) (pVal : Ptr# r1 Obj) :
                    fail# --invalid handle
           True#
             -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
-                  ddcCompactRegionStore (plusAddr# tableBase handle) pVal
+                  slot = plusAddr# tableBase handle
+                  ddcCompactRegionStore (read# slot 0#) pVal
                   
-
-ddcCompactRegionStore [r1 r2 : Region] (handleSlotAddr : Addr#) (pVal : Ptr# r1 Obj) : Ptr# r2 Obj 
+ddcCompactRegionStore [r1 r2 : Region] (head : Addr#) (pVal : Ptr# r1 Obj) : Ptr# r2 Obj
  = do 
-      regionRawBase = read# [Addr#] handleSlotAddr 0#
+      tail = ddcCompactRegionGetTail head
+      isLive = ddcCompactRegionIsLive head
+
       ddcCompactRegionDebugPrint "Store| "#
-      ddcPrintCompactRegionHeader regionRawBase
-      -- check if region is live.
-      isLive = ddcCompactRegionIsLive regionRawBase
-      case isLive of
+      ddcPrintCompactRegionHeader head
+
+      (case isLive of
         False# -> do ddcCompactRegionDebugPrint "Access dead region\n"#
-                     fail# 
-        True# -> do -- now attempt to store object into the compact region
-                    regionTop = read# [Addr#] regionRawBase 0#
-                    regionMax = read# [Addr#] regionRawBase 8#
-                    makePtr# (ddcCompactRegionResizeStore handleSlotAddr regionRawBase regionTop regionMax pVal)
+                     fail#
+        True#  -> ())
+      -- store the obj into next node
+      node = ddcCompactRegionCreateDataNode pVal
+      ddcCompactRegionSetNext tail node
+      ddcCompactRegionSetTail head node
+      -- store obj with ref on the heap to refList
+      objInRegion = makePtr# (ddcCompactRegionGetData node)
+      ddcCompactRegionUpdateRefList head objInRegion
 
+      -- ddcCompactRegionDebugPrint "objInRegion: "#
+      -- ddcPrimStderrPutAddr (ddcCompactRegionGetData node)
+      -- ddcCompactRegionDebugPrint "\n "#
 
--- store object into the compact region and
--- extends compact region when necessary
-ddcCompactRegionResizeStore [r1 : Region] 
-                              (handleSlotAddr : Addr#)
-                              (rawBase : Addr#)
-                              (top  : Addr#)
-                              (max  : Addr#)
-                              (pVal : Ptr# r1 Obj )
-                              : Addr#
-  = do  freeSize = sub# max top
-        case ge# (ddcObjectSize pVal) (promote# [Nat#] freeSize) of
-          True# 
-            -> do newSize = mul# (truncate# [Nat#] (sub# max rawBase)) 2# --TODO: a better strategy
-                  rawBaseNew = malloc newSize
-                  (case ddcCompactRegionDebug () of
-                        True# -> do ddcCompactRegionDebugPrint "Expand| Size: "#
-                                    ddcPrimStderrPutNat (ddcObjectSize pVal)
-                                    ddcCompactRegionDebugPrint "/"#
-                                    ddcPrimStderrPutNat (promote# [Nat#] freeSize)
-                                    ()
-                        False# -> ())
-                  ddcPrintCompactRegionHeader rawBase
-                  -- TODO: Update pointer in the refList
-                  -- copy old data and old header
-                  usedSize = truncate# [Nat#] (sub# top rawBase)
-                  copy# rawBaseNew rawBase usedSize
-                  -- update header
-                  topNew = plusAddr# rawBaseNew usedSize
-                  maxNew = plusAddr# rawBaseNew newSize
-                  write# rawBaseNew 0# topNew
-                  write# rawBaseNew 8# maxNew
-                  free rawBase
-                  -- trick, find another solution to this if possible.
-                  ddcCompactRegionResizeStore handleSlotAddr rawBaseNew topNew maxNew pVal
-          False#
-            -> do -- store the object to the compact region
-                  objAddrNew = ddcCompactRegionStoreObj rawBase pVal 
-                  write# handleSlotAddr 0# rawBase
-                  -- return the addr of object in the compact region
-                  objAddrNew
+      ddcCompactRegionDebugPrint "Post Store| "#
+      ddcPrintCompactRegionHeader head
+      
+      objInRegion
 
+ddcCompactRegionCreateDataNode [r1 : Region] (pVal : Ptr# r1 Obj) : Addr#
+ = do size = ddcObjectSize pVal
+      node = malloc (add# size 32#)
+      ddcCompactRegionSetNext node node
+      ddcCompactRegionSetTail node node
 
--- store object into compact region and check the object type and store to refList to avoid risk pointers
-ddcCompactRegionStoreObj [r1 : Region]
-                        (rawBase : Addr#)
-                        (pVal    : Ptr# r1 Obj)
-                        : Addr#
-  = do
-      case ddcObjectFormat pVal of
-        2# -> do ddcCompactRegionStoreObjWithRef rawBase pVal--thunk
-        3# -> do ddcCompactRegionStoreObjWithRef rawBase pVal --boxed
-        4# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--raw
-        5# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--array TODO: what to do? 
-        _  -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase (takePtr# pVal) (ddcObjectSize pVal)--mhm...
+      top = plusAddr# node 32#
+      -- ddcCompactRegionDebugPrint "dataNodeTop: "#
+      -- ddcPrimStderrPutAddr top
+      -- ddcCompactRegionDebugPrint "Size: "#
+      -- ddcPrimStderrPutNat size
+      -- ddcCompactRegionDebugPrint "\n"#
 
-ddcCompactRegionStoreObjWithRef [r1 : Region]
-                            (rawBase : Addr#)
-                            (pVal    : Ptr# r1 Obj)
-                            : Addr#
-  = do  
-        objBase = takePtr# pVal
-        objSize = ddcObjectSize pVal
-
-        refListHandleSlot = plusAddr# rawBase 17#
-        case eq# (promote# [Nat#] (read# [Addr#] refListHandleSlot 0#)) 0# of
-          True# -> do ddcCompactRegionUnsafeDirectStore [r1] rawBase objBase objSize
-          False# -> do -- a boxed obj to hold pointer to storing obj.
-                      newTop = ddcCompactRegionUnsafeDirectStore [r1] rawBase objBase objSize
-                      heapBox = ddcBoxedAlloc [r1] (truncate# 0#) (truncate# 1#) 1#
-                      ddcBoxedSetField [r1] [r1] heapBox 0# (makePtr# newTop)
-                      -- store that boxed obj to the refList
-                      ddcCompactRegionStore [r1] [r1] refListHandleSlot heapBox
-                      newTop
-        
-
-        
-
--- the inline function foc the "store object" part.
-ddcCompactRegionUnsafeDirectStore [r1 : Region]
-                                    (rawBase : Addr#)
-                                    (objBase : Addr#)
-                                    (objSize : Nat#)
-                                    : Addr#
-  = do 
-      -- get curr top
-      top = read# rawBase 0#
       -- do the copy
-      copy# top objBase objSize
+      copy# top (takePtr# pVal) size
       -- set the CR flag
       ddcObjectSetCompactRegionFlag [r1] (makePtr# top) True#
-      -- update top
-      write# rawBase 0# (plusAddr# top objSize)
-      
-      (case ddcCompactRegionDebug () of
-        True# -> do ddcCompactRegionDebugPrint "UnsafeStore| Region: "#
-                    ddcPrimStderrPutAddr rawBase
-                    ddcCompactRegionDebugPrint "|Obj Addr: "#
-                    ddcPrimStderrPutAddr objBase
-                    ddcCompactRegionDebugPrint "|Obj Size: "#
-                    ddcPrimStderrPutNat objSize
-                    ddcCompactRegionDebugPrint "\n"#
+      node
 
-                    ()
-        False# -> ())
-      top
+-- check object type
+ddcCompactRegionUpdateRefList [r1 : Region]
+                        (head : Addr#)
+                        (pVal    : Ptr# r1 Obj)
+                        : Unit
+  = do case ddcObjectFormat pVal of
+          2# -> do ddcCompactRegionUpdateReflistPrim head pVal --thunk
+                   ()
+          3# -> do ddcCompactRegionUpdateReflistPrim head pVal --boxed
+                   ()
+          4# -> do () --raw
+          5# -> do () --array TODO: what to do? 
+          _  -> do () --mhm...
 
--- TODO : destroy the RefList 
+
+
+ddcCompactRegionUpdateReflistPrim [r1 : Region]
+                            (head : Addr#)
+                            (pVal    : Ptr# r1 Obj)
+                            : Unit
+  = do  
+        objBase = takePtr# pVal
+
+        refList = ddcCompactRegionGetRefList head
+        refListTail = ddcCompactRegionGetTail refList
+        case eq# (promote# [Nat#] refList) 0# of
+          False# -> do node = malloc (add# 8# 32#) -- pointer size + header size
+                       ddcCompactRegionSetNext node node
+                       ddcCompactRegionSetTail node node
+
+                       ddcCompactRegionSetNext refListTail node
+                       ddcCompactRegionSetTail refList node
+                       write# node 32# objBase
+                       ()
+          True# -> do ()
+        
+
+
 --| set the flag to mark compact region dead
 ddcPrimCompactRegionMarkDead [r1 : Region]  (handle : Nat#) : Unit
  = do handleValid = ddcCompactRegionHandleValidation handle
       case handleValid of
         False# 
-          -> do fail# --invalid handle
+          -> do ddcCompactRegionDebugPrint "invalid handle!"#
+                fail# --invalid handle
         True#
           -> do tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
                 regionRawBase = read# [Addr#] tableBase handle
                 
-                flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 16#)
+                flag8  = truncate# [Word8#] (read# [Addr#] regionRawBase 16#) --TODO: 
+
                 -- mark compact region dead by set the flag
                 write# regionRawBase 16# (band# flag8 0b11111110w8#) 
                 -- mark each object 'free' from life cycle constraints
+               
+                (case eq# regionRawBase (ddcCompactRegionGetTail regionRawBase) of
+                  True#  -> ()
+                  False# -> ddcCompactRegionMarkObjectFree [r1] (ddcCompactRegionGetNext regionRawBase) (ddcCompactRegionGetTail regionRawBase)
+                )
+                ddcCompactRegionDebugPrint "MarkDead| "#
                 ddcPrintCompactRegionHeader regionRawBase
-                ddcCompactRegionMarkObjectFree [r1] (ddcCompactRegionRawBaseToBase regionRawBase) (read# [Addr#] regionRawBase 0#)
                 ()
 
-ddcCompactRegionMarkObjectFree [r1 : Region] (curr : Addr#) (max : Addr#) : Unit
- = do case ge# curr max of 
-        True#  -> ()
-        False# -> do -- mark current obj free
-                     size = ddcObjectSize [r1] (makePtr# curr)
-                     ddcObjectSetCompactRegionFlag [r1] (makePtr# curr) False#
-                     -- set next object free
-                     ddcCompactRegionMarkObjectFree [r1] (plusAddr# curr size) max      
+ddcCompactRegionMarkObjectFree [r1 : Region] (curr : Addr#) (last : Addr#) : Unit
+ = do  currData = ddcCompactRegionGetData curr
+      --  ddcCompactRegionDebugPrint "Free Obj from CR| "#
+      --  ddcPrimStderrPutAddr currData
+      --  ddcCompactRegionDebugPrint " | flag before "#
+
+      --  (case (ddcObjectIsInCompactRegion [r1] (makePtr# currData)) of 
+      --   True# -> do ddcPrimStderrPutNat 1#
+      --               ()
+      --   False# -> do ddcPrimStderrPutNat 0#
+      --                ()
+      --  )
+      --  ddcPrimStderrPutAddr (read# currData 0#)
+
+       -- mark current obj free
+       ddcObjectSetCompactRegionFlag [r1] (makePtr# currData) False#
+
+      --  ddcCompactRegionDebugPrint " | flag "#
+      --  (case (ddcObjectIsInCompactRegion [r1] (makePtr# currData)) of 
+      --   True# -> do ddcPrimStderrPutNat 1#
+      --               ()
+      --   False# -> do ddcPrimStderrPutNat 0#
+      --                ()
+      --  )
+      --  ddcPrimStderrPutAddr (read# currData 0#)
+
+       ddcCompactRegionDebugPrint "\n"#
+
+       case eq# curr last of 
+         True#  -> do ()
+         False# -> do ddcCompactRegionMarkObjectFree [r1] (ddcCompactRegionGetNext curr) last      
                 
-
--- inline function to write a header
-ddcCompactRegionConstructHeader 
-                  (rawBase : Addr#) 
-                  (top : Addr#) 
-                  (max : Addr#) 
-                  (flags : Word8#) 
-                  (refList: Addr#)
-                  : Void#
-  = do  write# rawBase 0# top
-        write# rawBase 8# max
-        write# rawBase 16# flags
-        write# rawBase 17# refList
-
-ddcCompactRegionRawBaseToBase (rawBase : Addr#) : Addr#
-  = do 
-      -- HEADER SIZE
-      plusAddr# rawBase 32#
-
-
--- return true if the compact region is live
--- otherwise false
-ddcCompactRegionIsLive (regionBase : Addr#) : Bool#
- = do   case eq# (truncate# [Nat#] regionBase) 0# of
-          True#  -> do False#
-          False# -> do
-                flag8  = truncate# [Word8#] (read# [Addr#] regionBase 16#)
-                case band# flag8 0b0000001w8# of
-                  0b00000001w8# -> True#
-                  _             -> False#
 
 -- return true if handle is valid
 -- otherwise, false   

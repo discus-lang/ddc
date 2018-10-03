@@ -1,0 +1,50 @@
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+where
+
+data BinaryTree 
+   = Branch BinaryTree Nat BinaryTree
+    |Leaf 
+
+-- operations
+sumOfTree (t:BinaryTree) : Nat
+ = case t of
+      Leaf -> 0
+      Branch l v r -> sumOfTree l + sumOfTree r + v
+
+headOfTree (t:BinaryTree) : Nat
+ = case t of 
+      Leaf -> 0
+      Branch _ v _ -> v
+
+-- slow Fib
+fib (a: Nat) : Nat
+ = case a of
+    0 -> 1
+    1 -> 1
+    _ -> (fib (a-1)) + (fib (a-2))
+
+-- allocation functions
+allocHeap : BinaryTree
+ = do allocHeapPrim 0 20
+
+allocHeapPrim (currLevel : Nat) (maxLevel : Nat) : BinaryTree
+ = do case currLevel == maxLevel of
+        True  -> Leaf 
+        False -> Branch (allocHeapPrim (currLevel + 1) maxLevel) 1 (allocHeapPrim (currLevel + 1) maxLevel) 
+
+
+main ()
+ = do a = allocHeap 
+      fib 20
+      
+      headOfTree a
+      writel $ "done"

@@ -1,4 +1,4 @@
-
+  
 module Main
 import System.IO.Console
 import Class.Show
@@ -11,28 +11,36 @@ import Data.CompactRegion
 
 import foreign c value
  ddcPerformGC : Unit -> Unit
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ref r Text -> Unit
 
 where
-
-createRefOnCR {@r1 : Region} {@r2 : Region}
-  (cr : CR r2)
-  : S (Alloc r1 + Write r2) (Ref r1 Text)
-  = do  
-        storeCR cr (allocRef {@r1} "hello")  
-
 
 -- basic demo of how compact region works.
 main ()
  = mutable r1 r2 in 
-    do  cr = allocCR {@r1} 1024
-        ref = createRefOnCR {@r1} cr
-        writel $ show (readRef ref)
+    do  cr = allocCR {@r1} ()
+
+        refOnCR = storeCR cr (allocRef {@r2} "hello")
+
         ddcPerformGC ()
-        writel $ show (readRef ref)
+        writel $ show (readRef refOnCR)
+
         ddcPerformGC ()
-        writel $ show (readRef ref)
+        writel $ show (readRef refOnCR)
+
         ddcPerformGC ()
-        writel $ show (readRef ref)
+        writel $ show (readRef refOnCR)
+
+
+        deleteCR cr
         ddcPerformGC ()
+        
+        writel $ show (readRef refOnCR)
+
+        -- if you uncomment this below, it should print proper 
+        -- box(ref)->box(textLit)->raw(binary) on the heap
+        -- ddcTraceObj {@r2} True True refOnCR
+
+
         ()
 
