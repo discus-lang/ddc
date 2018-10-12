@@ -12,6 +12,7 @@ import Data.CompactRegion
 import foreign c value
  ddcPerformGC : Unit -> Unit
  ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ref r Text -> Unit
+ ddcTraceCRByHandle     : [r: Region]. CR r -> Unit
 
 where
 
@@ -22,11 +23,21 @@ main ()
 
         refOnCR = storeCR cr (allocRef {@r2} "hello")
 
-        ddcPerformGC ()
-        writel $ show (readRef refOnCR)
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
 
         ddcPerformGC ()
         writel $ show (readRef refOnCR)
+
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
+        ddcPerformGC ()
+        writel $ show (readRef refOnCR)
+
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
 
         ddcPerformGC ()
         writel $ show (readRef refOnCR)
@@ -35,6 +46,9 @@ main ()
         deleteCR cr
         ddcPerformGC ()
         
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
         writel $ show (readRef refOnCR)
 
         -- if you uncomment this below, it should print proper 

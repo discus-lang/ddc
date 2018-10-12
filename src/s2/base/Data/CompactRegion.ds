@@ -1,15 +1,18 @@
 module Data.CompactRegion
-export { allocCR; storeCR; deleteCR }
+export { allocCR; storeCR; storeCRIgnoreRef; deleteCR; allocTestRaw }
 
 import foreign boxed type
  CR       : Region -> Data
 
+
 import foreign c value
 
  ddcPrimCompactRegionAlloc    : {@r : Region} -> Unit -> S (Alloc r) (CR r)
- ddcPrimCompactRegionStore    : {@r : Region} -> {@a: Data} -> CR r-> a -> S (Write r) a
+ ddcPrimCompactRegionStore    : {@r : Region} -> {@a: Data} -> CR r-> a  -> Bool# -> S (Write r) a
  ddcPrimCompactRegionMarkDead : {@r : Region} -> CR r -> S (Write r) Unit
 
+ ddcPrimVectorAlloc8    :  {@r : Region} -> Nat# -> S (Alloc r + Write r) (Vector# r Word8#)
+ 
 where
 
 
@@ -21,9 +24,19 @@ allocCR {@r : Region}
 storeCR {@r : Region} {@a: Data} 
         (cr : CR r) (x: a)
         : S (Write r) a
- =      ddcPrimCompactRegionStore {@r} cr x
+ =      ddcPrimCompactRegionStore {@r} cr x False
+
+storeCRIgnoreRef {@r : Region} {@a: Data} 
+      (cr : CR r) (x: a)
+      : S (Write r) a
+ =      ddcPrimCompactRegionStore {@r} cr x True
 
 deleteCR {@r : Region} 
          (x : CR r) 
          :  S (Write r) Unit
  =       ddcPrimCompactRegionMarkDead {@r} x
+
+allocTestRaw {@r : Region}
+      (size : Nat#)
+      : S (Alloc r + Write r) (Vector# r Word8#)
+  = ddcPrimVectorAlloc8 {@r} size

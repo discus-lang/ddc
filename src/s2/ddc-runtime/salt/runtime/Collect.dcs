@@ -61,7 +61,7 @@ import foreign c value
   ddcCompactRegionGetRefList   : Addr# -> Addr#
   ddcCompactRegionGetTail      : Addr# -> Addr#
   ddcCompactRegionGetData      : Addr# -> Addr#
-
+  traceCR : Addr# -> Unit
 
 with letrec
 
@@ -102,7 +102,7 @@ ddcCollectHeap
         aBackBase'      = read# [Addr#] aaBackBase 0#
         write# aaBackTop 0# aBackBase'
 
-        ddcCompactRegionDebugPrint "root\n"#
+        -- ddcCompactRegionDebugPrint "root\n"#
         -- Evacuate all the root objects to the to-space.
         ddcEvacuateRoots
                 aRootStart
@@ -111,18 +111,19 @@ ddcCollectHeap
                 (read# aaBackMax  0#)
 
         -- after LLVM root, directly scan compact region root
-        ddcCompactRegionDebugPrint "table\n"#
+        -- ddcCompactRegionDebugPrint "table\n"#
 
         ddcScanCompactRegionTable aaBackTop
 
-        ddcCompactRegionDebugPrint "heap\n"#
+        -- ddcCompactRegionDebugPrint "heap\n"#
+
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap
                 aaBackTop
                 (read# aaBackBase 0#)
  
-        ddcCompactRegionDebugPrint "Swap\n"#
+        -- ddcCompactRegionDebugPrint "Swap\n"#
 
         -- Flip the front and back heaps.
         aHeapBase       = read# [Addr#] aaHeapBase 0#
@@ -141,12 +142,14 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
-        ddcCompactRegionDebugPrint "CR\n"#
+        -- ddcCompactRegionDebugPrint "CR\n"#
 
         -- collect compact regions
         ddcCollectCompactRegionTable
                   (read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#)
                   (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
+                  
+        -- ddcCompactRegionDebugPrint "end\n"#
 
         ddcStatsOnGCEnd ()
         ()
@@ -279,6 +282,7 @@ ddcScanCompactRegionTable_iter
                         False# -> do ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
                         True# -> do ddcCompactRegionDebugPrint "GC| CR| Enter "#
                                     ddcPrintCompactRegionHeader rawBase
+                                    -- traceCR rawBase
                                     refList = ddcCompactRegionGetRefList rawBase
                                     refListTail = ddcCompactRegionGetTail refList
                                     (case eq# refListTail refList of
@@ -296,15 +300,15 @@ ddcScanCompactRegionObjectRoot
  = do refObj = ddcCompactRegionGetData refListCurr
       -- actualObjAddr = ddcBoxedGetField refObj 0#
       objInCR = (read# refObj 0#)
-      (case ddcCompactRegionDebug () of
-        True# -> do ddcCompactRegionDebugPrint "GC| Ref| Found "#
-                    ddcCompactRegionDebugPrint "| objInRefList: "#
-                    ddcPrimStderrPutAddr refObj
-                    ddcCompactRegionDebugPrint "| Ref to "#
-                    ddcPrimStderrPutAddr objInCR
-                    ddcCompactRegionDebugPrint "\n"#
-                    ()
-        False# -> ())
+      -- (case ddcCompactRegionDebug () of
+      --   True# -> do ddcCompactRegionDebugPrint "GC| Ref| Found "#
+      --               ddcCompactRegionDebugPrint "| objInRefList: "#
+      --               ddcPrimStderrPutAddr refObj
+      --               ddcCompactRegionDebugPrint "| Ref to "#
+      --               ddcPrimStderrPutAddr objInCR
+      --               ddcCompactRegionDebugPrint "\n"#
+      --               ()
+      --   False# -> ())
       
       ddcScanObject aaBackTop objInCR
       (case eq# refListCurr refListTail of
@@ -340,7 +344,7 @@ ddcEvacuateObject
                 -- so evacuate it to the to-space.
                 False#  -> case ddcObjectIsInCompactRegion aObj of
                               True#  -> do  
-                                            ddcCompactRegionDebugPrint "Reached CR Stop tracing: "#
+                                            -- ddcCompactRegionDebugPrint "Reached CR Stop tracing \n"#
                                             aObj 
                               False# -> ddcEvacuateCopy aaBackTop aObj
 
@@ -451,7 +455,7 @@ ddcScanHeap
         -- ddcCompactRegionDebugPrint "["#
 
         ddcScanObject aaToSpaceTop aObjScan
-        ddcCompactRegionDebugPrint "]\n"#
+        -- ddcCompactRegionDebugPrint "]\n"#
 
     
         -- Go to the next object to scan.

@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
+#include <time.h>
 
 typedef struct TimeDiff{
-  struct timeval start;
-  struct timeval end;
+  clock_t start;
+  clock_t end;
 } TimeDiff;
 
 typedef struct Node {
@@ -49,18 +49,19 @@ void append(Node* node, void* data){
 
 void ddcSeaStatsGCStart(){
   if(cache != NULL){
-      fprintf(stderr,"Erro on Cache. start\n");
+      fprintf(stdout,"Erro on Cache. start\n");
   }
   cache = (TimeDiff*)malloc(sizeof(TimeDiff));
-  gettimeofday(&cache->start, NULL);
+  cache->start = clock();
+
 }
 
 void ddcSeaStatsGCEnd(){
   if(cache == NULL){
-      fprintf(stderr,"Erro on Cache. end \n");
+      fprintf(stdout,"Erro on Cache. end \n");
       return;
   }
-  gettimeofday(&cache->end, NULL);
+  cache->end = clock();
 
   if(timeList == NULL){
     timeList = (Node*)malloc(sizeof(Node));
@@ -68,7 +69,8 @@ void ddcSeaStatsGCEnd(){
     timeList->data = cache;
   }else{
     append(timeList, cache);
-    fprintf(stderr,",%lu", (unsigned long)(cache->end.tv_usec - cache->start.tv_usec));
+    double timeTaken = (((double)(cache->end -  cache->start))/CLOCKS_PER_SEC) * 1000;
+    fprintf(stderr,",%f", timeTaken);
   }
   cache = NULL;
 }
@@ -78,7 +80,9 @@ void ddcSeaStatsShowTimeDiff(){
   Node* node = timeList;
   while(node != NULL){
     TimeDiff* diff = (TimeDiff*)(node->data);
-    fprintf(stderr,",%lu", (unsigned long)(diff->end.tv_usec - diff->start.tv_usec));
+    double timeTaken = (((double)(diff->end -  diff->start))/CLOCKS_PER_SEC) * 1000;
+    fprintf(stderr,",%f", timeTaken);
+
     node = node->next;
   }
   fprintf(stderr, "\n");

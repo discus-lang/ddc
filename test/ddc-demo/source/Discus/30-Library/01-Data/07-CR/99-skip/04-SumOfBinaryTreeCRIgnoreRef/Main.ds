@@ -1,0 +1,71 @@
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+
+import foreign c value
+  ddcTraceObj            : [r: Region]. Bool# -> Bool# -> BinaryTree -> Unit
+
+
+where
+
+data BinaryTree 
+   = Branch BinaryTree Nat BinaryTree
+    |Leaf 
+
+
+
+-- operations
+sumOfTree (t:BinaryTree) : Nat
+ = case t of
+      Leaf -> 0
+      Branch l v r -> sumOfTree l + sumOfTree r + v
+
+headOfTree (t:BinaryTree) : Nat
+ = case t of 
+      Leaf -> 0
+      Branch _ v _ -> v
+
+-- slow Fib
+fib (a: Nat) : Nat
+ = case a of
+    0 -> 1
+    1 -> 1
+    _ -> (fib (a-1)) + (fib (a-2))
+
+-- allocation functions
+allocTree {@r: Region} (cr: CR r) : S (Write r + Console) BinaryTree
+ = do allocTreePrim {@r} cr 0 5
+
+allocTreePrim {@r: Region} (cr: CR r) (currLevel : Nat) (maxLevel : Nat) : S (Write r + Console) BinaryTree
+ = do case currLevel == maxLevel of
+        True  -> storeCRIgnoreRef cr Leaf 
+        False -> do storeCRIgnoreRef cr (Branch (allocTreePrim cr (currLevel + 1) maxLevel) currLevel (allocTreePrim cr (currLevel + 1) maxLevel))
+
+runCompute ( t : BinaryTree) (curr: Nat) (max : Nat) : S Console Unit
+ = do case max == curr of
+        True  -> ()
+        False -> do sumOfTree t
+                    writel $" "
+                    runCompute t (curr+1) max
+
+
+main ()
+ = mutable r1 in  
+    do cr = allocCR {@r1} ()
+       t = allocTree cr
+       ddcTraceObj {@r1} True True t
+
+       writel $" "
+       writel $ "========== Alloc done! Now compute the Sum  =========== "
+       runCompute t 0 10
+
+
+       deleteCR cr
+       writel $ "done"

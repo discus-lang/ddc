@@ -8,10 +8,6 @@ import Data.Function
 import Data.Ref
 import Data.CompactRegion
 
-
-import foreign c value
- ddcPerformGC : Unit -> Unit
-
 where
 
 data BinaryTree 
@@ -37,23 +33,30 @@ fib (a: Nat) : Nat
     _ -> (fib (a-1)) + (fib (a-2))
 
 -- allocation functions
-allocTree {@r: Region} (cr: CR r) : S (Write r + Console) BinaryTree
- = do allocTreePrim {@r} cr 0 13
+allocHeap : BinaryTree
+ = do allocHeapPrim 0 15
 
-allocTreePrim {@r: Region} (cr: CR r) (currLevel : Nat) (maxLevel : Nat) : S (Write r + Console) BinaryTree
+allocHeapPrim (currLevel : Nat) (maxLevel : Nat) : BinaryTree
  = do case currLevel == maxLevel of
         True  -> Leaf 
-        False -> do newL = storeCR cr (allocTreePrim cr (currLevel + 1) maxLevel)
-                    newR = storeCR cr (allocTreePrim cr (currLevel + 1) maxLevel)
-                    Branch newL 1 newR
+        False -> Branch (allocHeapPrim (currLevel + 1) maxLevel) 1 (allocHeapPrim (currLevel + 1) maxLevel) 
 
+runCompute ( t : BinaryTree) (curr: Nat) (max : Nat) : S Console Unit
+ = do case max == curr of
+        True  -> ()
+        False -> do sumOfTree t
+                    writel $" "
+                    runCompute t (curr+1) max
 
 main ()
- = mutable r1 in  
-    do 
-       cr = allocCR {@r1} ()
-       t = allocTree cr
-       fib 20
-       headOfTree t
-       deleteCR cr
-       writel $ "done"
+ = do a = allocHeap 
+      writel $" "
+      writel $" "
+      writel $ "========== Alloc done! Now compute the Sum  =========== "
+      runCompute a 0 100
+
+      
+      writel $" "
+      writel $ "done! "
+
+
