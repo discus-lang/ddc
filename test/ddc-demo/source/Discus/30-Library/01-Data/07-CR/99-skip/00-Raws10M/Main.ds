@@ -25,7 +25,7 @@ fib (a: Nat) : Nat
 
 main ()
  =  mutable r1 in
-     do obj = allocTestRaw {@r1} 1073741824
+     do obj = allocTestRaw {@r1} (oneMb * 10)
         fib 40
         writel $" "
         writel $ "done! "

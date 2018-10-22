@@ -1,0 +1,33 @@
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+where
+
+oneGb : Nat
+  = 1073741824
+
+oneMb : Nat
+ = 1048576
+
+fib (a: Nat) : Nat
+ = case a of
+    0 -> 1
+    1 -> 1
+    _ -> (fib (a-1)) + (fib (a-2))
+
+
+main ()
+ =  mutable r1 in
+     do obj = allocTestRaw {@r1} oneGb
+        fib 40
+        writel $" "
+        writel $ "done! "
+
+

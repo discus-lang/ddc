@@ -1,0 +1,55 @@
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+import foreign c value
+
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> DList -> Unit
+ ddcTraceCRByHandle     : [r: Region]. CR r -> Unit
+
+
+where
+
+data DList = DNil | DCons DList DList
+
+countListPure (curr : Nat) (max : Nat) (secondMax : Nat): DList
+ = do case curr == max of
+        True -> DNil
+        False -> do v = (countListPurePrim 0 secondMax)
+                    DCons v (countListPure (curr+1) max secondMax)
+
+countListPurePrim (curr : Nat) (max : Nat) : DList
+ = do case curr == max of
+        True -> DNil
+        False -> DCons DNil (countListPurePrim (curr+1) max)
+
+-- slow Fib
+fib (a: Nat) : Nat
+ = case a of
+    0 -> 1
+    1 -> 1
+    _ -> (fib (a-1)) + (fib (a-2))
+
+oneGb : Nat
+  = 1073741824
+
+oneMb : Nat
+ = 1048576
+
+-- 10000*2600 boxded object with single field is roughly 1GB 
+-- 25% is 10000*750, need 750MB more raw data.
+
+main ()
+ =  mutable r in 
+    do a = countListPure 0 10000 750
+       b = allocTestRaw {@r} (oneMb * 750)
+       writel $ ""
+       writel $ "Start calculating Fib."
+       fib 40
+       writel $ "done"
