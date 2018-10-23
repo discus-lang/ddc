@@ -1,5 +1,6 @@
 module Data.CompactRegion
 export { allocCR; storeCR; storeCRIgnoreRef; deleteCR; allocTestRaw }
+import Data.Numeric
 
 import foreign boxed type
  CR       : Region -> Data
@@ -21,7 +22,7 @@ allocCR {@r : Region}
         : S (Alloc r) (CR r)
  =      ddcPrimCompactRegionAlloc {@r} ()
 
-storeCR {@r : Region} {@a: Data} 
+storeCR {@r : Region} {@a: Data}
         (cr : CR r) (x: a)
         : S (Write r) a
  =      ddcPrimCompactRegionStore {@r} cr x False
@@ -31,8 +32,8 @@ storeCRIgnoreRef {@r : Region} {@a: Data}
       : S (Write r) a
  =      ddcPrimCompactRegionStore {@r} cr x True
 
-deleteCR {@r : Region} 
-         (x : CR r) 
+deleteCR {@r : Region}
+         (x : CR r)
          :  S (Write r) Unit
  =       ddcPrimCompactRegionMarkDead {@r} x
 

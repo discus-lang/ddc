@@ -1,11 +1,11 @@
 
-module Main 
+module Main
 import Data.Ref
 import System.IO.Console
 
 import foreign c value
  ddcPerformGC : Unit -> Unit
- ddcTraceObj  : [a: Data]. Bool# -> Bool# -> a -> a
+ ddcTraceObj  : {@a: Data} -> Bool# -> Bool# -> a -> a
 
 where
 
@@ -15,10 +15,10 @@ where
 --   and even between different runs.
 main (_ : Unit)
  = private r with { Alloc r; Read r; Write r } in
-   do   
+   do
         -- Allocate a reference to a a small object.
         writel "* Before GC"
-        ref     = allocRef [r] 93
+        ref     = allocRef {@r} 93
         ddcTraceObj True True ref
 
         writel "* Doing GC"

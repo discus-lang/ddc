@@ -7,20 +7,21 @@ import Data.Maybe; Data.Numeric
 where
 
 
-data Light where
-        Light   :  Vec3         -- Point source for light.
-                -> Vec3         -- Color of light.
-                -> Light
+data Light
+ =      [ point : Vec3
+        , color : Vec3 ]
 
 
 -- | Translate a light by the given offset.
-light_translate (v: Vec3) (l: Light): Light
- = case l of
-        Light pos color -> Light (pos + v) color
+light_translate (v: Vec3) (light: Light): Light
+ =      [ point = light.point + v
+        , color = light.color]
 
 
 -- | Compute the direct lighting at a particular point for a list of lights.
-light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
+light_applys
+        (point normal: Vec3)
+        (ls: List Light) (os: List Object): Vec3
  = go ls (Vec3 0.0 0.0 0.0)
  where
         go Nil total
@@ -32,16 +33,17 @@ light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
 
 
 -- | Compute the direct lighting at a particular point for a single light.
-light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
- | Light lpoint color   <- l
+light_apply
+        (point normal: Vec3)
+        (light: Light) (os: List Object): Vec3
  = do
         -- Vector from the light to the surface point.
-        dir     = vec3_normalize (lpoint - point)
+        dir     = vec3_normalize (light.point - point)
 
         -- Distance from the light source to the surface point.
-        dist    = vec3_magnitude (lpoint - point)
+        dist    = vec3_magnitude (light.point - point)
 
-        if object_check (Ray point normal) os dist
+        if object_check [origin = point, direction = normal] os dist
          then Vec3 0.0 0.0 0.0
          else do
                 -- Magnitude of reflection.
@@ -49,5 +51,5 @@ light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
 
                 -- The light that is reflected.
                 if mag > 0.0
-                 then   vec3_muls color mag
+                 then   vec3_muls light.color mag
                  else   Vec3 0.0 0.0 0.0

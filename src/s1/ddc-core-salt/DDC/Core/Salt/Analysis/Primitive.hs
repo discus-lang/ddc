@@ -74,12 +74,11 @@ collectExp xx
  -- boilerplate.
  | otherwise
  = case xx of
-        XPrim{}         -> mempty
-        XCon{}          -> mempty
         XVar{}          -> mempty
         XAbs  _ _ xBody -> collectExp xBody
         XApp  _ x1 a2   -> mappend (collectExp  x1)  (collectArg a2)
         XLet  _ lts x   -> mappend (collectLets lts) (collectExp x)
+        XAtom{}         -> mempty
         XCase _ x alts  -> mappend (collectExp  x)   (mconcat $ map collectAlt alts)
         XCast _ _ x     -> collectExp x
 

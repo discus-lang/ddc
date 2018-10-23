@@ -1,0 +1,63 @@
+
+module Runtime.Prim.Record
+
+export foreign c value
+ ddcPrimRecordProject   : [r1 r2: Region]. Ptr# r1 Obj -> Word64# -> Ptr# r2 Obj
+
+import foreign c value
+ ddcObjectFormat        : [r: Region].     Ptr# r Obj -> Nat#
+
+ ddcBoxedFields         : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+ ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
+ ddcMixedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+import foreign c value
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ptr# r Obj -> Ptr# r Obj
+
+with letrec
+
+
+ddcPrimRecordProject
+        [r1 r2: Region]
+        (pObj: Ptr# r1 Obj) (wField: Word64#): Ptr# r2 Obj
+ = case ddcObjectFormat pObj of
+        -- Look through boxed objects with a single field.
+        3# -> do
+                nFields = ddcBoxedFields pObj
+                case eq# nFields 1# of
+                 True#  -> ddcPrimRecordProject (ddcBoxedGetField [r1] [r1] pObj 0#) wField
+                 False# -> fail#
+
+        -- Mixed object, used for records.
+        7# -> do
+                -- Each of the fields is identified by a hash which is a word
+                -- long, so the number of words is also the number of fields.
+                nFields = ddcMixedRawSizeWords pObj
+                pHashes = ddcMixedPayload pObj
+
+                iField  = ddcPrimRecordProject_search wField (castPtr# pHashes) nFields 0#
+                ddcMixedGetField pObj iField
+
+        _ -> fail#
+
+
+ddcPrimRecordProject_search
+        [r1: Region]
+        (wWanted: Word64#)
+        (pFields: Ptr# r1 Word64#)
+        (nFields: Nat#) (ix:  Nat#): Nat#
+ = case ge# ix nFields of
+        True#   -> fail#
+        False#
+         -> do  wHere = peek# [r1] [Word64#]
+                        (plusPtr# pFields (shl# ix (size2# [Word64#])))
+
+                case eq# wHere wWanted of
+                 True#  -> ix
+                 False# -> ddcPrimRecordProject_search
+                                wWanted pFields nFields (add# ix 1#)
+

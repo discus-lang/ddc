@@ -27,32 +27,32 @@ import Control.Monad
 
 -- | Wrapper for `substituteWithX` that determines the set of free names in the
 --   expression being substituted, and starts with an empty binder stack.
-substituteXX 
+substituteXX
         :: (Ord n, SubstituteXX c)
         => Bind n -> Exp a n -> c a n -> c a n
 
 substituteXX b xArg xx
  | Just u       <- takeSubstBoundOfBind b
  = substituteWithXX xArg
-        ( Sub 
+        ( Sub
         { subBound      = u
 
           -- Rewrite level-1 binders that have the same name as any
-          -- of the free variables in the expression to substitute, 
+          -- of the free variables in the expression to substitute,
           -- or any level-1 binders that expression binds itself.
-        , subConflict1  
+        , subConflict1
                 = Set.fromList
-                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty xArg) 
+                $  (mapMaybe takeNameOfBound $ Set.toList $ freeT Env.empty xArg)
                 ++ (mapMaybe takeNameOfBind  $ fst $ collectBinds xArg)
 
           -- Rewrite level-0 binders that have the same name as any
           -- of the free variables in the expression to substitute.
         , subConflict0
                 = Set.fromList
-                $ mapMaybe takeNameOfBound 
-                $ Set.toList 
+                $ mapMaybe takeNameOfBound
+                $ Set.toList
                 $ freeX Env.empty xArg
-                
+
         , subStack1     = BindStack [] [] 0 0
         , subStack0     = BindStack [] [] 0 0
         , subShadow0    = False })
@@ -62,7 +62,7 @@ substituteXX b xArg xx
 
 
 -- | Wrapper for `substituteX` to substitute multiple expressions.
-substituteXXs 
+substituteXXs
         :: (Ord n, SubstituteXX c)
         => [(Bind n, Exp a n)] -> c a n -> c a n
 substituteXXs bts x
@@ -70,9 +70,9 @@ substituteXXs bts x
 
 
 -- | Substitute the argument of an application into an expression.
---   Perform type substitution for an `XType` 
+--   Perform type substitution for an `XType`
 --    and witness substitution for an `XWitness`
-substituteXArg 
+substituteXArg
         :: (Ord n, SubstituteXX c, SubstituteWX c, SubstituteTX (c a))
         => Bind n -> Arg a n -> c a n -> c a n
 
@@ -95,12 +95,12 @@ substituteXArgs bas x
 
 -------------------------------------------------------------------------------
 class SubstituteXX (c :: * -> * -> *) where
- substituteWithXX 
-        :: forall a n. Ord n 
-        => Exp a n -> Sub n -> c a n -> c a n 
+ substituteWithXX
+        :: forall a n. Ord n
+        => Exp a n -> Sub n -> c a n -> c a n
 
 
-instance SubstituteXX Exp where 
+instance SubstituteXX Exp where
  substituteWithXX xArg sub xx
   = {-# SCC substituteWithXX #-}
     let down s x   = substituteWithXX xArg s x
@@ -110,9 +110,6 @@ instance SubstituteXX Exp where
          -> case substX xArg sub u of
                 Left  u' -> XVar a u'
                 Right x  -> x
-
-        XPrim{}         -> xx
-        XCon{}          -> xx
 
         XApp a x1 x2
          -> XApp a (down sub x1) (down sub x2)
@@ -152,10 +149,12 @@ instance SubstituteXX Exp where
                 x2'             = down   sub2 x2
             in  XLet a (LPrivate b' mT' bs') x2'
 
+        XAtom{} -> xx
+
         XCase     a x1 alts
          -> XCase a (down sub x1) (map (down sub) alts)
 
-        XCast     a cc x1 
+        XCast     a cc x1
          -> XCast a (down sub cc) (down sub x1)
 
 
@@ -176,7 +175,7 @@ instance SubstituteXX Alt where
     in case aa of
         AAlt PDefault xBody
          -> AAlt PDefault $ down sub xBody
-        
+
         AAlt (PData uCon bs) x
          -> let (sub1, bs')     = bind0s sub bs
                 x'              = down   sub1 x
@@ -194,13 +193,13 @@ instance SubstituteXX Cast where
 
 
 -- | Rewrite or substitute into an expression variable.
-substX  :: Ord n => Exp a n -> Sub n -> Bound n 
+substX  :: Ord n => Exp a n -> Sub n -> Bound n
         -> Either (Bound n) (Exp a n)
 
 substX xArg sub u
   = case substBound (subStack0 sub) (subBound sub) u of
         Left  u'                -> Left u'
-        Right n  
+        Right n
          | not $ subShadow0 sub -> Right (liftX n xArg)
          | otherwise            -> Left  u
 

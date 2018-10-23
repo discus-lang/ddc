@@ -30,6 +30,7 @@ instance BindStruct (Type n) n where
         TApp t1 t2      -> slurpBindTree t1 ++ slurpBindTree t2
         TForall b t     -> [bindDefT BindForall [b] [t]]
         TSum ts         -> concatMap slurpBindTree $ Sum.toList ts
+        TRow r          -> concatMap slurpBindTree $ map snd r
 
 
 instance BindStruct (TyCon n) n where
@@ -72,8 +73,10 @@ instance FreeVarConT Type where
          -> freeVarConT (Env.extend b kenv) t
 
         TSum ts
-         -> let (vss, css)      = unzip $ map (freeVarConT kenv)
-                                $ Sum.toList ts
+         -> let (vss, css)      = unzip $ map (freeVarConT kenv) $ Sum.toList ts
             in  (Set.unions vss, Set.unions css)
 
+        TRow r
+         -> let (vss, css)      = unzip $ map (freeVarConT kenv) $ map snd r
+            in  (Set.unions vss, Set.unions css)
 

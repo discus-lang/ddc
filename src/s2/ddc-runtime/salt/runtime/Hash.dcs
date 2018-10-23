@@ -9,6 +9,11 @@ import foreign c value
  ddcObjectFormat                : [r: Region]. Ptr# r Obj -> Nat#
  ddcObjectInfoIndex             : [r: Region]. Ptr# r Obj -> Word32#
 
+ ddcThunkArgs                   : [r: Region]. Ptr# r Obj -> Nat#
+ ddcThunkRuns                   : [r: Region]. Ptr# r Obj -> Nat#
+
+ ddcThunkGetField               : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
  ddcBoxedTag                    : [r: Region]. Ptr# r Obj -> Tag#
  ddcBoxedFields                 : [r: Region]. Ptr# r Obj -> Nat#
  ddcBoxedGetField               : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
@@ -22,6 +27,12 @@ import foreign c value
 
  ddcPrimStderrPutString         : TextLit# -> Void#
  ddcPrimStderrPutNat            : Nat# -> Void#
+
+ ddcInfoEntryLookup             : Word32# -> Addr#
+ ddcInfoEntryGetSuperHash0      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash1      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash2      : Addr# -> Word64#
+ ddcInfoEntryGetSuperHash3      : Addr# -> Word64#
 
 with letrec
 
@@ -55,7 +66,33 @@ ddcPrimHashThunk
         [r: Region]
         (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
  = do
-        fail#
+        wInfo   = ddcObjectInfoIndex pObj
+        aInfo   = ddcInfoEntryLookup wInfo
+        nArgs   = ddcThunkArgs pObj
+        nRuns   = ddcThunkRuns pObj
+
+        -- hash the meta-data.
+        ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff02w64#)
+        ddcPrimSha256PushWord64 aHashState (promote# nArgs)
+        ddcPrimSha256PushWord64 aHashState (promote# nRuns)
+
+        -- push hash for the super code.
+        ddcPrimSha256PushWord64 aHashState (ddcInfoEntryGetSuperHash0 aInfo)
+        ddcPrimSha256PushWord64 aHashState (ddcInfoEntryGetSuperHash1 aInfo)
+        ddcPrimSha256PushWord64 aHashState (ddcInfoEntryGetSuperHash2 aInfo)
+        ddcPrimSha256PushWord64 aHashState (ddcInfoEntryGetSuperHash3 aInfo)
+
+        ddcPrimHashThunk_fields aHashState pObj nArgs 0#
+
+ddcPrimHashThunk_fields
+        [r: Region]
+        (aHashState: Addr#) (pObj: Ptr# r Obj)
+        (nFields ix: Nat#): Unit
+ = case ge# ix nFields of
+        True#   -> ()
+        False#  -> do
+                ddcPrimHashObject [r] aHashState (ddcThunkGetField pObj ix)
+                ddcPrimHashThunk_fields aHashState pObj nFields (add# ix 1#)
 
 
 -------------------------------------------------------------------------------
@@ -92,6 +129,8 @@ ddcPrimHashRaw
         [r: Region]
         (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
  = do
+        -- All raw objects of the same type have the same info table index,
+        -- so we can hash the index directly.
         wInfo   = ddcObjectInfoIndex pObj
         ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff04w64#)
         ddcPrimSha256PushWord64 aHashState (promote# wInfo)
@@ -107,6 +146,8 @@ ddcPrimHashSmall
         [r: Region]
         (aHashState: Addr#) (pObj: Ptr# r Obj): Unit
  = do
+        -- All small objects of the same type have the same info table index,
+        -- so we can hash the index directly.
         wInfo   = ddcObjectInfoIndex pObj
         ddcPrimSha256PushWord64 aHashState (promote# 0xffffffffffffff06w64#)
         ddcPrimSha256PushWord64 aHashState (promote# wInfo)

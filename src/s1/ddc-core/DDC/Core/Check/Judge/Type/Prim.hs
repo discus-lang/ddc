@@ -26,11 +26,25 @@ shapeOfPrim :: Prim -> Type n
 shapeOfPrim p
  = case p of
         PElaborate
-         -> tForall kData
-         $  \tVal -> tVal
+         -> tForall   kData $ \tVal -> tVal
 
-        PProject _
+        PTuple ls
+         -> tForalls (replicate (length ls) kData)
+          $ \tsParam -> foldr tFun
+                         (tTuple  [ (l, t) | l <- ls | t <- tsParam])
+                         tsParam
+
+        PRecord ls
+         -> tForalls (replicate (length ls) kData)
+          $ \tsParam -> foldr tFun
+                         (tRecord [ (l, t) | l <- ls | t <- tsParam ])
+                         tsParam
+
+        PVariant _l
          -> tForalls [kData, kData]
-         $  \[tObj, tResult] -> tObj `tFun` tResult
+          $ \[tObj, tField]  -> tField `tFun` tObj
 
-        _ -> error "shapeOfPrim: no match"
+        PProject _l
+         -> tForalls [kData, kData]
+         $  \[tObj, tField] -> tObj    `tFun` tField
+

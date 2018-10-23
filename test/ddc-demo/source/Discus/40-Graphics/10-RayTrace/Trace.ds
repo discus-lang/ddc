@@ -9,33 +9,34 @@ where
 
 -- | Cast a ray through the screen view for the given pixel.
 trace_pixel
-        (world:         World)          -- ^ The world.
-        (posEye:        Vec3)           -- ^ Position of eye in world.
-        (fov:           Float)          -- ^ Field of view.
-        (sizeX sizeY:   Float)          -- ^ Size of screen in pixels.
-        (posX  posY:    Float)          -- ^ Pixel to trace.
-        (limit:         Nat)            -- ^ Maximum reflection count.
-        :               Vec3            -- ^ Visible color of pixel.
-
+        (world:         World)  -- ^ The world.
+        (posEye:        Vec3)   -- ^ Position of eye in world.
+        (fov:           Float)  -- ^ Field of view.
+        (sizeX sizeY:   Float)  -- ^ Size of screen in pixels.
+        (posX  posY:    Float)  -- ^ Pixel to trace.
+        (limit:         Nat)    -- ^ Maximum reflection count.
+        :               Vec3    -- ^ Visible color of pixel.
  = do
         -- Aspect ratio of image.
-        aspect          = div sizeX sizeY
+        aspect   = div sizeX sizeY
 
         -- Field of view in X and Y directions.
-        fovX            = fov * aspect
-        fovY            = fov
+        fovX     = fov * aspect
+        fovY     = fov
 
-        posLook         = Vec3 (posX * fovX) ((0.0 - posY) * fovY) 0.0
-        dirEye          = vec3_normalize (posLook - posEye)
+        posLook  = Vec3 (posX * fovX) ((0.0 - posY) * fovY) 0.0
+        dirEye   = vec3_normalize (posLook - posEye)
 
-        trace_ray world (Ray posEye dirEye) limit
+        trace_ray
+                world
+                (Ray [origin = posEye, direction = dirEye])
+                limit
 
 
 -- | Cast a single ray into the scene, returning the produced color.
 --   The limit is the maximum number of bounces permitted.
 trace_ray (world: World) (ray0: Ray) (limit0: Nat): Vec3
- | Ray origin0 dir0     <- ray0
- = go_cast origin0 dir0 limit0
+ = go_cast ray0.origin ray0.direction limit0
  where
         -- Too many reflections, so give up.
         go_cast _ _ 0
@@ -43,9 +44,9 @@ trace_ray (world: World) (ray0: Ray) (limit0: Nat): Vec3
 
         -- Cast the ray into the scene.
         go_cast origin dir limit
-         | World os _ _ <- world
-         = case object_cast (Ray origin dir) os of
-                -- Ray did not intersect any objects.
+         = case object_cast [origin = origin, direction = dir]
+                            world.objects
+            of  -- Ray did not intersect any objects.
                 Nothing
                  -> Vec3 0.0 0.0 0.0
 
@@ -56,7 +57,6 @@ trace_ray (world: World) (ray0: Ray) (limit0: Nat): Vec3
 
         -- Ray hit an object.
         go_hit object point dir limit
-         | World os ls lAmbient <- world
          = do   -- Surface normal at the intersection point.
                 normal  = object_normal point object
 
@@ -67,10 +67,10 @@ trace_ray (world: World) (ray0: Ray) (limit0: Nat): Vec3
                 lRefl   = go_cast point dirNew (limit - 1)
 
                 -- Direct lighting at this point.
-                lDirect = light_applys point normal ls os
+                lDirect = light_applys point normal world.lights world.objects
 
                 -- Total lighting is the direct lighting plus ambient.
-                lTotal  = lDirect + lAmbient
+                lTotal  = lDirect + world.ambient
 
                 -- Compute light reflected from the object.
                 color   = object_color object point

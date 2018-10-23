@@ -4,6 +4,7 @@
 module DDC.Source.Discus.Exp
         ( -- * Binding
           Name
+        , module DDC.Data.Label
         , Bind          (..)
         , Bound         (..)
         , takeBoundOfBind
@@ -233,6 +234,7 @@ import DDC.Source.Discus.Exp.Term.Base
 import DDC.Type.Exp.TyCon               as T
 
 import DDC.Data.SourcePos
+import DDC.Data.Label
 
 
 -- Type AST -------------------------------------------------------------------

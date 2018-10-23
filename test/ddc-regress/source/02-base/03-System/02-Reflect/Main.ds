@@ -14,17 +14,15 @@ import foreign abstract capability
 
 where
 
-data X where
-        XOne    : X
-        XWrap   : X -> X
-        XUnit   : Unit -> X
-        XBool   : Bool -> X
+data X  = XOne
+        | XWrap X
+        | XUnit Unit
+        | XBool Bool
 
 
 -- | Print a reified value to the console, with a label.
 printr (tx: Text) (x: a): S (Reify + Console) Unit
  = writel $ tx %% show (reflect_toValue x)
-
 
 main ()
  = do
@@ -43,10 +41,10 @@ main ()
 
         -- TODO: 32bit float constants don't work
 --        printr "Float32" 123.456f32
-        printr "Float32:   "    (truncate# [Float32#] 321.123)
+        printr "Float32:   "    (truncate# {@Float32#} 321.123)
 
         printr "Float64:   "    123.456f64
-        printr "Addr:      "    (promote# [Addr#] [Nat#] 1234)
+        printr "Addr:      "    (promote# {@Addr#} {@Nat#} 1234)
 
         -- Various text constructors.
         printr "Text Lit:  "    "foo"

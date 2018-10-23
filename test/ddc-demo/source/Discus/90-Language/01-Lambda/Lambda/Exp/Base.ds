@@ -15,24 +15,25 @@ type Name = Text
 
 
 -- | Untyped lambda calculus expressions.
-data Exp where
-        XVar    : Name  -> Exp
-        XAbs    : Subst -> Name -> Exp -> Exp
-        XApp    : Exp   -> Exp -> Exp
+data Exp
+        = XVar Name
+        | XAbs Subst Name Exp
+        | XApp Exp Exp
 
-data Subst where
-        Subst   : List (Tup2 Name Exp) -> Subst
+
+data Subst
+        = Subst (List (Name, Exp))
 
 
 show_Exp: Show Exp
  =  Show $ λxx
  -> case xx of
-        XVar n     
+        XVar n
          -> parens $ "XVar" %% show n
-        
+
         XAbs ss n x
          -> parens $ "XAbs" %% show ss %% show n %% show x
-        
+
         XApp x1 x2
          -> parens $ "XApp" %% show x1 %% show x2
 
@@ -40,6 +41,6 @@ show_Exp: Show Exp
 show_Subst: Show Subst
  =  Show $ λxx
  -> case xx of
-        Subst ls 
+        Subst ls
          -> parens $ "Subst" %% show ls
 

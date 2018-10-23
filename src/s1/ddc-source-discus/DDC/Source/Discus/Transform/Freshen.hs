@@ -224,6 +224,17 @@ freshenExp xx
         XLamCase a as
          -> XLamCase a   <$> mapM freshenAltCase as
 
+        XTuple a r
+         -> let (ls, xs) = unzip r
+            in  XTuple a <$> (zip ls <$> mapM freshenExp xs)
+
+        XRecord a r
+         -> let (ls, xs) = unzip r
+            in  XRecord a <$> (zip ls <$> mapM freshenExp xs)
+
+        XVariant a l x  -> XVariant a l <$> freshenExp x
+        XArray   a xs   -> XArray a <$> mapM freshenExp xs
+
 
 -------------------------------------------------------------------------------
 -- | Freshen an argument.
@@ -347,9 +358,7 @@ freshenType :: Type -> S Type
 freshenType tt
  = case tt of
         TAnnot a t      -> TAnnot a <$> freshenType t
-
         TCon{}          -> return tt
-
         TVar u          -> TVar <$> boundUT u
 
         TAbs b t1 t2
@@ -358,6 +367,26 @@ freshenType tt
                  -> TAbs b' t1' <$> freshenType t2
 
         TApp t1 t2      -> TApp <$> freshenType t1 <*> freshenType t2
+
+        TRow r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM freshenType ts
+                return  $ TRow $ zip ls ts'
+
+        TTuple r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM freshenType ts
+                return  $ TTuple $ zip ls ts'
+
+        TRecord r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM freshenType ts
+                return  $ TRecord $ zip ls ts'
+
+        TVariant r
+         -> do  let (ls, ts) = unzip r
+                ts'     <- mapM freshenType ts
+                return  $ TVariant $ zip ls ts'
 
 
 -------------------------------------------------------------------------------

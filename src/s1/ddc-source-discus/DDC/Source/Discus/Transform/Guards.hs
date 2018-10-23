@@ -180,9 +180,27 @@ desugarX sp xx
          -> do  (b, u)  <- newVar "x"
                 alts'   <- mapM  (desugarAltCase sp) alts
                 desugarX sp
-                        $  XAnnot sp
-                        $  XAbs  (MTerm (PVar b) Nothing)
-                        $  XCase (XVar u) alts'
+                        $ XAnnot sp
+                        $ XAbs  (MTerm (PVar b) Nothing)
+                        $ XCase (XVar u) alts'
+
+        XTuple a lxs
+         -> do  let (ls, xs) = unzip lxs
+                xs'     <- mapM (desugarX sp) xs
+                return  $ XTuple a $ zip ls xs'
+
+        XRecord a lxs
+         -> do  let (ls, xs) = unzip lxs
+                xs'     <- mapM (desugarX sp) xs
+                return  $ XRecord a $ zip ls xs'
+
+        XVariant a l x
+         -> do  x'      <- desugarX sp x
+                return  $ XVariant a l x'
+
+        XArray a xs
+         -> do  xs'     <- mapM (desugarX sp) xs
+                return  $ XArray a xs'
 
 
 -- | Check if this is simple Case alternative, which means if the pattern

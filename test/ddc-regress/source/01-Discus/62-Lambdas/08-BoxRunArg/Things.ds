@@ -21,8 +21,8 @@ nat1 = 777
 text1 = "marmot"
 
 -- A polymorphic CAF.
-fnord1 [a: Data]
- = Fnord [a]
+fnord1 {@a: Data}
+ = Fnord {@a}
 
 -- A suspended computation as a CAF.
 comp1  = writel "beep1"

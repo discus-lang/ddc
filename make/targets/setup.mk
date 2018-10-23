@@ -16,5 +16,6 @@ setup :
 		parsec-3.1.13.0 \
 		inchworm-1.0.2.2 \
 		shimmer-0.1.3.2 \
-		buildbox-2.2.1.1
+		buildbox-2.2.1.1 \
+		cryptohash-sha256-0.11.101.0
 

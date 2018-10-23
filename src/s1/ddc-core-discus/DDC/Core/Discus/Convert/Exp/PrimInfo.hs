@@ -82,7 +82,10 @@ convertPrimInfo _ectx ctx xxExp
          | Just ( D.NameOpInfo D.OpInfoFrameAddSuper True
                 , [ RTerm xAddr, RTerm xParams, RTerm xBoxes
                   , RTerm xTxtModule@(XCon _ (DaConPrim nTxtModule))
-                  , RTerm _xTxtSuper@(XCon _ (DaConPrim nTxtSuper)) ])
+                  , RTerm _xTxtSuper@(XCon _ (DaConPrim nTxtSuper))
+                  , RTerm xWord0, RTerm xWord1
+                  , RTerm xWord2, RTerm xWord3
+                  ])
                 <- takeXNameApps xxExp
          , D.NameLitUnboxed (D.NameLitTextLit txModule) <- nTxtModule
          , D.NameLitUnboxed (D.NameLitTextLit txSuper)  <- nTxtSuper
@@ -92,6 +95,11 @@ convertPrimInfo _ectx ctx xxExp
                 xParams'    <- convertX ExpArg ctx xParams
                 xBoxes'     <- convertX ExpArg ctx xBoxes
                 xTxtModule' <- convertX ExpArg ctx xTxtModule
+
+                xWord0'     <- convertX ExpArg ctx xWord0
+                xWord1'     <- convertX ExpArg ctx xWord1
+                xWord2'     <- convertX ExpArg ctx xWord2
+                xWord3'     <- convertX ExpArg ctx xWord3
 
                 let txSymbolInfoIndexRaw
                         = "ddcInfoIndex.super." T.<> txModule T.<> "."
@@ -106,7 +114,9 @@ convertPrimInfo _ectx ctx xxExp
                           $ xApps a' (XVar a' (UName (A.NameVar "ddcInfoFrameAddSuper")))
                                 [ RTerm xAddr', RTerm xParams', RTerm xBoxes'
                                 , RTerm xTxtModule'
-                                , RTerm (A.xTextLit a' txSuperNameSanitized) ]
+                                , RTerm (A.xTextLit a' txSuperNameSanitized)
+                                , RTerm xWord0', RTerm xWord1'
+                                , RTerm xWord2', RTerm xWord3' ]
 
                         , LLet  (BNone $ A.tVoid)
                           $ A.xWrite a'

@@ -22,9 +22,7 @@ import Class.Show
 import System.IO.Console
 where
 
-data Door where
-        Open    : Door
-        Closed  : Door
+data Door = Open | Closed
 
 showDoor   Open   = "Open"
 showDoor   Closed = "Closed"

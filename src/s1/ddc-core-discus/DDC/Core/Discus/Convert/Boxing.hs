@@ -64,6 +64,7 @@ isBoxedRepType tt
                 Just (TyConSpec  TcConUnit,         _)  -> True
                 Just (TyConSpec  (TcConRecord _ns), _)  -> True
                 Just (TyConSpec  TcConSusp,         _)  -> True
+                Just (TyConSpec  TcConR,            _)  -> True
 
                 Just (TyConBound (NameTyConDiscus TyConDiscusU), _)
                   -> False

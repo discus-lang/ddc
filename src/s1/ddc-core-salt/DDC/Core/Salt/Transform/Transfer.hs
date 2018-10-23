@@ -65,15 +65,11 @@ transSuper
 transSuper tails xx
  = let down = transSuper tails
    in  case xx of
-        -- Return the value bound to a var.
-        XVar a _        -> xReturn a (annotType a) xx
-
-        -- Return a constructor value.
-        XCon a _        -> xReturn a (annotType a) xx
+        -- Atomic things
+        XVar  a _       -> xReturn a (annotType a) xx
+        XAtom a t       -> xReturn a (annotType a) (XAtom a t)
 
         -- Return a primitive value.
-        XPrim a _       -> xReturn a (annotType a) xx
-
         XAbs  a b x     -> XAbs  a b $ down x
 
         -- Tail-call a supercombinator.
@@ -166,11 +162,10 @@ transX tails xx
  = let down     = transX tails
    in case xx of
         XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
         XAbs{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (transArg tails x2)
         XLet{}          -> xx
+        XAtom{}         -> xx
         XCase{}         -> xx
         XCast{}         -> xx
 

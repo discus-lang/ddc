@@ -12,6 +12,7 @@ GHC_LANGUAGE	:= \
         -XTupleSections \
         -XPatternGuards \
         -XKindSignatures \
+        -XPackageImports \
         -XPatternSynonyms \
         -XConstraintKinds \
 	-XFlexibleContexts \
@@ -93,7 +94,8 @@ DDC_PACKAGES	:= \
         -package parsec \
         -package buildbox \
         -package inchworm \
-        -package shimmer
+        -package shimmer \
+        -package cryptohash-sha256
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \

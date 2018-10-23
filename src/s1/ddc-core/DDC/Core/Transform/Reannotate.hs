@@ -38,24 +38,23 @@ instance Reannotate Exp where
  reannotateM f xx
   = let down x   = reannotateM f x
     in case xx of
-        XVar     a u            -> XVar     <$> f a <*> pure u
-        XPrim    a p            -> XPrim    <$> f a <*> pure p
-        XCon     a u            -> XCon     <$> f a <*> pure u
-        XAbs     a b x          -> XAbs     <$> f a <*> pure b <*> down x
-        XApp     a x1 x2        -> XApp     <$> f a            <*> down x1  <*> down x2
-        XLet     a lts x        -> XLet     <$> f a            <*> down lts <*> down x
-        XCase    a x alts       -> XCase    <$> f a            <*> down x   <*> mapM down alts
-        XCast    a c x          -> XCast    <$> f a            <*> down c   <*> down x
+        XVar  a u       -> XVar  <$> f a <*> pure u
+        XAbs  a b x     -> XAbs  <$> f a <*> pure b   <*> down x
+        XApp  a x1 x2   -> XApp  <$> f a <*> down x1  <*> down x2
+        XLet  a lts x   -> XLet  <$> f a <*> down lts <*> down x
+        XAtom a t       -> XAtom <$> f a <*> pure t
+        XCase a x alts  -> XCase <$> f a <*> down x   <*> mapM down alts
+        XCast a c x     -> XCast <$> f a <*> down c   <*> down x
 
 
 instance Reannotate Arg where
  reannotateM f aa
   = let down x  = reannotateM f x
     in case aa of
-        RType t                 -> RType     <$> pure t
-        RTerm x                 -> RTerm     <$> down x
-        RImplicit x             -> RImplicit <$> down x
-        RWitness  x             -> RWitness  <$> down x
+        RType t         -> RType     <$> pure t
+        RTerm x         -> RTerm     <$> down x
+        RImplicit x     -> RImplicit <$> down x
+        RWitness  x     -> RWitness  <$> down x
 
 
 instance Reannotate Lets where

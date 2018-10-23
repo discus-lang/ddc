@@ -114,7 +114,7 @@ textOfWord8 (w8: Word8): Text
  $ extend RegionText using mutable r1 in
    do   -- Allocate the vector to hold the data,
         -- including an extra null terminator byte.
-        vec     = vectorAlloc# [r1] 2
+        vec     = vectorAlloc# {@r1} 2
 
         -- Write the character.
         vectorWrite# vec 0 w8
@@ -143,7 +143,7 @@ vectorOfText
    do
         -- Allocate a vector to hold all the data,
         -- including an extra null terminator byte.
-        vec     = vectorAlloc# [r2] (add (sizeOfText tt) 1)
+        vec     = vectorAlloc# {@r2} (add (sizeOfText tt) 1)
 
         -- Copy the text data into the vector.
         iEnd    = copyTextToVector tt vec 0

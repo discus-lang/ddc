@@ -73,7 +73,7 @@ succsem (MNat n)        = MNat (n + 1)
 
 
 -- | Primitive recursion for a semantic natural number.
-recsem : [a: Data]. a -> (Nat -> a -> a) -> Sem -> a
+recsem : {@a: Data} -> a -> (Nat -> a -> a) -> Sem -> a
 recsem z s (MNat n)     = primrec z s n
 
 

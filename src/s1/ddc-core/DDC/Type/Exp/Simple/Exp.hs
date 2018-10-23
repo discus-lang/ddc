@@ -19,6 +19,7 @@ module DDC.Type.Exp.Simple.Exp
         , TcCon         (..))
 where
 import DDC.Type.Exp.TyCon
+import DDC.Data.Label
 import Data.Array
 import Data.Map.Strict  (Map)
 import Data.Set         (Set)
@@ -81,6 +82,9 @@ data Type n
 
         -- | Universal Quantification.
         | TForall !(Bind  n) !(Type  n)
+
+        -- | Row type, used for tuples and records.
+        | TRow    ![(Label, Type n)]
 
         -- | Least upper bound.
         | TSum    !(TypeSum n)

@@ -17,8 +17,6 @@ objectsOfExp
 objectsOfExp xx
  = case xx of
         XVar  _ _       -> Map.empty
-        XPrim{}         -> Map.empty
-        XCon  _ _       -> Map.empty
 
         XAbs  _ (MType _) x
          -> objectsOfExp x
@@ -31,6 +29,8 @@ objectsOfExp xx
 
         XApp  _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfArg x2)
         XLet  _ lts x   -> Map.union  (objectsOfLets lts) (objectsOfExp x)
+
+        XAtom{}         -> Map.empty
         XCase _ x alts  -> Map.unions (objectsOfExp x : map objectsOfAlt alts)
         XCast _ _ x     -> objectsOfExp x
 

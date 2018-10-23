@@ -3,6 +3,6 @@ import Prelude.Data
 where
 
 -- mod: extra signature, tuple syntax.
-g: [a: Data]. Tup2 (List Nat) a -> Nat
-g (T2 (Cons x z) y) = x
-g (T2 x y)          = 2
+g: {@a: Data} -> (List Nat, a) -> Nat
+g (Cons x z, y) = x
+g (x, y)        = 2

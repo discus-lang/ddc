@@ -3,16 +3,19 @@
 module DDC.Core.Discus.Transform.Initialize
         (initializeModule)
 where
-import qualified DDC.Type.Exp.Simple            as C
-import qualified DDC.Type.DataDef               as C
-import qualified DDC.Core.Exp.Annot             as C
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Salt.Runtime          as A
-import qualified DDC.Core.Call                  as Call
-import qualified DDC.Core.Discus                as D
-import qualified DDC.Core.Discus.Compounds      as D
-import qualified Data.Text                      as T
-import qualified Data.Set                       as Set
+import qualified DDC.Core.Discus                        as D
+import qualified DDC.Core.Discus.Compounds              as D
+import qualified DDC.Core.Salt.Runtime                  as A
+import qualified DDC.Type.Exp.Simple                    as C
+import qualified DDC.Type.DataDef                       as C
+import qualified DDC.Core.Exp.Annot                     as C
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Codec.Shimmer.Hash            as C
+import qualified DDC.Core.Codec.Shimmer.Encode          as C.Encode
+import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as D.Encode
+import qualified DDC.Core.Call                          as C
+import qualified Data.Text                              as T
+import qualified Data.Set                               as Set
 import Data.Monoid
 import Data.List
 import Data.Maybe
@@ -92,12 +95,13 @@ initBoundOfModule mn = C.UName $ initNameOfModule mn
 
 
 ---------------------------------------------------------------------------------------------------
-data SuperDef
+data SuperDef a
         = SuperDef
         { superDefModuleName    :: C.ModuleName
         , superDefName          :: T.Text
         , superDefParams        :: Int
-        , superDefBoxes         :: Int }
+        , superDefBoxes         :: Int
+        , superDefExp           :: C.Exp a D.Name }
         deriving Show
 
 
@@ -105,7 +109,7 @@ data SuperDef
 slurpSuperDefs
         :: C.ModuleName
         -> C.Exp a D.Name
-        -> [SuperDef]
+        -> [SuperDef a]
 
 slurpSuperDefs _modName xx
  = downTop xx
@@ -120,8 +124,8 @@ slurpSuperDefs _modName xx
         -- make an info table entry for.
         slurpSuperDef (D.BName n _t) x
          | Just (_csType, csValue, csBox)
-                <-  Call.splitStdCallCons
-                $   Call.takeCallConsFromExp x
+                <-  C.splitStdCallCons
+                $   C.takeCallConsFromExp x
          = let  txName = squashName n
            in   Just $ SuperDef
                  { superDefModuleName   = C.ModuleName ["DDC"]
@@ -129,7 +133,8 @@ slurpSuperDefs _modName xx
                         -- for now all supers are tagged with the same dummy module name.
                  , superDefName         = txName
                  , superDefParams       = length csValue
-                 , superDefBoxes        = length csBox }
+                 , superDefBoxes        = length csBox
+                 , superDefExp          = x }
 
         -- Some top level thing that doesn't look like a super.
         -- This is probably a CAF.
@@ -147,7 +152,7 @@ injectInfoInit
         :: C.ModuleName         -- ^ Name of the module we're making the table for.
         -> [C.ModuleName]       -- ^ Also call the init function for these other modules.
         -> [C.DataDef D.Name]   -- ^ Descriptions of data types defined locally in the module.
-        -> [SuperDef]           -- ^ Descriptions of supers defined locally in the module.
+        -> [SuperDef a]         -- ^ Descriptions of supers defined locally in the module.
         -> C.Exp a D.Name       -- ^ Body expression of the module to inject into.
         -> C.Exp a D.Name
 
@@ -240,7 +245,7 @@ makeInfoInitForDataDef a modName dataDef
 -- | Create a new frame to hold info about the given supers,
 --   and push it on the frame stack.
 makeInfoInitForSupers
-        :: a -> [SuperDef]
+        :: a -> [SuperDef a]
         -> C.Exp a D.Name -> C.Exp a D.Name
 
 makeInfoInitForSupers a superDefs xBase
@@ -251,15 +256,25 @@ makeInfoInitForSupers a superDefs xBase
          = C.LLet (C.BAnon D.tAddr)
          $ D.xInfoFrameNew a (length superDefs)
 
+        cEncode = C.Encode.Config
+                { C.Encode.configTakeRef        = D.Encode.takeName
+                , C.Encode.configTakeVarName    = D.Encode.takeVarName
+                , C.Encode.configTakeConName    = D.Encode.takeConName }
+
         lsAddSuper
          = [ let C.ModuleName parts = superDefModuleName super
                  flatName = intercalate "." parts
+
+                 (w0, w1, w2, w3)
+                   = C.hashExpAsWord64s cEncode $ superDefExp super
+
              in  C.LLet (C.BNone (D.tWord 32))
                   $ D.xInfoFrameAddSuper a
                         (C.XVar a (C.UIx 0))
                         (superDefParams super) (superDefBoxes super)
                         (C.XCon a (C.DaConPrim (D.NameLitTextLit (T.pack flatName))))
                         (C.XCon a (C.DaConPrim (D.NameLitTextLit (superDefName super))))
+                        w0 w1 w2 w3
            | super <- superDefs ]
 
         lFramePush

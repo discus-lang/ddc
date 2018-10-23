@@ -24,10 +24,10 @@ data List (a : Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
-map [a b : Data] (f : a -> b) (xx : List a) : List b
+map {@a b : Data} (f : a -> b) (xx : List a) : List b
  = case xs of
         Nil       -> Nil
-        Cons x xs -> Cons [a] (f x) (map [a] f xs)
+        Cons x xs -> Cons {@a} (f x) (map {@a} f xs)
 ;;
 
 
@@ -54,8 +54,8 @@ data List (a : Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
-add (x y : a) : a 
-        = add# [a] x y
+add (x y : a) : a
+        = add# {@a} x y
 
 length (xx : List a) : Nat
  = case xx of

@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/56-ProjectTooManyArgs/Main.ds:6:1
+  Field 'x' cannot be extracted automatically
+    as the data constructor has too many arguments.
+    type is: Foo

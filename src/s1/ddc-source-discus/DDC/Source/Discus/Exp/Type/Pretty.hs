@@ -66,6 +66,7 @@ pprRawPrecT d tt
          -> braces (ppr a) %% pprRawT t
 
         TCon c   -> pprRawC c
+
         TVar u   -> ppr u
 
         TAbs b k t
@@ -75,6 +76,26 @@ pprRawPrecT d tt
         TApp t1 t2
          -> pprParen (d > 10)
          $  pprRawT t1 %% pprRawPrecT 11 t2
+
+        TRow r
+         -> braces
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TTuple r
+         -> parens
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TRecord r
+         -> brackets
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
+
+        TVariant r
+         -> angles
+          $ hcat $ punctuate (string ", ")
+                 [ text (nameOfLabel l) % string ": " % pprRawT t | (l, t) <- r ]
 
 
 -- | Pretty print a type constructor using the generic, raw syntax.

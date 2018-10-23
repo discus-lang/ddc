@@ -101,7 +101,8 @@ convertDataT ctx tt
             in  convertDataT ctx' tBody
 
         -- Resentable types always have kind Data, but type sums cannot.
-        TSum{}    -> throw $ ErrorUnexpectedSum
+        TSum{}  -> throw $ ErrorUnexpectedSum
+        TRow{}  -> throw $ ErrorUnexpectedRow
 
 
 -- | Convert some data type from Core Discus to Core Salt.
@@ -120,6 +121,9 @@ convertDataAppT ctx tt
         -- Record types.
         | Just (TyConSpec (TcConRecord ns), tsArgs)     <- takeTyConApps tt
         , length ns == length tsArgs
+        = do    return $ A.tPtr A.rTop A.tObj
+
+        | Just (TyConSpec TcConR, _)                    <- takeTyConApps tt
         = do    return $ A.tPtr A.rTop A.tObj
 
 

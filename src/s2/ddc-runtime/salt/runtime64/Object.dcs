@@ -10,6 +10,7 @@
 --     3) Array: An object with pointers to up to 2^32-1 other boxed objects.
 --     4) Raw:   An object containing up to (2^32-1-8) raw non-pointer bytes.
 --     5) Small: An object containing up to 4 raw non-pointer bytes.
+--     6) Mixed: An object with both non-pointer and pointer data.
 --
 --   All objects start with a 64-bit object  header that includes a format
 --   descriptor byte and an index into the object info table. The header
@@ -19,7 +20,7 @@
 --   We want a 16 bit tag field for Boxed, and to use Array for boxed arrays.
 --
 --     1) Thunk    field:  | params   args  boxes  runs | info  format |
---                  bits:  |     8      8       8     8 |   24       8 |
+--                  bits:  |      8      8      8     8 |   24       8 |
 --
 --     2) Boxed    field:  |                arity   tag | info  format |
 --                  bits:  |                   24     8 |   24       8 |
@@ -33,6 +34,9 @@
 --     5) Small    field:  |                       data | info  format |
 --                  bits:  |                         32 |   24       8 |
 --
+--     6) Mixed    field:  | raw-word-count   ptr-count | info  format |
+--                  bits:  |             48          32 |   24       8 |
+
 --   Format field
 --   ~~~~~~~~~~~~
 --
@@ -43,16 +47,17 @@
 --           0  0  1  0  X  X  0  1  -- Boxed
 --           0  0  1  1  X  X  0  1  -- Raw
 --           0  1  0  0  X  X  0  1  -- Array
+--           0  1  0  1  X  X  0  1  -- Mixed
 --           -- size --  X  X  1  1  -- Small
 --
 --           X  X  X  X  a  X  X  X  -- Anchor flag
 --           X  X  X  X  X  c  X  X  -- Ref by obj in Compact region flag
-
 --
 --   Compact Region
 --     The 2nd bit of the flag is used for the compact region
 --     if the flag is set, the garbage collector will stop tracing the object
 --     and assume any reference from it will keep live.
+--
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
 --     "to-space" its header in the "from-space" is overwritten with a pointer
@@ -121,6 +126,14 @@ export foreign c value
  ddcSmallPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
  ddcSmallPayloadSize    : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
+ -- Objects with both raw and poitner data.
+ ddcMixedAlloc          : [r1:    Region]. Word32# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcMixedRawSizeWords   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPointerCount   : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcMixedPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
+ ddcMixedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcMixedSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
+
 import foreign c value
  ddcAllocCollect        : Nat# -> Unit
 
@@ -149,8 +162,9 @@ ddcObjectHeader [r: Region] (obj: Ptr# r Obj): Word64#
 --      Raw          = 4#
 --      Array        = 5#
 --      Small        = 6#
+--      Mixed        = 7#
 --
-ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
+ddcObjectFormat [r: Region] (obj: Ptr# r Obj): Nat#
  = do   -- Get the format byte from the header.
         fmt8    = truncate# [Word8#] (peek# [r] [Word64#] (castPtr# obj))
 
@@ -169,6 +183,7 @@ ddcObjectFormat [r: Region] (obj: Ptr# r Obj) : Nat#
                 0b00100000w8# -> 3# -- Boxed
                 0b00110000w8# -> 4# -- Raw
                 0b01000000w8# -> 5# -- Array
+                0b01010000w8# -> 7# -- Mixed
                 _             -> 0# -- Unknown
 
           -- Forwarding pointers point to 8-byte aligned objects,
@@ -194,22 +209,26 @@ ddcObjectSetCompactRegionFlag [r: Region] (obj : Ptr# r Obj) (flag: Bool#) : Uni
  = do
         fmt =  peek# (castPtr# obj)
         case flag of
-          True#  -> do 
+          True#  -> do
                       write# (takePtr# obj) 0# (bor# fmt (promote# [Word64#] 0b0100w8#))
                       ()
           False# -> do 
                       write# (takePtr# obj) 0# (bxor# (bor# fmt (promote# [Word64#] 0b0100w8#)) (promote# [Word64#] 0b0100w8#))
                       ()
+          -- False# -> do
+          --             write# (takePtr# obj) 0# (band# fmt (promote# [Word64#] 0b1011w8#))
+          --            ()
 
 --| Get the size of an object.
 ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcObjectFormat obj of
-      2# -> ddcThunkSize  obj
-      3# -> ddcBoxedSize  obj
-      4# -> ddcRawSize    obj
-      6# -> ddcSmallSize  obj
-      _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"# 
-               0#
+    2# -> ddcThunkSize  obj
+    3# -> ddcBoxedSize  obj
+    4# -> ddcRawSize    obj
+    6# -> ddcSmallSize  obj
+    7# -> ddcMixedSize  obj
+    _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
+             0#
 
 
 -- | Get the header size of an object, in bytes.
@@ -227,6 +246,7 @@ ddcObjectSizeMinimum [r: Region] (obj: Ptr# r Obj): Nat#
     3# -> 8#    -- Boxed  (64-bit header)
     4# -> 8#    -- Raw    (64-bit header)
     6# -> 8#    -- Small  (64-bit header with embedded data)
+    7# -> 8#    -- Mixed  (64-bit header)
     _  -> do ddcFailObject obj "ddcHeaderSizeOfObject"# "unrecognized object"#
              0#
 
@@ -743,6 +763,124 @@ ddcSmallPayloadSize [r: Region] (obj: Ptr# r Obj): Nat#
  = do   header64        = read# [Word64#] (takePtr# obj) 0#
         wordsPayload    = band# (shr# header64 4w64#) 0xfw64#
         shl# (promote# [Nat#] wordsPayload) (size2# [Word64#])
+
+
+-- Mixed ----------------------------------------------------------------------
+-- | A Mixed  object which holds both raw and pointer data.
+--
+--   Header Word
+--   ~~~~~~~~~~~
+--    field:  | raw-word-count   ptr-count | info  format |
+--     bits:  |             16          16 |   24       8 |
+--   offset:  |             48          32 |    8       0 |
+--
+--   Format Byte
+--   ~~~~~~~~~~~
+--   0  1  0  1  X  X  0  1  -- Mixed
+--
+--   Object Layout
+--   ~~~~~~~~~~~~~
+--   typedef struct
+--   { uint16_t  rawWordCount;  // Number of raw words of data in the object.
+--     uint16_t  ptrCount       // Number of pointers in the object.
+--     uint32_t  infoFormat;    // Info table and format field.
+--     uint8_t   payload[];     // Raw data that does not contain heap pointers.
+--     Obj*      pointers[];    // Pointer data, as many as the ptrCount field.
+--   } ObjSmall;
+--
+ddcMixedAlloc
+        [r: Region]
+        (info: Word32#) (wordsPayload: Nat#) (ptrsPayload: Nat#): Ptr# r Obj
+ = do
+        -- Size of the object we need to allocate.
+        bytesObj
+         = (add# (size# [Word64#])                      -- Header word.
+           (add# (shl# wordsPayload (size2# [Addr#]))   -- Payload words.
+                 (shl# ptrsPayload  (size2# [Addr#]))))
+
+        -- Check there is enough heap space, or force a GC if there is not.
+        (case check# bytesObj of
+            True#   -> ()
+            False#  -> ddcAllocCollect bytesObj)
+
+        -- Alloc and zero the whole object.
+        --   The Salt code generator does not guarantee that allocations
+        --   will not be performed before the argument pointers have been
+        --   written, so the pointer fields in the half constructed object
+        --   need to be zeroed to prevent the GC from tracing them.
+        addr    = alloc# bytesObj
+        set# addr 0w8# bytesObj
+
+        -- Write the header word.
+        write# addr 0#
+            (bor# (shl# (promote# [Word64#] wordsPayload) 48w64#)
+            (bor# (shl# (promote# [Word64#] ptrsPayload)  32w64#)
+            (bor# (shl# (promote# [Word64#] info)          8w64#)
+                  0b01010001w64#)))
+
+        -- Return pointer to the new object.
+        makePtr# addr
+
+
+ddcMixedSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do
+        nWordsPayload  = ddcMixedRawSizeWords obj
+        nPtrsPayload   = ddcMixedPointerCount obj
+
+        bytesObj
+         = (add# (size# [Word64#])                      -- Header word.
+           (add# (shl# nWordsPayload (size2# [Addr#]))   -- Payload words.
+                 (shl# nPtrsPayload  (size2# [Addr#]))))
+
+        bytesObj
+
+-- | Determine the total size of the raw data in a mixed object, in words.
+ddcMixedRawSizeWords [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 48w64#) 0x0ffffw64#)
+
+
+-- | Determine the number of pointers in a mixed object.
+ddcMixedPointerCount [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 32w64#) 0x0ffffw64#)
+
+
+-- | Get a pointer to the raw payload of mixed object.
+ddcMixedPayload [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ =      plusPtr# (castPtr# obj) 8#
+
+
+-- | Get one of the pointers from a mixed data object.
+ddcMixedGetField
+        [r1 r2: Region]
+        (obj: Ptr# r1 Obj) (index: Nat#)
+        : Ptr# r2 Obj
+ = do
+        -- Compute offset to the pointers, passed the raw data.
+        nBytesHeader = 8#
+        nBytesRaw    = shl# (ddcMixedRawSizeWords obj) (size2# [Addr#])
+        oPtrs        = add# nBytesHeader nBytesRaw
+
+        -- Read the desired pointer.
+        read#  (takePtr# obj)
+               (add# oPtrs (shl# index (size2# [Addr#])))
+
+
+-- | Set one of the pointers from a mixed data object.
+ddcMixedSetField
+        [r1 r2: Region]
+        (obj: Ptr# r1 Obj) (index: Nat#) (val: Ptr# r2 Obj): Void#
+ = do
+        -- Compute offset to the pointers, passed the raw data.
+        nBytesHeader = 8#
+        nBytesRaw    = shl# (ddcMixedRawSizeWords obj) (size2# [Addr#])
+        oPtrs        = add# nBytesHeader nBytesRaw
+
+        -- Write the desired pointer.
+        write# (takePtr# obj)
+               (add# oPtrs (shl# index (size2# [Addr#])))
+               val
 
 
 -- Failure --------------------------------------------------------------------

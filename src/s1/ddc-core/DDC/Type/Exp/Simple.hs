@@ -98,12 +98,9 @@ module DDC.Type.Exp.Simple
         , sComp, sProp
 
           -- ** Kinds
-        , kData, kRegion, kEffect, kClosure, kWitness
-        , kFun
-        , kFuns
-        , takeKFun
-        , takeKFuns
-        , takeKFuns'
+        , kData, kRegion, kEffect, kClosure, kWitness, kRow
+        , kFun, kFuns
+        , takeKFun, takeKFuns, takeKFuns'
         , takeResultKind
 
          -- ** Quantifiers
@@ -112,8 +109,10 @@ module DDC.Type.Exp.Simple
         , takeTForalls,  eraseTForalls
 
           -- ** Sums
-        , tBot
-        , tSum
+        , tBot, tSum
+
+          -- ** Row typed things.
+        , tTuple, tRecord, tVariant
 
           -- ** Applications
         , tApp,          ($:)
@@ -152,15 +151,11 @@ module DDC.Type.Exp.Simple
         , takeTExists
 
           -- ** Effect types
-        , tRead,        tDeepRead,      tHeadRead
-        , tWrite,       tDeepWrite
-        , tAlloc,       tDeepAlloc
+        , tRead, tWrite, tAlloc
 
           -- ** Witness types
         , tPure
-        , tConst,       tDeepConst
-        , tMutable,     tDeepMutable
-        , tDistinct
+        , tConst, tMutable, tDistinct
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp.Simple.Exp
