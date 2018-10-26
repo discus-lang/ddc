@@ -47,6 +47,7 @@ data BindWay
         | BindLetRegions
         | BindLetRegionWith
         | BindCasePat
+        | BindAsync
         deriving (Eq, Show)
 
 
@@ -78,6 +79,7 @@ boundLevelOfBindWay way
         BindLetRegions          -> BoundSpec
         BindLetRegionWith       -> BoundExp
         BindCasePat             -> BoundExp
+        BindAsync               -> BoundExp
 
 
 -- BindStruct -----------------------------------------------------------------

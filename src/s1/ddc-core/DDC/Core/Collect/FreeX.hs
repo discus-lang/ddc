@@ -72,9 +72,10 @@ instance BindStruct (Exp a n) n where
          ++ [ BindDef  BindLetRegions b
              [bindDefX BindLetRegionWith bs [x2]]]
 
-        XAtom{}         -> []
-        XCase _ x alts  -> slurpBindTree x ++ concatMap slurpBindTree alts
-        XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
+        XAtom{}          -> []
+        XCase _ x alts   -> slurpBindTree x ++ concatMap slurpBindTree alts
+        XCast _ c x      -> slurpBindTree c ++ slurpBindTree x
+        XAsync _ b e1 e2 -> slurpBindTree e1 ++ [bindDefX BindAsync [b] [e2]]
 
 
 instance BindStruct (Arg a n) n where
