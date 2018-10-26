@@ -67,7 +67,7 @@ lowerX n xx  = lowerAtDepthX n 0 xx
 class MapBoundX (c :: * -> *) n where
  -- | Apply a function to all bound variables in the program.
  --   The function is passed the current binding depth.
- --   This is used to defined both `liftX` and `lowerX`.
+ --   This is used to define both `liftX` and `lowerX`.
  mapBoundAtDepthX
         :: (Int -> Bound n -> Bound n)
                         -- ^ Function to apply to the bound occ.
