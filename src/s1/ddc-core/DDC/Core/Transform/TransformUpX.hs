@@ -106,6 +106,13 @@ instance Monad m => TransformUpMX m Exp where
                         (return a) (return c)
                         (transformUpMX f env x)
 
+        -- TODO FIXME review this, `b` is only bound in e2 so it looks roughly
+        -- of the right shape.
+        XAsync a b e1 e2
+         -> do  e1' <- transformUpMX f env e1
+                let env' = EnvX.extendX b env
+                e2' <- transformUpMX f env' e2
+                return $ XAsync a b e1' e2'
 
 instance Monad m => TransformUpMX m Arg  where
  transformUpMX f env aa

@@ -21,13 +21,14 @@ instance Monad m => MapT m (Exp a) where
   = let down :: forall (c :: * -> *). (Monad m, MapT m c) => c n -> m (c n)
         down = mapT f
     in case xx of
-        XVar  a u       -> pure (XVar  a u)
-        XAbs  a b x     -> XAbs  a <$> down b   <*> down x
-        XApp  a x1 x2   -> XApp  a <$> down x1  <*> down x2
-        XLet  a lts x   -> XLet  a <$> down lts <*> down x
-        XAtom a t       -> pure (XAtom a t)
-        XCase a x alts  -> XCase a <$> down x   <*> mapM down alts
-        XCast a cc x    -> XCast a <$> down cc  <*> down x
+        XVar   a u       -> pure (XVar  a u)
+        XAbs   a b x     -> XAbs   a <$> down b   <*> down x
+        XApp   a x1 x2   -> XApp   a <$> down x1  <*> down x2
+        XLet   a lts x   -> XLet   a <$> down lts <*> down x
+        XAtom  a t       -> pure (XAtom a t)
+        XCase  a x alts  -> XCase  a <$> down x   <*> mapM down alts
+        XCast  a cc x    -> XCast  a <$> down cc  <*> down x
+        XAsync a b e1 e2 -> XAsync a <$> down b   <*> down e1 <*> down e2
 
 
 instance Monad m => MapT m Param where

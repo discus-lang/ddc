@@ -107,6 +107,12 @@ instance MapBoundX (Exp a) n where
         XCase a x alts  -> XCase a (down x)  (map down alts)
         XCast a cc x    -> XCast a (down cc) (down x)
 
+        -- TODO FIXME need to check this handling
+        -- var is only bound in e2, so should be roughly right
+        XAsync a b e1 e2
+         -> let d' = d + countBAnons [b]
+            in XAsync a b (down e1) (mapBoundAtDepthX f d' e2)
+
 
 instance MapBoundX (Arg a) n where
  mapBoundAtDepthX f d aa

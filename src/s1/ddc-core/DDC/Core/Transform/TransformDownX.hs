@@ -109,6 +109,12 @@ instance Monad m => TransformDownMX m Exp where
                         (return a) (return c)
                         (transformDownMX f kenv tenv x)
 
+        -- TODO FIXME: variable is only bound in e2, so this looks roughly right
+        XAsync a b e1 e2
+         -> do  e1' <- transformDownMX f kenv tenv e1
+                e2' <- transformDownMX f kenv (Env.extend b tenv) e2
+                return $ XAsync a b e1' e2'
+
 
 instance Monad m => TransformDownMX m Arg where
  transformDownMX f kenv tenv aa

@@ -30,6 +30,7 @@ instance Ord n => MapBoundT (Exp a) n where
         XAtom {}                -> xx
         XCase a x alts          -> XCase    a (down x)  (map down alts)
         XCast a cc x            -> XCast    a (down cc) (down x)
+        XAsync a b e1 e2        -> XAsync   a (down b)  (down e1) (down e2)
 
 
 instance Ord n => MapBoundT (Arg a) n where

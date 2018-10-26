@@ -209,6 +209,12 @@ instance SupportX (Exp a) where
                 s2              = support kenv tenv x2
             in  mappend s1 s2
 
+        XAsync _ b e1 e2
+         -> let e1'   = support kenv tenv e1
+                b'    = support kenv tenv b
+                tenv' = Env.extend b tenv
+                e2'   = support kenv tenv' e2
+            in e1' <> b' <> e2'
 
 instance SupportX (Arg a) where
  support kenv tenv aa
