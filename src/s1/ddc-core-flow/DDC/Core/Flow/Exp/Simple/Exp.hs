@@ -5,7 +5,7 @@
 --   of the annotations would be empty. General purpose transformations should
 --   deal with the fully annotated version of the AST instead.
 --
-module DDC.Core.Flow.Exp.Simple.Exp 
+module DDC.Core.Flow.Exp.Simple.Exp
         ( module DDC.Type.Exp
 
           -- * Expressions
@@ -96,7 +96,7 @@ data Alt a n
 data Pat n
         -- | The default pattern always succeeds.
         = PDefault
-        
+
         -- | Match a data constructor and bind its arguments.
         | PData !(DaCon n (Type n)) ![Bind n]
         deriving (Show, Eq)
@@ -109,10 +109,10 @@ data Witness a n
 
         -- | Witness variable.
         | WVar  !(Bound n)
-        
+
         -- | Witness constructor.
         | WCon  !(WiCon n)
-        
+
         -- | Witness application.
         | WApp  !(Witness a n) !(Witness a n)
 
@@ -127,13 +127,13 @@ data Cast a n
         --   The given effect is added to the effect
         --   of the body.
         = CastWeakenEffect  !(Effect n)
-        
+
         -- | Purify the effect (action) of an expression.
         | CastPurify        !(Witness a n)
 
-        -- | Box up a computation, 
+        -- | Box up a computation,
         --   capturing its effects in the S computation type.
-        | CastBox 
+        | CastBox
 
         -- | Run a computation,
         --   releasing its effects into the environment.
