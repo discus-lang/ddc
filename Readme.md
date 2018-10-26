@@ -24,7 +24,7 @@ complete system that can be hacked around with, but it’s not yet industrial st
 ## Show Me Code
 
 Check out the
-[Demos](https://github.com/discus-lang/ddc/tree/master/test/ddc-demo/source/tetra),
+[Demos](https://github.com/discus-lang/ddc/tree/master/test/ddc-demo/source/Discus),
 [List Library](https://github.com/discus-lang/ddc/blob/master/src/s2/base/Data/List.ds), and
 [Text Implementation](https://github.com/discus-lang/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
 in the source tree. The Demos are simple programs. The List Library demonstrates effect polymorphism, and the Text
@@ -50,4 +50,4 @@ Development Wiki:       http://trac.discus-lang.org
 
 Development Blog:       http://blog.discus-lang.org
 
-Mailing List:           http://groups.google.com/group/disciple-cafe
+Mailing List:           https://groups.google.com/forum/#!forum/discus-lang
