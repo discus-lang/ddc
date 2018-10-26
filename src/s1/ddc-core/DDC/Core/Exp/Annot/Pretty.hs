@@ -138,6 +138,17 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          ->  pprParen' (d > 2)
          $   vcat [ ppr cc %% text "in", pprX x ]
 
+        -- TODO FIXME I have no idea what these magic numbers mean.
+        XAsync _ b e1 e2
+         -> pprParen' (d > 2)
+         $  vcat [
+                    text "async",
+                    ppr b,
+                    text "<-",
+                    pprX e1,
+                    text "in",
+                    pprX e2
+                 ]
 
 -- Param ----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Param n) where
