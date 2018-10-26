@@ -37,6 +37,7 @@ instance Deannotate A.Exp S.Exp where
 
         A.XCase a x alts                -> wrap a (S.XCase  (down x)   (map down alts))
         A.XCast a cc x                  -> wrap a (S.XCast  (down cc)  (down x))
+        A.XAsync a b e1 e2              -> wrap a (S.XAsync (down b) (down e1) (down e2))
 
 
 instance Deannotate A.Arg S.Exp where

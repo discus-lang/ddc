@@ -69,6 +69,9 @@ data Exp a n
 
         -- | Witness can appear as the argument of an application.
         | XWitness !(Witness a n)
+
+        -- | Async binding.
+        | XAsync !(Bind n) !(Exp a n) !(Exp a n)
         deriving (Show, Eq)
 
 
@@ -157,6 +160,7 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
         XCast  c x      -> rnf c   `seq` rnf x
         XType  t        -> rnf t
         XWitness w      -> rnf w
+        XAsync b e1 e2  -> rnf b   `seq` rnf e1 `seq` rnf e2
 
 
 instance (NFData a, NFData n) => NFData (Cast a n) where
