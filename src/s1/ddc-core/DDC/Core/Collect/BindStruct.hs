@@ -94,7 +94,7 @@ bindDefT way bs xs
 
 -- freeT ----------------------------------------------------------------------
 -- | Collect the free Spec variables in a thing (level-1).
-freeT   :: (BindStruct c n, Ord n) 
+freeT   :: (BindStruct c n, Ord n)
         => Env n -> c -> Set (Bound n)
 freeT tenv xx = Set.unions $ map (freeOfTreeT tenv) $ slurpBindTree xx
 
@@ -116,14 +116,14 @@ freeOfTreeT kenv tt
 
 
 -- collectBound ---------------------------------------------------------------
--- | Collect all the bound variables in a thing, 
+-- | Collect all the bound variables in a thing,
 --   independent of whether they are free or not.
-collectBound 
-        :: (BindStruct c n, Ord n) 
+collectBound
+        :: (BindStruct c n, Ord n)
         => c -> Set (Bound n)
 
-collectBound 
-        = Set.unions . map collectBoundOfTree . slurpBindTree 
+collectBound
+        = Set.unions . map collectBoundOfTree . slurpBindTree
 
 collectBoundOfTree :: Ord n => BindTree n -> Set (Bound n)
 collectBoundOfTree tt
@@ -135,8 +135,8 @@ collectBoundOfTree tt
 
 -- collectSpecBinds -----------------------------------------------------------
 -- | Collect all the spec and exp binders in a thing.
-collectBinds 
-        :: (BindStruct c n, Ord n) 
+collectBinds
+        :: (BindStruct c n, Ord n)
         => c
         -> ([Bind n], [Bind n])
 
@@ -144,7 +144,7 @@ collectBinds thing
  = let  tree    = slurpBindTree thing
    in   ( concatMap collectSpecBindsOfTree tree
         , concatMap collectExpBindsOfTree  tree)
-        
+
 
 collectSpecBindsOfTree :: Ord n => BindTree n -> [Bind n]
 collectSpecBindsOfTree tt
