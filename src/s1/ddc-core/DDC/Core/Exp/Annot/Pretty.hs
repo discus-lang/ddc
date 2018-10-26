@@ -390,7 +390,7 @@ instance (Pretty n, Eq n) => Pretty (WiCon n) where
 
 
 -- Binder ---------------------------------------------------------------------
--- | Preey print a binder.
+-- | Pretty print a binder.
 pprBinder   :: Pretty n => Binder n -> Doc
 pprBinder bb
  = case bb of
