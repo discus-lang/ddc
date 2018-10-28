@@ -72,8 +72,8 @@ snipX   :: Ord n
 
 snipX config arities x args
         -- For applications, remember the argument that the function is being
-        --   applied to, and decend into the function part.
-        --   This unzips application nodes as we decend into the tree.
+        --   applied to, and descend into the function part.
+        --   This unzips application nodes as we descend into the tree.
         | XApp a fun arg        <- x
         =  snipX config arities fun
         $ (snipA config arities arg, a) : args
