@@ -45,6 +45,7 @@ import DDC.Core.Check.Judge.Type.LetPrivate
 import DDC.Core.Check.Judge.Type.Case
 import DDC.Core.Check.Judge.Type.Cast
 import DDC.Core.Check.Judge.Type.Base
+import DDC.Core.Check.Judge.Type.Async
 import DDC.Core.Transform.MapT
 import qualified System.IO.Unsafe       as S
 
@@ -178,6 +179,7 @@ checkExpM !table !ctx !mode !demand !xx
     XLet{}                  -> tableCheckLet        table table ctx mode demand xx
     XCase{}                 -> tableCheckCase       table table ctx mode demand xx
     XCast{}                 -> tableCheckCast       table table ctx mode demand xx
+    XAsync{}                -> tableCheckAsync      table table ctx mode demand xx
 
 
 -- Table ----------------------------------------------------------------------
@@ -195,4 +197,5 @@ makeTable config
         , tableCheckLet         = checkLet
         , tableCheckLetPrivate  = checkLetPrivate
         , tableCheckCase        = checkCase
-        , tableCheckCast        = checkCast }
+        , tableCheckCast        = checkCast
+        , tableCheckAsync       = checkAsync }

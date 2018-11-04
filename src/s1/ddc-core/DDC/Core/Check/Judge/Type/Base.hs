@@ -95,7 +95,8 @@ data Table a n
         , tableCheckLet         :: Checker a n
         , tableCheckLetPrivate  :: Checker a n
         , tableCheckCase        :: Checker a n
-        , tableCheckCast        :: Checker a n }
+        , tableCheckCast        :: Checker a n
+        , tableCheckAsync       :: Checker a n }
 
 
 -- | Helper function for building the return value of checkExpM'
