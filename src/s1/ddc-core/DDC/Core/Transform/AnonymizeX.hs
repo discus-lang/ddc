@@ -89,6 +89,11 @@ instance AnonymizeX (Exp a) where
         XCase a x alts  -> XCase a (down x) (map down alts)
         XCast a c x     -> XCast a (down c) (down x)
 
+        XAsync a b e1 e2
+         -> let e1'           = down e1
+                (tstack', b') = pushAnonymizeBindX keep kstack tstack  b
+                e2'           = anonymizeWithX     keep kstack tstack' e2
+            in  XAsync a b' e1' e2'
 
 instance AnonymizeX (Arg a) where
  anonymizeWithX keep kstack tstack aa

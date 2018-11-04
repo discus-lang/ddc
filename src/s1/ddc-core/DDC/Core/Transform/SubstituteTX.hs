@@ -112,6 +112,11 @@ instance SubstituteTX (Exp a) where
         XCase a x1 alts -> XCase    a (down sub x1) (map (down sub) alts)
         XCast a cc x1   -> XCast    a (down sub cc) (down sub x1)
 
+        XAsync a b e1 e2
+         -> let e1'             = down  sub  e1
+                (sub', b')      = bind0 sub  (down sub b)
+                e2'             = down  sub' e2
+            in XAsync a b' e1' e2'
 
 instance SubstituteTX (Arg a) where
  substituteWithTX tArg sub aa

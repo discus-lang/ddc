@@ -168,13 +168,14 @@ boxingX config xx
             in  boxingCase config a tLit1 xScrut' alts'
 
         -- Boilerplate.
-        XVar{}          -> xx
-        XAtom{}         -> xx
-        XAbs a b x      -> XAbs a b  (boxingX   config x)
-        XApp a x1 x2    -> XApp a    (boxingX   config x1)  (boxingA config x2)
-        XLet a lts x    -> XLet a    (boxingLts config lts) (boxingX config x)
-        XCase a x alts  -> XCase a   (boxingX   config x)   (map (boxingAlt config) alts)
-        XCast a c x     -> XCast a c (boxingX   config x)
+        XVar{}           -> xx
+        XAtom{}          -> xx
+        XAbs   a b x     -> XAbs   a b (boxingX   config x)
+        XApp   a x1 x2   -> XApp   a   (boxingX   config x1)  (boxingA config x2)
+        XLet   a lts x   -> XLet   a   (boxingLts config lts) (boxingX config x)
+        XCase  a x alts  -> XCase  a   (boxingX   config x)   (map (boxingAlt config) alts)
+        XCast  a c x     -> XCast  a c (boxingX   config x)
+        XAsync a b e1 e2 -> XAsync a b (boxingX config e1)    (boxingX config e2)
 
 
 boxingA config aa

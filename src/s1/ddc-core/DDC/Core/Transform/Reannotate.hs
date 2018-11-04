@@ -38,13 +38,14 @@ instance Reannotate Exp where
  reannotateM f xx
   = let down x   = reannotateM f x
     in case xx of
-        XVar  a u       -> XVar  <$> f a <*> pure u
-        XAbs  a b x     -> XAbs  <$> f a <*> pure b   <*> down x
-        XApp  a x1 x2   -> XApp  <$> f a <*> down x1  <*> down x2
-        XLet  a lts x   -> XLet  <$> f a <*> down lts <*> down x
-        XAtom a t       -> XAtom <$> f a <*> pure t
-        XCase a x alts  -> XCase <$> f a <*> down x   <*> mapM down alts
-        XCast a c x     -> XCast <$> f a <*> down c   <*> down x
+        XVar   a u       -> XVar   <$> f a <*> pure u
+        XAbs   a b x     -> XAbs   <$> f a <*> pure b   <*> down x
+        XApp   a x1 x2   -> XApp   <$> f a <*> down x1  <*> down x2
+        XLet   a lts x   -> XLet   <$> f a <*> down lts <*> down x
+        XAtom  a t       -> XAtom  <$> f a <*> pure t
+        XCase  a x alts  -> XCase  <$> f a <*> down x   <*> mapM down alts
+        XCast  a c x     -> XCast  <$> f a <*> down c   <*> down x
+        XAsync a b e1 e2 -> XAsync <$> f a <*> pure b   <*> down e1 <*> down e2
 
 
 instance Reannotate Arg where

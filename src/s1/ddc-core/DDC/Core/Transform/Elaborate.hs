@@ -37,17 +37,18 @@ instance Elaborate (Exp a) where
   = {-# SCC elaborate #-}
     let down = elaborate us
     in case xx of
-        XVar{}            -> xx
-        XAbs  a b    x    -> XAbs a b (down x)
-        XApp  a x1   x2   -> XApp a (down x1) (down x2)
+        XVar{}             -> xx
+        XAbs   a b    x    -> XAbs  a b (down x)
+        XApp   a x1   x2   -> XApp  a (down x1) (down x2)
 
-        XLet  a lts  x2
+        XLet   a lts  x2
          -> let (us', lts') = elaborateLets us lts
             in  XLet a lts' (elaborate us' x2)
 
-        XAtom {}          -> xx
-        XCase a x    alts -> XCase a (down x) (map down alts)
-        XCast a cst  x2   -> XCast a (down cst) (down x2)
+        XAtom {}           -> xx
+        XCase  a x    alts -> XCase  a (down x) (map down alts)
+        XCast  a cst  x2   -> XCast  a (down cst) (down x2)
+        XAsync a b e1 e2   -> XAsync a b (down e1) (down e2)
 
 
 instance Elaborate (Arg a) where

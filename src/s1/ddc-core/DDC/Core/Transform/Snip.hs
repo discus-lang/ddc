@@ -168,6 +168,12 @@ enterX config arities xx
         XCast a c e
          -> XCast a c (down [] e)
 
+        -- asynchronous binding (similar to a non-recursive let)
+        XAsync a b e1 e2
+         -> let e1'     = down [] e1
+                e2'     = snipLetBody config a
+                        $ down [(b, arityOfExp' e1')] e2
+            in  XAsync a b e1' e2'
 
 -- | Build an A-normalised application of some functional expression to
 --   its arguments. Atomic arguments are applied directly, while

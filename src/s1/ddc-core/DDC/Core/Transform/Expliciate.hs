@@ -120,6 +120,9 @@ expliciateExp eqns xx
         XCast a c x     -> XCast a (expliciateCast  eqns c)
                                    (expliciateExp   eqns x)
 
+        XAsync a b e1 e2 -> XAsync a (expliciateBind eqns b)
+                                     (expliciateExp  eqns e1)
+                                     (expliciateExp  eqns e2)
 
 -- | Expliciate a parameter.
 expliciateParam

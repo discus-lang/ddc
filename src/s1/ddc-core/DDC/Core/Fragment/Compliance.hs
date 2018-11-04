@@ -258,6 +258,15 @@ instance Complies Exp where
         XCast _ _ x     -> compliesX profile kenv tenv (reset context) x
 
 
+        -- xasync ------------------------------
+        XAsync _ b e1 e2
+         -> do  (tUsed1, vUsed1) <- compliesX profile kenv tenv  (reset context) e1
+                let tenv'        =  Env.extend b tenv
+                (tUsed2, vUsed2) <- compliesX profile kenv tenv' (reset context) e2
+                vUsed2'          <- checkBind profile tenv b vUsed2
+
+                return ( Set.union tUsed1 tUsed2
+                       , Set.union vUsed1 vUsed2' )
 
 instance Complies Alt where
  compliesX profile kenv tenv context aa

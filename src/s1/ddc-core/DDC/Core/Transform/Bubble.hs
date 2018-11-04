@@ -115,6 +115,16 @@ instance Bubble Exp where
                 fc              = FvsCast c fvsT fvsX
             in  (fc : cs, x')
 
+        -- Descend into e1 and e2.
+        -- Make sure to strip out any casts in e2 that mention the variable
+        -- bound here (at b).
+        -- TODO FIXME check this carefully
+        XAsync a b e1 e2
+         -> let (cs1, e1')      = bubble kenv tenv e1
+                kenv'           = Env.extend b kenv
+                (cs2, e2')      = bubble kenv' tenv e2
+                (cs2', e2'')    = dropCasts kenv' tenv a [] [b] cs2 e2'
+            in (cs1 ++ cs2', XAsync a b e1' e2'')
 
 instance Bubble Arg where
  bubble kenv tenv aa

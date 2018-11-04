@@ -8,9 +8,9 @@ import qualified DDC.Core.Flow.Exp.Simple.Exp   as S
 
 -- | Convert the `Simple` version of the AST to the `Annot` version,
 --   using a the provided default annotation value.
-class Annotate  
-        (c1 :: * -> * -> *) 
-        (c2 :: * -> * -> *) | c1 -> c2 
+class Annotate
+        (c1 :: * -> * -> *)
+        (c2 :: * -> * -> *) | c1 -> c2
  where
  annotate :: a -> c1 a n -> c2 a n
 
@@ -40,6 +40,7 @@ instance Annotate S.Exp A.Exp where
         S.XLet  lts x                   -> A.XLet      def   (down lts) (down x)
         S.XCase x alts                  -> A.XCase     def   (down x)   (map down alts)
         S.XCast c x                     -> A.XCast     def   (down c)   (down x)
+        S.XAsync b e1 e2                -> A.XAsync    def b (down e1)  (down e2)
 
         S.XType    _                    -> error "ddc-core-flow.annotate: naked Xtype"
         S.XWitness _                    -> error "ddc-core-flow.annotate: naked Xwitness"
@@ -90,7 +91,7 @@ instance Annotate S.Witness A.Witness where
         S.WAnnot a (S.WType t)          -> A.WType a t
 
         S.WVar  u                       -> A.WVar  def u
-        S.WCon  dc                      -> A.WCon  def dc        
+        S.WCon  dc                      -> A.WCon  def dc
         S.WApp  x1 x2                   -> A.WApp  def (down x1) (down x2)
         S.WType t                       -> A.WType def t
 

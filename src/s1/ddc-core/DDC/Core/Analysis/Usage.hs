@@ -215,6 +215,13 @@ usageX' xx
          -> ( used'
             , XCast (used', a) c' x1')
 
+        -- TODO FIXME do we need to do anything with the bound variable here?
+        XAsync a b e1 e2
+         |  (used1, e1')   <- usageX' e1
+         ,  (used2, e2')   <- usageX' e2
+         ,  used'          <- plusUsedMap used1 used2
+         -> ( used'
+            , XAsync (used', a) b e1' e2')
 
 usageArg' :: Ord n
         => Arg a n

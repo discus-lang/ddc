@@ -157,6 +157,11 @@ instance SubstituteXX Exp where
         XCast     a cc x1
          -> XCast a (down sub cc) (down sub x1)
 
+        XAsync    a b e1 e2
+         -> let e1'             = down  sub  e1
+                (sub', b')      = bind0 sub  b
+                e2'             = down  sub' e2
+            in XAsync a b' e1' e2'
 
 instance SubstituteXX Arg where
  substituteWithXX xArg sub aa

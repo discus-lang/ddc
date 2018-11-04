@@ -208,10 +208,11 @@ addArgsX nts xx
 
         -- For the rest of the constructs their types do not
         -- change during the transform so we can resuse the old ones.
-        XAbs a b xBody    -> XAbs  a b (downX xBody)
-        XLet a lts xBody  -> XLet  a   (downLts lts)  (downX xBody)
-        XCase a xScrut as -> XCase a   (downX xScrut) (map downA as)
-        XCast a c x       -> XCast a c (downX x)
+        XAbs a b xBody    -> XAbs   a b (downX xBody)
+        XLet a lts xBody  -> XLet   a   (downLts lts)  (downX xBody)
+        XCase a xScrut as -> XCase  a   (downX xScrut) (map downA as)
+        XCast a c x       -> XCast  a c (downX x)
+        XAsync a b e1 e2  -> XAsync a b (downX e1)     (downX e2)
 
 
 addArgsAppX !nts !xx !ats

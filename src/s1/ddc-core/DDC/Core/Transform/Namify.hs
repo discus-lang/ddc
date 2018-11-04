@@ -169,6 +169,11 @@ instance Namify (Exp a) where
         XCase a x1 alts -> liftM2 (XCase    a) (down x1)  (mapM down alts)
         XCast a c  x    -> liftM2 (XCast    a) (down c)   (down x)
 
+        XAsync a b e1 e2
+         -> do  e1'             <- namify tnam xnam  e1
+                (xnam', b')     <- pushX  tnam xnam  b
+                e2'             <- namify tnam xnam' e2
+                return $ XAsync a b' e1' e2'
 
 instance Namify (Arg a) where
  namify tnam xnam aa

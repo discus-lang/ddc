@@ -37,6 +37,10 @@ checkExp xx
         XCast _a _c x
          ->     checkExp  x
 
+        XAsync a b e1 e2
+         -> do  checkExp e1
+                checkBind a b
+                checkExp e2
 
 -- | Post check a parameter.
 checkParam :: a -> Param n -> Either (Error a n) ()

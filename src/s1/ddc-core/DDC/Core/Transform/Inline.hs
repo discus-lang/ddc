@@ -42,13 +42,14 @@ instance Inline Exp where
          -> let !inside' = Set.insert n inside
             in  inline get inside' xx'
 
-        XVar{}          -> xx
-        XAbs  a b x     -> XAbs  a b (down x)
-        XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
-        XLet  a lts x2  -> XLet  a   (down lts) (down x2)
-        XAtom{}         -> xx
-        XCase a x alts  -> XCase a   (down x)   (map down alts)
-        XCast a c x     -> XCast a c            (down x)
+        XVar{}           -> xx
+        XAbs   a b x     -> XAbs   a b (down x)
+        XApp   a x1 x2   -> XApp   a   (down x1)  (down x2)
+        XLet   a lts x2  -> XLet   a   (down lts) (down x2)
+        XAtom{}          -> xx
+        XCase  a x alts  -> XCase  a   (down x)   (map down alts)
+        XCast  a c x     -> XCast  a c            (down x)
+        XAsync a b e1 e2 -> XAsync a b (down e1)  (down e2)
 
 
 instance Inline Arg  where
