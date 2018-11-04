@@ -453,6 +453,7 @@ checkValidPattern expr
         go XAtom{}              = return ()
         go x@(XCase _ _ _)      = Left $ ErrorNotFirstOrder x
         go (XCast _ _ x)        = go x
+        go x@(XAsync _ _ _ _)   = Left $ ErrorNotFirstOrder x
 
         go_t (TVar _)           = return ()
         go_t (TCon _)           = return ()
