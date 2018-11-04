@@ -378,6 +378,10 @@ takeExp c xx
                 C.CastPurify w  -> xAps "xtp" [takeWitness c w, takeExp c x]
                 C.CastBox       -> xAps "xtb" [takeExp c x]
                 C.CastRun       -> xAps "xtr" [takeExp c x]
+        -- Async -----
+        -- TODO FIXME need to implement and define "xas"
+        C.XAsync _ b e1 e2
+         -> xAps "xas"  [takeBind c b, takeExp c e1, takeExp c e2]
 
 
 -- Param ------------------------------------------------------------------------------------------
