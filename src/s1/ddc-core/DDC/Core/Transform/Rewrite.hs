@@ -181,6 +181,10 @@ rewriteX' ignore_toplevel rules x0
          = do   e'      <- downX env e
                 rewrites env (XCast a c e') args
 
+        go env (XAsync a b e1 e2) args _toplevel
+         = do   e1'  <- downX (RE.extend b env) e1
+                rewrites env (XAsync a b e1' e2) args
+
 {-
         go env x@(XType{})      args _toplevel
          =      rewrites env x args
