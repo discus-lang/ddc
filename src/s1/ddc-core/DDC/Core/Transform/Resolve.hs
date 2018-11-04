@@ -114,6 +114,11 @@ resolveExp !ctx xx
         XCast a c x
          -> XCast a c <$> resolveExp ctx x
 
+        XAsync a b e1 e2
+         -> do e1'       <- resolveExp      ctx  e1
+               let ctx'  = contextPushBinds [b]  ctx
+               e2'       <- resolveExp      ctx' e2
+               return $ XAsync a b e1' e2'
 
 -- | Resolve elaborations in an argument.
 resolveArg
