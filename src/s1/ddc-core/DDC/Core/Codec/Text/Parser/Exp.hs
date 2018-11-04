@@ -54,13 +54,13 @@ pExp c
 
         -- async expression
         -- async x <- e1 in e2
- , do   pKey EAsync
-        var   <- pVar
-        pTok (KOp "<-")
-        e1    <- pExp c
-        pKey  EIn
-        e2    <- pExp c
-        return  $ XAsync var e1 e2
+ , do   sp      <- pKey EAsync
+        var     <- pVar
+        pTok    (KOp "<-")
+        e1      <- pExp c
+        pKey    EIn
+        e2      <- pExp c
+        return  $ foldr (XAsync sp) var e1 e2
 
         -- do { STMTS }
         --   Sugar for a let-expression.
