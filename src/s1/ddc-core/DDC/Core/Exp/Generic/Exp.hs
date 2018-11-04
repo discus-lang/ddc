@@ -49,6 +49,8 @@ data GExp l
         -- | Type casting.
         | XCast    !(GCast l)  !(GExp l)
 
+        -- | Async binding.
+        | XAsync   !(GBind l)  !(GExp l)  !(GExp l)
 
 pattern XLAM b x = XAbs (MType b) x
 pattern XLam b x = XAbs (MTerm b) x

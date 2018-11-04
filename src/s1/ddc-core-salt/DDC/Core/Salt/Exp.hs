@@ -100,6 +100,8 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XCast _ c x
          -> G.XCast <$> fromAnnot c   <*> fromAnnot x
 
+        N.XAsync _ b e1 e2
+         -> G.XAsync <$> fromAnnot b <$> fromAnnot e1 <*> fromAnnot e2
 
 instance FromAnnot (N.Lets a A.Name) Lets where
  fromAnnot lts
