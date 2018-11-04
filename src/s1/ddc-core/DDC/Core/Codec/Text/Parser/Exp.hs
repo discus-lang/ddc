@@ -54,13 +54,11 @@ pExp c
 
         -- async expression
         -- async x <- e1 in e2
- , do   sp      <- pKey EAsync
-        var     <- pVar
-        pTok    (KOp "<-")
+ , do   (bind, sp)   <- pAsyncBindSP c
         e1      <- pExp c
         pKey    EIn
         e2      <- pExp c
-        return  $ foldr (XAsync sp) var e1 e2
+        return  $ XAsync sp bind e1 e2
 
         -- do { STMTS }
         --   Sugar for a let-expression.
@@ -517,6 +515,31 @@ pLetBinding c
                         return  (T.makeBindFromBinder b t, x) ]
          ]
 
+-- | A binding for an async expression with a source position.
+-- This will parse from 'async' up to and including the arrow '<-'.
+pAsyncBindSP
+        :: (Ord n, Pretty n)
+        => Context n
+        -> Parser n ( Bind n
+                    , SourcePos)
+
+pAsyncBindSP c
+ = do sp  <- pKey EAsync
+      var <- pBinder
+      P.choice
+          -- async expression (with type)
+          -- async x : t <- e1 in e2
+        [ do   pTok    (KOp ":")
+               t       <- pType c
+               pTok    (KOp "<-")
+               return  $ (T.makeBindFromBinder var t, sp)
+
+          -- async expression (without type)
+          -- async x <- e1 in e2
+        , do   pTok    (KOp "<-")
+               let t   = (T.tBot T.kData)
+               return  $ (T.makeBindFromBinder var t, sp)
+        ]
 
 -- Stmt -------------------------------------------------------------------------------------------
 data Stmt n
