@@ -39,6 +39,9 @@ instance BindStruct (Exp a n) n where
         XCast c x       -> slurpBindTree c ++ slurpBindTree x
         XType t         -> slurpBindTree t
         XWitness w      -> slurpBindTree w
+        XAsync b e1 e2
+         -> slurpBindTree e1
+         ++ [bindDefX BindAsync [b] [e2]]
 
 
 instance BindStruct (Cast a n) n where
