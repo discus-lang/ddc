@@ -245,6 +245,8 @@ convertX xx
    XCast a c x
     -> XCast a <$> convertCast  c <*> convertX x
 
+   XAsync a b e1 e2
+    -> XAsync a <$> (convertBind b) <*> convertX e1 <*> convertX e2
  where
   anno = annotOfExp xx
 
