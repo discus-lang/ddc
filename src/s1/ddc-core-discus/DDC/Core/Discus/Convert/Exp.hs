@@ -315,6 +315,8 @@ convertExp ectx ctx xx
         XCast _ _ x
          -> convertX (min ectx ExpBody) ctx x
 
+        -- TODO(chrishall): how do I hold this?
+        XAsync _ _ _ _ -> error "oh dear god - blame chrishall"
 
 
 ---------------------------------------------------------------------------------------------------

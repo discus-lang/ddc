@@ -255,6 +255,8 @@ lambdasX p c xx
         XCast a cc x
          ->     lambdasCast p c a cc x
 
+        -- TODO(chrishall): no idea how to hold this
+        XAsync _ _ _ _ -> error "OH DEAR GOD - blame chrishall"
 
 
 lambdasArg

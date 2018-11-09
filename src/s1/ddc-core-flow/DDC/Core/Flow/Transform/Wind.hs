@@ -414,6 +414,8 @@ windBodyX refMap context xx
         XAbs a b x      -> XAbs a b (down x)
 
         XApp{}          -> xx
+        -- TODO(chrishall): probably don't want to touch async...
+        XAsync{}        -> xx
 
         -- Decend into nest let binding.
         --  We need to drop the contexts because we never do a tail-call

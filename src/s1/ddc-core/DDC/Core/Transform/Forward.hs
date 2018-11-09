@@ -280,6 +280,8 @@ instance Forward Exp where
         XCase a x alts  -> liftM2 (XCase    (snd a)) (down x) (mapM down alts)
         XCast a c x     -> liftM2 (XCast    (snd a)) (down c) (down x)
 
+        -- TODO(chrishall): no idea how to hold this
+        XAsync _  _ _ _ -> error "oh dear god - blame chrishall"
 
 filterUsedInCasts :: [Used] -> [Used]
 filterUsedInCasts = filter notCast
