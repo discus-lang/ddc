@@ -107,6 +107,7 @@ transSuper tails xx
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
         XCast a c x     -> XCast a c (transSuper tails x)
+        XAsync a b e1 e2 -> XAsync a b (down e1) (down e2)
 
 
 -- | Add a statment to return this value,
@@ -168,6 +169,7 @@ transX tails xx
         XAtom{}         -> xx
         XCase{}         -> xx
         XCast{}         -> xx
+        XAsync{}        -> xx
 
 
 -- Arg ------------------------------------------------------------------------

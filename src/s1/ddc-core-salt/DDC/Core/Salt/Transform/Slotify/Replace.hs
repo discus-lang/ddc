@@ -19,16 +19,17 @@ replaceX sub xx
    in  case xx of
         XVar _a (UName n)
          -> case Map.lookup n sub of
-                Just x' -> x'
-                Nothing -> xx
+                Just x'  -> x'
+                Nothing  -> xx
 
-        XVar{}          -> xx
-        XAbs  a b x     -> XAbs  a b (down x)
-        XApp  a x1 x2   -> XApp  a   (down x1) (replaceArg sub x2)
-        XLet  a lts x2  -> XLet  a   (replaceL sub lts) (down x2)
-        XAtom{}         -> xx
-        XCase a x alts  -> XCase a   (down x) (map (replaceA sub) alts)
-        XCast a c x     -> XCast a c (down x)
+        XVar{}           -> xx
+        XAbs   a b x     -> XAbs   a b (down x)
+        XApp   a x1 x2   -> XApp   a   (down x1)  (replaceArg sub x2)
+        XLet   a lts x2  -> XLet   a   (replaceL sub lts) (down x2)
+        XAtom{}          -> xx
+        XCase  a x alts  -> XCase  a   (down x)  (map (replaceA sub) alts)
+        XCast  a c x     -> XCast  a c (down x)
+        XAsync a b e1 e2 -> XAsync a b (down e1) (down e2)
 
 
 -- | Replace variables with expressions in the given argument.

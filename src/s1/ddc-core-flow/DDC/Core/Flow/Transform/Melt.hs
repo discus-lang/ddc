@@ -168,6 +168,8 @@ instance Melt (Exp () Name) where
         XCast c x       -> liftM  (XCast c)  (melt x)
         XType t         -> return $ XType t
         XWitness w      -> return $ XWitness w
+        -- TODO(chrishall): no idea if I am holding this right
+        XAsync b e1 e2  -> liftM2 (XAsync b) (melt e1)  (melt e2)
 
 
 -- Lets -----------------------------------------------------------------------

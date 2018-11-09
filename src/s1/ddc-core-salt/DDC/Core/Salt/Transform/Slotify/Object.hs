@@ -16,23 +16,24 @@ objectsOfExp
 
 objectsOfExp xx
  = case xx of
-        XVar  _ _       -> Map.empty
+        XVar   _ _       -> Map.empty
 
-        XAbs  _ (MType _) x
+        XAbs   _ (MType _) x
          -> objectsOfExp x
 
-        XAbs  _ (MTerm b) x
+        XAbs   _ (MTerm b) x
          -> Map.union  (objectsOfBind b)   (objectsOfExp x)
 
-        XAbs  _ (MImplicit b) x
+        XAbs   _ (MImplicit b) x
          -> Map.union  (objectsOfBind b)   (objectsOfExp x)
 
-        XApp  _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfArg x2)
-        XLet  _ lts x   -> Map.union  (objectsOfLets lts) (objectsOfExp x)
+        XApp   _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfArg x2)
+        XLet   _ lts x   -> Map.union  (objectsOfLets lts) (objectsOfExp x)
 
-        XAtom{}         -> Map.empty
-        XCase _ x alts  -> Map.unions (objectsOfExp x : map objectsOfAlt alts)
-        XCast _ _ x     -> objectsOfExp x
+        XAtom{}          -> Map.empty
+        XCase  _ x alts  -> Map.unions (objectsOfExp x : map objectsOfAlt alts)
+        XCast  _ _ x     -> objectsOfExp x
+        XAsync _ b e1 e2 -> Map.unions [(objectsOfBind b), (objectsOfExp e1), (objectsOfExp e2)]
 
 
 -- Arg --------------------------------------------------------------------------------------------

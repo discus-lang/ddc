@@ -17,14 +17,15 @@ injectX :: Map A.Name (Exp a A.Name -> Exp a A.Name)
 
 injectX injs xx
  = case xx of
-        XVar{}          -> xx
-        XAbs  a b x     -> XAbs  a b   (injectX injs x) -- Should we error? Salt doesn't have lambdas.
-        XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectArg injs x2)
-        XLet  a lts x   -> XLet  a     (injectLts injs lts)
-                                       (injectionsOfLets injs lts (injectX injs x))
-        XAtom{}         -> xx
-        XCase a x alts  -> XCase a     (injectX injs x)      (map (injectA injs) alts)
-        XCast a c x     -> XCast a c   (injectX injs x)
+        XVar{}           -> xx
+        XAbs   a b x     -> XAbs   a b   (injectX injs x) -- Should we error? Salt doesn't have lambdas.
+        XApp   a x1 x2   -> XApp   a     (injectX injs x1)          (injectArg injs x2)
+        XLet   a lts x   -> XLet   a     (injectLts injs lts)
+                                         (injectionsOfLets injs lts (injectX injs x))
+        XAtom{}          -> xx
+        XCase  a x alts  -> XCase  a     (injectX injs x)      (map (injectA injs) alts)
+        XCast  a c x     -> XCast  a c   (injectX injs x)
+        XAsync a b e1 e2 -> XAsync a b   (injectX injs e1)          (injectX injs e2)
 
 
 injectArg :: Map A.Name (Exp a A.Name -> Exp a A.Name)
