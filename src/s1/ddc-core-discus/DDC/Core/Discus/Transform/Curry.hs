@@ -147,6 +147,10 @@ curryX envt callables xx
          ->     XCast ()  <$> return (reannotate (const ()) c)
                           <*> curryX envt callables xBody
 
+        XAsync _ b e1 e2
+         -> let callables' = shadowCallables [b] callables
+            in  XAsync () b <$> (curryX envt callables' e1)
+                            <*> (curryX envt callables' e2)
 
 curryArg  :: Show a
         => EnvT Name                    -- ^ Current type environment.
