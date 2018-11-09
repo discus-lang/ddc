@@ -117,6 +117,16 @@ instance PrettyLanguage l => Pretty (GExp l) where
          $   vcat [ ppr cc %% text "in"
                   , pprX x]
 
+        -- async x <- e1 in e2
+        XAsync b e1 e2
+         -> pprParen' (d > 2)
+         $  vcat [  text "async"
+                 %% ppr b
+                 %% text "<-"
+                 %% ppr e1
+                 %% text "in"
+                 %% ppr e2
+                 ]
 
 -- Arg ------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GArg l) where

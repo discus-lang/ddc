@@ -40,6 +40,9 @@ instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
         XCase x alts            -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast c x               -> slurpBindTree c ++ slurpBindTree x
 
+        XAsync b e1 e2
+         -> slurpBindTree e1
+         ++ [bindDefX BindAsync [b] [e2]]
 
 instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GArg l) l where
