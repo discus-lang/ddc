@@ -74,13 +74,14 @@ collectExp xx
  -- boilerplate.
  | otherwise
  = case xx of
-        XVar{}          -> mempty
-        XAbs  _ _ xBody -> collectExp xBody
-        XApp  _ x1 a2   -> mappend (collectExp  x1)  (collectArg a2)
-        XLet  _ lts x   -> mappend (collectLets lts) (collectExp x)
-        XAtom{}         -> mempty
-        XCase _ x alts  -> mappend (collectExp  x)   (mconcat $ map collectAlt alts)
-        XCast _ _ x     -> collectExp x
+        XVar{}           -> mempty
+        XAbs  _ _ xBody  -> collectExp xBody
+        XApp  _ x1 a2    -> mappend (collectExp  x1)  (collectArg a2)
+        XLet  _ lts x    -> mappend (collectLets lts) (collectExp x)
+        XAtom{}          -> mempty
+        XCase _ x alts   -> mappend (collectExp  x)   (mconcat $ map collectAlt alts)
+        XCast _ _ x      -> collectExp x
+        XAsync _ _ e1 e2 -> mappend (collectExp e1)   (collectExp e2)
 
 
 -- | Collect the support of an argument.
