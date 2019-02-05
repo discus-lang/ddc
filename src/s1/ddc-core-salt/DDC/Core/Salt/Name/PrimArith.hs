@@ -8,7 +8,7 @@ import Control.DeepSeq
 import Data.List
 
 
--- | Primitive arithmetic, logic, and comparison opretors.
+-- | Primitive arithmetic, logic, and comparison operators.
 --   We expect the backend/machine to be able to implement these directly.
 --
 --   For the Shift Right operator, the type that it is used at determines
