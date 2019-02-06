@@ -38,15 +38,15 @@ addons:
       - llvm-toolchain-trusty-6.0
 
     packages: &apt_packages
-      - cabal-install-1.24
+      - cabal-install-2.4
 
 compiler:
-  - GHC-8.4.1
-  - GHC-8.2.2
+  - GHC-8.6.3
+  - GHC-8.4.4
 
 env:
   global:
-    - CABAL=1.24
+    - CABAL=2.4
   matrix:
     - LLVM=6.0.0
     - LLVM=5.0.1
