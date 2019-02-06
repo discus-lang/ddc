@@ -79,8 +79,8 @@ add# [Nat#] 5#
 
 
 -- Let bindings.
-let x: Nat#
-      = 5# in
+let x: Nat# 
+    = 5# in
 add# [Nat#] x
 :*: Nat# -> Nat#
 :!: Pure
@@ -88,7 +88,7 @@ add# [Nat#] x
 
 -- Functional let binding.
 let f: Nat# -> Nat#
-      = λ(x: Nat#). add# [Nat#] x 2# in
+    = λ(x: Nat#). add# [Nat#] x 2# in
 f 3#
 :*: Nat#
 :!: Pure
@@ -96,11 +96,11 @@ f 3#
 
 -- Multiple let bindings.
 let f: Nat# -> Nat#
-      = λ(x: Nat#). x in
+    = λ(x: Nat#). x in
 let g: (Nat# -> Nat#) -> Nat# -> Nat#
-      = λ(f: Nat# -> Nat#).λ(z: Nat#). f z in
+    = λ(f: Nat# -> Nat#).λ(z: Nat#). f z in
 let h: Nat# -> Nat#
-      = λ(x: Nat#). add# [Nat#] x 2# in
+    = λ(x: Nat#). add# [Nat#] x 2# in
 h (g f 5#)
 :*: Nat#
 :!: Pure
@@ -108,11 +108,11 @@ h (g f 5#)
 
 -- As above, but use function binding syntax.
 let f: Nat# -> Nat#
-      = λ(x: Nat#). x in
+    = λ(x: Nat#). x in
 let g: (Nat# -> Nat#) -> Nat# -> Nat#
-      = λ(f: Nat# -> Nat#).λ(z: Nat#). f z in
+    = λ(f: Nat# -> Nat#).λ(z: Nat#). f z in
 let h: Nat# -> Nat#
-      = λ(x: Nat#). add# [Nat#] x 2# in
+    = λ(x: Nat#). add# [Nat#] x 2# in
 h (g f 5#)
 :*: Nat#
 :!: Pure
@@ -121,8 +121,8 @@ h (g f 5#)
 -- Synthesis still runs in the right of a binding with a 
 -- full type annotation.
 let f: Nat# -> Nat#
-      = λ(x: Nat#).
-        (λ(z: Nat#). z) x in
+    = λ(x: Nat#).
+      (λ(z: Nat#). z) x in
 f 5#
 :*: Nat#
 :!: Pure
@@ -317,8 +317,8 @@ f
 -- Kind of 'a' is constrained by its use as the type of a let-binding.
 Λ(a: Data).
 λ(x: a).
-let y: a   
-      = x in
+let y: a    
+    = x in
 ()
 :*: [a: Data].a -> Unit
 :!: Pure
@@ -327,10 +327,10 @@ let y: a
 -- As above, but with transitive let-bindings.
 Λ(a: Data).
 λ(x: a).
-let y: a   
-      = x in
-let z: a   
-      = y in
+let y: a    
+    = x in
+let z: a    
+    = y in
 z
 :*: [a: Data].a -> a
 :!: Pure
@@ -340,8 +340,8 @@ z
 -- of a let-binding. 
 Λ(a: Data).
 λ(x: a).
-let y: Unit
-      = () in
+let y: Unit 
+    = () in
 x
 :*: [a: Data].a -> a
 :!: Pure
@@ -397,7 +397,7 @@ f x
 Λ(f: ?3 -> Data).Λ(a: ?3).
 λ(x: [w: Data].f a).λ(g: f a -> Nat# -> ?11).
 let y: Nat# -> ?11
-      = g (x [Nat#]) in
+    = g (x [Nat#]) in
 y 5#
 :*: [f: ?3 -> Data].[a: ?3].([w: Data].f a) -> (f a -> Nat# -> ?11) -> ?11
 :!: Pure
@@ -407,7 +407,7 @@ y 5#
 Λ(f: Data -> Region).Λ(a: Data).
 λ(x: [w: Region].a).λ(g: a -> Nat# -> ?10).
 let y: Nat# -> ?10
-      = g (x [f a]) in
+    = g (x [f a]) in
 y 5#
 :*: [f: Data -> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?10) -> ?10
 :!: Pure

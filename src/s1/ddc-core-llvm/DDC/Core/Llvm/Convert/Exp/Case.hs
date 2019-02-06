@@ -89,7 +89,7 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
 
         -- Convert all the alternatives,
         -- assiging their results into separate vars.
-        (vDstAlts, alts'@(_:_))
+        (vDstAlts, alts')
                 <- liftM unzip
                 $  mapM (\alt -> do
                         vDst'   <- newUniqueNamedVar "alt" (typeOfVar vDst)

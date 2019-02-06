@@ -3,7 +3,7 @@ ok
 -- Ok: let expression with explicit type annotation.
 When checking expression.
   In binding 'x'
-  <batch>:4:2
+  <batch>:4:3
   Type mismatch.
     inferred type: Int#
     expected type: Nat#
@@ -20,7 +20,7 @@ x
 -- Error: let binder has incorrect type annotation.
 When checking expression.
   In binding 'x'
-  <batch>:12:2
+  <batch>:12:3
   Type mismatch.
     inferred type: Int#
     expected type: Unit

@@ -7,7 +7,7 @@ import qualified Data.Char              as Char
 
 
 -- | Scan a deBruijn index.
-scanIndex   :: Scanner IO Location [Char] (I.Location, Int)
+scanIndex   :: Scanner IO Location [Char] (Range Location, Int)
 scanIndex
  = I.munchPred Nothing matchIndex acceptIndex
  where

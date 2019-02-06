@@ -6,7 +6,7 @@ ok
 
 -- Error: Unknown primop.
 When checking expression.
-  <batch>:8:2
+  <batch>:8:3
   Undefined value variable: foo#
 
 
@@ -29,8 +29,8 @@ module Main with
 letrec {
   foo: Int# -> Int#
     = λ(x: Int#).
-      let y: Int#
-            = add# [Int#] x x in
+      let y: Int# 
+          = add# [Int#] x x in
       return# [Int#] y
 }
 
@@ -40,8 +40,8 @@ module Main with
 letrec {
   foo: Int# -> Int#
     = λ(x: Int#).
-      let y: Int#
-            = add# [Int#] x x in
+      let y: Int# 
+          = add# [Int#] x x in
       fail# [Int#]
 }
 
@@ -51,8 +51,8 @@ module Main with
 letrec {
   foo: Int# -> Int#
     = λ(x: Int#).
-      let y: Int#
-            = x in
+      let y: Int# 
+          = x in
       return# [Int#] y
 }
 
@@ -62,8 +62,8 @@ module Main with
 letrec {
   foo: Nat# -> Nat#
     = λ(x: Nat#).
-      let y: Nat#
-            = 5# in
+      let y: Nat# 
+          = 5# in
       return# [Nat#] y
 }
 

@@ -97,7 +97,7 @@ sayKeyword kw
 
 -------------------------------------------------------------------------------
 -- | Scanner for a `Keyword`.
-scanKeyword :: Scanner IO Location [Char] (Location, Keyword)
+scanKeyword :: Scanner IO Location [Char] (Range Location, Keyword)
 scanKeyword
  = munchPred Nothing matchVarName acceptKeyword
 

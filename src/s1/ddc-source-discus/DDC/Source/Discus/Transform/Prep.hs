@@ -149,7 +149,12 @@ desugarX rns xx
                 progress
 
                 -- Make a new name for b2 and desugar x2 to force the rename.
-                (b2', (UName n2')) <- newVar "x"
+                -- TODO: Cleanup mess due to MonadFail transition.
+                (b2', n2')
+                 <- newVar "x"
+                 >>= \case (b2', (UName n2')) -> return (b2', n2')
+                           _ -> error "no match"
+
                 x2'     <- desugarX ((n2, n2') : rns) x2
 
                 desugarX rns
@@ -195,7 +200,10 @@ desugarX rns xx
                 x0'     <- desugarX rns x0
 
                 -- New variable to bind the scrutinee.
-                (b, u@(UName nScrut)) <- newVar "xScrut"
+                (b, u) <- newVar "xScrut"
+                let nScrut = case u of
+                                UName nScrut' -> nScrut'
+                                _  -> error "no match"
 
                 -- For each alternative, if it has a variable pattern
                 -- then substitute the new name for it in the alternative.

@@ -127,15 +127,15 @@ scanner :: FilePath
 
 scanner fileName
  = let
-        stamp   :: (I.Location, a) -> Located a
-        stamp (I.Location line col, token)
-         = Located (SourcePos fileName line col) token
+        stamp   :: (I.Range I.Location, a) -> Located a
+        stamp (I.Range (I.Location line col) _, token)
+         = Located (SourcePos fileName line (col + 1)) token
         {-# INLINE stamp #-}
 
         stamp'  :: (a -> b)
-                -> (I.Location, a) -> Located b
-        stamp' k (I.Location line col, token)
-          = Located (SourcePos fileName line col) (k token)
+                -> (I.Range I.Location, a) -> Located b
+        stamp' k (I.Range (I.Location line col) _, token)
+          = Located (SourcePos fileName line (col + 1)) (k token)
         {-# INLINE stamp' #-}
 
    in I.skip (\c -> c == ' ' || c == '\t')

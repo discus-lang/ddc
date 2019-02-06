@@ -44,7 +44,7 @@ sayBuiltin bb
 
 -------------------------------------------------------------------------------
 -- | Scanner for builtin names.
-scanBuiltin   :: Scanner IO Location [Char] (Location, Builtin)
+scanBuiltin   :: Scanner IO Location [Char] (Range Location, Builtin)
 scanBuiltin
  = munchPred Nothing matchConName acceptBuiltin
 

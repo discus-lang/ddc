@@ -9,13 +9,13 @@ While parsing.
 -- Error: Like above, but ensure the line number has advanced
 -- between interpreter commands.
 When checking expression.
-  <batch>:18:4
+  <batch>:18:5
   Undefined value variable: ?
 
 
 -- Ok: should allow variable named 'inc'.
 let inc: Unit
-      = () in
+    = () in
 inc
 :*: Unit
 :!: Pure

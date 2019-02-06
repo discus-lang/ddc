@@ -271,8 +271,11 @@ addConstant ctx lit
         let mname       = List.intercalate "." parts
 
         -- Make a new variable to name the literal constant.
-        (Var (NameLocal sLit) tLit)
-                <- newUniqueNamedVar mname (typeOfLit lit)
+        -- TODO: cleanup mess due to GHC MonadFail transition.
+        (sLit, tLit)
+         <- newUniqueNamedVar mname (typeOfLit lit)
+         >>= \case Var (NameLocal sLit) tLit -> return (sLit, tLit)
+                   _ -> error "no match"
 
         let nLit =  NameGlobal sLit
         let vLit =  Var nLit tLit

@@ -32,10 +32,10 @@ module Test with
 letrec {
   thing: ([a: Data].a -> a) -> Unit
     = λ(id: [a: Data].a -> a).
-      let _: Nat#
-            = id [Nat#] 5# in
-      let _: Unit
-            = id [Unit] () in
+      let _: Nat# 
+          = id [Nat#] 5# in
+      let _: Unit 
+          = id [Unit] () in
       ();
   
   foo: Unit -> Unit
@@ -69,7 +69,7 @@ letrec {
 
 -- Error: missing type annotation for parameter of lambda.
 When checking expression.
-  <batch>:57:2
+  <batch>:57:3
   Missing annotation on function parameter.
     With paramter: x
 

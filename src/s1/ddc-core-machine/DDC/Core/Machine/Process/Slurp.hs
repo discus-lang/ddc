@@ -62,7 +62,13 @@ just _ (Just r) = Right r
 slurpNetworkX :: (Bind Name, Exp () Name) -> Either SlurpError (Bind Name, Network)
 slurpNetworkX (networkBind,xx)
  = do   let err str = just $ SlurpErrorOther (text str) xx
-        (NameOpMachine proc, nestArgs) <- err "takeXFragApps" $ takeXNameApps xx
+
+        (proc, nestArgs)
+         <- case takeXNameApps xx of
+                Just (NameOpMachine proc, nestArgs)
+                  -> return (proc, nestArgs)
+                _ -> Left $ SlurpErrorOther (text "takeXFragApps") xx
+
         -- NOTE: currently assuming process# prim is unapplied
         nest <- case takeExpsFromArgs nestArgs of
             [nest] -> return nest

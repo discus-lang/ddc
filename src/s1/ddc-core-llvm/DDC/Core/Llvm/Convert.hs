@@ -202,7 +202,12 @@ collectGlobalsOfModule pp mm
         globals_llvm
          <- forM (Map.toList globals_salt)
          $  \(name, tbs)
-         -> do  _ts'@(t' : _)  <- mapM (convertType pp Env.empty) $ map fst tbs
+         -> do
+                -- TODO: cleanup mess due to GHC MonadFail transition.
+                t' <- (mapM (convertType pp Env.empty) $ map fst tbs)
+                   >>= \case (t' : _) -> return t'
+                             _ -> error "no match"
+
                 let bInitHere   = or $ map snd tbs
                 return  (name, (t', bInitHere))
 

@@ -15,7 +15,7 @@ import qualified Data.List      as List
 
 -------------------------------------------------------------------------------
 -- | Scanner for operators used prefix.
-scanPrefixOperator :: Scanner IO Location [Char] (Location, String)
+scanPrefixOperator :: Scanner IO Location [Char] (Range Location, String)
 scanPrefixOperator
  = munchPred Nothing matchPrefixOperator acceptPrefixOperator
 
@@ -41,10 +41,9 @@ acceptPrefixOperator str
         = Nothing
 
 
-
 -------------------------------------------------------------------------------
 -- | Scanner for operators used infix.
-scanInfixOperator  :: Scanner IO Location [Char] (Location, String)
+scanInfixOperator  :: Scanner IO Location [Char] (Range Location, String)
 scanInfixOperator
  = munchPred Nothing matchInfixOperator acceptInfixOperator
 

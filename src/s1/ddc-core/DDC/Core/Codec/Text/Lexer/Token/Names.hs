@@ -23,7 +23,7 @@ import qualified Data.Char      as Char
 
 -- Variable names ---------------------------------------------------------------------------------
 -- | Scanner for variable anmes.
-scanVarName   :: Scanner IO Location [Char] (Location, String)
+scanVarName   :: Scanner IO Location [Char] (Range Location, String)
 scanVarName
  = munchPred Nothing matchVarName acceptVarName
 
@@ -84,7 +84,7 @@ isVarBody c
 
 -- Constructor names ------------------------------------------------------------------------------
 -- | Scanner for constructor names.
-scanConName   :: Scanner IO Location [Char] (Location, String)
+scanConName   :: Scanner IO Location [Char] (Range Location, String)
 scanConName
  = munchPred Nothing matchConName acceptConName
 

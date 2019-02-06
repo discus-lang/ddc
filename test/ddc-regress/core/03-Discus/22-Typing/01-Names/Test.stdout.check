@@ -12,7 +12,7 @@ When checking type.
 
 -- Error: Data constructor not in environment.
 When checking expression.
-  <batch>:12:2
+  <batch>:12:3
   Undefined data constructor: Whatever
 
 
@@ -25,12 +25,12 @@ While parsing.
 
 -- Error: Data constructor used as a type constructor.
 While parsing.
-  Parse error in "<batch>" (line 20, column 2)
+  Parse error in "<batch>" (line 20, column 3)
   Unexpected .
   Expected a type.
 
 
 -- Error: Type variable used as a value variable.
 When checking expression.
-  <batch>:24:27
+  <batch>:24:28
   Undefined value variable: a

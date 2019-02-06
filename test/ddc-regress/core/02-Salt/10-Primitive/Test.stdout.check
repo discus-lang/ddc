@@ -20,7 +20,7 @@ When checking type.
 
 -- Check types of tailcallN# prims.
 When checking expression.
-  <batch>:18:2
+  <batch>:18:3
   Undefined value variable: tailcall0#
 
 tailcall1#
@@ -64,12 +64,12 @@ While parsing.
 
 -- no unboxed literals in this fragment.
 While parsing.
-  Parse error in "<batch>" (line 47, column 2)
+  Parse error in "<batch>" (line 47, column 3)
   Unexpected literal.
 
 -- Error: not a valid bit width
 When checking expression.
-  <batch>:50:2
+  <batch>:50:3
   Undefined data constructor: 0x2aw42#
 
 -- Binary literals

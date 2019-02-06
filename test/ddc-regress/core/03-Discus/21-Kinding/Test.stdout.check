@@ -63,6 +63,6 @@ When checking type.
 
 -- #242 Error: Unexpected constructor ().
 While parsing.
-  Parse error in "<batch>" (line 35, column 20)
+  Parse error in "<batch>" (line 35, column 21)
   Unexpected symbol "+".
   Expected a type.

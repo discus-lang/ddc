@@ -337,8 +337,9 @@ stripParamsToGuards (p:ps)
 
            PAt b p1
             -> do (psParam', gsRest) <- stripParamsToGuards ps
-                  ([p1'],    gsData) <- stripPatsToGuards  [p1]
-                  let Just u         = takeBoundOfBind b
+                  (ps',      gsData) <- stripPatsToGuards  [p1]
+                  let [p1']     = ps'
+                  let Just u    = takeBoundOfBind b
                   return  ( make (PVar b) mt : psParam'
                           , GPat p1' (XVar u)
                                 : (gsData ++ gsRest))
@@ -376,7 +377,8 @@ stripPatsToGuards (p:ps)
                 (psRest', gsRest)   <- stripPatsToGuards ps
 
                 -- Strip nested patterns from the argument.
-                ([p1'],     gsData) <- stripPatsToGuards [p1]
+                (ps', gsData) <- stripPatsToGuards [p1]
+                let [p1']       = ps'
                 let Just u      = takeBoundOfBind b
 
                 return  ( PVar b : psRest'
@@ -411,8 +413,9 @@ stripGuardToGuards g
         -- As we alerady have the expression being matched we don't
         -- need to introduce a new variable to name it.
         GPat (PAt b p) x
-         -> do  ([p'], gsData) <- stripPatsToGuards [p]
-                let Just u      = takeBoundOfBind b
+         -> do  (ps', gsData) <- stripPatsToGuards [p]
+                let [p']   = ps'
+                let Just u = takeBoundOfBind b
                 return  ( GPat (PVar b) x
                         , GPat p' (XVar u) : gsData)
 

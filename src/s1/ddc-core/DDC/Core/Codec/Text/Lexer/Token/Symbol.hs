@@ -92,7 +92,7 @@ saySymbol pp
 
 -------------------------------------------------------------------------------
 -- | Scanner for a `Symbol`.
-scanSymbol :: Scanner IO Location [Char] (Location, Symbol)
+scanSymbol :: Scanner IO Location [Char] (Range Location, Symbol)
 scanSymbol
  = alt  (munchPred Nothing matchSymbol2 acceptSymbol2)
         (from      acceptSymbol1)

@@ -24,7 +24,7 @@ import qualified Data.Text              as Text
 
 
 -- Literal --------------------------------------------------------------------
-scanLiteral   :: Scanner IO Location [Char] (Location, (Literal, Bool))
+scanLiteral   :: Scanner IO Location [Char] (Range Location, (Literal, Bool))
 scanLiteral
  = alts [ munchPred Nothing matchLiteral acceptLiteral
 

@@ -84,7 +84,12 @@ checkLetPrivate !table !ctx mode demand
 
         tBody5      <- applyContext ctx5 tBody4
         kBody5      <- applyContext ctx5 kBody4
-        TSum effs5  <- applyContext ctx5 (TSum effs3)
+
+        -- TODO: cleanup mess introduced in GHC MonadFail transition.
+        effs5       <- applyContext ctx5 (TSum effs3)
+                    >>= \case TSum effs5 -> return effs5
+                              _          -> error "not a type sum"
+
         when (not $ isDataKind kBody5)
          $ throw $ ErrorMismatch a kBody5 kData xx
 
