@@ -1,0 +1,60 @@
+  
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+import foreign c value
+ ddcPerformGC : Unit -> Unit
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> Ref r Text -> Unit
+ ddcTraceCRByHandle     : [r: Region]. CR r -> Unit
+
+where
+
+-- basic demo of how compact region works.
+main ()
+ = mutable r1 r2 in 
+    do  cr = allocCR {@r1} ()
+
+        refOnCR = storeCR cr (allocRef {@r2} "hello")
+
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
+        ddcPerformGC ()
+        writel $ show (readRef refOnCR)
+
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
+        ddcPerformGC ()
+        writel $ show (readRef refOnCR)
+
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
+
+        ddcPerformGC ()
+        writel $ show (readRef refOnCR)
+
+
+        deleteCR cr
+        ddcPerformGC ()
+        
+        -- ddcTraceCRByHandle cr
+        -- ddcTraceObj True True refOnCR
+
+        writel $ show (readRef refOnCR)
+
+        -- if you uncomment this below, it should print proper 
+        -- box(ref)->box(textLit)->raw(binary) on the heap
+        -- ddcTraceObj {@r2} True True refOnCR
+
+
+        ()
+

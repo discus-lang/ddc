@@ -114,17 +114,15 @@ compactRegionTableMax [r1: Region] (original : Ptr# r1 Obj) (acc : Nat#) : Unit
       ddcPrimStdoutPutVector str
       ddcPrimStdoutPutTextLit "\n"#
 
-      ddcPrimCompactRegionMarkDead handle
       case gt# acc 1024# of
         True#   -> do ddcPrimStdoutPutTextLit "pass\n"#; ()
         False#  -> do compactRegionTableMax [r1] x2 (add# acc 1#)
-        _       -> do ddcPrimStdoutPutTextLit "try\n"#; ()
 
 
 main [r1 : Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 1024# 0#
+        ddcInit 409600# 0#
 
         original = boxWord32 [r1] 0w32#
 

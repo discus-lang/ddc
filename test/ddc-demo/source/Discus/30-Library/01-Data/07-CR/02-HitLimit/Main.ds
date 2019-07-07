@@ -5,6 +5,7 @@ import Class.Show
 import Data.Numeric
 import Data.Function
 import Data.CompactRegion
+
 where
 
 -- The compact region will automatically
@@ -14,15 +15,15 @@ hitLimit {@r: Region} (cr: CR r) (acc: Nat): S (Write r + Console) Nat
   = case (acc < 2048) of
       True  ->  do
                   val = storeCR cr acc
-                  writel (show val)
                   hitLimit cr (acc + 1)
       False ->  acc
 
 
 main ()
- = private r with { Alloc r; Read r; Write r } in
-   do
-      cr = allocCR {@r} 1024
+ = mutable r in
+   do   
+      cr = allocCR {@r} ()
       acc = hitLimit cr 0
       deleteCR cr
+      writel $ show acc
 

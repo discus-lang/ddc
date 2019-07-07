@@ -53,6 +53,20 @@ import foreign c value
   ddcPrimStdoutPutString : TextLit# -> Void#
   ddcPrimStdoutPutAddr : Addr# -> Void#
 
+  ddcPrimStderrPutAddr : Addr# -> Void#
+  ddcPrimStderrPutNat  : Nat# -> Void#
+
+  ddcCompactRegionDebugPrint   : TextLit# -> Unit
+  ddcPrintCompactRegionHeader  : Addr# -> Unit
+  ddcCompactRegionDebug        : Unit -> Bool#
+
+  ddcCompactRegionDestroy      : Addr# -> Unit
+  ddcCompactRegionGetNext      : Addr# -> Addr#
+  ddcCompactRegionGetRefList   : Addr# -> Addr#
+  ddcCompactRegionGetTail      : Addr# -> Addr#
+  ddcCompactRegionGetData      : Addr# -> Addr#
+  traceCR : Addr# -> Unit
+
 with letrec
 
 
@@ -92,6 +106,7 @@ ddcCollectHeap
         aBackBase'      = read# [Addr#] aaBackBase 0#
         write# aaBackTop 0# aBackBase'
 
+        -- ddcCompactRegionDebugPrint "root\n"#
         -- Evacuate all the root objects to the to-space.
         ddcEvacuateRoots
                 aRootStart
@@ -99,11 +114,20 @@ ddcCollectHeap
                 aaBackTop
                 (read# aaBackMax  0#)
 
+        -- after LLVM root, directly scan compact region root
+        -- ddcCompactRegionDebugPrint "table\n"#
+
+        ddcScanCompactRegionTable aaBackTop
+
+        -- ddcCompactRegionDebugPrint "heap\n"#
+
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap
                 aaBackTop
                 (read# aaBackBase 0#)
+ 
+        -- ddcCompactRegionDebugPrint "Swap\n"#
 
         -- Flip the front and back heaps.
         aHeapBase       = read# [Addr#] aaHeapBase 0#
@@ -122,10 +146,14 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
+        -- ddcCompactRegionDebugPrint "CR\n"#
+
         -- collect compact regions
         ddcCollectCompactRegionTable
                   (read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#)
                   (read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#)
+                  
+        -- ddcCompactRegionDebugPrint "end\n"#
 
         ddcStatsOnGCEnd ()
         ()
@@ -210,12 +238,89 @@ ddcEvacuateRoot
                 -- Evacuate an object, returning its new address in the to-space.
                 aObjNew = ddcEvacuateObject aaBackTop aObj
 
+                -- ddcCompactRegionDebugPrint "root slot update| "#
+                -- ddcPrimStderrPutAddr aaObj
+                -- ddcCompactRegionDebugPrint " ["#
+                -- ddcPrimStderrPutAddr (read# aaObj 0#)
+                -- ddcCompactRegionDebugPrint " -> "#
+                -- ddcPrimStderrPutAddr aObjNew
+                -- ddcCompactRegionDebugPrint "] "#
+                -- ddcCompactRegionDebugPrint "\n"#
+
                 -- Update the slot entry to point to the new location.
                 write# aaObj 0# aObjNew
-
                 ()
+                
+               
 
 
+                
+
+                
+-- | Scan the compact region RefList header
+-- trace object in the RefList, copy objects on the heap to the back-heap
+-- as root objects
+ddcScanCompactRegionTable
+          (aaBackTop : Addr#)
+          : Unit
+ = do
+      tableBase = read# [Addr#] (global# [Addr#] "ddcCRTableBase"#) 0#
+      tableMax = read# [Addr#] (global# [Addr#] "ddcCRTableMax"#) 0#
+      ddcScanCompactRegionTable_iter aaBackTop tableBase tableMax
+
+
+ddcScanCompactRegionTable_iter
+          (aaBackTop : Addr#)
+          (curr  : Addr#)
+          (max   : Addr#)
+          : Unit
+ = do
+      case ge# curr max of
+        True#  -> ()
+        False# -> do  rawBase = read# [Addr#] curr 0#
+                      case ddcCompactRegionIsLive rawBase of
+                        -- not live, skip
+                        False# -> do ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
+                        True# -> do ddcCompactRegionDebugPrint "GC| CR| Enter "#
+                                    ddcPrintCompactRegionHeader rawBase
+                                    -- traceCR rawBase
+                                    refList = ddcCompactRegionGetRefList rawBase
+                                    refListTail = ddcCompactRegionGetTail refList
+                                    (case eq# refListTail refList of
+                                      True# -> ()
+                                      False# -> ddcScanCompactRegionObjectRoot aaBackTop (ddcCompactRegionGetNext refList) refListTail)
+                                    ddcScanCompactRegionTable_iter aaBackTop (plusAddr# curr 8#) max
+                                    
+                                    
+
+ddcScanCompactRegionObjectRoot
+            (aaBackTop : Addr#)
+            (refListCurr   : Addr#) 
+            (refListTail    : Addr#) 
+            : Unit
+ = do refObj = ddcCompactRegionGetData refListCurr
+      -- actualObjAddr = ddcBoxedGetField refObj 0#
+      objInCR = (read# refObj 0#)
+      -- (case ddcCompactRegionDebug () of
+      --   True# -> do ddcCompactRegionDebugPrint "GC| Ref| Found "#
+      --               ddcCompactRegionDebugPrint "| objInRefList: "#
+      --               ddcPrimStderrPutAddr refObj
+      --               ddcCompactRegionDebugPrint "| Ref to "#
+      --               ddcPrimStderrPutAddr objInCR
+      --               ddcCompactRegionDebugPrint "\n"#
+      --               ()
+      --   False# -> ())
+      
+      ddcScanObject aaBackTop objInCR
+      (case eq# refListCurr refListTail of
+        True#  -> ()
+        False# ->  do ddcScanCompactRegionObjectRoot aaBackTop (ddcCompactRegionGetNext refListCurr) refListTail
+                      ()
+      )
+
+                      
+
+      
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
 ddcEvacuateObject
@@ -239,6 +344,7 @@ ddcEvacuateObject
                 -- This is a real object in the from-space,
                 -- so evacuate it to the to-space.
                 False#  -> case ddcObjectIsInCompactRegion aObj of
+
                               True#  -> aObj
                               False# -> ddcEvacuateCopy aaBackTop aObj
 
@@ -250,13 +356,25 @@ ddcEvacuateCopy
                         : Addr#     -- ^ Address that the object has been copied to.
 
  = do   -- Get the size of the whole object.
+        -- ddcPrimStderrPutAddr aObj
+        -- ddcCompactRegionDebugPrint " "#
+
+        -- a = ddcObjectFormat aObj
+        -- ddcPrimStderrPutNat a
+     
         size    = ddcObjectSize aObj
 
         -- Where we're going to copy it to in the to-space.
         aObjNew = read# aaBackTop 0#
 
+        -- ddcCompactRegionDebugPrint " ->"#
+        -- ddcPrimStderrPutAddr aObjNew
+
         -- Copy the sucker.
         copy# aObjNew aObj size
+
+        -- ddcCompactRegionDebugPrint " :"#
+        -- ddcPrimStderrPutNat size
 
         -- Advance the to-pointer to point to the first byte of
         -- where the next object could be copied to.
@@ -266,6 +384,8 @@ ddcEvacuateCopy
         --   This records the fact that we've copied the object,
         --   so if we come back here again we'll know where it's gone.
         ddcForwardWrite aObj aObjNew
+
+        -- ddcCompactRegionDebugPrint "\n"#
 
         aObjNew
 
@@ -285,8 +405,11 @@ ddcCollectCompactRegionTableIter
       case gt# (plusAddr# tableBase acc) tableMax of
         True# -> ()
         False# -> do
-          ddcCollectCompactRegion rawBase (plusAddr# tableBase acc)
+          (case eq# rawBase (promote# [Addr#] 0#) of
+            True# -> ()
+            False# -> ddcCollectCompactRegion rawBase (plusAddr# tableBase acc))
           ddcCollectCompactRegionTableIter tableBase tableMax (add# acc 8#)
+          
           ()
 
 
@@ -297,8 +420,11 @@ ddcCollectCompactRegion
  = do
       case (ddcCompactRegionIsLive rawBase) of
         True# -> do ()
-        False#-> do -- free the actual memory
-                    free rawBase
+        False#-> do 
+                    ddcCompactRegionDebugPrint "GC| CR| deadCR: "#
+                    ddcPrintCompactRegionHeader rawBase
+                    -- free the CR 
+                    ddcCompactRegionDestroy rawBase
                     -- delete it from the table
                     write# tableEntryAddr 0# 0#
                     ()
@@ -324,8 +450,14 @@ ddcScanHeap
 
         -- Scan an object in the to-space and copy any object that
         -- it refers to from the from-space to the to-space.
-        ddcScanObject aaToSpaceTop aObjScan
+        -- ddcCompactRegionDebugPrint "Scan To|"#
+        -- ddcPrimStderrPutAddr aObjScan
+        -- ddcCompactRegionDebugPrint "["#
 
+        ddcScanObject aaToSpaceTop aObjScan
+        -- ddcCompactRegionDebugPrint "]\n"#
+
+    
         -- Go to the next object to scan.
         size            = ddcObjectSize aObjScan
         aObjNext        = plusAddr# aObjScan size
@@ -418,7 +550,6 @@ ddcScanBoxed_arg
     False# -> do
         -- Address where the object argument is in the from-space.
         aArgFrom  = ddcBoxedGetField aObjScan iArg
-
         -- Skip over null pointer arguments in the boxed object.
         --   When the object is initially allocated the argument pointers are
         --   set to null so that if a GC cycle runs before the thunk is

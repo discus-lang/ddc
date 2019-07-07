@@ -1,0 +1,46 @@
+module Main
+import System.IO.Console
+import Class.Show
+import Class.Numeric
+import Class.Ord
+import Data.Numeric.Nat
+import Data.Function
+import Data.Ref
+import Data.CompactRegion
+
+import foreign c value
+
+ ddcTraceObj            : [r: Region]. Bool# -> Bool# -> DList -> Unit
+ ddcTraceCRByHandle     : [r: Region]. CR r -> Unit
+
+where
+
+data DList = DNil | DCons DList DList
+
+countList {@r: Region} (cr : CR r) (curr : Nat ) (max : Nat) (secondMax : Nat) : S (Write r) DList
+ = do case curr == max of
+        True -> storeCRIgnoreRef cr DNil
+        False -> storeCRIgnoreRef cr $ DCons (countListPrim cr 0 secondMax) (countList cr (curr+1) max secondMax)
+
+
+countListPrim {@r: Region} (cr : CR r)  (curr : Nat) (max : Nat) : S (Write r) DList
+ = do case curr == max of
+        True -> DNil
+        False -> DCons DNil (countListPrim cr (curr+1) max)
+
+-- slow Fib
+fib (a: Nat) : Nat
+ = case a of
+    0 -> 1
+    1 -> 1
+    _ -> (fib (a-1)) + (fib (a-2))
+
+main ()
+ = mutable r1 in  
+    do 
+       cr = allocCR {@r1} ()
+       a = countList cr 0 10000 2600
+       writel $ ""
+       writel $ "OK, now caulculate the fib."
+       fib 100
+       writel $ "done"

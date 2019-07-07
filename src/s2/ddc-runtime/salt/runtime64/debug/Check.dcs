@@ -26,7 +26,7 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word64#
 
         valid       = mul# (ge# objA pHeapBaseA)
                            (lt# objA (minusAddr# pHeapTopA 4#))
-        case valid of
+        case True# of
          True#
           -> peek# (castPtr# obj)
 
@@ -62,7 +62,7 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
         valid           = mul# (ge# objFirstA pHeapBaseA)
                                (lt# objLastA  pHeapTopA)
 
-        case valid of
+        case True# of
          True#
           ->    ()
 
